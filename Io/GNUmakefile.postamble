@@ -1,0 +1,4 @@
+after-all::
+ifeq ($(FOUNDATION_LIB), apple)
+	@cp -f Info.plist $(BUNDLE_NAME)$(BUNDLE_EXTENSION)/Contents/Info.plist
+endif

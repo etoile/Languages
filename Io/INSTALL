@@ -1,0 +1,40 @@
+====================
+Io (GNUstep) INSTALL
+====================
+
+Required software
+-----------------
+
+You need to have the GNUstep core libraries installed in order to
+compile and use PreferencesKit. The core packages are, at a minimum:
+
+   * gnustep-make
+
+   * gnustep-base
+
+   * gnustep-gui
+
+   * gnustep-back
+
+See <http://www.gnustep.org/> for further information.
+
+You also need to have StepTalk framework installed:
+
+    * StepTalk (part of GNUstep, but not a core package)
+
+See <http://gnustep.org/experience/StepTalk.html> for further information.
+
+
+Build and Install
+-----------------
+
+   Steps to build:
+
+   * make install
+
+
+Trouble
+-------
+
+   Give us feedback! Tell us what you like; tell us what you think
+could be better. Send bug reports and patches to <etoile-track@gna.org>.

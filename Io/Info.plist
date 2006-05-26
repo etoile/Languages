@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>IoLanguage</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.etoile-project.iolanguage</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>StepTalkLanguages</key>
+	<dict>
+		<key>Io</key>
+		<dict>
+			<key>EngineClass</key>
+			<string>IoLanaguageEngine</string>
+			<key>FileTypes</key>
+			<array>
+				<string>io</string>
+			</array>
+		</dict>
+	</dict>
+</dict>
+</plist>

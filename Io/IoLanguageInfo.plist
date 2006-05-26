@@ -1,0 +1,9 @@
+{
+    /* Array of file types of your language scripts */
+    StepTalkLanguages = {
+		Io = { 
+				FileTypes = ("io");
+				EngineClass = "IoLanguageEngine";
+			}
+    }
+}
