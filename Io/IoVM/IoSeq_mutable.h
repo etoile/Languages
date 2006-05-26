@@ -46,7 +46,13 @@ IoObject *IoSeq_replaceMap(IoSeq *self, IoObject *locals, IoMessage *m);
 IoObject *IoSeq_strip(IoSeq *self, IoObject *locals, IoMessage *m);
 IoObject *IoSeq_lstrip(IoSeq *self, IoObject *locals, IoMessage *m);
 IoObject *IoSeq_rstrip(IoSeq *self, IoObject *locals, IoMessage *m);
-IoObject *IoSeq_setFloat32At(IoSeq *self, IoObject *locals, IoMessage *m);
+
+// float
+
+IoObject *IoSeq_float32ArrayAtPut(IoSeq *self, IoObject *locals, IoMessage *m);
+IoObject *IoSeq_float32ArrayAdd(IoSeq *self, IoObject *locals, IoMessage *m);
+IoObject *IoSeq_float32ArrayMultiplyScalar(IoSeq *self, IoObject *locals, IoMessage *m);
+IoObject *IoSeq_zero(IoSeq *self, IoObject *locals, IoMessage *m);
 
 // escape 
 

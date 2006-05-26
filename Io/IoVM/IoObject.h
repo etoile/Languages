@@ -63,7 +63,12 @@ unsigned int IoObject_rawHasProto_(IoObject *self, IoObject *p);
 
 void IoObject_createSlots(IoObject *self);
 void IoObject_setSlot_to_(IoObject *self, IoSymbol *slotName, IoObject *value);
+
 IoObject *IoObject_getSlot_(IoObject *self, IoSymbol *slotName);
+IoObject *IoObject_symbolGetSlot_(IoObject *self, IoSymbol *slotName);
+IoObject *IoObject_seqGetSlot_(IoObject *self, IoSymbol *slotName);
+double IoObject_doubleGetSlot_(IoObject *self, IoSymbol *slotName);
+
 //IoObject *IoObject_objectWithSlotValue_(IoObject *self, IoObject *slotValue);
 void IoObject_removeSlot_(IoObject *self, IoSymbol *slotName);
 

@@ -4,7 +4,7 @@ List ioDoc(
            docLicense("BSD revised")
            docObject("List")
            docInclude("_ioCode/List.io")
-           docDescription("An mutable array of values. The first index is 0.")
+           docDescription("A mutable array of values. The first index is 0.")
 		 docCategory("DataStructures")
            */
 
@@ -438,7 +438,6 @@ receiver from the startIndex to the endIndex. The endIndex argument
 is optional. If not given, it is assumed to be the end of the string. ")
 	*/
 	
-	List *list;
 	int start, end;
 	
 	start = IoMessage_locals_intArgAt_(m, locals, 0);

@@ -1,3 +1,9 @@
+2006-05-26  Yen-Ju Chen <yjchenx at gmail>
+
+    * Update to Io darcs 20060526.
+      Try to make minimal change to make it easier to sync in the future.
+    * Tested on GNUstep/Ubuntu/PPC with test_gnustep.io.
+
 2006-05-26  Quentin Mathe <qmathe@club-internet.fr>
 
 	Fixed compilation on GNUstep.

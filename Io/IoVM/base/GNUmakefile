@@ -27,6 +27,7 @@ IoVM_base_C_FILES = \
 	PortableStrlcpy.c \
 	PortableStrptime.c \
 	PortableTruncate.c \
+	PortableUContext.c \
 	PortableUsleep.c \
 	RandomGen.c \
 	Sorting.c \

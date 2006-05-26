@@ -478,11 +478,26 @@ IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObjec
 	IoState_stackRetain_(state, target); 
 #endif
 
-	if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
-	{ 
-		Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine));
-		IoState_error_(state, self, "stack overflow while sending '%s' message to a '%s' object", 
-					CSTRING(IoMessage_name(self)), IoObject_name(target)); 
+	{
+		IoCoroutine *currentCoroutine = state->currentCoroutine;
+		
+		/*
+		if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
+		{ 
+			Coro *coro = IoCoroutine_cid(state->currentCoroutine);
+			//Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine));
+			//IoState_error_(state, self, "stack overflow while sending '%s' message to a '%s' object", 
+			//			CSTRING(IoMessage_name(self)), IoObject_name(target)); 
+			printf("%p-%p overflow %i/%i\n", 
+				  (void *)currentCoroutine, (void *)coro, Coro_bytesLeftOnStack(coro), Coro_stackSize(coro));
+			{
+				IoCoroutine *newCoro = IoCoroutine_new(state);
+				IoCoroutine_try(newCoro, target, locals, self);
+				result = IoCoroutine_rawResult(newCoro);
+				goto stop;
+			 }
+		}
+		*/
 	}
 		
 	for (outer = self; outer; outer = DATA(outer)->nextMessage)
@@ -1122,6 +1137,12 @@ IoMessage *IoMessage_asMessageWithEvaluatedArgs(IoMessage *self, IoObject *local
 	IoState *state = IOSTATE;
 	IoMessage *sendMessage;
 	int i, max = IoMessage_argCount(self);
+	IoObject *context = locals;
+	
+	if (IoMessage_argCount(m) > 0)
+	{
+		context = IoMessage_locals_valueArgAt_(m, locals, 0); 
+	}
 	
 	if (IoMessage_needsEvaluation(self))
 	{ 
@@ -1135,7 +1156,7 @@ IoMessage *IoMessage_asMessageWithEvaluatedArgs(IoMessage *self, IoObject *local
 	for (i = 0; i < max; i ++)
 	{
 		IoMessage *arg = IoMessage_rawArgAt_(self, i);
-		IoObject *result = IoMessage_locals_performOn_(arg, locals, locals);
+		IoObject *result = IoMessage_locals_performOn_(arg, context, context);
 		IoMessage_setCachedArg_to_(sendMessage, i, result);
 	}
 	

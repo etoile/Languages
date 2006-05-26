@@ -1,8 +1,9 @@
 #include "IoState.h"
 
-void IoBindingsInit(IoState *self, IoObject *context)
+void IoBindingsInit(IoState *self, IoObject *context); 
 
 //#define IOBINDINGS 
+
 int main(int argc, const char *argv[])
 {
     IoState *self = IoState_new();

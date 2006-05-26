@@ -20,10 +20,11 @@ typedef IoObject IoCall;
 typedef struct
 {
 	IoObject *sender;
-	IoObject *target;
 	IoObject *message;
+	IoObject *target;
 	IoObject *slotContext;
 	IoObject *activated;
+	IoObject *coroutine;
 } IoCallData;
 
 IoCall *IoCall_with(void *state, 
@@ -31,7 +32,8 @@ IoCall *IoCall_with(void *state,
 									 IoObject *target,
 									 IoObject *message,
 									 IoObject *slotContext,
-									 IoObject *activated);
+									 IoObject *activated,
+									 IoObject *coroutine);
 
 IoCall *IoCall_proto(void *state);
 IoCall *IoCall_rawClone(IoCall *self);
@@ -48,6 +50,7 @@ IoObject *IoCall_message(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoCall_target(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoCall_slotContext(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoCall_activated(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoCall_coroutine(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoCall_evalArgAt(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoCall_argAt(IoObject *self, IoObject *locals, IoMessage *m);
 

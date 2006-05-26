@@ -15,6 +15,8 @@ docLicense("BSD revised")
 extern "C" {
 #endif
 
+typedef int uchar_t;
+
 typedef struct
 {
     char *s;
@@ -53,8 +55,9 @@ void IoLexer_popPos(IoLexer *self);
 void IoLexer_popPosBack(IoLexer *self);
 
 /* --- next/prev character --- */
-char IoLexer_nextChar(IoLexer *self);
-char IoLexer_prevChar(IoLexer *self);
+uchar_t IoLexer_nextChar(IoLexer *self);
+uchar_t IoLexer_prevChar(IoLexer *self);
+
 char *IoLexer_current(IoLexer *self);
 int IoLexer_onNULL(IoLexer *self);
 

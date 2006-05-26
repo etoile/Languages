@@ -57,11 +57,6 @@ void IoState_debuggingOff(IoState *self)
 
 int IoState_hasDebuggingCoroutine(IoState *self)
 {
-	/*
-	return List_detect_(self->coroutines, 
-					(ListDetectCallback *)IoCoroutine_rawDebuggingOn) 
-		   != (void *)0x0;
-	*/
 	return 1; // hack awaiting decision on how to change this
 }
 

@@ -6,8 +6,8 @@ Object ioDoc(
 			 docInclude("_ioCode/Object.io")
 			 docDescription("""An Object is a key/value dictionary with string keys and values of any type. The prototype Object contains a clone slot that is a CFuntion that creates new objects. When cloned, an Object will call it's init slot (with no arguments).
 
-<p>
-<b>Important note:</b> <p>The data structure used for objects is optimized for objects with relatively few slots (less than 100). Objects become very memory inefficient (exponentially so) when they have a large number of slots. Objects should not be used as large hash tables or lists. Use a Hash or List primitive instead.""")
+<p><b>Important note:</b></p>
+<p>The data structure used for objects is optimized for objects with relatively few slots (less than 100). Objects become very memory inefficient (exponentially so) when they have a large number of slots. Objects should not be used as large hash tables or lists. Use a Hash or List primitive instead.</p>""")
 		   docCategory("Core")
 			 */
 
@@ -345,7 +345,7 @@ IoObject *IoObject_rawClone(IoObject *proto)
 	IoObject *self = IoObject_alloc(proto);
 	self->tag = proto->tag;
 	IoObject_setProtoTo_(self, proto);
-	IoObject_setDataPointer_(self, IoObject_dataPointer(proto)); // is this right????????????
+	IoObject_setDataPointer_(self, IoObject_dataPointer(proto)); // is this right?
 	self->isDirty = 1;
 	return self;
 }
@@ -741,6 +741,63 @@ IoObject *IoObject_getSlot_(IoObject *self, IoSymbol *slotName)
 	return v ? v : IONIL(self);
 }
 
+double IoObject_doubleGetSlot_(IoObject *self, IoSymbol *slotName)
+{ 
+	IoObject *v = IoObject_rawGetSlot_(self, slotName);
+	
+	if (!v)
+	{
+		IoState_error_(IOSTATE, 0x0, "missing slot %s in %s", 
+					CSTRING(slotName), IoObject_name(self));
+	}
+
+	if (!ISNUMBER(v))
+	{
+		IoState_error_(IOSTATE, 0x0, "slot %s in %s must be a number, not a %s", 
+					CSTRING(slotName), IoObject_name(self), IoObject_name(v));
+	}
+	
+	return CNUMBER(v);
+}
+
+IoObject *IoObject_symbolGetSlot_(IoObject *self, IoSymbol *slotName)
+{ 
+	IoObject *v = IoObject_rawGetSlot_(self, slotName);
+	
+	if (!v)
+	{
+		IoState_error_(IOSTATE, 0x0, "missing slot %s in %s", 
+					CSTRING(slotName), IoObject_name(self));
+	}
+	
+	if (!ISSYMBOL(v))
+	{
+		IoState_error_(IOSTATE, 0x0, "slot %s in %s must be a symbol, not a %s", 
+					CSTRING(slotName), IoObject_name(self), IoObject_name(v));
+	}
+	
+	return v;
+}
+
+IoObject *IoObject_seqGetSlot_(IoObject *self, IoSymbol *slotName)
+{ 
+	IoObject *v = IoObject_rawGetSlot_(self, slotName);
+	
+	if (!v)
+	{
+		IoState_error_(IOSTATE, 0x0, "missing slot %s in %s", 
+					CSTRING(slotName), IoObject_name(self));
+	}
+	
+	if (!ISSEQ(v))
+	{
+		IoState_error_(IOSTATE, 0x0, "slot %s in %s must be a sequence, not a %s", 
+					CSTRING(slotName), IoObject_name(self), IoObject_name(v));
+	}
+	
+	return v;
+}
+
 IoObject *IoObject_activateFunc(IoObject *self, 
 								IoObject *target, 
 								IoObject *locals, 
@@ -1014,7 +1071,7 @@ IoObject *IOCLONE(IoObject *self)
 IoObject *IoObject_clone(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("clone ", "Returns a clone of the receiver.")
+	docSlot("clone", "Returns a clone of the receiver.")
 	*/
 	
 	IoObject *newObject = IOCLONE(self);

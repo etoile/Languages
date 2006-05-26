@@ -3,7 +3,7 @@ Random ioDoc(
              docCopyright("Steve Dekorte", 2002)
              docLicense("BSD revised")
              docObject("Random")
-             docDescription("""A high quality and reasonably fast random number generator based on Makoto Matsumoto, Takuji Nishimura, and Eric Landry's implementation of the Mersenne Twister algorithm.
+             docDescription("""A high quality and reasonably fast random number generator based on Makoto Matsumoto, Takuji Nishimura, and Eric Landry's implementation of the Mersenne Twister algorithm. The default seed is and xor of the ANSI C time() and clock() return values.
 <p>
 Reference: 
 <p>
@@ -74,7 +74,7 @@ IoRandom *IoRandom_proto(void *state)
 	self->tag = IoRandom_tag(state);
 	IoObject_setDataPointer_(self, RandomGen_new());
 	
-	RandomGen_init(IVAR(self), 0);
+	RandomGen_chooseRandomSeed(IVAR(self));
 	
 	IoState_registerProtoWithFunc_((IoState *)state, self, IoRandom_proto);
 	
@@ -86,7 +86,7 @@ IoNumber *IoRandom_rawClone(IoRandom *proto)
 {
 	IoObject *self = IoObject_rawClonePrimitive(proto);
 	IoObject_setDataPointer_(self, RandomGen_new());
-	memcpy(IVAR(self), IVAR(proto), sizeof(RandomGen));
+	//RandomGen_chooseRandomSeed(IVAR(self));
 	return self;
 }
 
@@ -159,6 +159,6 @@ IoObject *IoRandom_setSeed(IoObject *self, IoObject *locals, IoMessage *m)
 	*/
 	
 	unsigned long v = IoMessage_locals_longArgAt_(m, locals, 0);
-	RandomGen_init(IVAR(self), v);
+	RandomGen_setSeed(IVAR(self), v);
 	return self;
 }

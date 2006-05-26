@@ -63,15 +63,26 @@ typedef struct {
 
 static DIR *opendir(char *pSpec)
 {
-    DIR *pDir = malloc(sizeof *pDir);
-    char *longer_string = malloc((strlen(pSpec) + 3) * sizeof *longer_string);
-    
-    strcpy(longer_string, pSpec);
-    strcat(longer_string, "/*");
-     pDir->hFind = FindFirstFile(longer_string, &pDir->wfd);
-     free(longer_string);
-     pDir->valid = pDir->hFind != INVALID_HANDLE_VALUE;
-     return pDir;
+	 DIR *pDir = malloc(sizeof *pDir);
+	 char *longer_string = malloc((strlen(pSpec) + 3) * sizeof *longer_string);
+	
+	 strcpy(longer_string, pSpec);
+	 strcat(longer_string, "/*");
+	 pDir->hFind = FindFirstFile(longer_string, &pDir->wfd);
+	 free(longer_string);
+	 pDir->valid = pDir->hFind != INVALID_HANDLE_VALUE;
+	 
+	 if (!pDir->valid)
+	 {
+		 DWORD err = GetLastError();
+		 if (err == ERROR_PATH_NOT_FOUND)
+		 {
+			 free(pDir);
+			 return (DIR*)0;
+		 }
+	 }
+	 
+	 return pDir;
 }
 
 static void closedir(DIR * pDir)

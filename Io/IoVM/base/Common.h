@@ -38,10 +38,6 @@ typedef unsigned long long uint64_t;
 typedef long long int64_t;
 #endif
 
-#if defined(linux) || defined(__NetBSD__) || defined(__FreeBSD__) || (defined(__SVR4) && defined (__sun))
-#define HAS_UCONTEXT 1
-#endif
-
 /* Windows stuff */
 
 #if defined(WIN32) || defined(__WINS__) || defined(__MINGW32__) || defined(_MSC_VER)  

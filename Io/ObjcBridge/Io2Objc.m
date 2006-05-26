@@ -6,8 +6,7 @@
 #include "List.h"
 
 #ifdef GNUSTEP
-#include <Foundation/Foundation.h>
-#include <objc/objc.h>
+#include "IoGNUstep.h"
 #else
 #import <Foundation/Foundation.h>
 #import <objc/objc-runtime.h>
@@ -111,8 +110,8 @@ IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 	void *state = IOSTATE;
 	NSInvocation *invocation = nil;
 	NSMethodSignature *methodSignature;
-	NSString *methodName = IoObjcBridge_objcMethodFor_(DATA(self)->bridge, CSTRING(IoMessage_name(m)));
-	SEL selector = NSSelectorFromString(methodName);
+	char *methodName = IoObjcBridge_objcMethodFor_(DATA(self)->bridge, CSTRING(IoMessage_name(m)));
+	SEL selector = sel_getUid(methodName);
 	id object = DATA(self)->object;
 	char debug = IoObjcBridge_rawDebugOn(DATA(self)->bridge);
 	IoObject *result;

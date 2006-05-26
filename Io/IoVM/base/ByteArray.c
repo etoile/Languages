@@ -1252,8 +1252,9 @@ int ByteArray_writeToFilePath_(ByteArray *self, const char *path)
 
 int ByteArray_readFromCStream_(ByteArray *self, FILE *fp)
 {
-	size_t fileSize;
+	size_t bytesToRead;
 	size_t pos; 
+	size_t bytesRead;
 	
 	if (!fp) 
 	{
@@ -1263,23 +1264,21 @@ int ByteArray_readFromCStream_(ByteArray *self, FILE *fp)
 	// get file size 
 	pos = ftell(fp);
 	fseek(fp, 0, SEEK_END);
-	fileSize = ftell(fp) - pos;
+	bytesToRead = ftell(fp) - pos;
 	fseek(fp, 0, pos);
-	//rewind(fp);
-	ByteArray_setSize_(self, fileSize);
+	ByteArray_setSize_(self, bytesToRead);
 	
 	// read whole file into buffer 
-	{
-		size_t n = fread(self->bytes, 1, fileSize, fp);
-		
-		if (n != fileSize) 
-		{ 
-			printf("WARNING: read full file but only found %i bytes while ftell() indicated a size of %i\n", 
-				  (int)n, (int)fileSize); 
-		}
-	} 
+	bytesRead = fread(self->bytes, 1, bytesToRead, fp);
 	
-	return 0;
+	if (bytesRead != bytesToRead) 
+	{ 
+		printf("WARNING: read rest of file but only found %i bytes while ftell() indicated that %i were remaining - file may be directory\n", 
+			  (int)bytesRead, (int)bytesToRead);
+		return -1;
+	}
+	
+	return 1;
 }
 
 int ByteArray_readFromFilePath_(ByteArray *self, const char *path)
@@ -1330,12 +1329,15 @@ unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream)
 	return readSomething;
 }
 
-size_t ByteArray_readNumberOfBytes_fromCStream_(ByteArray *self, long size, FILE *stream)
+size_t ByteArray_readNumberOfBytes_fromCStream_(ByteArray *self, size_t size, FILE *stream)
 {
 	size_t readSize;
-	ByteArray_setSize_(self, size);
-	readSize = fread((void *)self->bytes, 1, size, stream);
-	ByteArray_setSize_(self, readSize);
+	size_t oldSize = ByteArray_size(self);
+	
+	ByteArray_setSize_(self, oldSize + size);
+	readSize = fread((void *)(self->bytes + oldSize), 1, size, stream);
+	ByteArray_setSize_(self, oldSize + readSize);
+	
 	return readSize;
 }
 
@@ -1859,6 +1861,39 @@ void ByteArray_convertInt16ArrayToFloat32(ByteArray *self)
 	
 	ByteArray_setData_size_(self, (unsigned char *)f, count * sizeof(float));
 	free(f);
+}
+
+void ByteArray_float32ArrayAdd_(ByteArray *self, ByteArray *other)
+{
+	size_t size = self->size / sizeof(float);
+	size_t otherSize = other->size / sizeof(float);
+	size_t count = size < otherSize ? size : otherSize;
+	float *f1 = (float *)self->bytes;
+	float *f2 = (float *)other->bytes;
+	
+	while (count --)
+	{
+		*f1 += *f2;
+		f1 ++;
+		f2 ++;
+	}
+}
+
+void ByteArray_float32ArrayMultiplyScalar_(ByteArray *self, float s)
+{
+	size_t count = self->size / sizeof(float);
+	float *f1 = (float *)self->bytes;
+	
+	while (count --)
+	{
+		*f1 *= s;
+		f1 ++;
+	}
+}
+
+void ByteArray_zero(ByteArray *self)
+{
+	memset(self->bytes, 0x0, self->size);
 }
 
 

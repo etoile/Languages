@@ -243,7 +243,8 @@ void IoCoroutine_rawReturnToParent(IoCoroutine *self)
 		IoCoroutine_rawPrintBackTrace(self);
 	}
 	
-	printf("IoCoroutine error: unable to auto abort coro %p\n", (void *)self);
+	printf("IoCoroutine error: unable to auto abort coro %p by resuming parent coro %s_%p\n", 
+		  (void *)self, IoObject_name(parent), (void *)parent);
 	exit(-1);
 }
 
@@ -253,7 +254,7 @@ void IoCoroutine_coroStart(void *context) // Called by Coro_Start()
 	IoObject *result;
 
 	IoState_setCurrentCoroutine_(IOSTATE, self);
-	//printf("IoCoroutine starting %i\n", (int)self);
+	//printf("%p-%p start\n", (void *)self, (void *)DATA(self)->cid);
 	
 	result = IoMessage_locals_performOn_(IOSTATE->mainMessage, self, self);
 	
@@ -362,7 +363,7 @@ IoObject *IoCoroutine_rawResume(IoObject *self)
 { 
 	IoCoroutine *current = IoState_currentCoroutine(IOSTATE);
 	IoState_setCurrentCoroutine_(IOSTATE, self);
-	//printf("IoCoroutine resuming %i\n", (int)self);
+	//printf("IoCoroutine resuming %p\n", (void *)self);
 	Coro_switchTo_(IoCoroutine_rawCoro(current), IoCoroutine_rawCoro(self));
 	
 	//IoState_setCurrentCoroutine_(IOSTATE, current);
@@ -441,18 +442,21 @@ IoObject *IoObject_performWithDebugger(IoObject *self, IoObject *locals, IoMessa
 	
 	if (IoCoroutine_rawDebuggingOn(currentCoroutine))
 	{
-		if (state->debugger)
-		{
-			/*
-			 printf("IoObject_performWithDebugger(%i, %p, %s)\n", 
-				   (int)(void *)self, (void *)locals, CSTRING(IoMessage_name(m)));
-			 */
-			IoMessage_setCachedArg_to_(state->vmWillSendMessage, 0, currentCoroutine);
-			IoMessage_setCachedArg_to_(state->vmWillSendMessage, 1, m);
-			IoMessage_setCachedArg_to_(state->vmWillSendMessage, 2, self);
-			IoMessage_setCachedArg_to_(state->vmWillSendMessage, 3, locals);
-			//IoObject_actorPerform(state->debugger, locals, state->vmWillSendMessage, 0);
-			//IoCoroutine_rawPause(currentCoroutine);
+		IoObject *debugger = state->debugger; // stack retain it?
+
+		if (debugger)
+		{							
+			IoObject_setSlot_to_(debugger, IOSYMBOL("messageCoroutine"), currentCoroutine);
+			IoObject_setSlot_to_(debugger, IOSYMBOL("messageSelf"), self);
+			IoObject_setSlot_to_(debugger, IOSYMBOL("messageLocals"), locals);
+			IoObject_setSlot_to_(debugger, IOSYMBOL("message"), m);
+			
+			{
+				IoObject *context;
+				IoCoroutine *c = IoObject_rawGetSlot_context_(debugger, IOSYMBOL("debuggerCoroutine"), &context);
+				IOASSERT(c, "Debugger needs a debuggerCoroutine slot"); 
+				IoCoroutine_rawResume(c);
+			}
 		}
 	}
 	

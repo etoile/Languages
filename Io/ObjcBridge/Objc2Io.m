@@ -7,9 +7,7 @@
 #import "MethodDeclarations.h"
 
 #ifdef GNUSTEP
-#include <GNUstepBase/GSObjCRuntime.h>
-#include <objc/objc.h>
-#include <objc/objc-api.h>
+#include "IoGNUstep.h"
 #else
 #import <objc/objc-runtime.h>
 #import <objc/objc-api.h>
@@ -74,9 +72,8 @@ static inline BOOL OBClassIsSubclassOfClass(Class subClass, Class superClass)
 
 - (BOOL)respondsToSelector:(SEL)sel
 {
-	//char *objcMethodName = (char *)sel_getName(sel);
-	const char *objcMethodName = [NSStringFromSelector(sel) cStringUsingEncoding: NSASCIIStringEncoding];
-	char *ioMethodName = IoObjcBridge_ioMethodFor_(bridge, (char*)objcMethodName);
+	char *objcMethodName = (char *)sel_getName(sel);
+	char *ioMethodName = IoObjcBridge_ioMethodFor_(bridge, objcMethodName);
 	
 	if (IoObjcBridge_rawDebugOn(bridge))
 		IoState_print_(bridge->tag->state,
@@ -105,8 +102,7 @@ static inline BOOL OBClassIsSubclassOfClass(Class subClass, Class superClass)
 const char *get_selector_encoding(Class theClass, SEL sel)
 {
 #ifdef GNUSTEP
-	//Method_t m = class_get_instance_method(theClass, sel); 
-        GSMethod m = GSGetMethod(theClass, sel, YES, YES);
+	Method_t m = class_get_instance_method(theClass, sel); 
 #else
 	Method m = class_getInstanceMethod(theClass, sel); 
 	if (!m) 

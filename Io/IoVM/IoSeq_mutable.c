@@ -68,7 +68,11 @@ void IoSeq_addMutableMethods(IoSeq *self)
 	{"lstrip", IoSeq_lstrip},
 	{"rstrip", IoSeq_rstrip},
 		
-	{"setFloat32At", IoSeq_setFloat32At},
+	{"float32ArrayAtPut", IoSeq_float32ArrayAtPut},
+	{"float32ArrayAdd", IoSeq_float32ArrayAdd},
+	{"float32ArrayMultiplyScalar", IoSeq_float32ArrayMultiplyScalar},
+	{"zero", IoSeq_zero},
+	
 	{"escape",   IoSeq_escape},
 	{"unescape", IoSeq_unescape},
 	{"removePrefix", IoSeq_removePrefix},
@@ -328,7 +332,7 @@ IoObject *IoSeq_uppercase(IoSeq *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
 	docSlot("uppercase", 
-		   "Returns a copy of the receiver with all characters made uppercase. ")
+		   "Makes all characters of the receiver uppercase. ")
 	*/
 	
 	IO_ASSERT_NOT_SYMBOL(self);
@@ -605,10 +609,12 @@ aSequence stripped from the end of the receiver. Example:
 	return self;
 }
 
-IoObject *IoSeq_setFloat32At(IoSeq *self, IoObject *locals, IoMessage *m)
+// float
+
+IoObject *IoSeq_float32ArrayAtPut(IoSeq *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("setFloat32At(value, indexNumber)", 
+	docSlot("float32ArrayAtPut(value, indexNumber)", 
 		   "Treats the buffer as an array of 32 bit floats and 
 returns the Number at the specified index.")
 	*/
@@ -621,6 +627,26 @@ returns the Number at the specified index.")
 	IO_ASSERT_NOT_SYMBOL(self);
 	ByteArray_setFloat32_at_(BIVAR(self), v, index);
 	
+	return self;
+}
+
+IoObject *IoSeq_float32ArrayAdd(IoSeq *self, IoObject *locals, IoMessage *m)
+{
+	IoSeq *other = IoMessage_locals_seqArgAt_(m, locals, 0);
+	ByteArray_float32ArrayAdd_(IoSeq_rawByteArray(self), IoSeq_rawByteArray(other));
+	return self;
+}
+
+IoObject *IoSeq_float32ArrayMultiplyScalar(IoSeq *self, IoObject *locals, IoMessage *m)
+{
+	float s = (float)IoMessage_locals_doubleArgAt_(m, locals, 0);
+	ByteArray_float32ArrayMultiplyScalar_(IoSeq_rawByteArray(self), s);
+	return self;
+}
+
+IoObject *IoSeq_zero(IoSeq *self, IoObject *locals, IoMessage *m)
+{
+	ByteArray_zero(IoSeq_rawByteArray(self));
 	return self;
 }
 

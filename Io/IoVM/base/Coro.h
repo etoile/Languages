@@ -5,13 +5,16 @@
 #define CORO_DEFINED 1
 
 #include "Common.h"
+#include "PortableUContext.h"
+
 
 #if defined(__SYMBIAN32__)
 	#define CORO_STACK_SIZE     8192
 	#define CORO_STACK_SIZE_MIN 1024
 #else
-     #define CORO_STACK_SIZE     1048576
-     //IoSeq_lowercase#define CORO_STACK_SIZE     65536
+     //#define CORO_STACK_SIZE     1048576
+	//#define CORO_STACK_SIZE     65536
+	#define CORO_STACK_SIZE     65536
 	#define CORO_STACK_SIZE_MIN 8192
 #endif
 

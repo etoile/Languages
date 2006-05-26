@@ -52,6 +52,7 @@ IoCall *IoCall_proto(void *vState)
 	{"slotContext", IoCall_slotContext},
 	{"target",      IoCall_target},
 	{"activated",   IoCall_activated},
+	{"coroutine",   IoCall_coroutine},
 	{"evalArgAt",   IoCall_evalArgAt},
 	{"argAt",       IoCall_argAt},
 	{NULL, NULL},
@@ -88,14 +89,17 @@ IoCall *IoCall_with(void *state,
 				 IoObject *target,
 				 IoObject *message,
 				 IoObject *slotContext,
-				 IoObject *activated)
+				 IoObject *activated,
+				 IoObject *coroutine)
 {
-	IoCall *self = IoCall_new(state);
+	IoCall *self = IoCall_new(state); 
+	// are these iorefs needed?
 	DATA(self)->sender      = IOREF(sender);
 	DATA(self)->target      = IOREF(target);
 	DATA(self)->message     = IOREF(message);
 	DATA(self)->slotContext = IOREF(slotContext);	
 	DATA(self)->activated   = IOREF(activated);
+	DATA(self)->coroutine   = IOREF(coroutine);
 	return self;
 }
 
@@ -108,6 +112,7 @@ void IoCall_mark(IoCall *self)
 	IoObject_shouldMarkIfNonNull(d->message);
 	IoObject_shouldMarkIfNonNull(d->slotContext);
 	IoObject_shouldMarkIfNonNull(d->activated);
+	IoObject_shouldMarkIfNonNull(d->coroutine);
 }
 
 void IoCall_free(IoCall *self)
@@ -153,6 +158,14 @@ IoObject *IoCall_activated(IoObject *self, IoObject *locals, IoMessage *m)
 	docSlot("activated", "Returns the activated value.")
 	*/
 	return DATA(self)->activated;
+}
+
+IoObject *IoCall_coroutine(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("activated", "Returns the coroutine in which the message was sent.")
+	*/
+	return DATA(self)->coroutine;
 }
 
 IoObject *IoCall_evalArgAt(IoObject *self, IoObject *locals, IoMessage *m)

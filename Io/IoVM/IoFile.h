@@ -85,7 +85,7 @@ IoObject *IoFile_moveTo_(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_write(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_readLine(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_readLines(IoFile *self, IoObject *locals, IoMessage *m);
-IoObject *IoFile_readToBuffer_length_(IoFile *self, IoObject *locals, IoMessage *m);
+IoObject *IoFile_readToBufferLength(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_readStringOfLength_(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_readBufferOfLength_(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_rewind(IoFile *self, IoObject *locals, IoMessage *m);

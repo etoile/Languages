@@ -1,8 +1,42 @@
+/*
+ Credits
+ 
+	Originally based on Edgar Toernig's Minimalistic cooperative multitasking
+	http://www.goron.de/~froese/
+	reorg by Steve Dekorte and Chis Double
+	Symbian and Cygwin support by Chis Double
+	Linux/PCC, Linux/Opteron, Irix and FreeBSD/Alpha, ucontext support by Austin Kurahone
+	FreeBSD/Intel support by Faried Nawaz
+	Mingw support by Pit Capitain
+	Visual C support by Daniel Vollmer
+	Solaris support by Manpreet Singh
+	Fibers support by Jonas Eschenburg
+	Ucontext arg support by Olivier Ansaldi  
+ 
+ Notes
+ 
+	This is the system dependent coro code.
+	Setup a jmp_buf so when we longjmp, it will invoke 'func' using 'stack'.
+	Important: 'func' must not return!
+ 
+	Usually done by setting the program counter and stack pointer of a new, empty stack.
+	If you're adding a new platform, look in the setjmp.h for PC and SP members 
+	of the stack structure
+ 
+	If you don't see those members, Kentaro suggests writting a simple 
+	test app that calls setjmp and dumps out the contents of the jmp_buf.  
+	(The PC and SP should be in jmp_buf->__jmpbuf).  
+ 
+	Using something like GDB to be able to peek into register contents right 
+	before the setjmp occurs would be helpful also.
+ */
+ 
 #include "Base.h" 
 #include "Coro.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include "PortableUContext.h"
 
 #ifdef USE_VALGRIND
 #include <valgrind/valgrind.h>
@@ -107,39 +141,6 @@ int Coro_stackSpaceAlmostGone(Coro *self)
 	return Coro_bytesLeftOnStack(self) < CORO_STACK_SIZE_MIN;
 }
 
-/*
-Credits
-
-	Originally based on Edgar Toernig's Minimalistic cooperative multitasking
-	http://www.goron.de/~froese/
-	reorg by Steve Dekorte and Chis Double
-	Symbian and Cygwin support by Chis Double
-	Linux/PCC, Linux/Opteron, Irix and FreeBSD/Alpha, ucontext support by Austin Kurahone
-	FreeBSD/Intel support by Faried Nawaz
-	Mingw support by Pit Capitain
-	Visual C support by Daniel Vollmer
-	Solaris support by Manpreet Singh
-	Fibers support by Jonas Eschenburg
-	Ucontext arg support by Olivier Ansaldi  
-
-Notes
-
-	This is the system dependent coro code.
-	Setup a jmp_buf so when we longjmp, it will invoke 'func' using 'stack'.
-	Important: 'func' must not return!
-
-	Usually done by setting the program counter and stack pointer of a new, empty stack.
-	If you're adding a new platform, look in the setjmp.h for PC and SP members 
-	of the stack structure
-
-	If you don't see those members, Kentaro suggests writting a simple 
-	test app that calls setjmp and dumps out the contents of the jmp_buf.  
-	(The PC and SP should be in jmp_buf->__jmpbuf).  
-
-	Using something like GDB to be able to peek into register contents right 
-	before the setjmp occurs would be helpful also.
-*/
-
 void Coro_initializeMainCoro(Coro *self)
 {
 	self->isMain = 1;
@@ -175,17 +176,6 @@ void Coro_Start(void)
 	CallbackBlock block = globalCallbackBlock;
 	Coro_StartWithArg(&block);
 }
-
-/*
-static void Coro_StartWithArgTest(void *self)
-{
-	void *s;
-	//printf("sp = %p\n", &s);
-	//printf("s = %p\n", s);
-	Coro_StartWithArg(s);
-	//printf("Coro_StartWithArgTest(%p) - exiting s = %p\n", self, &s);
-}
-*/
 
 // --------------------------------------------------------------------
 
@@ -243,9 +233,11 @@ void Coro_setup(Coro *self, void *arg)
 	
 	ucp->uc_stack.ss_sp    = Coro_stack(self);
 	ucp->uc_stack.ss_size  = Coro_stackSize(self);
+#if !defined(__APPLE__)
 	ucp->uc_stack.ss_flags = 0;
 	ucp->uc_link = NULL;
-	
+#endif
+
 	makecontext(ucp, (makecontext_func)Coro_StartWithArg, 1, arg); 
 }
 
@@ -296,7 +288,6 @@ void Coro_setup(Coro *self, void *arg)
 	self->env[8] =  self->env[3] + 32;
 }
 
-// #if defined(__MACOSX__) && defined(_BSD_PPC_SETJMP_H_)
 #elif defined(_BSD_PPC_SETJMP_H_) 
 
 #define buf (self->env)
@@ -306,67 +297,18 @@ void Coro_setup(Coro *self, void *arg)
 void Coro_setup(Coro *self, void *arg)
 {
 	size_t *sp = (size_t *)(((intptr_t)Coro_stack(self) + Coro_stackSize(self) - 64 + 15) & ~15);
-
+	
 	setjmp(buf);
-		
+	
 	//printf("self = %p\n", self);
 	//printf("sp = %p\n", sp);
 	buf[0]  = (int)sp;
 	buf[21] = (int)Coro_Start;
 	//sp[-4] = (size_t)self; // for G5 10.3
 	//sp[-6] = (size_t)self; // for G4 10.4
-
+	
 	//printf("self = %p\n", (void *)self);
 	//printf("sp = %p\n", sp);
-}
-
-#elif defined(_BSD_I386_SETJMP_H) 
-
-#define buf (self->env)
-//#define setjmp  _setjmp 
-//#define longjmp _longjmp
-
-void Coro_setup(Coro *self, void *arg)
-{
-	size_t *sp = (size_t *)((intptr_t)Coro_stack(self) + Coro_stackSize(self));
-
-	setjmp(buf);
-	
-	//size_t *sp = (size_t *)((intptr_t)Coro_stack(self));
-	/*
-	 {
-		 int i;
-		 
-		 printf("Coro_setup:\n");
-		 for(i = 0; i < 20; i ++)
-		 {
-			 printf("buf[%i] = %i\n", i, buf[i]);
-		 }
-	 }
-	 */
-	
-	/* hints from luajit
-      #define COCO_MAKECTX(coco, buf, func, stack, a0) \
-	 _setjmp(buf); COCO_PATCHCTX(coco, buf, func, stack, a0)
-	 
-	 * #elif defined(__MACH__) && defined(_BSD_I386_SETJMP_H_)	// x86-macosx
-	 * #define COCO_PATCHCTX(coco, buf, func, stack, a0) \
-	 * buf[12] = (int)(func); \
-	 * buf[9] = (int)(stack); \
-	 * buf[8] = 0; // ebp \
-	 * COCO_SETJMP_X86(coco, stack, a0)
-	 * #endif
-	 *
-	 * ...
-	 *
-	 * #define COCO_SETJMP_X86(coco, stack, a0) \
-	 * stack[COCO_STACKADJUST-1] = 0xdeadc0c0;  // Dummy return address.  \
-	 * coco->arg0 = (size_t)(a0);	 
-	 */
-	
-	buf[9] = (int)(sp); // esp 
-	buf[12] = (int)Coro_Start; // eip 
-     //buf[8] = 0; // ebp 
 }
 
 #elif defined(__DragonFly__)
@@ -395,6 +337,47 @@ void Coro_setup(Coro *self, void *arg)
 
 // old code
 
+/*
+ // APPLE coros are handled by PortableUContext now 
+#elif defined(_BSD_PPC_SETJMP_H_) 
+ 
+#define buf (self->env)
+#define setjmp  _setjmp 
+#define longjmp _longjmp
+ 
+ void Coro_setup(Coro *self, void *arg)
+ {
+	 size_t *sp = (size_t *)(((intptr_t)Coro_stack(self) + Coro_stackSize(self) - 64 + 15) & ~15);
+	 
+	 setjmp(buf);
+	 
+	 //printf("self = %p\n", self);
+	 //printf("sp = %p\n", sp);
+	 buf[0]  = (int)sp;
+	 buf[21] = (int)Coro_Start;
+	 //sp[-4] = (size_t)self; // for G5 10.3
+	 //sp[-6] = (size_t)self; // for G4 10.4
+	 
+	 //printf("self = %p\n", (void *)self);
+	 //printf("sp = %p\n", sp);
+ }
+ 
+#elif defined(_BSD_I386_SETJMP_H) 
+ 
+#define buf (self->env)
+ 
+ void Coro_setup(Coro *self, void *arg)
+ {
+	 size_t *sp = (size_t *)((intptr_t)Coro_stack(self) + Coro_stackSize(self));
+	 
+	 setjmp(buf);
+	 
+	 buf[9] = (int)(sp); // esp 
+	 buf[12] = (int)Coro_Start; // eip 
+						   //buf[8] = 0; // ebp 
+ }
+ */
+ 
 /* Solaris supports ucontext - so we don't need this stuff anymore
 
 void Coro_setup(Coro *self, void *arg)
@@ -603,8 +586,5 @@ x = (JBTYPE)((JBTYPE)stack-stacksize / 2 + 15);
 while ((x % 8) != 0) x ++; // align on an even boundary
 buf[SUN_STACK_END_INDEX] = (JBTYPE)x;
 
-#else
-Coro_UnsupportedPlatformError();
-#endif
 */
 

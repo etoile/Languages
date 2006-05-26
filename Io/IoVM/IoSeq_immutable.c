@@ -32,6 +32,7 @@ void IoSeq_addImmutableMethods(IoSeq *self)
 	{"print", IoSeq_print},
 	{"linePrint", IoSeq_linePrint},
 	{"size", IoSeq_size},
+	{"isEmpty", IoSeq_isEmpty},
 	{"at", IoSeq_at},
 	{"slice", IoSeq_slice},
      {"between", IoSeq_between},
@@ -199,6 +200,14 @@ IoObject *IoSeq_linePrint(IoObject *self, IoObject *locals, IoMessage *m)
     return self;
 }
 
+IoObject *IoSeq_isEmpty(IoSeq *self, IoObject *locals, IoMessage *m)
+{
+/*#io
+docSlot("isEmpty", """Returns true if the size of the receiver is 0, false otherwise.""")
+*/
+
+	return IOBOOL(self, ByteArray_size(BIVAR(self)) == 0); 
+}
 
 IoObject *IoSeq_size(IoSeq *self, IoObject *locals, IoMessage *m)
 { 

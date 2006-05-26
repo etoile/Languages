@@ -5,7 +5,7 @@
  This is an optimized version that amortizes the shift/reload cost,
  by Eric Landry 2004-03-15.
  
- Before using, initialize the state by using RandomGen_init(seed) or
+ Before using, initialize the state by using RandomGen_setSeed(seed) or
  init_by_array(init_key, key_length).
  
  Copyright (C) 1997--2004, Makoto Matsumoto, Takuji Nishimura, and
@@ -80,11 +80,22 @@ static void init_genrand(RandomGen *self, unsigned long s)
 	}
 }
 
-void RandomGen_init(RandomGen *self, unsigned long seed)
+void RandomGen_setSeed(RandomGen *self, unsigned long seed)
 {
 	init_genrand(self, seed);
 }
 
+#include <time.h>
+
+void RandomGen_chooseRandomSeed(RandomGen *self)
+{
+	unsigned long seed = 0;
+
+	seed ^= (unsigned long)clock(); // processor time since program start
+	seed ^= (unsigned long)time(NULL); // seconds since 1970
+	
+	RandomGen_setSeed(self, seed);
+}
 
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */

@@ -92,7 +92,7 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 /* --- method name buffer ----------------------------------- */
 void IoObjcBridge_setMethodBuffer_(IoObjcBridge *self, char *name);
 char *IoObjcBridge_ioMethodFor_(IoObjcBridge *self, char *name);
-NSString *IoObjcBridge_objcMethodFor_(IoObjcBridge *self, char *name);
+char *IoObjcBridge_objcMethodFor_(IoObjcBridge *self, char *name);
 
 /* --- new classes -------------------------------------------- */
 IoObject *IoObjcBridge_newClassNamed_withProto_(IoObjcBridge *self, IoObject *locals, IoMessage *m);

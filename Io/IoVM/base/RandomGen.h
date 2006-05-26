@@ -18,7 +18,8 @@ typedef struct
 RandomGen *RandomGen_new(void);
 void RandomGen_free(RandomGen *self);
 
-void RandomGen_init(RandomGen *self, unsigned long seed);
+void RandomGen_setSeed(RandomGen *self, unsigned long seed);
+void RandomGen_chooseRandomSeed(RandomGen *self);
 
 // generates a random number on between 0.0 and 1.0 
 double RandomGen_randomDouble(RandomGen *self);

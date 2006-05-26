@@ -67,26 +67,106 @@ void IoLexer_buildLineIndex(IoLexer *self)
 
 // next/prev character ------------------------
 
-TEST_INLINE char IoLexer_nextChar(IoLexer *self)
+#define UTF8_SEQLEN(c) (    \
+    (c) < 0x80 ? 1 :        \
+    (c) < 0xe0 ? 2 :        \
+    (c) < 0xf0 ? 3 :        \
+    (c) < 0xf8 ? 4 :        \
+    (c) < 0xfc ? 5 :        \
+    (c) < 0xfe ? 6 : 1      \
+    )
+#define INVALID_CHAR 0xfffe
+
+static uchar_t _IoLexer_DecodeUTF8(const unsigned char *s)
 {
-	char c = *(self->current);
-	
-	if (c) 
-	{
-		self->current ++;
-	}
-	
-	return c;
+    if (*s < 0x80)
+        return *s;
+    else if (*s < 0xc2)
+        return INVALID_CHAR;
+    else if (*s < 0xe0)
+    {
+        if (!((s[1] ^ 0x80) < 0x40))
+            return INVALID_CHAR;
+        return ((uchar_t)(s[0] & 0x1f) << 6) | (uchar_t)(s[1] ^ 0x80);
+    }
+    else if (*s < 0xf0)
+    {
+        if (!((s[1] ^ 0x80) < 0x40 && (s[2] ^ 0x80) < 0x40 && (s[0] >= 0xe1 || s[1] >= 0xa0)))
+            return INVALID_CHAR;
+        return ((uchar_t)(s[0] & 0x0f) << 12) | ((uchar_t)(s[1] ^ 0x80) << 6) | (uchar_t)(s[2] ^ 0x80);
+    }
+    else if (*s < 0xf8)
+    {
+        if (!((s[1] ^ 0x80) < 0x40 && (s[2] ^ 0x80) < 0x40 && (s[3] ^ 0x80) < 0x40 && (s[0] >= 0xf1 || s[1] >= 0x90)))
+            return INVALID_CHAR;
+        return ((uchar_t)(s[0] & 0x07) << 18) | ((uchar_t)(s[1] ^ 0x80) << 12) | ((uchar_t)(s[2] ^ 0x80) << 6) | (uchar_t)(s[3] ^ 0x80);
+    }
+    else if (*s < 0xfc)
+    {
+        if (!((s[1] ^ 0x80) < 0x40 && (s[2] ^ 0x80) < 0x40 && (s[3] ^ 0x80) < 0x40 && (s[4] ^ 0x80) < 0x40 && (s[0] >= 0xf9 || s[1] >= 0x88)))
+            return INVALID_CHAR;
+        return ((uchar_t)(s[0] & 0x03) << 24) | ((uchar_t)(s[1] ^ 0x80) << 18) | ((uchar_t)(s[2] ^ 0x80) << 12) | ((uchar_t)(s[3] ^ 0x80) << 6) | (uchar_t)(s[4] ^ 0x80);
+    }
+    else if (*s < 0xfe)
+    {
+        if (!((s[1] ^ 0x80) < 0x40 && (s[2] ^ 0x80) < 0x40 && (s[3] ^ 0x80) < 0x40 && (s[4] ^ 0x80) < 0x40 && (s[5] ^ 0x80) < 0x40 && (s[0] >= 0xfd || s[1] >= 0x84)))
+            return INVALID_CHAR;
+        return ((uchar_t)(s[0] & 0x01) << 30) | ((uchar_t)(s[1] ^ 0x80) << 24) | ((uchar_t)(s[2] ^ 0x80) << 18) | ((uchar_t)(s[3] ^ 0x80) << 12) | ((uchar_t)(s[4] ^ 0x80) << 6) | (uchar_t)(s[5] ^ 0x80);
+    }
+    else
+        return INVALID_CHAR;
 }
 
-TEST_INLINE char IoLexer_prevChar(IoLexer *self)
+TEST_INLINE uchar_t IoLexer_nextChar(IoLexer *self)
 {
-	if (self->current > self->s) 
-	{
-		self->current --;
-	}
-	
-	return *(self->current);
+    unsigned char c = (unsigned char) * (self->current);
+    int seqlen, i;
+    uchar_t uch;
+
+	if (c == 0)
+        return 0;
+    else if (c < 0x80)
+    {
+        self->current++;
+        return c;
+    }
+
+    seqlen = UTF8_SEQLEN(c);
+    for (i = 0; i < seqlen; i++)
+    {
+        if (self->current[i] == 0)
+        {
+            /* XXX: invalid or incomplete sequence */
+            return 0;
+        }
+    }
+
+    uch = _IoLexer_DecodeUTF8((unsigned char*)self->current);
+    if (uch == INVALID_CHAR)
+        return 0;
+
+    self->current += seqlen;
+    return uch;
+}
+
+TEST_INLINE uchar_t IoLexer_prevChar(IoLexer *self)
+{
+    uchar_t uch;
+    int len;
+
+    for (len = 1; len <= 6 && self->current - len > self->s; len++)
+    {
+        unsigned char c = *(unsigned char *)(self->current - len);
+        if (c < 0x80 || c >= 0xc2)
+            break;
+    }
+
+    self->current -= len;
+    uch = _IoLexer_DecodeUTF8((unsigned char*)self->current);
+    if (uch == INVALID_CHAR)
+        return 0;
+
+    return uch;
 }
 
 TEST_INLINE char *IoLexer_current(IoLexer *self)
@@ -588,7 +668,7 @@ int IoLexer_readIdentifier(IoLexer *self)
 
 int IoLexer_readOperator(IoLexer *self)
 {
-	char c;
+	uchar_t c;
 	IoLexer_pushPos(self);
 	// ok if first character is a colon 
 	c = IoLexer_nextChar(self);
@@ -701,7 +781,7 @@ int IoLexer_readMonoQuote(IoLexer *self)
 	{
 		for (;;)
 		{
-			int c = IoLexer_nextChar(self);
+			uchar_t c = IoLexer_nextChar(self);
 			
 			if (mbskip <= 0 && ismbchar(c)) 
 			{ 
@@ -755,7 +835,7 @@ int IoLexer_readTriQuote(IoLexer *self)
 	{
 		while (!IoLexer_readString_(self, "\"\"\""))
 		{ 
-			char c = IoLexer_nextChar(self); 
+			uchar_t c = IoLexer_nextChar(self); 
 			
 			if (c == 0x0) 
 			{ 
@@ -828,9 +908,9 @@ TEST_INLINE int IoLexer_readCharIn_(IoLexer *self, const char *s)
 {
 	if (!IoLexer_onNULL(self))
 	{
-		char c = IoLexer_nextChar(self);
+		uchar_t c = IoLexer_nextChar(self);
 		
-		if (strchr(s, c)) 
+		if (c < 0x80 && strchr(s, c)) 
 		{
 			return 1;
 		}
@@ -840,11 +920,11 @@ TEST_INLINE int IoLexer_readCharIn_(IoLexer *self, const char *s)
 	return 0;
 }
 
-TEST_INLINE int IoLexer_readCharInRange_(IoLexer *self, char first, char last)
+TEST_INLINE int IoLexer_readCharInRange_(IoLexer *self, uchar_t first, uchar_t last)
 {
 	if (!IoLexer_onNULL(self))
 	{
-		char c = IoLexer_nextChar(self);
+		uchar_t c = IoLexer_nextChar(self);
 		
 		if (c >= first && c <= last) 
 		{
@@ -860,7 +940,7 @@ int IoLexer_readChar_(IoLexer *self, char c)
 {
 	if (!IoLexer_onNULL(self))
 	{
-		char nc = IoLexer_nextChar(self);
+		uchar_t nc = IoLexer_nextChar(self);
 		
 		if (nc && nc == c) 
 		{
@@ -876,7 +956,7 @@ int IoLexer_readCharAnyCase_(IoLexer *self, char c)
 {
 	if (!IoLexer_onNULL(self))
 	{
-		char nc = IoLexer_nextChar(self);
+		uchar_t nc = IoLexer_nextChar(self);
 		
 		if (nc && tolower(nc) == tolower(c)) 
 		{
@@ -886,6 +966,20 @@ int IoLexer_readCharAnyCase_(IoLexer *self, char c)
 		IoLexer_prevChar(self);
 	}
 	return 0;
+}
+
+int IoLexer_readNonASCIIChar_(IoLexer *self)
+{
+    if (!IoLexer_onNULL(self))
+    {
+        uchar_t nc = IoLexer_nextChar(self);
+
+        if (nc >= 0x80)
+            return 1;
+
+        IoLexer_prevChar(self);
+    }
+    return 0;
 }
 
 int IoLexer_readNonReturn(IoLexer *self)
@@ -952,7 +1046,8 @@ int IoLexer_readDigit(IoLexer *self)
 int IoLexer_readLetter(IoLexer *self)
 {
 	return IoLexer_readCharInRange_(self, 'A', 'Z') || 
-	IoLexer_readCharInRange_(self, 'a', 'z'); 
+	    IoLexer_readCharInRange_(self, 'a', 'z') ||
+        IoLexer_readNonASCIIChar_(self);
 	//return IoLexer_readCharIn_(self, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"); 
 }
 

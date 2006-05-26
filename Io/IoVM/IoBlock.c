@@ -193,7 +193,13 @@ IoObject *IoBlock_activate(IoBlock *self, IoObject *target, IoObject *locals, Io
 	IoObject_createSlotsIfNeeded(blockLocals);
 	
 	{
-		IoObject *ac = IoCall_with(state, locals, target, m, slotContext, self);
+		IoObject *ac = IoCall_with(state, 
+							  locals, 
+							  target, 
+							  m, 
+							  slotContext, 
+							  self, 
+							  state->currentCoroutine);
 		IoObject_setSlot_to_(blockLocals, state->callSymbol, ac);
 	}
 
@@ -206,7 +212,26 @@ IoObject *IoBlock_activate(IoBlock *self, IoObject *target, IoObject *locals, Io
 		IoObject_setSlot_to_(blockLocals, name, arg);
 	);
 	
-	result = IoMessage_locals_performOn_(selfData->message, blockLocals, blockLocals);  
+	if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
+	{ 
+		/*
+		IoCoroutine *currentCoroutine = state->currentCoroutine;
+		Coro *coro = IoCoroutine_cid(currentCoroutine);
+		
+		printf("%p-%p block overflow %i/%i\n", 
+			  (void *)currentCoroutine, (void *)coro, Coro_bytesLeftOnStack(coro), Coro_stackSize(coro));
+		printf("message = %s\n", CSTRING(IoMessage_name(selfData->message)));
+		*/
+		{
+			IoCoroutine *newCoro = IoCoroutine_new(state);
+			IoCoroutine_try(newCoro, blockLocals, blockLocals, selfData->message);
+			result = IoCoroutine_rawResult(newCoro);
+		}
+	}
+	else
+	{
+		result = IoMessage_locals_performOn_(selfData->message, blockLocals, blockLocals);  
+	}
 	
 	state->stopStatus = MESSAGE_STOP_STATUS_NORMAL;
 	

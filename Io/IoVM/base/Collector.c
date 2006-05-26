@@ -255,6 +255,9 @@ size_t Collector_sweepPhase(Collector *self)
 	if (self->debugOn)
 	{
 		printf("Collector_sweepPhase()\n");
+		//printf("  allocsPerMark %i\n", (int)self->allocsPerMark);
+		//printf("  marksPerSweep %i\n", (int)self->marksPerSweep);
+		//printf("  sweepsPerGeneration %i\n", (int)self->sweepsPerGeneration);
 	}
 	
 	self->marksUntilSweep = self->marksPerSweep;

@@ -176,7 +176,7 @@ int ByteArray_writeToFilePath_(ByteArray *self, const char *path); /* returns 0 
 int ByteArray_readFromFilePath_(ByteArray *self, const char *path); /* returns 0 on success */
 unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream);
 int ByteArray_readFromCStream_(ByteArray *self, FILE *stream);
-size_t ByteArray_readNumberOfBytes_fromCStream_(ByteArray *self, long length, FILE *stream);
+size_t ByteArray_readNumberOfBytes_fromCStream_(ByteArray *self, size_t length, FILE *stream);
 
 // private utility functions 
 
@@ -225,6 +225,9 @@ int ByteArray_aveAbsSignedInt32From_to_(ByteArray *self, size_t from, size_t to)
 void ByteArray_convertFloat32ArrayToInt32(ByteArray *self);
 void ByteArray_convertFloat32ArrayToInt16(ByteArray *self);
 void ByteArray_convertInt16ArrayToFloat32(ByteArray *self);
+void ByteArray_float32ArrayAdd_(ByteArray *self, ByteArray *other);
+void ByteArray_float32ArrayMultiplyScalar_(ByteArray *self, float s);
+void ByteArray_zero(ByteArray *self);
 
 // split
 

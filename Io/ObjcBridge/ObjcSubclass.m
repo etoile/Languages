@@ -8,9 +8,7 @@
 #include "IoMessage.h"
 
 #ifdef GNUSTEP
-#include <GNUstepBase/GSObjCRuntime.h>
-#include <objc/objc-list.h>
-#include <objc/objc.h>
+#include "IoGNUstep.h"
 #else
 #import <objc/objc-class.h>
 #import <objc/objc-runtime.h>
@@ -65,13 +63,8 @@ static Hash *classProtos = 0x0;
     Class c = malloc(sizeof(struct objc_class));
     memcpy(c, a, sizeof(struct objc_class));
     c->name = strdup(CSTRING(ioName));
-#ifdef GNUSTEP
-    NSValue *c_ptr = GSObjCMakeClass([NSString stringWithCString: c->name encoding: NSASCIIStringEncoding], NSStringFromClass(a), nil);
-    GSObjCAddClasses([NSArray arrayWithObject: c_ptr]);
-#else
     //FIXME: Cannot find the GNUstep equivalent (seb)
     objc_addClass(c);
-#endif
     state = proto->tag->state;
     if (c) Hash_at_put_([self classProtos], ioName, proto);
     return c;

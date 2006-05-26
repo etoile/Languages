@@ -62,7 +62,6 @@ void List_sliceInPlace(List* self, int startIndex, int endIndex)
     
     List_copy_(self, tmp);
     List_free(tmp);
-    //return self;
 }
 
 List *List_cloneSlice(List *self, int startIndex, int endIndex)

@@ -97,7 +97,7 @@ IoFile *IoFile_proto(void *state)
     {"readLines", IoFile_readLines},
     {"readStringOfLength", IoFile_readStringOfLength_},
     {"readBufferOfLength", IoFile_readBufferOfLength_},
-    {"readToBufferLength", IoFile_readToBuffer_length_},
+    {"readToBufferLength", IoFile_readToBufferLength},
     {"at", IoFile_at},
     {"foreach", IoFile_foreach},
 		
@@ -619,14 +619,17 @@ IoObject *IoFile_remove(IoFile *self, IoObject *locals, IoMessage *m)
     /*#io
     docSlot("remove", 
 			"Removes the file specified by the receiver's path. 
-Raises an File doesNotExist exception if the file does not exist. Returns self.")
+Raises an error if the file exists but is not removed. Returns self.")
     */
     
-#if !defined(__SYMBIAN32__)
-    int error = remove(CSTRING(DATA(self)->path));
+    int error;
+    
+#if defined(__SYMBIAN32__)
+	error = -1;
 #else
-    int error = -1;
+	error = remove(CSTRING(DATA(self)->path));
 #endif
+
     if (error && IoFile_justExists(self))
     {
 		IoState_error_(IOSTATE, m, "error removing file '%s'", CSTRING(DATA(self)->path));
@@ -799,18 +802,19 @@ ByteArray *IoFile_readByteArrayOfLength_(IoFile *self, IoObject *locals, IoMessa
     return ba;
 }
 
-IoObject *IoFile_readToBuffer_length_(IoFile *self, IoObject *locals, IoMessage *m)
+IoObject *IoFile_readToBufferLength(IoFile *self, IoObject *locals, IoMessage *m)
 {
     /*#io
     docSlot("readToBufferOfLength(aBuffer, aNumber)", 
-			"Reads the aNumber bytes and appends them to aBuffer.
-Returns the number of bytes read.")
+			"Reads at most aNumber bytes and appends them to aBuffer.
+Returns true if any bytes where read and false otherwise.")
     */
     
     IoSeq *buffer = IoMessage_locals_mutableSeqArgAt_(m, locals, 0);
-    long length      = IoMessage_locals_longArgAt_(m, locals, 1);
+    size_t length = IoMessage_locals_longArgAt_(m, locals, 1);
     ByteArray *ba = IoSeq_rawByteArray(buffer);
-    int bytesRead = ByteArray_readNumberOfBytes_fromCStream_(ba, length, DATA(self)->stream);
+    size_t bytesRead = ByteArray_readNumberOfBytes_fromCStream_(ba, length, DATA(self)->stream);
+    //return IOBOOL(self, bytesRead > 0);
     return IONUMBER(bytesRead);
 }
 

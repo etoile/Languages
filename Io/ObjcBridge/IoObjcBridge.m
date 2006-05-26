@@ -13,8 +13,7 @@
 #include "IoNumber.h"
 
 #ifdef GNUSTEP
-#include <GNUstepBase/GSObjCRuntime.h>
-#include <objc/objc.h>
+#include "IoGNUstep.h"
 #else
 #import <objc/objc-runtime.h>
 #endif
@@ -42,27 +41,16 @@ List *IoObjcBridge_allClasses(IoObjcBridge *self)
 	}
 	else
 	{
-		int numClasses = 0, newNumClasses = 0;
+		int numClasses = 0, newNumClasses = objc_getClassList(NULL, 0);
 		Class *classes = NULL;
-#ifdef GNUSTEP
-		// max here is not important because buffer is nil
-		newNumClasses = GSClassList(NULL, 0, NO);
-#else
-		newNumClasses = objc_getClassList(NULL, 0);
-#endif
 		
 		DATA(self)->allClasses = List_new();
 		
 		while (numClasses < newNumClasses) 
 		{
 			numClasses = newNumClasses;
-			// GNUStep need to hold max+1 classes.
-			classes = realloc(classes, sizeof(Class) * numClasses+1);
-#ifdef GNUSTEP
-			newNumClasses += GSClassList(classes, numClasses, NO);
-#else
+			classes = realloc(classes, sizeof(Class) * numClasses);
 			newNumClasses = objc_getClassList(classes, numClasses);
-#endif
 		}
 		
 		for (n = 0; n < numClasses; n ++)
@@ -186,7 +174,7 @@ int IoObjcBridge_rawDebugOn(IoObjcBridge *self)
 
 IoObject *IoObjcBridge_autoLookupClassNamesOn(IoObjcBridge *self, IoObject *locals, IoMessage *m)
 {
-	IoState_doCString_(IOSTATE, "Lobby forward := method(m := thisMessage name; v := ObjcBridge classNamed(m); if (v, return v, Exception raise(\"Lookup error\",  \"slot '\" .. m ..\"' not found\")))");
+	IoState_doCString_(IOSTATE, "Lobby forward := method(m := call message name; v := ObjcBridge classNamed(m); if (v, return v, Exception raise(\"Lookup error\",  \"slot '\" .. m ..\"' not found\")))");
 	return self; 
 }
 
@@ -229,8 +217,7 @@ IoObject *IoObjcBridge_debugOff(IoObjcBridge *self, IoObject *locals, IoMessage 
 IoObject *IoObjcBridge_classNamed(IoObjcBridge *self, IoObject *locals, IoMessage *m)
 {
 	IoSymbol *name = IoMessage_locals_symbolArgAt_(m, locals, 0);
-	//id obj = objc_lookUpClass(CSTRING(name));
-        id obj = NSClassFromString([NSString stringWithCString: CSTRING(name) encoding: NSASCIIStringEncoding]);
+	id obj = objc_lookUpClass(CSTRING(name));
 	
 	if (!obj) 
 	{
@@ -399,17 +386,17 @@ IoObject *IoObjcBridge_ioValueForCValue_ofType_(IoObjcBridge *self, void *cValue
   }
 	
 	
-	if (!strcmp(cType, "{_NSPoint=ff}"))
+	if (!strncmp(cType, "{_NSPoint=ff}", 13))
 	{
 		NSPoint p = *(NSPoint *)cValue;
 		return IoVector_newX_y_z_(state, p.x, p.y, 0);
 	}
-	else if (!strcmp(cType, "{_NSSize=ff}"))
+	else if (!strncmp(cType, "{_NSSize=ff}", 12))
 	{
 		NSSize s = *(NSSize *)cValue;
 		return IoVector_newX_y_z_(state, s.width, s.height, 0);
 	}
-	else if (!strcmp(cType, "{_NSRect={_NSPoint=ff}{_NSSize=ff}}"))
+	else if (!strncmp(cType, "{_NSRect={_NSPoint=ff}{_NSSize=ff}}", 35))
 	{
 		NSRect r = *(NSRect *)cValue;
 		return IoBox_newSet(state, 
@@ -545,7 +532,7 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 				return (void *)&(DATA(self)->cValue.cp);
 			}
 			
-			else if (!strcmp(cType, "{_NSPoint=ff}"))
+			else if (!strncmp(cType, "{_NSPoint=ff}", 13))
 			{
 				if (ISPOINT(value))
 				{
@@ -558,7 +545,7 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 				}
 				*error = "requires a Point";
 			}
-			else if (!strcmp(cType, "{_NSSize=ff}"))
+			else if (!strncmp(cType, "{_NSSize=ff}", 12))
 			{
 				if (ISPOINT(value))
 				{
@@ -571,14 +558,12 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 				}
 				*error = "requires a Point";
 			}
-			else if (!strcmp(cType, "{_NSRect={_NSPoint=ff}{_NSSize=ff}}"))
+			else if (!strncmp(cType, "{_NSRect={_NSPoint=ff}{_NSSize=ff}}", 35))
 			{
-				if (ISLIST(value))
+				if (ISBOX(value))
 				{
-					IoList *l = (IoList *)value;
-					List *list = IoList_rawList(l);
-					IoVector *p1 = List_at_(list, 0);
-					IoVector *p2 = List_at_(list, 1);
+					IoVector *p1 = IoBox_rawOrigin(value);
+					IoVector *p2 = IoBox_rawSize(value);
 					
 					if (p1 && p2 && ISVECTOR(p1) && ISVECTOR(p2))
 					{
@@ -594,7 +579,7 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 						return (void *)&(DATA(self)->cValue.rect);
 					}
 				}
-				*error = "requires a List containing 2 points";
+				*error = "requires a Box containing 2 points";
 			}
 			else
 			{ 
@@ -630,7 +615,7 @@ char *IoObjcBridge_ioMethodFor_(IoObjcBridge *self, char *name)
 	return name;
 }
 
-NSString *IoObjcBridge_objcMethodFor_(IoObjcBridge *self, char *name)
+char *IoObjcBridge_objcMethodFor_(IoObjcBridge *self, char *name)
 {
 	/*
 	 IoObjcBridge_setMethodBuffer_(self, name);
@@ -640,7 +625,7 @@ NSString *IoObjcBridge_objcMethodFor_(IoObjcBridge *self, char *name)
 	 }
 	 return DATA(self)->methodNameBuffer;
 	 */
-	return [NSString stringWithCString: name encoding: NSASCIIStringEncoding];
+	return name;
 }
 
 /* --- new classes -------------------------------------------- */
@@ -650,8 +635,7 @@ IoObject *IoObjcBridge_newClassNamed_withProto_(IoObjcBridge *self, IoObject *lo
 	IoSymbol *ioSubClassName = IoMessage_locals_symbolArgAt_(m, locals, 0);
 	IoObject *proto          = IoMessage_locals_valueArgAt_(m, locals, 1);
 	char *subClassName   = CSTRING(ioSubClassName);
-	//Class sub = objc_lookUpClass(subClassName);
-        Class sub = NSClassFromString([NSString stringWithCString: subClassName encoding: NSASCIIStringEncoding]);
+	Class sub = objc_lookUpClass(subClassName);
 	
 	if (sub)
 	{
