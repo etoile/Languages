@@ -15,7 +15,7 @@ ADDITIONAL_INCLUDE_DIRS += -IIoVM -IIoVM/base -IIoVM/SkipDB -IAAVector -IObjcBri
 
 TOOL_NAME = ioobjc
 
-io_SUBPROJECTS += \
+ioobjc_SUBPROJECTS += \
 	IoVM \
 	AAVector \
 	ObjcBridge
@@ -24,12 +24,12 @@ io_SUBPROJECTS += \
 # Files
 #
 
-io_OBJC_FILES = \
+ioobjc_OBJC_FILES = \
 	main.m
 
 ifeq ($(FOUNDATION_LIB), apple)
 else
-  io_objc_OBJC_LIBS += -lgnustep-gui
+  ioobjc_OBJC_LIBS += -lgnustep-gui
 endif
 
 # MyLanguage_BUNDLE_LIBS += -lmylanguage

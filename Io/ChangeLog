@@ -1,5 +1,12 @@
 2006-05-26  Quentin Mathe <qmathe@club-internet.fr>
 
+	Fixed compilation on GNUstep.
+	* GNUmakefile.tool: Fixed typos.
+	* IoLanguageEngine.h: Fixed wrong import statement, now looks for STEngine
+	header in StepTalk headers and not anymore locally.
+
+2006-05-26  Quentin Mathe <qmathe@club-internet.fr>
+
 	This a special port of Io language to GNUstep done by Yen-Ju Chen.
     * ChangeLog:
     * GNUmakefile:

@@ -14,7 +14,7 @@
     All Rights Reserved. See COPYING.
 */ 
 
-#import "STEngine.h"
+#import <StepTalk/STEngine.h>
 #import "IoState.h"
 #import "IoObjcBridge.h"
 
