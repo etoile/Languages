@@ -2,7 +2,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 # FIXME: cannot use this one. It will not work for GNUmakefile
 # Only for Darwin
-#ADDITIONAL_CFLAGS += -mdynamic-no-pic -falign-loops=16
+ADDITIONAL_CFLAGS += -mdynamic-no-pic #-falign-loops=16
 
 SUBPROJECT_NAME = IoVM_base
 
@@ -35,5 +35,10 @@ IoVM_base_C_FILES = \
 	UTinstant.c \
 	UTzones.c 
 
+IoVM_base_OBJ_FILES = \
+	PortableUContext_asm.o
+
+-include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/subproject.make
+-include GNUmakefile.postamble
 

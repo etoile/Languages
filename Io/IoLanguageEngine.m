@@ -20,6 +20,9 @@
 static BOOL firstRun = YES;
 
 /* Taken from IoBindingsInit.c generated from io language */
+void IoAAVectorInit(IoState *self, IoObject *context);
+void IoObjcBridgeInit(IoState *self, IoObject *context);
+
 void IoBindingsInit(IoState *self, IoObject *context)
 {
         IoAAVectorInit(self, context);

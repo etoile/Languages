@@ -4,6 +4,9 @@
 /* Taken from IoVM/main.c */
 #include "IoVM/IoState.h"
 
+void IoAAVectorInit(IoState *self, IoObject *context);
+void IoObjcBridgeInit(IoState *self, IoObject *context);
+
 /* Taken from IoBindingsInit.c generated from io language */
 void IoBindingsInit(IoState *self, IoObject *context)
 {

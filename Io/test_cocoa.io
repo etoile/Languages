@@ -28,21 +28,20 @@ string println
 /* Application */
 NSApp := ObjcBridge classNamed("NSApplication") sharedApplication
 
-frame := method(x, y, w, h,
-        List clone append(Point clone set(x, y), Point clone set(w, h))
-)
+frame := Box clone set( vector(200, 500), vector(420, 150) )
 
 Window := ObjcBridge classNamed("NSWindow")
-win := Window alloc initWithContentRect:styleMask:backing:defer:(frame(200, 500, 420, 150), 15, 2, 0)
+win := Window alloc initWithContentRect:styleMask:backing:defer:(frame, 15, 2, 0)
 win setTitle:("Io Window")
 
-quitButton := ObjcBridge classNamed("NSButton") alloc initWithFrame:(frame(330, 10, 76, 25))
-win contentView addSubview:(quitButton)
+frame := Box clone set( vector(330, 10), vector(76, 25) )
+quitButton := ObjcBridge classNamed("NSButton") alloc initWithFrame:(frame)
 quitButton setBezelStyle:(4)
 quitButton setTarget:(NSApp)
 quitButton setAction:("terminate:")
 quitButton setTitle:("Quit")
 
+win contentView addSubview:(quitButton)
 win display
 win orderFrontRegardless
 
