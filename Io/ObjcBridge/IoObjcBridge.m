@@ -13,7 +13,7 @@
 #include "IoNumber.h"
 
 #ifdef GNUSTEP
-#include "IoGNUstep.h"
+#define objc_getClassList(buffer, max) GSClassList((buffer), (max), NO)
 #else
 #import <objc/objc-runtime.h>
 #endif
@@ -49,7 +49,11 @@ List *IoObjcBridge_allClasses(IoObjcBridge *self)
 		while (numClasses < newNumClasses) 
 		{
 			numClasses = newNumClasses;
+#ifdef GNUSTEP
+			classes = realloc(classes, sizeof(Class) * (numClasses + 1));
+#else
 			classes = realloc(classes, sizeof(Class) * numClasses);
+#endif
 			newNumClasses = objc_getClassList(classes, numClasses);
 		}
 		

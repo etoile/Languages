@@ -7,7 +7,8 @@
 #import "MethodDeclarations.h"
 
 #ifdef GNUSTEP
-#include "IoGNUstep.h"
+#include <objc/objc.h>
+#include <objc/objc-api.h>
 #else
 #import <objc/objc-runtime.h>
 #import <objc/objc-api.h>

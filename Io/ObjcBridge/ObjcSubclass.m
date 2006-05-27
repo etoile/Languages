@@ -8,7 +8,9 @@
 #include "IoMessage.h"
 
 #ifdef GNUSTEP
-#include "IoGNUstep.h"
+#include <objc/objc-list.h>
+#include <objc/objc.h>
+#define objc_addClass(class) GSObjCAddClasses([NSArray arrayWithObject:(class)])
 #else
 #import <objc/objc-class.h>
 #import <objc/objc-runtime.h>

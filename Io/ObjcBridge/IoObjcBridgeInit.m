@@ -5,7 +5,6 @@
 #include "IoState.h"
 #include "IoObjcBridge.h"
 #include "Io2Objc.h"
-#include "IoGNUstep.h"
 
 void IoObjcBridgeInit(IoState *self, IoObject *context)
 {

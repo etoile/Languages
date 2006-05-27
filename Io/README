@@ -12,9 +12,6 @@ The module is automatically built in various ready to use solutions:
     * IoLanguage (StepTalk bundle to script GNUstep applications or interact 
       with them)
 
-Io is taken from darcs 2006-05-25 (http://www.iolanguage.com/downloads/), and 
-StepTalk from 0.11.1 (http://steptalk.blogspot.com/2006/05/updated-try.html).
-
 This module is released under BSD license (see COPYING document).
 Original licence of Io language is BSD License too.
 

@@ -1,6 +1,10 @@
 // We need this so the runtime will know the correct method signatures
 
-#import <Cocoa/Cocoa.h>
+#ifdef GNUSTEP
+  #include <AppKit/AppKit.h>
+#else
+  #import <Cocoa/Cocoa.h>
+#endif
 
 
 @interface MethodDeclarations : NSObject 

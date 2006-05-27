@@ -1,6 +1,5 @@
 #ifdef GNUSTEP
 #include <AppKit/AppKit.h>
-#include "IoGNUstep.h"
 #else
 #import <Cocoa/Cocoa.h>
 #endif

@@ -6,7 +6,8 @@
 #include "List.h"
 
 #ifdef GNUSTEP
-#include "IoGNUstep.h"
+#include <Foundation/Foundation.h>
+#include <objc/objc.h>
 #else
 #import <Foundation/Foundation.h>
 #import <objc/objc-runtime.h>
