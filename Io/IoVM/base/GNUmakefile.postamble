@@ -1,7 +1,7 @@
 
 # Things to do before compiling
-before-all::
-	$(CC) -c PortableUContext_asm.S -o PortableUContext_asm.o
+#before-all::
+#	$(CC) -c PortableUContext_asm.S -o PortableUContext_asm.o
 
 # Things to do after compiling
 # after-all::
@@ -22,8 +22,8 @@ before-all::
 # before-clean::
 
 # Things to do after cleaning
-after-clean::
-	$(RM) PortableUContext_asm.o
+#after-clean::
+#	$(RM) PortableUContext_asm.o
   
 # Things to do before distcleaning
 # before-distclean::

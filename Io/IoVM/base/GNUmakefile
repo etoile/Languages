@@ -36,7 +36,10 @@ IoVM_base_C_FILES = \
 	UTzones.c 
 
 IoVM_base_OBJ_FILES = \
-	PortableUContext_asm.o
+	$(GNUSTEP_OBJ_DIR)/PortableUContext_asm.o
+
+$(GNUSTEP_OBJ_DIR)/%$(OEXT): %.S
+	$(ECHO_COMPILING)$(CC) $< -c -o $@$(END_ECHO)
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/subproject.make

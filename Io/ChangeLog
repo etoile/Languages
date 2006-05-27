@@ -1,6 +1,7 @@
 2006-05-27  Yen-Ju Chen <yjchenx at gmail>
 
     * Update to Io darcs 20060527 (Only ObjcBridge).
+    * Compiling assembly code in a better way.
 
 2006-05-26  Yen-Ju Chen <yjchenx at gmail>
 
