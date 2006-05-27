@@ -3,8 +3,11 @@
     * Update to Io darcs 20060526.
       Try to make minimal change to make it easier to sync in the future.
     * Tested on GNUstep/Ubuntu/PPC with test_gnustep.io.
-    * Work on Cocoa (Not with StepTalk, because of the assembly code ?).
-      Need to be tested on GNUstep again.
+    * On Cocoa:
+      Only ioobjc works, not with StepTalk (because of the assembly code ?).
+    * On GNUstep/Ubuntu/PPC:
+      Both ioobjc and StepTalk bundle ('make steptalk=yes') compiles.
+      ioobjc works for test.io. StepTalk bundle is not tested.
 
 2006-05-26  Quentin Mathe <qmathe@club-internet.fr>
 

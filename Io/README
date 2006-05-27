@@ -2,16 +2,17 @@
 Io (GNUstep) 0.1 README
 =======================
 
-Io (GNUstep) is a module which provides Io language support in a convenient way for
-GNUstep and StepTalk developers or users (linking Objective-C bridge by default). 
+Io (GNUstep) is a module which provides Io language support in a convenient 
+way for GNUstep and StepTalk developers or users (linking Objective-C bridge 
+by default). 
 The module is automatically built in various ready to use solutions:
     * ioobjc (tool you can run in your shell to use Io interactive environment)
     * IoBundle (bundle you can link directly to write Objective-C applications 
-      in Io)
+      in Io) (Not yet).
     * IoLanguage (StepTalk bundle to script GNUstep applications or interact 
       with them)
 
-Io is taken from IoFull-2006-05-02 (http://www.iolanguage.com/downloads/), and 
+Io is taken from darcs 2006-05-25 (http://www.iolanguage.com/downloads/), and 
 StepTalk from 0.11.1 (http://steptalk.blogspot.com/2006/05/updated-try.html).
 
 This module is released under BSD license (see COPYING document).
@@ -43,7 +44,7 @@ Developer notes
 Dependency
 ---------
 
-   * StepTalk: GNUstep languages agnostic scripting framework
+   * StepTalk (Optional): GNUstep languages agnostic scripting framework
 
 
 Automatically generated files

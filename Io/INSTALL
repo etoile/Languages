@@ -18,7 +18,7 @@ compile and use PreferencesKit. The core packages are, at a minimum:
 
 See <http://www.gnustep.org/> for further information.
 
-You also need to have StepTalk framework installed:
+You also need to have StepTalk framework installed for StepTalk bundle:
 
     * StepTalk (part of GNUstep, but not a core package)
 
@@ -28,10 +28,13 @@ See <http://gnustep.org/experience/StepTalk.html> for further information.
 Build and Install
 -----------------
 
-   Steps to build:
+   Steps to build without StepTalk bundle:
 
    * make install
 
+   Steps to build with StepTalk bundle:
+
+   * make steptalk=yes install
 
 Trouble
 -------
