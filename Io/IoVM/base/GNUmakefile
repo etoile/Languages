@@ -2,7 +2,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 # FIXME: cannot use this one. It will not work for GNUmakefile
 # Only for Darwin
-ADDITIONAL_CFLAGS += -mdynamic-no-pic #-falign-loops=16
+#ADDITIONAL_CFLAGS += -mdynamic-no-pic -falign-loops=16
 
 SUBPROJECT_NAME = IoVM_base
 
