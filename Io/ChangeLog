@@ -7,7 +7,8 @@
       Only ioobjc works, not with StepTalk (because of the assembly code ?).
     * On GNUstep/Ubuntu/PPC:
       Both ioobjc and StepTalk bundle ('make steptalk=yes') compiles.
-      ioobjc works for test.io. StepTalk bundle is not tested.
+      ioobjc works for test.io. 
+      StepTalk bundle is tested with 'stexec test.io'.
 
 2006-05-26  Quentin Mathe <qmathe@club-internet.fr>
 
