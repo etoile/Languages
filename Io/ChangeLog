@@ -1,3 +1,11 @@
+2006-06-20  Yen-Ju Chen <yjchenx at gmail>
+
+    * IoFoundation.h:
+    * IoFoundation.m:
+    * IoAppKit.h:
+    * IoAppKit.m:
+    Import constants.
+
 2006-05-27  Yen-Ju Chen <yjchenx at gmail>
 
     * Update to Io darcs 20060527 (Only ObjcBridge).

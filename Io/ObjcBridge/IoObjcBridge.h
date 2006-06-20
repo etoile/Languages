@@ -49,6 +49,7 @@ typedef struct
   char *methodNameBuffer;
   int methodNameBufferSize;
   int debug;
+  BOOL conversion; // Automatically conversion objects on both side
   List *allClasses;
 } IoObjcBridgeData;
 
@@ -71,6 +72,10 @@ IoObject *IoObjcBridge_autoLookupClassNamesOff(IoObjcBridge *self, IoObject *loc
 
 IoObject *IoObjcBridge_debugOn(IoObjcBridge *self, IoObject *locals, IoMessage *m);
 IoObject *IoObjcBridge_debugOff(IoObjcBridge *self, IoObject *locals, IoMessage *m);
+
+IoObject *IoObjcBridge_autoObjectConversionOn(IoObjcBridge *self, IoObject *locals, IoMessage *m);
+IoObject *IoObjcBridge_autoObjectConversionOff(IoObjcBridge *self, IoObject *locals, IoMessage *m);
+
 
 IoObject *IoObjcBridge_NSSelectorFromString(IoObjcBridge *self, IoObject *locals, IoMessage *m);
 IoObject *IoObjcBridge_NSStringFromSelector(IoObjcBridge *self, IoObject *locals, IoMessage *m);

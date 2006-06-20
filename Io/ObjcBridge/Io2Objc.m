@@ -106,14 +106,20 @@ void Io2Objc_nullObjcBridge(Io2Objc *self)
 
 IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 {
+	/* Intercept ioString method */
+	char *m_name = CSTRING(IoMessage_name(m));
+	id object = DATA(self)->object;
+	if (strcmp(m_name, "ioString") == 0) {
+		return IOSYMBOL((char *)[[object description] cString]);
+	}
+
 	/* --- get the method signature ------------ */
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	void *state = IOSTATE;
 	NSInvocation *invocation = nil;
 	NSMethodSignature *methodSignature;
-	char *methodName = IoObjcBridge_objcMethodFor_(DATA(self)->bridge, CSTRING(IoMessage_name(m)));
+	char *methodName = IoObjcBridge_objcMethodFor_(DATA(self)->bridge, m_name);
 	SEL selector = sel_getUid(methodName);
-	id object = DATA(self)->object;
 	char debug = IoObjcBridge_rawDebugOn(DATA(self)->bridge);
 	IoObject *result;
 	

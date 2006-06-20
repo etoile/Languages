@@ -5,6 +5,7 @@
 #include "IoState.h"
 #include "IoObjcBridge.h"
 #include "Io2Objc.h"
+#include "IoFoundation.h"
 
 void IoObjcBridgeInit(IoState *self, IoObject *context)
 {
@@ -26,5 +27,9 @@ void IoObjcBridgeInit(IoState *self, IoObject *context)
 	// in Cocoa (pools need not to be released before throwing an NSException
 	// (this according to the Cocoa documentation....) 
     }
+    /* Load Foundation constants */
+    IoFoundation_Init(self, context);
+    /* Load AppKit constants */
+    IoAppKit_Init(self, context);
 }
 

@@ -85,6 +85,7 @@ IoObjcBridge *IoObjcBridge_proto(void *state)
 	IoObject_setDataPointer_(self, calloc(1, sizeof(IoObjcBridgeData)));
 	DATA(self)->io2objcs = Hash_new();
 	DATA(self)->objc2ios = Hash_new();
+        DATA(self)->conversion = YES;
 	IoObjcBridge_setMethodBuffer_(self, "nop");
 	
 	sharedBridge = self;
@@ -99,6 +100,8 @@ IoObjcBridge *IoObjcBridge_proto(void *state)
 		{"newClassWithNameAndProto", IoObjcBridge_newClassNamed_withProto_},
 		{"autoLookupClassNamesOn",IoObjcBridge_autoLookupClassNamesOn},
 		{"autoLookupClassNamesOff",IoObjcBridge_autoLookupClassNamesOff},
+		{"autoObjectConversionOn",IoObjcBridge_autoObjectConversionOn},
+		{"autoObjectConversionOff",IoObjcBridge_autoObjectConversionOff},
 			// Extras
 			//{"NSSelectorFromString", IoObjcBridge_NSSelectorFromString},
 			//{"NSStringFromSelector", IoObjcBridge_NSStringFromSelector},
@@ -197,6 +200,18 @@ IoObject *IoObjcBridge_debugOn(IoObjcBridge *self, IoObject *locals, IoMessage *
 IoObject *IoObjcBridge_debugOff(IoObjcBridge *self, IoObject *locals, IoMessage *m)
 { 
 	DATA(self)->debug = 0; 
+	return self; 
+}
+
+IoObject *IoObjcBridge_autoObjectConversionOn(IoObjcBridge *self, IoObject *locals, IoMessage *m)
+{ 
+	DATA(self)->conversion = YES; 
+	return self; 
+}
+
+IoObject *IoObjcBridge_autoObjectConversionOff(IoObjcBridge *self, IoObject *locals, IoMessage *m)
+{ 
+	DATA(self)->conversion = NO; 
 	return self; 
 }
 
@@ -308,17 +323,21 @@ IoObject *IoObjcBridge_ioValueForCValue_ofType_(IoObjcBridge *self, void *cValue
 			 }
 			 */
 			
-			else if ([obj isKindOfClass:[NSString class]])
-			{ 
-				return IOSYMBOL((char *)[obj cString]); 
+			else if (DATA(self)->conversion == YES) 
+			{
+
+				if ([obj isKindOfClass:[NSString class]])
+				{ 
+					return IOSYMBOL((char *)[obj cString]); 
+				}
+			
+				else if ([obj isKindOfClass:[NSNumber class]])
+				{ 
+					return IONUMBER([obj doubleValue]); 
+				}
 			}
 			
-			else if ([obj isKindOfClass:[NSNumber class]])
-			{ 
-				return IONUMBER([obj doubleValue]); 
-			}
-			
-			else if ([obj isKindOfClass:[Objc2Io class]])
+			if ([obj isKindOfClass:[Objc2Io class]])
 			{ 
 				return [obj ioValue]; 
 			}
@@ -334,17 +353,21 @@ IoObject *IoObjcBridge_ioValueForCValue_ofType_(IoObjcBridge *self, void *cValue
 				return IONIL(self); 
 			}
 			
-			else if ([obj isKindOfClass:[NSString class]])
-			{ 
-				return IOSYMBOL((char *)[obj cString]); 
+			else if (DATA(self)->conversion == YES) 
+			{
+
+				if ([obj isKindOfClass:[NSString class]])
+				{ 
+					return IOSYMBOL((char *)[obj cString]); 
+				}
+			
+				else if ([obj isKindOfClass:[NSNumber class]])
+				{ 
+					return IONUMBER([obj doubleValue]); 
+				}
 			}
 			
-			else if ([obj isKindOfClass:[NSNumber class]])
-			{ 
-				return IONUMBER([obj doubleValue]); 
-			}
-			
-			else if ([obj isKindOfClass:[Objc2Io class]])
+			if ([obj isKindOfClass:[Objc2Io class]])
 			{ 
 				return [obj ioValue]; 
 			}

@@ -8,6 +8,8 @@ ADDITIONAL_INCLUDE_DIRS += -I../IoVM -I../IoVM/base -I../AAVector
 SUBPROJECT_NAME = ObjcBridge
 
 ObjcBridge_OBJC_FILES = \
+	IoAppKit.m \
+	IoFoundation.m \
 	Io2Objc.m \
 	ObjcSubclass.m \
 	IoObjcBridge.m \
