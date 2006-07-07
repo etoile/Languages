@@ -97,6 +97,7 @@ void IoObject_show(IoObject *self);
 // proto 
 
 IoObject *IoObject_clone(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoObject_cloneWithoutInit(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_shallowCopy(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_initClone_(IoObject *self, IoObject *locals, IoMessage *m, IoObject *newObject);
 
@@ -158,6 +159,7 @@ IoObject *IoObject_subtract(IoObject *self, IoObject *locals, IoMessage *m);
 
 int IoObject_sortCompare(IoObject **self, IoObject **v);
 
+IoObject *IoObject_isIdenticalTo(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_equals(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_notEquals(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_protoCompare(IoObject *self, IoObject *locals, IoMessage *m);

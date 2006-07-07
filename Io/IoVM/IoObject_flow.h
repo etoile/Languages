@@ -7,11 +7,12 @@ docLicense("BSD revised")
 
 IoObject *IoObject_loop(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_while(IoObject *self, IoObject *locals, IoMessage *m);
-IoObject *IoObject_foreach(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoObject_foreachSlot(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_for(IoObject *self, IoObject *locals, IoMessage *m);
 
 // break
 
+IoObject *IoObject_returnIfNonNil(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_return(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_break(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_continue(IoObject *self, IoObject *locals, IoMessage *m);

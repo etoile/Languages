@@ -45,6 +45,7 @@ size_t IoList_rawSize(IoObject *self);
 IoObject *IoList_with(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoList_indexOf(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoList_contains(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoList_containsIdenticalTo(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoList_capacity(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoList_size(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoList_at(IoObject *self, IoObject *locals, IoMessage *m);

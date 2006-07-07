@@ -162,11 +162,25 @@ done:
 IoObject *IoObject_return(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("return anObject", "Return anObject from the current execution block.")
+	docSlot("return(anObject)", "Return anObject from the current execution block.")
 	*/
 	
 	IoObject *v = IoMessage_locals_valueArgAt_(m, locals, 0);
 	IoState_return(IOSTATE, v);
+	return self;
+}
+
+IoObject *IoObject_returnIfNonNil(IoObject *self, IoObject *locals, IoMessage *m)
+{ 
+	/*#io
+	docSlot("returnIfNonNil", "Returns the receiver from the current execution block if it is non nil. Otherwise returns the receiver locally.")
+	*/
+	
+	if(!ISNIL(self)) 
+	{
+		IoState_return(IOSTATE, self);
+	}
+	
 	return self;
 }
 

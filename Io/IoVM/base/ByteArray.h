@@ -173,7 +173,7 @@ void ByteArray_print(ByteArray *self);
 size_t ByteArray_writeToCStream_(ByteArray *self, FILE *stream);
 int ByteArray_writeToFilePath_(ByteArray *self, const char *path); /* returns 0 on success */
 
-int ByteArray_readFromFilePath_(ByteArray *self, const char *path); /* returns 0 on success */
+int ByteArray_readFromFilePath_(ByteArray *self, const char *path); /* returns 1 on success */
 unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream);
 int ByteArray_readFromCStream_(ByteArray *self, FILE *stream);
 size_t ByteArray_readNumberOfBytes_fromCStream_(ByteArray *self, size_t length, FILE *stream);

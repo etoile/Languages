@@ -163,7 +163,9 @@ void ByteArray_setSize_(ByteArray *self, size_t size)
 
 void ByteArray_copy_(ByteArray *self, ByteArray *other)
 { 
-	ByteArray_setData_size_(self, other->bytes, other->size); 
+	ByteArray_setData_size_(self, other->bytes, other->size);
+	//printf("self %p size %i memSize %i\n", (void *)self, (int)self->size, (int)self->memSize);
+	//printf("other %p size %i memSize %i\n", (void *)other, (int)other->size, (int)other->memSize);
 }
 
 void ByteArray_setData_size_(ByteArray *self, const unsigned char *bytes, size_t size)
@@ -312,21 +314,21 @@ void ByteArray_escape(ByteArray *self)
 		switch (c)
 		{ 
 			case '"': ByteArray_appendCString_(ba, "\\\""); break;
-case '\a': ByteArray_appendCString_(ba, "\\a"); break;
-case '\b': ByteArray_appendCString_(ba, "\\b"); break;
-case '\f': ByteArray_appendCString_(ba, "\\f"); break;
-case '\n': ByteArray_appendCString_(ba, "\\n"); break;
-case '\r': ByteArray_appendCString_(ba, "\\r"); break;
-case '\t': ByteArray_appendCString_(ba, "\\t"); break;
-case '\v': ByteArray_appendCString_(ba, "\\v"); break;
-case '\\': ByteArray_appendCString_(ba, "\\\\"); break;
-default: ByteArray_appendChar_(ba, c);
+			case '\a': ByteArray_appendCString_(ba, "\\a"); break;
+			case '\b': ByteArray_appendCString_(ba, "\\b"); break;
+			case '\f': ByteArray_appendCString_(ba, "\\f"); break;
+			case '\n': ByteArray_appendCString_(ba, "\\n"); break;
+			case '\r': ByteArray_appendCString_(ba, "\\r"); break;
+			case '\t': ByteArray_appendCString_(ba, "\\t"); break;
+			case '\v': ByteArray_appendCString_(ba, "\\v"); break;
+			case '\\': ByteArray_appendCString_(ba, "\\\\"); break;
+			default: ByteArray_appendChar_(ba, c);
 		}
     }
 
-s[i] = (char)NULL;
-ByteArray_copy_(self, ba);
-ByteArray_free(ba);
+	s[i] = (char)NULL;
+	ByteArray_copy_(self, ba);
+	ByteArray_free(ba);
 }
 
 void ByteArray_unescape(ByteArray *self)
@@ -1287,7 +1289,7 @@ int ByteArray_readFromFilePath_(ByteArray *self, const char *path)
 	int error;
 	
 	if (!fp) 
-	{
+	{ 
 		return -1;
 	}
 	
@@ -1295,6 +1297,29 @@ int ByteArray_readFromFilePath_(ByteArray *self, const char *path)
 	fclose(fp); 
 	return error;
 }
+
+/*
+
+unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream)
+{
+	unsigned char readSomething = 0;
+	
+	while(ferror(stream) == 0)
+	{
+		int b = fgetc(stream);
+		readSomething = 1;
+		
+		if ( b == '\n' || b == '\r') 
+		{
+			break;
+		}
+		
+		ByteArray_appendByte_(self, b);
+	}
+	
+	return readSomething;
+}
+*/
 
 #define CHUNK_SIZE 4096
 

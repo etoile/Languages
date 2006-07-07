@@ -66,6 +66,7 @@ IoObject *IoObject_protoFinish(void *state)
 {	
 	IoMethodTable methodTable[] = { 
 	{"clone", IoObject_clone},
+	{"cloneWithoutInit", IoObject_cloneWithoutInit},
 	{"shallowCopy", IoObject_shallowCopy},
 	//{"print", IoObject_protoPrint},
 	{"write", IoObject_protoWrite},
@@ -82,6 +83,7 @@ IoObject *IoObject_protoFinish(void *state)
 		
 	// comparison 
 		
+	{"isIdenticalTo", IoObject_isIdenticalTo},
 	{"==", IoObject_equals},
 	{"!=", IoObject_notEquals},
 		
@@ -117,6 +119,7 @@ IoObject *IoObject_protoFinish(void *state)
 	{"evalArgAndReturnNil", IoObject_evalArgAndReturnNil},
 		
 	{"return", IoObject_return},
+	{"returnIfNonNil", IoObject_returnIfNonNil},
 	{"loop", IoObject_loop},
 	{"while", IoObject_while},
 	{"break", IoObject_break},
@@ -145,7 +148,7 @@ IoObject *IoObject_protoFinish(void *state)
 		
     // enumeration 
 		
-	{"foreach", IoObject_foreach},
+	{"foreachSlot", IoObject_foreachSlot},
 	{"-", IoObject_subtract},
 				
 	{"thisContext", IoObject_self},
@@ -1078,6 +1081,15 @@ IoObject *IoObject_clone(IoObject *self, IoObject *locals, IoMessage *m)
 	return IoObject_initClone_(self, locals, m, newObject);
 }
 
+IoObject *IoObject_cloneWithoutInit(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("cloneWithoutInit", "Returns a clone of the receiver but does not call init.")
+	*/
+	
+	return IOCLONE(self);
+}
+
 IoObject *IoObject_shallowCopy(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
@@ -1476,6 +1488,17 @@ IoObject *IoObject_doFile(IoObject *self, IoObject *locals, IoMessage *m)
 	return IONIL(self);
 }
 
+IoObject *IoObject_isIdenticalTo(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("isIdenticalTo(aValue)", 
+			"Returns true if the receiver is identical to aValue, false otherwise. ")
+	*/
+	
+	IoObject *other = IoMessage_locals_valueArgAt_(m, locals, 0);
+	return IOBOOL(self, self == other);
+}
+
 IoObject *IoObject_equals(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
@@ -1495,14 +1518,14 @@ IoObject *IoObject_notEquals(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
 	docSlot("!= aValue", 
-			"Returns the receiver is aValue is not identical, nil otherwise. ")
+			"Returns true the receiver is not equal to aValue, false otherwise. ")
 	*/
 	
 	IoObject *other = IoMessage_locals_valueArgAt_(m, locals, 0);
 	return IOBOOL(self, IoObject_compare(self, other) != 0);
 }
 
-IoObject *IoObject_foreach(IoObject *self, IoObject *locals, IoMessage *m)
+IoObject *IoObject_foreachSlot(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
 	docSlot("foreach([name,] value, message)", 

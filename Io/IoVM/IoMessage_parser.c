@@ -352,19 +352,6 @@ inline Level *Levels_currentLevel(Levels *self)
 	return List_top(self->stack);
 }
 
-Level *Levels_nextHighestLevel(Levels *self)
-{
-	const int size = List_size(self->stack);
-
-	if (size < 2)
-	{
-		printf("Levels_nextHighestLevel internal error. levels[IO_OP_MAX_LEVEL-1] should always be used.");
-		return 0x0;
-	}
-
-	return List_at_(self->stack, size - 1);
-}
-
 void Levels_popDownTo(Levels *self, int targetLevel)
 {
 	Level *level;

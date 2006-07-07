@@ -163,7 +163,7 @@ IOINLINE int List_contains_(List *self, void *item)
 			return 1; 
 		}
 		
-		index++;
+		index ++;
 	}
 	
 	return 0;

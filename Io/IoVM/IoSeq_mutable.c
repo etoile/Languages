@@ -42,7 +42,7 @@ void IoSeq_addMutableMethods(IoSeq *self)
 	{"append", IoSeq_append},
 	{"atInsertSeq", IoSeq_atInsertSeq},
 	{"removeSlice", IoSeq_removeSlice},
-	{"removeLastByte", IoSeq_removeLastByte},
+	{"removeLast", IoSeq_removeLast},
 	{"setSize", IoSeq_setSize},
 	{"preallocateToSize", IoSeq_preallocateToSize},
 	{"replaceSeq", IoSeq_replaceSeq},
@@ -96,7 +96,7 @@ IoObject *IoSeq_copy(IoSeq *self, IoObject *locals, IoMessage *m)
 	
 	IO_ASSERT_NOT_SYMBOL(self);
 	
-	other = IoMessage_locals_valueArgAt_(m, locals, 0);
+	other = IoMessage_locals_seqArgAt_(m, locals, 0);
 	
 	ByteArray_copy_(BIVAR(self), BIVAR(other)); 
 	
@@ -208,11 +208,11 @@ Returns self.")
 	return self;
 }
 
-IoObject *IoSeq_removeLastByte(IoSeq *self, IoObject *locals, IoMessage *m)
+IoObject *IoSeq_removeLast(IoSeq *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("removeLastByte", 
-		   "Removes the last byte from the receiver. Returns self.")
+	docSlot("removeLast", 
+		   "Removes the last element from the receiver. Returns self.")
 	*/
 	
 	IO_ASSERT_NOT_SYMBOL(self);

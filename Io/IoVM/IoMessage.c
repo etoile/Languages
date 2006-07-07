@@ -94,6 +94,8 @@ IoMessage *IoMessage_proto(void *state)
 	{"argAt", IoMessage_argAt},
 	{"arguments", IoMessage_arguments},
 	{"setArguments", IoMessage_setArguments},
+	{"appendArg", IoMessage_appendArg},
+	{"argCount", IoMessage_argCount_},
 		
 	{"cachedResult", IoMessage_cachedResult},
 	{"setCachedResult", IoMessage_setCachedResult},
@@ -456,8 +458,7 @@ IoObject *IoMessage_setLabel(IoMessage *self, IoObject *locals, IoMessage *m)
 IoObject *IoMessage_doInContext(IoMessage *self, IoObject *locals, IoMessage *m)
 {
 	/*
-	methodOld: doInContext(anObject, locals)
-	docDescription("Evaluates the receiver in the context of anObject. ")
+	docSlot("doInContext(anObject, locals)", "Evaluates the receiver in the context of anObject. ")
 	*/
 	
 	IoObject *context = IoMessage_locals_valueArgAt_(m, (IoObject *)locals, 0);
@@ -465,23 +466,24 @@ IoObject *IoMessage_doInContext(IoMessage *self, IoObject *locals, IoMessage *m)
 	return IoMessage_locals_performOn_(self, locals, context);
 }
 
-#define IO_DEBUG_STACK
+//#define IO_DEBUG_STACK
 
 IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObject *target)
 {
 	IoState *state = IOSTATE;
 	IoMessage *outer;
 	IoObject *result = state->ioNil;
-		
+	//int debug = 0;
+	
 #ifdef IO_DEBUG_STACK
 	IoState_pushRetainPool(state); 
 	IoState_stackRetain_(state, target); 
 #endif
 
+	/*
 	{
 		IoCoroutine *currentCoroutine = state->currentCoroutine;
 		
-		/*
 		if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
 		{ 
 			Coro *coro = IoCoroutine_cid(state->currentCoroutine);
@@ -497,18 +499,24 @@ IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObjec
 				goto stop;
 			 }
 		}
-		*/
 	}
+	*/
 		
 	for (outer = self; outer; outer = DATA(outer)->nextMessage)
 	{
 		IoMessage *inner = outer;
 		
-		//printf("%s %i\n", CSTRING(IoMessage_name(inner)), 
-		//    IoCoroutine_rawIoStackSize(IoState_currentCoroutine(state)));
 		
 		for (inner = outer; inner; inner = DATA(inner)->attachedMessage)
 		{
+			/*
+			if (debug)
+			{
+				printf("%s\n", CSTRING(IoMessage_name(inner)));
+				//printf("%s %i\n", CSTRING(IoMessage_name(inner)), 
+				//IoCoroutine_rawIoStackSize(IoState_currentCoroutine(state)));
+			}
+			*/
 			
 #ifdef IO_SANDBOX
 			if (state->messageCountLimit && state->messageCount == 0)
@@ -665,7 +673,7 @@ IoObject *IoMessage_locals_mutableSeqArgAt_(IoMessage *self, IoObject *locals, i
 	
 	if (!ISMUTABLESEQ(v)) 
 	{
-		IoMessage_locals_numberArgAt_errorForType_(self, locals, n, "Sequence");
+		IoMessage_locals_numberArgAt_errorForType_(self, locals, n, "mutable Sequence");
 	}
 	
 	return v;
@@ -975,6 +983,42 @@ those contained in aListOfMessages.  Returns self.")
 	);
 
 	return self; 
+}
+
+IoObject *IoMessage_appendArg(IoMessage *self, IoObject *locals, IoMessage *m)
+{ 
+	/*#io
+	docSlot("appendArg(aMessage)", 
+		   """Adds aMessage to the argument list of receiver. Examples,
+		   <pre>
+		   Io> message(a) appendArg(message(b))
+		   ==> a(b)
+
+		   Io> message(a(1,2)) appendArg(message(3))
+		   ==> a(1, 2, 3)
+		   </pre>""")
+	*/
+	
+	IoMessage *msg = IoMessage_locals_messageArgAt_(m, locals, 0);
+	IoMessage_addArg_(self, msg);
+	return self;
+}
+
+IoObject *IoMessage_argCount_(IoMessage *self, IoObject *locals, IoMessage *m)
+{ 
+	/*#io
+	docSlot("argCount", 
+		   """Returns the number of arguments this message has. A faster way to do, msg arguments size. Examples,
+		   <pre>
+		   Io> message(a(1,2,3)) argCount
+		   ==> 3
+
+		   Io> message(a) argCount
+		   ==> 0
+		   </pre>""")
+	*/
+	
+	return IONUMBER(IoMessage_argCount(self));
 }
 
 IoObject *IoMessage_fromString(IoMessage *self, IoObject *locals, IoMessage *m)

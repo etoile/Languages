@@ -1,3 +1,7 @@
+2006-07-06  Yen-Ju Chen <yjchenx at gmail>
+
+    * Update to Io darcs 20060706 (Not ObjcBridge. Only IoVM and AAVector).
+
 2006-06-20  Yen-Ju Chen <yjchenx at gmail>
 
     * IoFoundation.h:

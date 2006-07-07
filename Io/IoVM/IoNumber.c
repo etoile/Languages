@@ -80,8 +80,8 @@ IoNumber *IoNumber_proto(void *state)
 	{"-", IoNumber_subtract},
 	{"*", IoNumber_multiply},
 	{"/", IoNumber_divide},
-	{"print", IoNumber_printNumber},
-	{"linePrint", IoNumber_linePrint},
+	//{"print", IoNumber_printNumber},
+	//{"linePrint", IoNumber_linePrint},
         
 	{"asString", IoNumber_asString},
 	{"asBuffer", IoNumber_asBuffer},

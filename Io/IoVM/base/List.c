@@ -90,7 +90,7 @@ void List_removeAll(List *self)
 
 void List_copy_(List *self, List *otherList)
 {
-    if (self == otherList || !otherList->size) 
+    if (self == otherList || (!otherList->size && !self->size)) 
     { 
 		return; 
     }

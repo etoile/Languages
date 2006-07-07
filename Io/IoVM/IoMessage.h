@@ -137,6 +137,8 @@ IoObject *IoMessage_setAttachedMessage(IoMessage *self, IoObject *locals, IoMess
 IoObject *IoMessage_argAt(IoMessage *self, IoObject *locals, IoMessage *m);
 IoObject *IoMessage_arguments(IoMessage *self, IoObject *locals, IoMessage *m);
 IoObject *IoMessage_setArguments(IoMessage *self, IoObject *locals, IoMessage *m);
+IoObject *IoMessage_appendArg(IoMessage *self, IoObject *locals, IoMessage *m);
+IoObject *IoMessage_argCount_(IoMessage *self, IoObject *locals, IoMessage *m);
 IoObject *IoMessage_cachedResult(IoMessage *self, IoObject *locals, IoMessage *m);
 IoObject *IoMessage_setCachedResult(IoMessage *self, IoObject *locals, IoMessage *m);
 IoObject *IoMessage_removeCachedResult(IoMessage *self, IoObject *locals, IoMessage *m);

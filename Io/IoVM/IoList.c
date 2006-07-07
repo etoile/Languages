@@ -61,14 +61,18 @@ void IoList_readFromStore_stream_(IoObject *self, IoStore *store, BStream *strea
 IoList *IoList_proto(void *state)
 {
 	IoMethodTable methodTable[] = {
-	{"with",        IoList_with},     
+	{"with",        IoList_with},
+	     
 	// access 
+	
 	{"indexOf",     IoList_indexOf},  
 	{"contains",    IoList_contains}, 
+	{"containsIdenticalTo", IoList_containsIdenticalTo},
 	{"capacity",    IoList_capacity},     
 	{"size",        IoList_size},     
 	
 	// mutation 
+	
 	{"removeAll",   IoList_removeAll},     
 	{"appendSeq",   IoList_appendSeq}, 
 	{"append",      IoList_append},    
@@ -305,11 +309,22 @@ IoObject *IoList_contains(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
 	docSlot("contains(anObject)", 
-		   "Returns self if the receiver contains anObject, otherwise returns Nil. ")
+		   "Returns true if the receiver contains anObject, otherwise returns false. ")
 	*/
 	
 	IoObject *v = IoMessage_locals_valueArgAt_(m, locals, 0);
 	return IOBOOL(self, IoList_rawIndexOf_(self, v) != -1);
+}
+
+IoObject *IoList_containsIdenticalTo(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("containsIdenticalTo(anObject)", 
+		   "Returns true if the receiver contains a value identical to anObject, otherwise returns false. ")
+	*/
+	
+	IoObject *v = IoMessage_locals_valueArgAt_(m, locals, 0);
+	return IOBOOL(self, List_contains_(LISTIVAR(self), v) != 0);
 }
 
 IoObject *IoList_capacity(IoObject *self, IoObject *locals, IoMessage *m)

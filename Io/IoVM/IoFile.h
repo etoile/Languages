@@ -53,6 +53,8 @@ int IoFile_create(IoFile *self);
 
 /* ----------------------------------------------------------- */
 
+IoObject *IoFile_descriptor(IoFile *self, IoObject *locals, IoMessage *m);
+
 IoObject *IoFile_standardInput(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_standardOutput(IoFile *self, IoObject *locals, IoMessage *m);
 IoObject *IoFile_standardError(IoFile *self, IoObject *locals, IoMessage *m);
@@ -104,7 +106,6 @@ IoObject *IoFile_foreach(IoFile *self, IoObject *locals, IoMessage *m);
 
 IoObject *IoFile_rawDo(IoFile *self, IoObject *context);
 IoObject *IoFile_do(IoFile *self, IoObject *locals, IoMessage *m);
-
 
 #ifdef __cplusplus
 }

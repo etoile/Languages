@@ -63,6 +63,7 @@ IoTag *IoFile_tag(void *state)
 IoFile *IoFile_proto(void *state)
 {
     IoMethodTable methodTable[] = {
+    {"descriptor", IoFile_descriptor},
     // standard I/O 
     {"standardInput", IoFile_standardInput},
     {"standardOutput", IoFile_standardOutput},
@@ -124,8 +125,8 @@ IoFile *IoFile_proto(void *state)
     self->tag = IoFile_tag(state);
     
     IoObject_setDataPointer_(self, calloc(1, sizeof(IoFileData)));
-    DATA(self)->path = IOSYMBOL("");
-    DATA(self)->mode = IOSYMBOL("r+b");
+    DATA(self)->path  = IOSYMBOL("");
+    DATA(self)->mode  = IOSYMBOL("r+b");
     DATA(self)->flags = IOFILE_FLAGS_NONE;
     IoState_registerProtoWithFunc_((IoState *)state, self, IoFile_proto);
     
@@ -252,6 +253,16 @@ int IoFile_create(IoFile *self)
 }
 
 /* ----------------------------------------------------------- */
+
+IoObject *IoFile_descriptor(IoFile *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("escriptor", "Returns the file's descriptor as a number.")
+	*/
+	
+	return IONUMBER(fileno(DATA(self)->stream));
+
+}
 
 IoObject *IoFile_standardInput(IoFile *self, IoObject *locals, IoMessage *m)
 {
@@ -530,7 +541,7 @@ IoObject *IoFile_rawAsString(IoFile *self)
 {
     ByteArray *ba = ByteArray_new();
     
-    if (ByteArray_readFromFilePath_(ba, CSTRING(DATA(self)->path)) == 0)
+    if (ByteArray_readFromFilePath_(ba, CSTRING(DATA(self)->path)) == 1)
     { 
 		return IoState_symbolWithByteArray_copy_(IOSTATE, ba, 0); 
     }
@@ -591,7 +602,7 @@ contents of the file into a buffer object, closes the file and returns the buffe
     
     ByteArray *ba = ByteArray_new();
     
-    if (ByteArray_readFromFilePath_(ba, CSTRING(DATA(self)->path)) == 0)
+    if (ByteArray_readFromFilePath_(ba, CSTRING(DATA(self)->path)) == 1)
     { 
 		return IoSeq_newWithByteArray_copy_(IOSTATE, ba, 0); 
     }
@@ -770,6 +781,7 @@ string without the return character. Returns Nil if the end of the file has been
 			ByteArray_free(ba);
 			clearerr(DATA(self)->stream);
 			IoState_error_(IOSTATE, m, "error reading from file '%s'", CSTRING(DATA(self)->path));
+			return IONIL(self); 
 		}
 		
 		clearerr(DATA(self)->stream);
@@ -1040,7 +1052,7 @@ aFile foreach(v, writeln("byte ", v))
 	   
         if (c == EOF) 
 	   {
-	   break;
+		   break;
 	   }
 	   
         if (indexSlotName)
@@ -1076,7 +1088,7 @@ IoObject *IoFile_do(IoFile *self, IoObject *locals, IoMessage *m)
     while (arg && !ISNIL(arg))
     {
 		IoList_rawAppend_(argsList, arg);
-		argn++;
+		argn ++;
 		arg = IoMessage_locals_valueArgAt_(m, locals, argn);
     }
     

@@ -143,8 +143,7 @@ IoObject *IoMap_empty(IoMap *self, IoObject *locals, IoMessage *m)
 
 IoObject *IoMap_rawAt(IoMap *self, IoSymbol *k)
 {
-	void *result = Hash_at_(HASHIVAR(self), k);
-	return IOBOOL(self, result != 0x0);
+	return Hash_at_(HASHIVAR(self), k);
 }
 
 IoObject *IoMap_at(IoMap *self, IoObject *locals, IoMessage *m)
