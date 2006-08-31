@@ -47,7 +47,7 @@ IoVM_C_FILES = \
 	IoToken_parser.c \
 	IoFile.c \
 	IoSeq_immutable.c \
-	IoVMCode.c \
+	IoVMInit.c \
 	IoFile_stat.c \
 	IoSeq_mutable.c \
 	IoWeakLink.c \

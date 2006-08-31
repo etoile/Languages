@@ -12,13 +12,7 @@ docLicense("BSD revised")
 #include "IoNumber.h"
 #include "List.h"
 #include <ctype.h>
-
-#ifdef GNUSTEP
-  #include <Foundation/Foundation.h>
-#else
-  #import <Foundation/Foundation.h>
-#endif
-
+#include "Runtime.h"
 #include "IoObject.h"
 #include "IoObject.h"
 #include "IoObjcBridge.h"
@@ -29,10 +23,10 @@ typedef IoObject Io2Objc;
 
 typedef struct
 {
-  IoObjcBridge *bridge;
-  id object; /* object object that this instance is talking to */
-  unsigned char *returnBuffer;
-  int returnBufferSize;
+	IoObjcBridge *bridge;
+	id object; /* object object that this instance is talking to */
+	unsigned char *returnBuffer;
+	int returnBufferSize;
 } Io2ObjcData;
 
 Io2Objc *Io2Objc_rawClone(Io2Objc *self);
@@ -49,6 +43,11 @@ void *Io2Objc_object(Io2Objc *self);
 
 /* ----------------------------------------------------------------- */
 IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m);
+Io2Objc *Io2Objc_newSubclassNamed(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *Io2Objc_setSlot(Io2Objc *self, IoObject *locals, IoMessage *m);
+IoObject *Io2Objc_updateSlot(Io2Objc *self, IoObject *locals, IoMessage *m);
+IoObject *Io2Objc_super(Io2Objc *self, IoObject *locals, IoMessage *m);
+//IoObject *Io2Objc_print(Io2Objc *self, IoObject *locals, IoMessage *m);
+//IoObject *Io2Objc_slotSummary(Io2Objc *self, IoObject *locals, IoMessage *m);
 
 #endif
-

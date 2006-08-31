@@ -55,6 +55,8 @@ struct IoState
 	IoSymbol *callSymbol;
 	IoSymbol *updateSlotSymbol;
 	IoSymbol *typeSymbol;
+        IoSymbol *opShuffleSymbol;
+        IoSymbol *noShufflingSymbol;
 
 	IoObject *setSlotBlock;
 	IoObject *localsUpdateSlotCFunc;
@@ -67,6 +69,7 @@ struct IoState
 	IoMessage *nilMessage;
 	IoMessage *runMessage;
 	IoMessage *printMessage;
+	IoMessage *opShuffleMessage;
 
 	List *cachedNumbers;
 	

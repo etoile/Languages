@@ -29,6 +29,7 @@ typedef struct
     List *tokenStream;
     size_t resultIndex;
     IoToken *errorToken;
+	char *errorDescription;
 } IoLexer;
 
 IoLexer *IoLexer_new(void);
@@ -42,6 +43,7 @@ void IoLexer_string_(IoLexer *self, const char *string);
 int IoLexer_lex(IoLexer *self);
 void IoLexer_print(IoLexer *self);
 void IoLexer_printTokens(IoLexer *self);
+char *IoLexer_errorDescription(IoLexer *self);
 
 /* --- getting results ------ */
 IoToken *IoLexer_top(IoLexer *self);

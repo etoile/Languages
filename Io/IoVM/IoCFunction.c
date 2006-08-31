@@ -32,6 +32,7 @@ IoCFunction *IoCFunction_proto(void *state)
 	
 	IoObject_setDataPointer_(self, calloc(1, sizeof(IoCFunctionData)));
 	DATA(self)->func = IoObject_self;
+	//self->isActivatable = 1;
 	IoState_registerProtoWithFunc_((IoState *)state, self, IoCFunction_proto);
 	return self;
 }
@@ -56,6 +57,7 @@ IoCFunction *IoCFunction_rawClone(IoCFunction *proto)
 {
 	IoObject *self = IoObject_rawClonePrimitive(proto);
 	IoObject_setDataPointer_(self, cpalloc(DATA(proto), sizeof(IoCFunctionData)));
+	self->isActivatable = 1;
 	return self;
 }
 

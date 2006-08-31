@@ -22,12 +22,12 @@ ByteArray *ByteArray_new(void)
 
 ByteArray *ByteArray_newWithCString_(const char *s)
 { 
-	return ByteArray_newWithData_size_copy_((unsigned char *)s, strlen(s), 1); 
+	return ByteArray_newWithData_size_((const unsigned char *)s, strlen(s)); 
 }
 
 ByteArray *ByteArray_newWithCString_size_(const char *s, int size)
 { 
-	return ByteArray_newWithData_size_copy_((unsigned char *)s, size, 1); 
+	return ByteArray_newWithData_size_((const unsigned char *)s, size); 
 }
 
 ByteArray *ByteArray_newWithSize_(int size)
@@ -39,20 +39,13 @@ ByteArray *ByteArray_newWithSize_(int size)
 	return self;
 }
 
-ByteArray *ByteArray_newWithData_size_copy_(unsigned char* buf, size_t size, char copy)
+ByteArray *ByteArray_newWithData_size_(const unsigned char* buf, size_t size)
 {
 	ByteArray *self = (ByteArray *)calloc(1, sizeof(ByteArray));
 	
-	if (copy)
-	{
-		self->bytes = (unsigned char *)malloc(size + 1);
-		self->bytes[size] = (unsigned char)0;
-		memcpy(self->bytes, buf, size);
-	}
-	else
-	{ 
-		self->bytes = buf; 
-	}
+        self->bytes = (unsigned char *)malloc(size + 1);
+        self->bytes[size] = (unsigned char)0;
+        memcpy(self->bytes, buf, size);
 	
 	self->size = size;
 	
@@ -61,7 +54,7 @@ ByteArray *ByteArray_newWithData_size_copy_(unsigned char* buf, size_t size, cha
 
 ByteArray *ByteArray_clone(ByteArray *self)
 { 
-	return ByteArray_newWithData_size_copy_(self->bytes, self->size, 1); 
+	return ByteArray_newWithData_size_(self->bytes, self->size); 
 }
 
 // datum ------------------------------------------------ 
@@ -279,8 +272,8 @@ void ByteArray_removeCharAt_(ByteArray *self, int pos)
 	pos = ByteArray_wrapPos_(self, pos);
 	
 	memmove(self->bytes + pos * csize, 
-		   self->bytes + (pos + 1) * csize, 
-		   (len - pos + 1) * csize);
+			self->bytes + (pos + 1) * csize, 
+			(len - pos + 1) * csize);
 }
 
 void ByteArray_removeSlice(ByteArray *self, int from, int to)
@@ -314,21 +307,21 @@ void ByteArray_escape(ByteArray *self)
 		switch (c)
 		{ 
 			case '"': ByteArray_appendCString_(ba, "\\\""); break;
-			case '\a': ByteArray_appendCString_(ba, "\\a"); break;
-			case '\b': ByteArray_appendCString_(ba, "\\b"); break;
-			case '\f': ByteArray_appendCString_(ba, "\\f"); break;
-			case '\n': ByteArray_appendCString_(ba, "\\n"); break;
-			case '\r': ByteArray_appendCString_(ba, "\\r"); break;
-			case '\t': ByteArray_appendCString_(ba, "\\t"); break;
-			case '\v': ByteArray_appendCString_(ba, "\\v"); break;
-			case '\\': ByteArray_appendCString_(ba, "\\\\"); break;
-			default: ByteArray_appendChar_(ba, c);
+case '\a': ByteArray_appendCString_(ba, "\\a"); break;
+case '\b': ByteArray_appendCString_(ba, "\\b"); break;
+case '\f': ByteArray_appendCString_(ba, "\\f"); break;
+case '\n': ByteArray_appendCString_(ba, "\\n"); break;
+case '\r': ByteArray_appendCString_(ba, "\\r"); break;
+case '\t': ByteArray_appendCString_(ba, "\\t"); break;
+case '\v': ByteArray_appendCString_(ba, "\\v"); break;
+case '\\': ByteArray_appendCString_(ba, "\\\\"); break;
+default: ByteArray_appendChar_(ba, c);
 		}
     }
 
-	s[i] = (char)NULL;
-	ByteArray_copy_(self, ba);
-	ByteArray_free(ba);
+s[i] = (char)NULL;
+ByteArray_copy_(self, ba);
+ByteArray_free(ba);
 }
 
 void ByteArray_unescape(ByteArray *self)
@@ -428,7 +421,17 @@ void ByteArray_appendByte_(ByteArray *self, unsigned char c)
 
 void ByteArray_append_(ByteArray *self, ByteArray *other)
 { 
-	ByteArray_appendBytes_size_(self, other->bytes, other->size); 
+	// Don't use, ByteArray_appendBytes_size_(self, other->bytes, other->size);
+	// because it can copy the wrong memory when self == other and a resize occurs.
+	
+	int otherSize = other->size;
+	
+	if(otherSize)
+	{
+		int selfSize = self->size;
+		ByteArray_setSize_(self, selfSize + otherSize);
+		memcpy(self->bytes + selfSize, other->bytes, otherSize);
+	}
 }
 
 void ByteArray_appendCString_(ByteArray *self, const char *s)
@@ -456,25 +459,25 @@ void ByteArray_appendAndEscapeCString_(ByteArray *self, const char *s)
 		{ 
 			ByteArray_appendBytes_size_(self, (const unsigned char *)"\\\"", 2); 
 		}
-		else
-		{
+else
+{
 			oneChar[0] = *s;
 			ByteArray_appendBytes_size_(self, (const unsigned char *)oneChar, 1);
-		}
+}
 
-		s ++;
+s ++;
 	}
 
-	self->bytes[self->size] = (unsigned char)0x0;
+self->bytes[self->size] = (unsigned char)0x0;
 }
 
 void ByteArray_appendBytes_size_(ByteArray *self, const unsigned char *bytes, size_t size)
 {
 	int oldSize;
-
+	
 	if(size == 0)
 		return;
-
+	
 	oldSize = self->size;
 	ByteArray_setSize_(self, oldSize + size);
 	memcpy(self->bytes + oldSize, bytes, size);
@@ -516,7 +519,7 @@ ByteArray *ByteArray_newWithBytesFrom_to_(ByteArray *self, int startpos, int end
 		return ByteArray_new();
 	}
 	
-	return ByteArray_newWithData_size_copy_(self->bytes+startpos, newlen, 1);
+	return ByteArray_newWithData_size_(self->bytes+startpos, newlen);
 }
 
 // insert --------------------------------------------
@@ -789,7 +792,7 @@ int ByteArray_endsWith_(ByteArray *self, ByteArray *other)
 { 
 	int sl = self->size;
 	int ol = other->size;
-
+	
 	if (!ol) 
 	{
 		return 1;
@@ -825,6 +828,8 @@ int ByteArray_find_from_(ByteArray *self, ByteArray *other, int from)
 	int i, max = self->size - other->size + 1;
 	
 	from = ByteArray_wrapPos_(self, from);
+	
+	//string_caseInsensitiveBoyerMooreSearch()
 	
 	for (i = from; i < max; i ++)
 	{
@@ -902,14 +907,14 @@ int ByteArray_rFind_from_(ByteArray *self, ByteArray *other, int from)
 int ByteArray_rFindCharacters_from_(ByteArray *self, const char *chars, int from)
 {
     // return -1 for no match, starting position of match if found 
-
+	
     unsigned char *start = self->bytes;
     unsigned char *p = self->bytes;
     const char* pChar = NULL;
-
+	
     from = ByteArray_wrapPos_(self, from);
     p = p + from - 1;  // -1 : the from index is not included in the search
-
+	
     // for each byte in self
     while( start <= p )
     {
@@ -921,10 +926,10 @@ int ByteArray_rFindCharacters_from_(ByteArray *self, const char *chars, int from
                 return p - start;
             }
         }
-
+		
         --p;
     }
-
+	
     return -1;
 }
 
@@ -997,14 +1002,10 @@ int ByteArray_findByteWithoutValue_from_(ByteArray *self, unsigned char v, int f
 }
 
 void ByteArray_setByteWithValue_from_to_(ByteArray *self, 
-								 unsigned char v, 
-								 size_t from, 
-								 size_t to)
+										 unsigned char v, 
+										 size_t from, 
+										 size_t to)
 {
-	if (from < 0) from = 0;
-	
-	if (to < 0) to = 0;
-	
 	if (from > to)
 	{
 		int x = to;
@@ -1053,8 +1054,8 @@ size_t ByteArray_count_(ByteArray *self, ByteArray *other)
 }
 
 void ByteArray_replaceCString_withCString_(ByteArray *self, 
-								   const char *s1, 
-								   const char *s2)
+										   const char *s1, 
+										   const char *s2)
 {
 	ByteArray *b1 = ByteArray_newWithCString_(s1);
 	ByteArray *b2 = ByteArray_newWithCString_(s2);
@@ -1064,9 +1065,9 @@ void ByteArray_replaceCString_withCString_(ByteArray *self,
 }
 
 void ByteArray_replace_with_output_(ByteArray *self, 
-							 ByteArray *substring, 
-							 ByteArray *other, 
-							 ByteArray *output)
+									ByteArray *substring, 
+									ByteArray *other, 
+									ByteArray *output)
 {
 	int lastGetIndex = 0;
 	int getIndex = 0;
@@ -1092,9 +1093,9 @@ void ByteArray_replace_with_output_(ByteArray *self,
 }
 
 void ByteArray_replaceFrom_size_with_(ByteArray *self, 
-							   size_t index, 
-							   size_t substringSize, 
-							   ByteArray *other)
+									  size_t index, 
+									  size_t substringSize, 
+									  ByteArray *other)
 {
 	size_t oldSize = ByteArray_size(self);
 	size_t otherSize = ByteArray_size(other);
@@ -1121,9 +1122,9 @@ void ByteArray_replaceFrom_size_with_(ByteArray *self,
 }
 
 size_t ByteArray_replaceFirst_from_with_(ByteArray *self, 
-								 ByteArray *substring, 
-								 size_t start, 
-								 ByteArray *other)
+										 ByteArray *substring, 
+										 size_t start, 
+										 ByteArray *other)
 {
 	size_t substringSize = ByteArray_size(substring);
 	int index = ByteArray_find_from_(self, substring, start);
@@ -1276,7 +1277,7 @@ int ByteArray_readFromCStream_(ByteArray *self, FILE *fp)
 	if (bytesRead != bytesToRead) 
 	{ 
 		printf("WARNING: read rest of file but only found %i bytes while ftell() indicated that %i were remaining - file may be directory\n", 
-			  (int)bytesRead, (int)bytesToRead);
+			   (int)bytesRead, (int)bytesToRead);
 		return -1;
 	}
 	
@@ -1299,27 +1300,27 @@ int ByteArray_readFromFilePath_(ByteArray *self, const char *path)
 }
 
 /*
-
-unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream)
-{
-	unsigned char readSomething = 0;
-	
-	while(ferror(stream) == 0)
-	{
-		int b = fgetc(stream);
-		readSomething = 1;
-		
-		if ( b == '\n' || b == '\r') 
-		{
-			break;
-		}
-		
-		ByteArray_appendByte_(self, b);
-	}
-	
-	return readSomething;
-}
-*/
+ 
+ unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream)
+ {
+	 unsigned char readSomething = 0;
+	 
+	 while(ferror(stream) == 0)
+	 {
+		 int b = fgetc(stream);
+		 readSomething = 1;
+		 
+		 if ( b == '\n' || b == '\r') 
+		 {
+			 break;
+		 }
+		 
+		 ByteArray_appendByte_(self, b);
+	 }
+	 
+	 return readSomething;
+ }
+ */
 
 #define CHUNK_SIZE 4096
 
@@ -1332,9 +1333,9 @@ unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream)
 	{
 		char *eol1 = strchr(s, '\n');
 		char *eol2 = strchr(s, '\r');
-
+		
 		readSomething = 1;
-
+		
 		if (eol1) { *eol1 = 0x0; } // remove the \n return character
 		if (eol2) { *eol2 = 0x0; } // remove the \r return character
 		
@@ -1519,14 +1520,14 @@ void ByteArray_appendPathCString_(ByteArray *self, const char *path)
 	int selfEndsWithSep = IsPathSeparator(lastChar);
 	int pathStartsWithSep = IsPathSeparator(*path);
 	//int pathStartsWithDoubleSep = IsPathSeparator(*path) && strlen(path) > 1 && IsPathSeparator(*(path + 1));
-
+	
 	/*
-	if (pathStartsWithSep)
-	{
-		ByteArray_setCString_(self, path); 
-	}
-	else 
-	*/
+	 if (pathStartsWithSep)
+	 {
+		 ByteArray_setCString_(self, path); 
+	 }
+	 else 
+	 */
 	
 	if (ByteArray_size(self) != 0)
 	{
@@ -1542,7 +1543,7 @@ void ByteArray_appendPathCString_(ByteArray *self, const char *path)
 	}
 	
 	ByteArray_appendCString_(self, path); 
-
+	
 	ByteArray_replaceCString_withCString_(self, IO_PATH_SEPARATOR_DOT, IO_PATH_SEPARATOR);
 	//ByteArray_replaceCString_withCString_(self, "//", "/");
 }
@@ -2098,3 +2099,121 @@ size_t ByteArray_matchingPrefixSizeWith_(ByteArray *self, ByteArray *other)
 	Datum d2 = ByteArray_asDatum(other);
 	return Datum_matchingPrefixSizeWith_(&d1, &d2);
 }
+
+// -------------------------
+
+/*
+char *string_caseInsensitiveBoyerMooreSearch(char *buffer, size_t length, char *needle, size_t needleLen)
+{
+        register char *p;
+
+        switch (needleLen)
+        {
+                case 0:
+                return NULL;
+
+                case 1:
+                for (p = buffer; *p; p++)
+                {
+                        if (toupper(*p) == toupper(*needle))
+                                return p;
+                }
+                return NULL;
+                break;
+
+        }
+	
+		{
+        register const size_t needleSafetyBouncer = needleLen - 1;
+        register size_t i;
+        register byte delta[256];
+        register const char *end = buffer + length;
+        int k;
+
+        for (i = 0; i < 256; i++)
+                delta[i] = needleLen;
+
+        for (i = needleLen - 1, k = 0; i >=0 ; k++, i--)
+        {
+                if (delta[(byte)toupper(needle[i])] == needleLen)
+                        delta[(byte)toupper(needle[i])] = k;
+        }
+
+
+        for (p = buffer; p < end; )
+        {
+                for (i = needleSafetyBouncer ; ;)
+                {
+                        if (toupper(p[i]) != toupper(needle[i]))
+                        {
+                                p+=delta[(byte)toupper(p[i])];
+                                break;
+                        }
+
+                        if (!i--)
+                                return p;
+                }
+        }
+		}
+
+        return NULL;
+}
+
+char *string_caseSensitiveBoyerMooreSearch(char *buffer, size_t length, char *needle, size_t needleLen)
+{
+	
+	register char *p;
+	
+	switch (needleLen)
+	{
+		case 0:
+			return NULL;
+			
+		case 1:
+			for (p = buffer; *p; p++)
+			{
+				if (*p == *needle)
+					return p;
+			}
+			return NULL;
+			break;
+			
+	}
+	
+	
+	{
+        register const size_t needleSafetyBouncer = needleLen - 1;
+        register size_t i;
+        register uint8_t delta[256];
+        register const char *end = buffer + length;
+        int k;
+		
+        for (i = 0; i < 256; i++)
+			delta[i] = needleLen;
+		
+        for (i = needleLen - 1, k = 0; i >=0 ; k++, i--)
+        {
+			if (delta[(uint8_t)needle[i]] == needleLen)
+				delta[(uint8_t)needle[i]] = k;
+        }
+		
+		
+        for (p = buffer; p < end; )
+        {
+			for (i = needleSafetyBouncer ; ;)
+			{
+				if (p[i] != needle[i])
+				{
+					p+=delta[(uint8_t)p[i]];
+					break;
+				}
+				
+				if (!i--)
+					return p;
+			}
+        }
+	}
+	
+	return NULL;
+}
+*/

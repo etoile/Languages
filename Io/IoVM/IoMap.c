@@ -74,7 +74,7 @@ IoMap *IoMap_proto(void *state)
 	{"empty",    IoMap_empty}, 
 	{"at",       IoMap_at}, 
 	{"atPut",    IoMap_atPut}, 
-	{"atIfAbsentPut", IoMap_atIfAbsentPut}, 
+	{"atPutIfAbsent", IoMap_atPutIfAbsent}, 
 	{"size",     IoMap_size}, 
 	{"keys",     IoMap_keys}, 
 	{"values",   IoMap_values}, 
@@ -177,10 +177,10 @@ IoObject *IoMap_atPut(IoMap *self, IoObject *locals, IoMessage *m)
 	return self;
 }
 
-IoObject *IoMap_atIfAbsentPut(IoMap *self, IoObject *locals, IoMessage *m)
+IoObject *IoMap_atPutIfAbsent(IoMap *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("atIfAbsentPut(keyString, aValue)", 
+	docSlot("atPutIfAbsent(keyString, aValue)", 
 		   "Inserts/sets aValue with the key keyString if the 
 key is not already present. Returns self. ")
 	*/

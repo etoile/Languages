@@ -1,6 +1,6 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
-ADDITIONAL_INCLUDE_DIRS += -I../IoVM -I../IoVM/base
+ADDITIONAL_INCLUDE_DIRS += -I../IoVM -I../IoVM/base -I../IoVM/SkipDB
 
 ifeq ($(FOUNDATION_LIB), apple)
   	# Only for Darwin
@@ -8,10 +8,10 @@ ifeq ($(FOUNDATION_LIB), apple)
   	ADDITIONAL_LDFLAGS += -framework Accelerate -faltivec
 endif
 
-SUBPROJECT_NAME = AAVector
+SUBPROJECT_NAME = Vector
 
-AAVector_C_FILES = \
-	IoAAVectorInit.c \
+Vector_C_FILES = \
+	IoVectorInit.c \
 	IoBox.c \
 	IoVector.c \
 	Vector.c

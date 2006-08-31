@@ -68,6 +68,7 @@ IoObject *IoObject_protoFinish(void *state)
 	{"clone", IoObject_clone},
 	{"cloneWithoutInit", IoObject_cloneWithoutInit},
 	{"shallowCopy", IoObject_shallowCopy},
+	{"duplicate", IoObject_duplicate},
 	//{"print", IoObject_protoPrint},
 	{"write", IoObject_protoWrite},
 	{"writeln", IoObject_protoWriteLn},
@@ -166,6 +167,7 @@ IoObject *IoObject_protoFinish(void *state)
 	{"proto", IoObject_objectProto},
 	//{"tailCall", IoObject_tailCall},
 	{"setIsActivatable", IoObject_setIsActivatable},
+	{"isActivatable", IoObject_isActivatable},
 	{"argIsActivationRecord", IoObject_argIsActivationRecord},
 	{"argIsCall", IoObject_argIsCall},
 		
@@ -1109,6 +1111,17 @@ IoObject *IoObject_shallowCopy(IoObject *self, IoObject *locals, IoMessage *m)
 	return newObject;
 }
 
+IoObject *IoObject_duplicate(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("duplicate", "Creates a new copy of the receiver, including its proto list.")
+	*/
+
+	IoObject *newObject = IoObject_new(IOSTATE); 
+	memmove(newObject, self, sizeof(*self));
+	return newObject;
+}
+
 // lobby methods ---------------------------------------------- 
 
 IoObject *IoObject_protoSet_to_(IoObject *self, IoObject *locals, IoMessage *m)
@@ -1882,6 +1895,16 @@ Primitives (such as CFunction or Block). Returns self.")
 	self->isActivatable = ISTRUE(v);
 	
 	return self;
+}
+
+IoObject *IoObject_isActivatable(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("isActivatable", 
+			"Returns true if the receiver is activatable, false otherwise.")
+	*/
+	
+	return self->isActivatable ? IOTRUE(self) : IOFALSE(self);
 }
 
 IoObject *IoObject_rawDoMessage(IoObject *self, IoMessage *m)

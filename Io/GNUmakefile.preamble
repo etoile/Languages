@@ -10,7 +10,7 @@ ADDITIONAL_CFLAGS += -Wall
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += \
         -IIoVM -IIoVM/base -IIoVM/SkipDB \
-        -IAAVector -IObjcBridge
+        -IVector -IObjcBridge
 
 # Additional LDFLAGS to pass to the linker
 ADDITIONAL_LDFLAGS += 

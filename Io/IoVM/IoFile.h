@@ -27,7 +27,6 @@ typedef struct
     IoSymbol *path;
     IoSymbol *mode;
     unsigned char flags;
-    unsigned char autoYield; /* not used yet */
     void *info; /* reserved for use in OS specific extensions */
 } IoFileData;
 
@@ -40,6 +39,7 @@ IoFile *IoFile_rawClone(IoFile *self);
 IoFile *IoFile_new(void *state);
 IoFile *IoFile_newWithPath_(void *state, IoSymbol *path);
 IoFile *IoFile_cloneWithPath_(IoFile *self, IoSymbol *path);
+IoFile *IoFile_newWithStream_(void *state, FILE *stream);
 
 void IoFile_free(IoFile *self);
 void IoFile_mark(IoFile *self);

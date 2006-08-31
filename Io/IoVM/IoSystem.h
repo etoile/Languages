@@ -20,6 +20,7 @@ IoObject *IoObject_errnoDescription(IoObject *self, IoObject *locals, IoMessage 
 IoObject *IoObject_exit(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_compileString(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_getenv(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoObject_setenv(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_system(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_memorySizeOfState(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_compactState(IoObject *self, IoObject *locals, IoMessage *m);

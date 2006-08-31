@@ -44,6 +44,7 @@ IoObject *IoRange_index(IoRange *self, IoObject *locals, IoMessage *m);
 IoObject *IoRange_value(IoRange *self, IoObject *locals, IoMessage *m);
 
 IoRange *IoRange_setRange(IoRange *self, IoObject *locals, IoMessage *m);
+IoRange *IoRange_rewind(IoRange *self, IoObject *locals, IoMessage *m);
 IoObject *IoRange_foreach(IoRange *self, IoObject *locals, IoMessage *m);
 IoObject *IoRange_select(IoRange *self, IoObject *locals, IoMessage *m);
 IoObject *IoRange_map(IoRange *self, IoObject *locals, IoMessage *m);

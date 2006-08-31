@@ -121,7 +121,7 @@ IoBlock *IoBlock_proto(void *vState)
 	DATA(self)->argNames = List_new();
 	DATA(self)->scope    = 0x0;
 	IoState_registerProtoWithFunc_((IoState *)state, self, IoBlock_proto);
-	
+
 	IoObject_addMethodTable_(self, methodTable);
 	return self;
 }
@@ -135,6 +135,7 @@ IoBlock *IoBlock_rawClone(IoBlock *proto)
 	DATA(self)->message  = IoMessage_deepCopyOf_(protoData->message);
 	DATA(self)->argNames = List_clone(protoData->argNames);
 	DATA(self)->scope    = protoData->scope;
+	self->isActivatable = 1;
 	return self;
 }
 
@@ -422,7 +423,7 @@ object. If Nil, it will set them to the target of the message. ")
 IoObject *IoBlock_performOn(IoBlock *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("performOn(anObject, optionalLocals, optionalMessage)", 
+	docSlot("performOn(anObject, optionalLocals, optionalMessage, optionalSlotContext)", 
 		   "Activates the receiver in the target context of anObject. 
 Returns the result.")
 	*/

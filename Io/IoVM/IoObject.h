@@ -99,6 +99,7 @@ void IoObject_show(IoObject *self);
 IoObject *IoObject_clone(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_cloneWithoutInit(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_shallowCopy(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoObject_duplicate(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_initClone_(IoObject *self, IoObject *locals, IoMessage *m, IoObject *newObject);
 
 // printing 
@@ -188,6 +189,7 @@ IoObject *IoObject_doFile(IoObject *self, IoObject *locals, IoMessage *m);
 // activatable
 
 IoObject *IoObject_setIsActivatable(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoObject_isActivatable(IoObject *self, IoObject *locals, IoMessage *m);
 
 // eval
 

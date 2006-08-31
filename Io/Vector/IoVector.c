@@ -131,6 +131,7 @@ IoVector* IoVector_proto(void *state)
 	{"setDepth", IoVector_setZ},
 		
 	{"zero", IoVector_zero},
+	{"sign", IoVector_sign},
 		
 	{"negate", IoVector_negate},
 		
@@ -146,6 +147,7 @@ IoVector* IoVector_proto(void *state)
 	{"Max", IoVector_Max},
 	{"zero", IoVector_zero},
 	{"isZero", IoVector_isZero},
+	{"sign", IoVector_sign},
 	{"rangeFill", IoVector_rangeFill},
 		
 	{NULL, NULL}
@@ -282,11 +284,17 @@ IoSeq *IoVector_equals(IoVector *self, IoObject *locals, IoMessage *m)
 those of the receiver. Returns false otherwise.")
 	*/
 	
-	IoObject *other = IoMessage_locals_vectorArgAt_(m, locals, 0);
-	Vector *v1 = VIVAR(self);
-	Vector *v2 = VIVAR(other);
-	int e = Vector_equals_(v1, v2);
-	return IOBOOL(self, e);
+	IoObject *other = IoMessage_locals_valueArgAt_(m, locals, 0);
+
+	if (ISVECTOR(other))
+	{
+		Vector *v1 = VIVAR(self);
+		Vector *v2 = VIVAR(other);
+		int e = Vector_equals_(v1, v2);
+		return IOBOOL(self, e);
+	}
+
+	return IOFALSE(self);
 }
 
 
@@ -1118,6 +1126,17 @@ IoObject *IoVector_isZero(IoVector *self, IoObject *locals, IoMessage *m)
 	
 	Vector *vec  = VIVAR(self);
 	return IOBOOL(self, Vector_isZero(vec));
+}
+
+IoObject *IoVector_sign(IoVector *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("sign", "Sets each element to -1 if it is below zero, or 1 if it is above 0.")
+	*/
+	
+	Vector *vec  = VIVAR(self);
+	Vector_sign(vec);
+	return self;
 }
 
 IoObject *IoVector_print(IoVector *self, IoObject *locals, IoMessage *m)

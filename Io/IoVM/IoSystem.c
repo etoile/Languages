@@ -25,6 +25,7 @@ IoObject *IoSystem_proto(void *state)
 	{"errno", IoObject_errnoDescription},
 	{"exit", IoObject_exit},
 	{"getenv", IoObject_getenv},
+	{"setenv", IoObject_setenv},
 	{"system", IoObject_system},
 	//{"memorySizeOfState", IoObject_memorySizeOfState},
 	//{"compactState", IoObject_compactState},
@@ -134,18 +135,15 @@ IoObject *IoObject_compactState(IoObject *self, IoObject *locals, IoMessage *m)
 	//IoState_compact(IOSTATE); 
 	return self; 
 }
-
-/*
  
- IoObject *IoObject_setenv(IoObject *self, IoObject *locals, IoMessage *m)
- { 
-      // setenv() takes different args in different implementations
-	 IoSymbol *key = IoMessage_locals_symbolArgAt_(m, locals, 0);
-	 IoSymbol *value = IoMessage_locals_symbolArgAt_(m, locals, 1);
-	 setenv(CSTRING(key), CSTRING(value), 1); 
-	 return self;
- }
- */
+IoObject *IoObject_setenv(IoObject *self, IoObject *locals, IoMessage *m)
+{ 
+	// setenv() takes different args in different implementations
+	IoSymbol *key = IoMessage_locals_symbolArgAt_(m, locals, 0);
+	IoSymbol *value = IoMessage_locals_symbolArgAt_(m, locals, 1);
+	setenv(CSTRING(key), CSTRING(value), 1); 
+	return self;
+}
 
 IoObject *IoObject_platform(IoObject *self, IoObject *locals, IoMessage *m)
 {

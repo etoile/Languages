@@ -49,6 +49,7 @@ IoRange *IoRange_proto(void *state)
             {"value", IoRange_value},
             {"foreach", IoRange_foreach},
             {"setRange", IoRange_setRange},
+			{"rewind", IoRange_rewind},
     	    {NULL, NULL},
     	};
     	IoObject_addMethodTable_(self, methodTable);
@@ -112,29 +113,21 @@ IoObject *IoRange_next(IoRange *self, IoObject *locals, IoMessage *m)
      */
 
     IoRangeData *rd = DATA(self);
-    double newPos;
+	IoObject *context;
+	IoObject *v = IoObject_rawGetSlot_context_(rd->curr, IOSYMBOL("nextInSequence"), &context);
 
-    if (strcmp(IoObject_name(rd->curr), "Number") == 0)
-    {
-        double end = CNUMBER(IoRange_getLast(self));
-        double curr = CNUMBER(IoRange_getCurrent(self));
-        double increment = CNUMBER(IoRange_getIncrement(self));
-        double index = CNUMBER(IoRange_getIndex(self));
-        unsigned int ret;
-        newPos = curr + increment;
-        ret = newPos <= end;
-        if(ret)
-        {
-            IoRange_setCurrent(self, IONUMBER(newPos));
-            IoRange_setIndex(self, IONUMBER(index + increment));
-        }
-        return IOBOOL(self, ret);
-    }
-    else
-    {
-        IoState_error_(IOSTATE, m, "'next' requires an implementation for types other than Number.");
-        return IOFALSE(self);
-    }
+	if (v && rd->curr != rd->end)
+	{
+		IoMessage *newMessage = IoMessage_new(IOSTATE);
+		IoObject *ret;
+		IoMessage_addCachedArg_(newMessage, rd->increment);
+		ret = IoObject_activate(v, rd->curr, locals, newMessage, context);
+		IoRange_setCurrent(self, ret);
+		IoRange_setIndex(self, IONUMBER(CNUMBER(rd->index) + CNUMBER(rd->increment)));
+		return self;
+	}
+
+	return IONIL(self);
 }
 
 IoObject *IoRange_previous(IoRange *self, IoObject *locals, IoMessage *m)
@@ -144,25 +137,21 @@ IoObject *IoRange_previous(IoRange *self, IoObject *locals, IoMessage *m)
      */
 
     IoRangeData *rd = DATA(self);
-    double newPos;
+	IoObject *context;
+	IoObject *v = IoObject_rawGetSlot_context_(rd->curr, IOSYMBOL("nextInSequence"), &context);
 
-    if (strcmp(IoObject_name(rd->curr), "Number") == 0)
-    {
-        double start = CNUMBER(rd->start);
-        double curr = CNUMBER(rd->curr);
-        double increment = CNUMBER(rd->increment);
-        unsigned int ret;
-        newPos = curr - increment;
-        ret = newPos >= start;
-        if(ret)
-            rd->curr = IONUMBER(newPos);
-        return IOBOOL(self, ret);
-    }
-    else
-    {
-        IoState_error_(IOSTATE, m, "'previous' requires an implementation for types other than Number.");
-        return IOFALSE(self);
-    }
+	if (v && rd->curr != rd->start)
+	{
+		IoMessage *newMessage = IoMessage_new(IOSTATE);
+		IoObject *ret;
+		IoMessage_addCachedArg_(newMessage, IONUMBER(-CNUMBER(rd->increment)));
+		ret = IoObject_activate(v, rd->curr, locals, newMessage, context);
+		IoRange_setCurrent(self, ret);
+		IoRange_setIndex(self, IONUMBER(CNUMBER(rd->index) - CNUMBER(rd->increment)));
+		return self;
+	}
+
+	return IONIL(self);
 }
 
 IoObject *IoRange_index(IoRange *self, IoObject *locals, IoMessage *m)
@@ -209,31 +198,33 @@ IoRange *IoRange_setRange(IoRange *self, IoObject *locals, IoMessage *m)
     return self;
 }
 
+IoRange *IoRange_rewind(IoRange *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("rewind", "Sets the current item and the index to the values the receiver started out with.")
+	*/
+	IoRange_setCurrent(self, RANGEDATA(self)->start);
+	IoRange_setIndex(self, IONUMBER(0));
+	return self;
+}
+
 IoObject *IoRange_each(IoRange *self, IoObject *locals, IoMessage *m)
 {
     IoState *state = IOSTATE;
     IoObject *result = IONIL(self);
     IoMessage *doMessage = IoMessage_rawArgAt_(m, 0);
 
-    if (strcmp(IoObject_name(IoRange_getFirst(self)), "Number") == 0)
-    {
-        double increment = CNUMBER(IoRange_getIncrement(self));
-        double index;
+    double increment = CNUMBER(IoRange_getIncrement(self));
+    double index;
 
-        for(index = 0; ; index += increment)
-        {
-            IoState_clearTopPool(state);
-            result = IoMessage_locals_performOn_(doMessage, locals, locals);
-            if (IoRange_next(self, locals, m) == IOFALSE(self)) goto done;
-            if (IoState_handleStatus(state)) goto done;
-        }
-    }
-    else
+    for(index = 0; ; index += increment)
     {
-        IoState_error_(state, m, "Operation on items other than Numbers are not supported at this time.");
+        IoState_clearTopPool(state);
+        result = IoMessage_locals_performOn_(doMessage, locals, RANGEDATA(self)->curr);
+        if (IoRange_next(self, locals, m) == IONIL(self)) break;
+        if (IoState_handleStatus(state)) break;
     }
 
-done:
     IoState_popRetainPoolExceptFor_(state, result);
     return result;
 }
@@ -268,7 +259,6 @@ IoObject *IoRange_foreach(IoRange *self, IoObject *locals, IoMessage *m)
     IoMessage_foreachArgs(m, self, &indexName, &valueName, &doMessage);
     IoState_pushRetainPool(state);
 
-    if (strcmp(IoObject_name(IoRange_getFirst(self)), "Number") == 0)
     {
         double increment = CNUMBER(IoRange_getIncrement(self));
         double index;
@@ -281,12 +271,8 @@ IoObject *IoRange_foreach(IoRange *self, IoObject *locals, IoMessage *m)
             IoObject_setSlot_to_(locals, valueName, rd->curr);
             result = IoMessage_locals_performOn_(doMessage, locals, locals);
             if (IoState_handleStatus(state)) break;
-            if (IoRange_next(self, locals, m) == IOFALSE(self)) break;
+            if (IoRange_next(self, locals, m) == IONIL(self)) break;
         }
-    }
-    else
-    {
-        IoState_error_(state, m, "Operation on items other than Numbers are not supported at this time.");
     }
 
     IoState_popRetainPoolExceptFor_(state, result);

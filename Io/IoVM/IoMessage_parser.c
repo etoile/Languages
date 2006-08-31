@@ -6,6 +6,7 @@
 #include "IoMessage_parser.h"
 #include "IoObject.h"
 #include "IoSeq.h"
+#include "IoMap.h"
 #include "IoNumber.h"
 #include "IoState.h"
 #include "IoLexer.h"
@@ -143,7 +144,7 @@ IoMessage *IoMessage_newParse(void *state, IoLexer *lexer)
 
 		m = IoMessage_newFromIoToken_(state, IoLexer_errorToken(lexer)); 
 		IoMessage_label_(m, IoState_symbolWithCString_((IoState *)state, "[lexer]"));
-		errorString = IoState_symbolWithCString_((IoState *)state, IoToken_error(IoLexer_errorToken(lexer)));
+		errorString = IoState_symbolWithCString_((IoState *)state, IoLexer_errorDescription(lexer));
 		IoState_error_(state, m, "compile error: %s", CSTRING(errorString));
 	}
 
@@ -309,6 +310,7 @@ typedef struct {
 	int currentLevel;
 
 	List *stack;
+        IoMap *operatorTable;
 } Levels;
 
 void Levels_reset(Levels *self)
@@ -334,9 +336,26 @@ void Levels_reset(Levels *self)
 }
 
 
-Levels *Levels_new()
+Levels *Levels_new(IoMessage *msg)
 {
 	Levels *self = calloc(1, sizeof(Levels));
+        IoObject *opTable = IoObject_rawGetSlot_(msg, IoState_symbolWithCString_(msg->state, "OperatorTable"));
+        self->operatorTable = 0;
+        if (opTable)
+        {
+                IoObject *rightOperators = IoObject_rawGetSlot_(opTable, IoState_symbolWithCString_(msg->state, "rightOperators"));
+                if (rightOperators)
+                {
+                        if (ISMAP(rightOperators))
+                        {
+                                self->operatorTable = rightOperators;
+                        }
+                        else
+                        {
+                                IoState_error_(msg->state, 0x0, "compile error: Message OperatorTable rightOperators is not a Map. %p %s", rightOperators, CSTRING(IoMessage_name(msg)));
+                        }
+                }
+        }
 	self->stack = List_new();
 	Levels_reset(self);
 	return self;
@@ -433,12 +452,38 @@ void Level_setAlreadyHasArgs(Level *self, IoMessage *msg)
 	self->message = msg;
 }
 
+int Levels_levelForOp(Levels *self, char *messageName, IoSymbol *messageSymbol, IoMessage *msg)
+{
+        if (self->operatorTable)
+        {
+                IoObject *value = IoMap_rawAt(self->operatorTable, messageSymbol);
+                if (!value)
+                {
+                        return -1;
+                }
+                if (ISNUMBER(value))
+                {
+                        return IoNumber_asInt((IoNumber*)value);
+                }
+                else
+                {
+			IoState_error_(msg->state, msg, "compile error: Value for '%s' in Message OperatorTable is not a number. Values in the OperatorTable are numbers which indicate the precedence of the operator.", messageName);
+                        return -1; // To keep the compiler happy.
+                }
+        }
+        else
+        {
+                return IoToken_LevelForOp_(messageName);
+        }
+}
+
 void Levels_attach(Levels *self, IoMessage *msg, List *expressions)
 {
 	// TODO clean up this method.
 	
-	char *messageName = CSTRING(IoMessage_name(msg));
-	int precedence = IoToken_LevelForOp_(messageName);
+        IoSymbol *messageSymbol = IoMessage_name(msg);
+	char *messageName = CSTRING(messageSymbol);
+	int precedence = Levels_levelForOp(self, messageName, messageSymbol, msg);
 
 	if (strcmp(messageName, ":=") == 0 || strcmp(messageName, "=") == 0)
 	{
@@ -545,6 +590,14 @@ void Levels_nextMessage(Levels *self)
 
 void IoMessage_opShuffle_(IoMessage *self)
 {
+        if (IoObject_rawGetSlot_(self, IOSTATE->opShuffleSymbol) && IoMessage_name(self) != IOSTATE->noShufflingSymbol)
+        {
+                IoMessage_locals_performOn_(IOSTATE->opShuffleMessage, IOSTATE->lobby, self);
+        }
+}
+
+IoMessage *IoMessage_opShuffle(IoMessage *self, IoObject *locals, IoMessage *m)
+{
 	Levels *levels = Levels_new(self);
 	List *expressions = List_new();
 	
@@ -565,11 +618,6 @@ void IoMessage_opShuffle_(IoMessage *self)
 		}
 	}
 	Levels_free(levels);
-}
-
-IoMessage *IoMessage_opShuffle(IoMessage *self, IoObject *locals, IoMessage *m)
-{
-	IoMessage_opShuffle_(self);
 	return self;
 }
 

@@ -1,16 +1,11 @@
-=======================
-Io (GNUstep) 0.1 README
-=======================
+=========================
+Io (GNUstep) 0.1.1 README
+=========================
 
 Io (GNUstep) is a module which provides Io language support in a convenient 
-way for GNUstep and StepTalk developers or users (linking Objective-C bridge 
-by default). 
+way for GNUstep developers or users (linking Objective-C bridge by default). 
 The module is automatically built in various ready to use solutions:
     * ioobjc (tool you can run in your shell to use Io interactive environment)
-    * IoBundle (bundle you can link directly to write Objective-C applications 
-      in Io) (Not yet).
-    * IoLanguage (StepTalk bundle to script GNUstep applications or interact 
-      with them)
 
 This module is released under BSD license (see COPYING document).
 Original licence of Io language is BSD License too.
@@ -19,7 +14,7 @@ Maintainer: Yen-Ju Chen <yjchenx at gmail dot com>
 Author: Yen-Ju Chen, Steve Dekorte
 
 To know more about Io in Etoile: 
-<http://www.dromasoftware.com/etoile/mediawiki/index.php?title=Io>
+<http://www.etoile-project.org/mediawiki/index.php?title=Io>
 
 
 Build and Install
@@ -38,26 +33,33 @@ since no Xcode project is provided (or will be).
 Developer notes
 ===============
 
-Dependency
----------
-
-   * StepTalk (Optional): GNUstep languages agnostic scripting framework
-
+Directories structure
+---------------------
+Due to the reorganization of Io since August, 2006, 
+the directories are mapped as:
+libs/basekit -> IoVM/base
+libs/coroutine -> IoVM/base
+libs/garbagecollector -> IoVM/base
+libs/iovm -> IoVM
+libs/skipdb -> IoVM/SkipDB
+addons/Vector -> Vector
+addons/Vector/io/Vector.io -> Vector/IoVectorInit.c (manually)
+addons/ObjcBridge -> ObjcBridge
+tools/source/main.c -> main.m (manually)
 
 Automatically generated files
 -----------------------------
 
 These are automatically generated files from Io language:
 
-    * IoVM/IoVMCode.c
-    * AAVector/IoAAVectorInit.c
-    * IoBindingsInit.c (Move into IoLanguageEngine)
+    * IoVM/IoVMInit.c
+    * Vector/IoVectorInit.c (Need to manually generated)
 
 They are included directly into Io (GNUstep) project, then not in source form 
 which would have to be regenerated with each compilation. The source version
-for these files can be found in vm/_ioCode in official Io releases. The tools
-necessary to process the source and ouput 'IoVMCode.c' are are located in 
-vm/_tools.
+for these files can be found in io/ in official Io releases. The tools
+necessary to process the source and ouput 'IoVMInit.c' are are located in 
+libs/iovm/tools.
 
 
 Contribute 

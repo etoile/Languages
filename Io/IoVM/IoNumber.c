@@ -105,7 +105,8 @@ IoNumber *IoNumber_proto(void *state)
 	{"min", IoNumber_min},
 	{"%", IoNumber_mod},
 	{"mod", IoNumber_mod},
-	{"^", IoNumber_pow},
+	//{"^", IoNumber_pow},
+	{"**", IoNumber_pow},
 	{"pow", IoNumber_pow},
 	{"roundDown", IoNumber_roundDown},
 	{"roundUp", IoNumber_roundUp},
@@ -667,7 +668,10 @@ IoObject *IoNumber_pow(IoNumber *self, IoObject *locals, IoMessage *m)
     docSlot("pow(aNumber)", 
             "Returns the value of the receiver to the aNumber power.")
     */
-    
+    /*#io
+    docSlot("**(aNumber)", 
+            "Same as pow(aNumber).")
+    */    
     IoNumber *other = IoMessage_locals_numberArgAt_(m, locals, 0);
     return IONUMBER(pow(NIVAR(self), NIVAR(other)));
 }
@@ -1197,7 +1201,7 @@ IoObject *IoNumber_doubleMin(IoNumber *self, IoObject *locals, IoMessage *m)
 IoObject *IoNumber_repeat(IoNumber *self, IoObject *locals, IoMessage *m)
 {
     /*#io
-    docSlot("repeatTimes(expression)", 
+    docSlot("repeatTimes(optionalIndex, expression)", 
             "Evaluates message a number of times that corresponds to the receivers 
 integer value. This is significantly  faster than a for() or while() loop.")
     */
@@ -1205,9 +1209,21 @@ integer value. This is significantly  faster than a for() or while() loop.")
     IoMessage_assertArgCount_receiver_(m, 1, self);
     {
         IoState *state = IOSTATE;
-        IoMessage *doMessage = IoMessage_rawArgAt_(m, 0);
+	IoSymbol *indexSlotName;
+        IoMessage *doMessage;
         int i, max = CNUMBER(self);
         IoObject *result = IONIL(self);
+
+        if(IoMessage_argCount(m) > 1)
+        {
+            indexSlotName = IoMessage_name(IoMessage_rawArgAt_(m, 0));
+            doMessage = IoMessage_rawArgAt_(m, 1);
+        }
+        else
+        {
+            indexSlotName = 0;
+            doMessage = IoMessage_rawArgAt_(m, 0);
+        }
         
         IoState_pushRetainPool(state);
         
@@ -1221,6 +1237,10 @@ integer value. This is significantly  faster than a for() or while() loop.")
              */
             
             IoState_clearTopPool(state);
+            if (indexSlotName)
+            {
+                IoObject_setSlot_to_(locals, indexSlotName, IONUMBER(i));
+            }
             result = IoMessage_locals_performOn_(doMessage, locals, locals);
             
             if (IoState_handleStatus(IOSTATE)) 

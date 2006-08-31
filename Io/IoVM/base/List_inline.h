@@ -113,7 +113,7 @@ IOINLINE ListCursor List_cursor(List *self)
 
 IOINLINE void *ListCursor_next(ListCursor *self)
 {
-	if (self->index == List_size(self->list))
+	if (self->index == (size_t)List_size(self->list))
 	{
 		return 0x0;
 	}

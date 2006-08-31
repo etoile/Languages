@@ -79,8 +79,7 @@ IoList *IoList_proto(void *state)
 	{"prepend",     IoList_prepend},    
 	{"push",        IoList_append},    
 		
-	{"addIfAbsent",    IoList_appendIfAbsent}, // old 
-	{"appendIfAbsent", IoList_appendIfAbsent}, // old 
+	{"appendIfAbsent", IoList_appendIfAbsent},
 		
 	{"remove",      IoList_remove},      
 	{"pop",         IoList_pop},         
@@ -376,7 +375,7 @@ If optionalSize is provided, that number of the first items in the list are retu
 	{
 		int end = IoMessage_locals_intArgAt_(m, locals, 0);
 		
-		if (end < 0)
+		if (end <= 0)
 		{
 			return IoList_new(IOSTATE);
 		}
@@ -417,6 +416,35 @@ If optionalSize is provided, that number of the last items in the list are retur
 	}
 }
 
+void IoList_sliceArguments(IoObject *self, IoObject *locals, IoMessage *m, int *start, int *end)
+{
+        int size = IoList_rawSize(self);
+	
+	*start = IoMessage_locals_intArgAt_(m, locals, 0);
+        if (*start < 0)
+        {
+            *start += size;
+            if (*start < 0)
+            {
+                *start = 0;
+            }
+        }
+	
+	if (IoMessage_argCount(m) == 2)
+	{
+		*end = IoMessage_locals_intArgAt_(m, locals, 1);
+                if (*end < 0)
+                {
+                    *end += size;
+                }
+                (*end)--;
+	}
+	else
+	{
+		*end = size;
+	}
+}
+
 IoObject *IoList_slice(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
@@ -428,20 +456,18 @@ is optional. If not given, it is assumed to be the end of the string. ")
 	
 	List *list;
 	int start, end;
-	
-	start = IoMessage_locals_intArgAt_(m, locals, 0);
-	
-	if (IoMessage_argCount(m) == 2)
-	{
-		end = IoMessage_locals_intArgAt_(m, locals, 1);
-	}
-	else
-	{
-		end = IoList_rawSize(self);
-	}
-	
-	list = List_cloneSlice(LISTIVAR(self), start, end);
-	return IoList_newWithList_(IOSTATE, list);
+
+        IoList_sliceArguments(self, locals, m, &start, &end);
+
+        if (end < start)
+        {
+                return IoList_new(IOSTATE);
+        }
+        else
+        {
+            list = List_cloneSlice(LISTIVAR(self), start, end);
+            return IoList_newWithList_(IOSTATE, list);
+        }
 }
 
 IoObject *IoList_sliceInPlace(IoObject *self, IoObject *locals, IoMessage *m)
@@ -454,19 +480,17 @@ is optional. If not given, it is assumed to be the end of the string. ")
 	*/
 	
 	int start, end;
-	
-	start = IoMessage_locals_intArgAt_(m, locals, 0);
-	
-	if (IoMessage_argCount(m) == 2)
-	{
-		end = IoMessage_locals_intArgAt_(m, locals, 1);
-	}
-	else
-	{
-		end = IoList_rawSize(self);
-	}
-	
-	List_sliceInPlace(LISTIVAR(self), start, end);
+
+        IoList_sliceArguments(self, locals, m, &start, &end);
+
+        if (end < start)
+        {
+                List_removeAll(LISTIVAR(self));
+        }
+        else
+        {
+                List_sliceInPlace(LISTIVAR(self), start, end);
+        }
 	return self;
 }
 

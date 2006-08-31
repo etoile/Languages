@@ -8,6 +8,8 @@
 #define NUMBERARRAY
 
 #define NUM_TYPE float
+//#define NUM_TYPE double
+//#define NUM_TYPE_IS_DOUBLE 1
 
 typedef struct
 {
@@ -112,6 +114,9 @@ void Vector_print(Vector *self);
 
 void Vector_zero(Vector *self);
 int Vector_isZero(Vector *self);
+
+void Vector_sign(Vector *self);
+
 void Vector_rangeFill(Vector *self);
 void Vector_rangeFillWithShapeVectorDim(Vector *self, Vector *shape, size_t d);
 

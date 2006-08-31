@@ -156,6 +156,14 @@ IoFile *IoFile_newWithPath_(void *state, IoSymbol *path)
     return self;
 }
 
+
+IoFile *IoFile_newWithStream_(void *state, FILE *stream)
+{
+    IoFile *self = IoFile_new(state);
+    DATA(self)->stream = stream;
+    return self;
+}
+
 IoFile *IoFile_cloneWithPath_(IoFile *self, IoSymbol *path)
 {
     IoFile *f = IOCLONE(self);

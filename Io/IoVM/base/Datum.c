@@ -22,7 +22,7 @@ unsigned char *Datum_data(Datum *self)
 
 void *Datum_asByteArray(Datum *self)
 {
-	return ByteArray_newWithData_size_copy_(self->data, self->size, 1);
+	return ByteArray_newWithData_size_(self->data, self->size);
 }
 
 Datum Datum_FromData_length_(unsigned char *data, PID_TYPE size)

@@ -99,6 +99,7 @@ IoObject *IoVector_Min(IoVector *self, IoObject *locals, IoMessage *m);
 IoObject *IoVector_Max(IoVector *self, IoObject *locals, IoMessage *m);
 IoObject *IoVector_zero(IoVector *self, IoObject *locals, IoMessage *m);
 IoObject *IoVector_isZero(IoVector *self, IoObject *locals, IoMessage *m);
+IoObject *IoVector_sign(IoVector *self, IoObject *locals, IoMessage *m);
 
 /* --- Point --- */
 IoObject *IoVector_x(IoVector *self, IoObject *locals, IoMessage *m); 

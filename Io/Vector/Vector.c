@@ -252,7 +252,11 @@ void Vector_multiplyScalar_andAddTo_(Vector *self, NUM_TYPE v, Vector *other)
 	
 	/*
 #ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	 vSaxpyD(self->size, v, d1, d2);
+	#else
 	 vSaxpy(self->size, v, d1, d2);
+	#endif
 	 //#elif HAS_SSE
 #else
 	 */
@@ -279,8 +283,11 @@ void Vector_multiplyScalar_(Vector *self, NUM_TYPE v)
 #ifdef HAS_ALTIVEC
 	//const int inc = 1;
 	//SSCAL(&(self->size), &v, d1, &inc)  
-	
+	#ifdef NUM_TYPE_IS_DOUBLE
+	vsmulD(d1, 1, &v, d1, 1, self->size);
+	#else
 	vsmul(d1, 1, &v, d1, 1, self->size);
+	#endif
 	//#elif HAS_SSE
 #else
 	{
@@ -339,7 +346,11 @@ int Vector_addArray_(Vector *self, Vector *other)
 	}
 	
 #ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	vaddD(d1, 1, d2, 1, d1, 1, other->size);
+	#else
 	vadd(d1, 1, d2, 1, d1, 1, other->size);
+	#endif
 	//vaddfp(d1, 1, d2, 1, d1, 1, self->size);
 	//#elif HAS_SSE
 #else
@@ -367,8 +378,11 @@ int Vector_subtractArray_(Vector *self, Vector *other)
 	}
 	
 #ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	vsubD(d2, 1, d1, 1, d1, 1, other->size);
+	#else
 	vsub(d2, 1, d1, 1, d1, 1, other->size);
-	
+	#endif
 	//#elif HAS_SSE
 #else
 	{
@@ -395,7 +409,11 @@ int Vector_multiplyArray_(Vector *self, Vector *other)
 	}
 	
 #ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	vmulD(d1, 1, d2, 1, d1, 1, other->size);
+	#else
 	vmul(d1, 1, d2, 1, d1, 1, other->size);
+	#endif
 	//#elif HAS_SSE
 #else
 	{
@@ -453,7 +471,11 @@ NUM_TYPE Vector_dotProduct_(Vector *self, Vector *other)
 	}
 	
 #ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	dotprD(d1, 1, d2, 1, &result, self->size);
+	#else
 	dotpr(d1, 1, d2, 1, &result, self->size);
+	#endif
 	//#elif HAS_SSE
 #else
 	{
@@ -489,7 +511,11 @@ void Vector_square(Vector *self)
 	NUM_TYPE *d1 = self->values;
 	
 #ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	vsqD(d1, 1, d1, 1, self->size);
+	#else
 	vsq(d1, 1, d1, 1, self->size);
+	#endif
 	//#elif HAS_SSE
 #else
 	{
@@ -1080,6 +1106,26 @@ int Vector_isZero(Vector *self)
 	return 1;
 }
 
+void Vector_sign(Vector *self)
+{
+	NUM_TYPE *d1 = self->values;
+	size_t n = self->size;
+	
+	while (n)
+	{
+		if (*d1 < 0)
+		{
+			*d1 = -1;
+		} 
+		else if(*d1 > 0)
+		{
+			*d1 = 1;
+		}; 
+		d1 ++; 
+		n --;
+	}
+}
+
 void Vector_rangeFill(Vector *self)
 {
 	NUM_TYPE *d1 = self->values;
@@ -1105,7 +1151,7 @@ void Vector_rangeFillWithShapeVectorDim(Vector *self, Vector *shape, size_t d)
 		size_t i, max = self->size;
 		NUM_TYPE *s = shape->values;
 		size_t *c = calloc(1, sizeof(size_t) * (shape->size + 1)); 
-		size_t dim = 0;
+		//size_t dim = 0;
 		size_t j;
 
 		if (d > shape->size - 1) return;

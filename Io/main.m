@@ -4,14 +4,14 @@
 /* Taken from IoVM/main.c */
 #include "IoVM/IoState.h"
 
-void IoAAVectorInit(IoState *self, IoObject *context);
-void IoObjcBridgeInit(IoState *self, IoObject *context);
+void IoVectorInit(IoObject *context);
+void IoObjcBridgeInit(IoObject *context);
 
 /* Taken from IoBindingsInit.c generated from io language */
 void IoBindingsInit(IoState *self, IoObject *context)
 {
-        IoAAVectorInit(self, context);
-        IoObjcBridgeInit(self, context);
+        IoVectorInit(context);
+        IoObjcBridgeInit(context);
 }
 
 int main(int argc, const char *argv[])

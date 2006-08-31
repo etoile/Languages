@@ -1,12 +1,6 @@
-#ifdef GNUSTEP
-#include <AppKit/AppKit.h>
-#else
-#import <Cocoa/Cocoa.h>
-#endif
-
+#include "Io_NSApplicationMain.h"
 #include "IoState.h"
 #include "IoObject.h"
-
 
 IoObject *Io_NSApplicationMainRun(IoState *state)
 {

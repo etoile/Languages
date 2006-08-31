@@ -15,7 +15,7 @@ typedef IoObject IoStore;
 #include <stdarg.h>
 #include "Hash.h"
 #include "BStream.h"
-#include "SkipDB/SkipDBM.h"
+#include "SkipDBM.h"
 #include "IoContext.h"
 
 #ifdef __cplusplus

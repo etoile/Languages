@@ -35,7 +35,7 @@
 
 #include <stdlib.h>
 
-void IoVMCodeInit(IoState *self, IoObject *context);
+void IoVMCodeInit(IoObject *context);
 
 void IoState_setupQuickAccessSymbols(IoState *self)
 {
@@ -48,6 +48,8 @@ void IoState_setupQuickAccessSymbols(IoState *self)
 	self->updateSlotSymbol   = IoState_retain_(self, SIOSYMBOL("updateSlot"));
 	self->callSymbol         = IoState_retain_(self, SIOSYMBOL("call"));  
 	self->typeSymbol         = IoState_retain_(self, SIOSYMBOL("type"));  
+	self->opShuffleSymbol         = IoState_retain_(self, SIOSYMBOL("opShuffle"));  
+        self->noShufflingSymbol       = IoState_retain_(self, SIOSYMBOL("__noShuffling__"));
 }
 
 IoState *IoState_new(void)
@@ -164,6 +166,7 @@ IoState *IoState_new(void)
 		self->ioNil = IOCLONE(objectProto);
 		IoObject_setSlot_to_(vm, SIOSYMBOL("Nil"), self->ioNil);
 		IoObject_setSlot_to_(vm, SIOSYMBOL("nil"), self->ioNil);
+		IoObject_setSlot_to_(vm, self->noShufflingSymbol, self->ioNil);
 		IoObject_setSlot_to_(vm, SIOSYMBOL("Message"), IoMessage_proto(self));
 		IoObject_setSlot_to_(vm, SIOSYMBOL("Call"),  IoCall_proto(self));
 		
@@ -204,6 +207,9 @@ IoState *IoState_new(void)
 		
 		self->mainMessage = IoMessage_newWithName_(self, SIOSYMBOL("main"));
 		IoState_retain_(self, self->mainMessage);
+
+                self->opShuffleMessage = IoMessage_newWithName_(self, self->opShuffleSymbol);
+                IoState_retain_(self, self->opShuffleMessage);
 		
 		{
 			self->debugger = IoState_retain_(self, IoDebugger_proto(self));
@@ -243,7 +249,7 @@ IoState *IoState_new(void)
 		IoState_clearRetainStack(self);
 		IoState_popCollectorPause(self);
 		
-		IoVMCodeInit(self, vm);
+		IoVMCodeInit(vm);
 		IoState_clearRetainStack(self);
 	}
 	

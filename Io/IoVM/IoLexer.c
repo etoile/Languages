@@ -41,8 +41,31 @@ void IoLexer_free(IoLexer *self)
 	Stack_free(self->tokenStack);
 	List_free(self->tokenStream);
 	List_free(self->charLineIndex);
+	if(self->errorDescription) free(self->errorDescription);
 	free(self);
 }
+
+char *IoLexer_errorDescription(IoLexer *self)
+{
+	IoToken *et = IoLexer_errorToken(self);
+
+	if (!self->errorDescription)
+	{
+		self->errorDescription = calloc(1, 1024);
+	}
+	
+	if (et)
+	{
+		sprintf(self->errorDescription, 
+			"\"%s\" on line %i character %i", 
+			et->error, 
+			IoToken_lineNumber(et), 
+			IoToken_charNumber(et));
+	}
+	
+	return self->errorDescription;
+}
+
 
 void IoLexer_buildLineIndex(IoLexer *self)
 {
@@ -586,6 +609,7 @@ int IoLexer_readMessage(IoLexer *self)
 			
 			if (!IoLexer_readTokenChars_type_(self, ")]}", CLOSEPAREN_TOKEN)) 
 			{
+				/*
 				char c = *IoLexer_current(self);
 				
 				if (strchr("([{", c))
@@ -596,6 +620,19 @@ int IoLexer_readMessage(IoLexer *self)
 				{ 
 					IoLexer_readMessage_error(self, "missing closing group character for argument list"); 
 				}
+				*/
+				if (groupChar == '(')
+				{
+					IoLexer_readMessage_error(self, "unmatched ()s"); 
+				}
+				else if (groupChar == '[')
+				{
+					IoLexer_readMessage_error(self, "unmatched []s"); 
+				}
+				else if (groupChar == '{')
+				{
+					IoLexer_readMessage_error(self, "unmatched {}s"); 
+				}				
 				//printf("Token %p error: %s - %s\n", t, t->error, IoToken_error(t));
 				return 0;
 			}

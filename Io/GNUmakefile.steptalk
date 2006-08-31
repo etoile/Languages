@@ -6,7 +6,7 @@ BUNDLE_NAME = IoLanguage
 
 IoLanguage_SUBPROJECTS += \
 	IoVM \
-	AAVector \
+	Vector \
 	ObjcBridge
 
 BUNDLE_EXTENSION  := .stlanguage

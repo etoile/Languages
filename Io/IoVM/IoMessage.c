@@ -59,6 +59,15 @@ void IoMessage_readFromStore_stream_(IoMessage *self, IoStore *store, BStream *s
 	IoMessage_copy_(self, m);
 }
 
+IoObject *IoMessage_activate(IoMessage *self, IoObject *target, IoObject *locals, IoMessage *m, IoObject *slotContext)
+{
+	//printf("activating self %s\n", CSTRING(IoMessage_name(self)));
+	//printf("activating m %s\n", CSTRING(IoMessage_name(m)));
+
+	return IoMessage_locals_performOn_(self, locals, locals);
+	//return IoObject_perform(locals, locals, self);
+}
+
 IoTag *IoMessage_tag(void *state)
 {
 	IoTag *tag = IoTag_newWithName_("Message");
@@ -68,6 +77,7 @@ IoTag *IoMessage_tag(void *state)
 	tag->markFunc  = (TagMarkFunc *)IoMessage_mark;
 	tag->writeToStoreOnStreamFunc  = (TagWriteToStoreOnStreamFunc *)IoMessage_writeToStore_stream_;
 	tag->readFromStoreOnStreamFunc = (TagReadFromStoreOnStreamFunc *)IoMessage_readFromStore_stream_;
+	tag->activateFunc = (TagActivateFunc *)IoMessage_activate;
 	return tag;
 }
 
@@ -119,6 +129,7 @@ IoMessage *IoMessage_proto(void *state)
 	{"asMessageWithEvaluatedArgs", IoMessage_asMessageWithEvaluatedArgs},
 
 	{"opShuffle", IoMessage_opShuffle},
+	{"opShuffleC", IoMessage_opShuffle},
 		
 	{NULL, NULL},
 	};
@@ -506,7 +517,6 @@ IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObjec
 	{
 		IoMessage *inner = outer;
 		
-		
 		for (inner = outer; inner; inner = DATA(inner)->attachedMessage)
 		{
 			/*
@@ -539,7 +549,6 @@ IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObjec
 				IoState_pushRetainPool(state); 
 				result = target->tag->performFunc(target, locals, inner);
 				IoState_popRetainPoolExceptFor_(state, result); 
-				
 				
 #ifdef IO_DEBUG_STACK
 				IoState_stackRetain_(state, result); 

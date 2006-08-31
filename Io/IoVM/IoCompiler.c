@@ -49,10 +49,9 @@ IoObject *IoObject_tokensForString(IoObject *self, IoObject *locals, IoMessage *
 	
 	if (IoLexer_errorToken(lexer))
 	{ 
-		IoSymbol *errorString = IOSYMBOL(IoLexer_errorToken(lexer)->error);
-		
+		IoSymbol *errorString  = IOSYMBOL(IoLexer_errorDescription(lexer));
 		IoLexer_free(lexer);
-		IoState_error_(IOSTATE, 0x0, "Compiler tokensForString %s", CSTRING(errorString));
+		IoState_error_(IOSTATE, 0x0, "compile error: %s", CSTRING(errorString));
 	}
 	else
 	{

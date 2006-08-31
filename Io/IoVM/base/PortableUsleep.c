@@ -1,3 +1,5 @@
+int PortableUsleep_justHereToAvoidRanlibWarning(void) { return 0; }
+
 #ifdef WIN32
 #include <windows.h>
 

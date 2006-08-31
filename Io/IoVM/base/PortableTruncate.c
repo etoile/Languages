@@ -1,6 +1,9 @@
 
 #include "PortableTruncate.h"
 
+
+int PortableTruncate_justHereToAvoidRanlibWarning(void) { return 0; }
+
 #ifdef _WIN32
 
 #include <stdio.h>

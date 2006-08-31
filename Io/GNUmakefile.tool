@@ -1,5 +1,5 @@
 ifeq ($(FOUNDATION_LIB), apple)
-  # For AAVector
+  # For Vector
   ADDITIONAL_LDFLAGS += -framework Accelerate -faltivec
   # Only for Darwin 
   ADDITIONAL_CFLAGS += -mdynamic-no-pic -falign-loops=16
@@ -13,7 +13,7 @@ TOOL_NAME = ioobjc
 
 ioobjc_SUBPROJECTS += \
 	IoVM \
-	AAVector \
+	Vector \
 	ObjcBridge
 
 ioobjc_OBJC_FILES = \

@@ -8,8 +8,8 @@
 #include "IoSeq.h"
 #include "IoNumber.h"
 
-#define MIN_CACHED_NUMBER -1
-#define MAX_CACHED_NUMBER 100
+#define MIN_CACHED_NUMBER -10
+#define MAX_CACHED_NUMBER 256
 
 void IoState_setupCachedNumbers(IoState *self)
 {
@@ -17,7 +17,7 @@ void IoState_setupCachedNumbers(IoState *self)
 	
 	self->cachedNumbers = List_new();
 	
-	for (i = MIN_CACHED_NUMBER; i < MAX_CACHED_NUMBER+1; i ++)
+	for (i = MIN_CACHED_NUMBER; i < MAX_CACHED_NUMBER + 1; i ++)
 	{
 		IoNumber *number = IoNumber_newWithDouble_(self, i);
 		List_append_(self->cachedNumbers, number);

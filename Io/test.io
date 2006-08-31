@@ -2,7 +2,7 @@
    docCopyright("Yen-Ju Chen", 2006)
    docLicense("BSD revised") */
 
-ObjcBridge autoLookupClassNamesOn // useless
+ObjcBridge autoLookupClassNamesOn
 
 /* Io */
 "Test" println
@@ -26,8 +26,8 @@ string println
    Therefore, it is not a NSString anymore */
 
 /* Application */
-NSApp := ObjcBridge classNamed("NSApplication") sharedApplication
-
+/* Does not work now
+application := ObjcBridge classNamed("NSApplication") sharedApplication
 frame := Box clone set( vector(200, 500), vector(420, 150) )
 
 Window := ObjcBridge classNamed("NSWindow")
@@ -45,4 +45,6 @@ win contentView addSubview:(quitButton)
 win display
 win orderFrontRegardless
 
-NSApp run
+application run
+*/
+

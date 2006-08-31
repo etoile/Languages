@@ -150,6 +150,7 @@ unsigned char DynLib_hasError(DynLib *self)
 void DynLib_open(DynLib *self)
 {  
     self->handle = dlopen(self->path, RTLD_NOW | RTLD_GLOBAL); /* RTLD_LAZY); */
+    //self->handle = dlopen(self->path, RTLD_NOW | RTLD_LAZY); 
     DynLib_updateError(self);
     
     if (DynLib_hasError(self)) 
@@ -169,6 +170,7 @@ void DynLib_open(DynLib *self)
 		
 		if (self->initArg) 
 		{ 
+			//printf("DynLib: opening with 1 arg %p\n", self->initArg);
 			(*(DynLibOneArgFunction *)f)(self->initArg); 
 		} 
 		else 

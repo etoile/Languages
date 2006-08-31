@@ -7,7 +7,6 @@
 #include "Common.h"
 #include "PortableUContext.h"
 
-
 #if defined(__SYMBIAN32__)
 	#define CORO_STACK_SIZE     8192
 	#define CORO_STACK_SIZE_MIN 1024

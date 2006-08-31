@@ -260,7 +260,7 @@ unsigned int marshal(IoDynLib *self, IoObject *arg)
 	} 
 	else 
 	{
-		return (unsigned int)IONIL(self);
+		n =  (unsigned int)arg; //IONIL(self);
 	}
 	
 	return n;
@@ -350,9 +350,11 @@ IoDynLib *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m)
 		  IoMessage_argCount(m) - 1);
 #endif
 	
+	IoState_pushCollectorPause(IOSTATE);
+
 	switch(IoMessage_argCount(m) - 1) {
 		case 0:
-			rc = ((int (*)())f)();
+			rc = ((int (*)(void))f)();
 			break;
 		case 1:
 			rc = ((int (*)(int))f)(params[0]);
@@ -379,6 +381,9 @@ IoDynLib *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m)
 			rc = ((int (*)(int,int,int,int,int,int,int,int))f)(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7]);
 			break;
 	}
+	
+	IoState_popCollectorPause(IOSTATE);
+
 	
 	for (n = 0; n < IoMessage_argCount(m) - 1; n ++) 
 	{

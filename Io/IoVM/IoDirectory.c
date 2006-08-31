@@ -510,7 +510,7 @@ ByteArray *IoDirectory_CurrentWorkingDirectoryAsByteArray(void)
     }
     else
     {
-        ByteArray *ba =  ByteArray_newWithData_size_copy_((unsigned char *)buf, strlen(buf), 1);
+        ByteArray *ba =  ByteArray_newWithData_size_((unsigned char *)buf, strlen(buf));
 	//free(buf);
         /*free(buf); OSX get cwd man page says we should free this, but MallocDebug doesn't like it */
         return ba;

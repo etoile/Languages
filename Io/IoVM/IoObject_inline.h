@@ -231,8 +231,11 @@ IOINLINE IoObject *IoObject_activate(IoObject *self,
                                      IoMessage *m,
                                      IoObject *slotContext)
 {
-	TagActivateFunc *act = self->tag->activateFunc;
-	return act ? (IoObject *)((*act)(self, target, locals, m, slotContext)) : self;
+	//TagActivateFunc *act = self->tag->activateFunc;
+	//return act ? (IoObject *)((*act)(self, target, locals, m, slotContext)) : self;
+	//printf("activate %s %i\n", self->tag->name, self->isActivatable);
+
+	return self->isActivatable ? (IoObject *)((self->tag->activateFunc)(self, target, locals, m, slotContext)) : self;
 }
 
 IOINLINE IoObject *IoObject_forward(IoObject *self, IoObject *locals, IoMessage *m)
@@ -241,7 +244,7 @@ IOINLINE IoObject *IoObject_forward(IoObject *self, IoObject *locals, IoMessage 
 	IoObject *context;
 	IoObject *forwardSlot = IoObject_rawGetSlot_context_(self, state->forwardSymbol, &context);
 	
-	if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
+	if (Coro_stackSpaceAlmostGone((Coro*)IoCoroutine_cid(state->currentCoroutine))) 
 	{ 
 
 		IoState_error_(IOSTATE, m, "stack overflow in forward while sending '%s' message to a '%s' object", 

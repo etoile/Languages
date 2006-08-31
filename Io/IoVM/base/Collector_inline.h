@@ -30,22 +30,22 @@ IOINLINE int Collector_markerIsBlack_(Collector *self, CollectorMarker *m)
 
 IOINLINE void Collector_makeWhite_(Collector *self, void *v)
 { 
-	CollectorMarker_removeAndInsertAfter_(v, self->whites);
+	CollectorMarker_removeAndInsertAfter_((CollectorMarker*)v, self->whites);
 }
 
 IOINLINE void Collector_makeGray_(Collector *self, void *v)
 {
-	CollectorMarker_removeAndInsertAfter_(v, self->grays);
+	CollectorMarker_removeAndInsertAfter_((CollectorMarker*)v, self->grays);
 }
 
 IOINLINE void Collector_makeBlack_(Collector *self, void *v)
 { 
-	CollectorMarker_removeAndInsertAfter_(v, self->blacks);
+	CollectorMarker_removeAndInsertAfter_((CollectorMarker*)v, self->blacks);
 }
 
 IOINLINE void Collector_makeGrayIfWhite_(Collector *self, void *v)
 {
-	if (Collector_markerIsWhite_(self, v)) 
+	if (Collector_markerIsWhite_(self, (CollectorMarker*)v)) 
 	{
 		Collector_makeGray_(self, v);
 	}
@@ -60,7 +60,7 @@ IOINLINE void Collector_makeGrayIfWhite_(Collector *self, void *v)
  
 IOINLINE void *Collector_value_addingRefTo_(Collector *self, void *v, void *ref)
 {	 
-	if (Collector_markerIsBlack_(self, v) && Collector_markerIsWhite_(self, ref))
+	if (Collector_markerIsBlack_(self, (CollectorMarker*)v) && Collector_markerIsWhite_(self, (CollectorMarker*)ref))
 	{
 		Collector_makeGray_(self, ref);
 	}

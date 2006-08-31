@@ -10,16 +10,12 @@ docLicense("BSD revised")
 #include "IoState.h"
 #include "IoObject.h"
 #include "IoObjcBridge.h"
-#ifdef GNUSTEP
-  #include <Foundation/Foundation.h>
-#else
-  #import <Foundation/Foundation.h>
-#endif
+#include "Runtime.h"
 
 @interface Objc2Io : NSObject // NSProxy
 {
-  IoObjcBridge *bridge;
-  IoObject *ioValue;
+	IoObjcBridge *bridge;
+	IoObject *ioValue;
 }
 
 - (void)setIoObject:(IoObject *)v;
@@ -28,8 +24,9 @@ docLicense("BSD revised")
 
 - (void)mark;
 
-//- (BOOL)respondsToSelector:(SEL)aSelector;
-//- (void)forwardInvocation:(NSInvocation *)anInvocation;
+- (BOOL)respondsToSelector:(SEL)selector;
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)selector;
+- (void)forwardInvocation:(NSInvocation *)invocation;
 
 @end
 

@@ -42,7 +42,7 @@ typedef struct
 } ByteArray ;
 
 ByteArray *ByteArray_new(void);
-ByteArray *ByteArray_newWithData_size_copy_(unsigned char *buf, size_t size, char copy);
+ByteArray *ByteArray_newWithData_size_(const unsigned char *buf, size_t size);
 ByteArray *ByteArray_newWithCString_size_(const char *s, int size);
 ByteArray *ByteArray_newWithCString_(const char *s);
 ByteArray *ByteArray_newWithSize_(int size);
