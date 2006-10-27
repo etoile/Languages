@@ -35,6 +35,7 @@ ioobjc_OBJC_FILES = \
 	main.m
 
 ifeq ($(FOUNDATION_LIB), apple)
+  ioobjc_OBJC_LIBS += -framework AppKit
 else
   # in order to access gui classes from tool.
   ioobjc_OBJC_LIBS += -lgnustep-gui

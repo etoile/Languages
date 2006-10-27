@@ -22,6 +22,7 @@ ObjcBridge_OBJC_FILES = \
 	ObjcSubclass.m \
 	IoObjcBridge.m \
 	IoObjcBridgeInit.m \
+	Io_NSApplicationMain.m \
 	Objc2Io.m
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
