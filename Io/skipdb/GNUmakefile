@@ -3,11 +3,11 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # Only for Darwin
 #ADDITIONAL_CFLAGS += -mdynamic-no-pic -falign-loops=16 -DSANE_POPEN
 ADDITIONAL_LDFLAGS +=
-ADDITIONAL_INCLUDE_DIRS += -I../base
+ADDITIONAL_INCLUDE_DIRS += -I../basekit
 
-SUBPROJECT_NAME = IoVM_SkipDB
+SUBPROJECT_NAME = skipdb
 
-IoVM_SkipDB_C_FILES = \
+skipdb_C_FILES = \
 	JFile.c \
 	SkipDBCursor.c \
 	SkipDBRecord.c \
@@ -19,3 +19,4 @@ IoVM_SkipDB_C_FILES = \
 	UDBRecord.c
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
+

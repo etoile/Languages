@@ -3,7 +3,14 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # Only for Darwin
 #ADDITIONAL_CFLAGS += -mdynamic-no-pic -falign-loops=16 -DSANE_POPEN
 ADDITIONAL_LDFLAGS +=
-ADDITIONAL_INCLUDE_DIRS += -I../IoVM -I../IoVM/base -I../IoVM/SkipDB -I../Vector
+ADDITIONAL_INCLUDE_DIRS += \
+        -I../iovm \
+        -I../basekit \
+        -I../skipdb \
+        -I../garbagecollector \
+        -I../coroutine \
+	-I../Vector
+
 
 SUBPROJECT_NAME = ObjcBridge
 

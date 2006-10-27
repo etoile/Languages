@@ -9,10 +9,23 @@ endif
 # Runtime tool (aka ioVM)
 #
 
+ADDITIONAL_INCLUDE_DIRS += \
+        -Iiovm \
+        -Ibasekit \
+        -Iskipdb \
+        -Igarbagecollector \
+        -Icoroutine \
+        -IVector \
+        -IObjcBridge
+
 TOOL_NAME = ioobjc
 
 ioobjc_SUBPROJECTS += \
-	IoVM \
+	basekit \
+	coroutine \
+        garbagecollector \
+	skipdb \
+	iovm \
 	Vector \
 	ObjcBridge
 

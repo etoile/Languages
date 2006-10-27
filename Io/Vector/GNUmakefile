@@ -1,6 +1,11 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
-ADDITIONAL_INCLUDE_DIRS += -I../IoVM -I../IoVM/base -I../IoVM/SkipDB
+ADDITIONAL_INCLUDE_DIRS += \
+	-I../iovm \
+	-I../basekit \
+	-I../skipdb \
+	-I../garbagecollector \
+	-I../coroutine
 
 ifeq ($(FOUNDATION_LIB), apple)
   	# Only for Darwin

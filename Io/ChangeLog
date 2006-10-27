@@ -1,3 +1,7 @@
+2006-10-26  Yen-Ju Chen <yjchenx at gmail>
+
+    * Reorganize to match current directories of Io.
+
 2006-08-30  Yen-Ju Chen <yjchenx at gmail>
 
     * Update to Io darcs 20060830 as 0.1.1 release.

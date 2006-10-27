@@ -2,7 +2,7 @@
    All Rights Reserved. See COPYING.*/
 
 /* Taken from IoVM/main.c */
-#include "IoVM/IoState.h"
+#include "IoState.h"
 
 void IoVectorInit(IoObject *context);
 void IoObjcBridgeInit(IoObject *context);
