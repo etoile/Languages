@@ -3,15 +3,15 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # Only for Darwin
 #ADDITIONAL_CFLAGS += -mdynamic-no-pic -falign-loops=16
 ADDITIONAL_LDFLAGS +=
-ADDITIONAL_INCLUDE_DIRS += -Ibase -ISkipDB
+ADDITIONAL_INCLUDE_DIRS += \
+	-I../basekit \
+	-I../coroutine \
+	-I../skipdb \
+	-I../garbagecollector
 
-SUBPROJECT_NAME = IoVM
+SUBPROJECT_NAME = iovm
 
-IoVM_SUBPROJECTS = \
-	base \
-	SkipDB
-
-IoVM_C_FILES = \
+iovm_C_FILES = \
 	IoBlock.c \
 	IoMap.c \
 	IoState_coros.c \
@@ -57,4 +57,4 @@ IoVM_C_FILES = \
 	IoState_callbacks.c 
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
-include $(GNUSTEP_MAKEFILES)/aggregate.make
+
