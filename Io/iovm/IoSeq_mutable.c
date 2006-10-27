@@ -79,6 +79,8 @@ void IoSeq_addMutableMethods(IoSeq *self)
 	{"removeSuffix", IoSeq_removeSuffix},
 	{"capitalize", IoSeq_capitalize},
 	{"appendPathSeq", IoSeq_appendPathSeq},
+	
+	{"interpolateInPlace", IoSeq_interpolateInPlace},
 		
 	{NULL, NULL},
 	};
@@ -745,5 +747,59 @@ and only one path separator between the two. Returns self.")
 
 	IO_ASSERT_NOT_SYMBOL(self);
 	ByteArray_appendPathCString_(BIVAR(self), (char *)BIVAR(component)->bytes);
+	return self;
+}
+
+IoObject *IoSeq_interpolateInPlace(IoSeq *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("interpolateInPlace(ctx)",
+		"Replaces all #{<code>} with <code> evaluated in the context ctx.  "
+		"If ctx not given the current context is used.  Returns self.")
+	*/
+	
+	IoObject *context;
+	ByteArray *string;
+	ByteArray *code;
+	IoObject *evaluatedCode;
+	ByteArray *evaluatedCodeAsString;
+	const char *label;
+	int from, to;
+	
+	IO_ASSERT_NOT_SYMBOL(self);
+	
+	context = IoMessage_locals_valueArgAt_(m, locals, 0);
+	string = BIVAR(self);
+	label = "IoSeq_interpolateInPlace()";
+	from = 0;
+
+	context = (context == IONIL(self)) ? locals : context;
+
+	for(;;)
+	{
+		from = ByteArray_findCString_from_(string, "#{", from);
+		if (from == -1)
+			break;
+		
+		to = ByteArray_findCString_from_(string, "}", from);
+		if (to == -1)
+			break;
+		
+		code = ByteArray_newWithBytesFrom_to_(string, from+2, to);
+		if (ByteArray_size(code) == 0)
+		{
+			// we don't want "#{}" to interpolate into "nil"
+			evaluatedCodeAsString = BIVAR(IoState_doCString_(IOSTATE, "Sequence clone"));
+		}
+		else
+		{
+			evaluatedCode = IoState_on_doCString_withLabel_(IOSTATE, context, (char *)ByteArray_bytes(code), label);
+			evaluatedCodeAsString = BIVAR(IoState_on_doCString_withLabel_(IOSTATE, evaluatedCode, "asString", label));
+		}
+		ByteArray_free(code); code = NULL;
+		
+		ByteArray_replaceFrom_size_with_(string, from, to-from+1, evaluatedCodeAsString);
+	}
+	
 	return self;
 }

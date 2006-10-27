@@ -2,13 +2,13 @@
 #include "SkipDBRecord.h"
 #include "SkipDB.h"
 
-inline void SkipDBPointer_setRecord_(SkipDBPointer *self, SkipDBRecord *r)
+static void SkipDBPointer_setRecord_(SkipDBPointer *self, SkipDBRecord *r)
 {
 	self->record = r;
 }
 
 
-inline PID_TYPE SkipDBPointer_pid(SkipDBPointer *self)
+static PID_TYPE SkipDBPointer_pid(SkipDBPointer *self)
 {
 	return self->pid;
 }
@@ -292,7 +292,7 @@ void SkipDBRecord_level_(SkipDBRecord *self, int level)
 	}
 }
 
-inline void SkipDBRecord_checkLevel_(SkipDBRecord *self, int level)
+static void SkipDBRecord_checkLevel_(SkipDBRecord *self, int level)
 {
      if (level > self->level - 1) 
      { 
@@ -301,7 +301,7 @@ inline void SkipDBRecord_checkLevel_(SkipDBRecord *self, int level)
      }
 }
 
-inline SkipDBPointer *SkipDBRecord_pointerAtLevel_(SkipDBRecord *self, int level)
+static SkipDBPointer *SkipDBRecord_pointerAtLevel_(SkipDBRecord *self, int level)
 {
 	SkipDBRecord_checkLevel_(self, level);
 	return self->pointers + level;
@@ -372,7 +372,7 @@ SkipDBRecord *SkipDBRecord_cachedRecordAtLevel_(SkipDBRecord *self, int level)
 	return self->pointers[level].record;
 }
 
-inline SkipDBRecord *SkipDBRecord_recordAtLevel_(SkipDBRecord *self, int level)
+SkipDBRecord *SkipDBRecord_recordAtLevel_(SkipDBRecord *self, int level)
 {
 	SkipDBRecord_checkLevel_(self, level);
 	
@@ -471,7 +471,7 @@ void SkipDBRecord_save(SkipDBRecord *self)
 
 // search ------------------------------------ 
 
-inline int SkipDBRecord_compareKey_(SkipDBRecord *self, Datum key)
+static int SkipDBRecord_compareKey_(SkipDBRecord *self, Datum key)
 {
 	return ByteArray_compareDatum_(self->key, key);
 }

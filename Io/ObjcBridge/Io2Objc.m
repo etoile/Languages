@@ -110,8 +110,6 @@ void Io2Objc_nullObjcBridge(Io2Objc *self)
 IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 {
 	/* --- get the method signature ------------ */
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	void *state = IOSTATE;
 	NSInvocation *invocation = nil;
 	NSMethodSignature *methodSignature;
 	char *methodName = IoObjcBridge_objcMethodFor_(DATA(self)->bridge, CSTRING(IoMessage_name(m)));
@@ -157,7 +155,7 @@ IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 					printf(", ");
 			}
 			if (error)
-				IoState_error_(state, m, "Io Io2Objc perform %s - argtype:'%s' argnum:%i", error, cType, n-2);
+				IoState_error_(IOSTATE, m, "Io Io2Objc perform %s - argtype:'%s' argnum:%i", error, cType, n-2);
 			[invocation setArgument:cValue atIndex:n]; /* copies the contents of value as a buffer of the appropriate size */
 		}
 	}
@@ -170,7 +168,7 @@ IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 		NS_DURING
 			[invocation invoke];
 		NS_HANDLER
-			IoState_error_(state, m, "Io Io2Objc perform while sending '%s' %s - %s", methodName, [[localException name] cString], [[localException reason] cString]);
+			IoState_error_(IOSTATE, m, "Io Io2Objc perform while sending '%s' %s - %s", methodName, [[localException name] cString], [[localException reason] cString]);
 		NS_ENDHANDLER
 	}
 
@@ -183,7 +181,7 @@ IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 		if (*cType == 'v')
 			return IONIL(self); /* void */
 
-		if (length > (unsigned int)DATA(self)->returnBufferSize)
+		if ((unsigned int)DATA(self)->returnBufferSize < length)
 		{
 			DATA(self)->returnBuffer = objc_realloc(DATA(self)->returnBuffer, length);
 			DATA(self)->returnBufferSize = length;
@@ -192,9 +190,8 @@ IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 		[invocation getReturnValue:DATA(self)->returnBuffer];
 		result = IoObjcBridge_ioValueForCValue_ofType_error_(DATA(self)->bridge, DATA(self)->returnBuffer, cType, &error);
 		if (error)
-			IoState_error_(state, m, "Io Io2Objc perform %s - return type:'%s'", error, cType);
+			IoState_error_(IOSTATE, m, "Io Io2Objc perform %s - return type:'%s'", error, cType);
 	}
-	[pool release];
 	return result;
 }
 
@@ -313,7 +310,8 @@ IoObject *Io2Objc_setSlot(Io2Objc *self, IoObject *locals, IoMessage *m)
 			}
 		}
 	}
-	return IoObject_protoSet_to_(self, locals, m);
+	IoObject_inlineSetSlot_to_(self, slotName, slotValue);
+	return slotValue;
 }
 
 IoObject *Io2Objc_updateSlot(Io2Objc *self, IoObject *locals, IoMessage *m)
@@ -329,7 +327,11 @@ IoObject *Io2Objc_updateSlot(Io2Objc *self, IoObject *locals, IoMessage *m)
 		if (argCount != expectedArgCount)
 			IoState_error_(IOSTATE, m, "Method '%s' is waiting for %i arguments, %i given\n", CSTRING(slotName), expectedArgCount, argCount);
 	}
-	return IoObject_protoUpdateSlot_to_(self, locals, m);
+	if (IoObject_rawGetSlot_(self, slotName))
+		IoObject_inlineSetSlot_to_(self, slotName, slotValue);
+	else
+		IoState_error_(IOSTATE, m, "Slot %s not found. Must define slot using := operator before updating.", CSTRING(slotName));
+	return slotValue;
 }
 
 IoObject *Io2Objc_super(Io2Objc *self, IoObject *locals, IoMessage *m)

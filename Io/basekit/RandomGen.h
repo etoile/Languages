@@ -13,6 +13,8 @@ typedef struct
 {
 	unsigned long mt[RANDOMGEN_N]; // the array for the state vector
 	int mti; // mti==N+1 means mt[N] is not initialized 
+	double y2; // guassian
+	int use_last; // guassian
 } RandomGen;
 
 RandomGen *RandomGen_new(void);
@@ -25,6 +27,8 @@ void RandomGen_chooseRandomSeed(RandomGen *self);
 double RandomGen_randomDouble(RandomGen *self);
 
 int RandomGen_randomInt(RandomGen *self);
+
+double RandomGen_gaussian(RandomGen *self, double mean, double standardDeviation);
 
 #ifdef __cplusplus
 }

@@ -265,13 +265,9 @@ IOINLINE IoObject *IoObject_perform(IoObject *self, IoObject *locals, IoMessage 
 {
 	IoObject *context;
 	IoObject *slotValue = IoObject_rawGetSlot_context_(self, IoMessage_name(m), &context);
-/*	
-	if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(IOSTATE->currentCoroutine))) 
-	{ 
-		IoState_error_(IOSTATE, m, "stack overflow while sending '%s' message to a '%s' object", 
-					CSTRING(IoMessage_name(m)), IoObject_name(self)); 
-	}
-*/
+
+	// note: coro chaining was moved to IoBlock.c
+
 	if (slotValue) 
 	{
 		return IoObject_activate(slotValue, self, locals, m, context);

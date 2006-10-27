@@ -186,6 +186,14 @@ IOINLINE void List_appendSeq_(List *self, List *otherList)
 	*/
 }
 
+IOINLINE void List_compactIfNeeded(List *self)
+{
+	if(self->memSize > 1024 && self->size * sizeof(void *) * 4 < self->memSize)
+	{
+		List_compact(self);
+	}
+}
+
 IOINLINE void List_removeIndex_(List *self, int index)
 {
 	if (index >= 0 && index < self->size)
@@ -197,6 +205,8 @@ IOINLINE void List_removeIndex_(List *self, int index)
 		}
 		
 		self->size --;
+		
+		List_compactIfNeeded(self);
 	}
 }
 
@@ -235,6 +245,8 @@ IOINLINE void List_removeIndex_toIndex_(List *self, int index1, int index2)
 		   (self->size - index2) * sizeof(void *));
 	
 	self->size -= length;
+	
+	List_compactIfNeeded(self);
 }
 
 IOINLINE void List_remove_(List *self, void *item)
@@ -375,13 +387,17 @@ IOINLINE void List_push_(List *self, void *item)
 
 IOINLINE void *List_pop(List *self)
 {
+	void *item;
+	
 	if (!self->size) 
 	{ 
 		return (void *)0x0; 
 	}
 	
 	self->size --;
-	return self->items[self->size];
+	item = self->items[self->size];
+	List_compactIfNeeded(self);
+	return item;
 }
 
 IOINLINE void *List_top(List *self)

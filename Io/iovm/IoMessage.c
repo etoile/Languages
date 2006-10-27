@@ -486,6 +486,14 @@ IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObjec
 	IoObject *result = state->ioNil;
 	//int debug = 0;
 	
+	/*
+	if (DATA(self)->cachedResult) 
+	{
+		result = DATA(self)->cachedResult;
+		goto stop;
+	}
+	*/
+	
 #ifdef IO_DEBUG_STACK
 	IoState_pushRetainPool(state); 
 	IoState_stackRetain_(state, target); 

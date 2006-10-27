@@ -243,6 +243,7 @@ RandomGen *RandomGen_new(void)
 	unsigned long t2 = clock();
 	self->mti = RANDOMGEN_N + 1;
 	init_genrand(self, t1 + t2);
+	self->y2 = 0;
 	return self;
 }
 
@@ -260,3 +261,61 @@ int RandomGen_randomInt(RandomGen *self)
 { 
 	return genrand_int32(self); 
 }
+
+#include <math.h>
+#ifndef M_PI_2 // some windows'es don't define this
+# define M_PI_2 1.57079632679489661923
+#endif
+
+double RandomGen_gaussian(RandomGen *self, double m, double s)
+{
+/*
+	double x1, x2, w, y1, y2;
+
+	do {
+		x1 = 2.0 * RandomGen_randomDouble(self) - 1.0;
+		x2 = 2.0 * RandomGen_randomDouble(self) - 1.0;
+		w = x1 * x1 + x2 * x2;
+	} while ( w >= 1.0 );
+
+	w = sqrt( (-2.0 * log( w ) ) / w );
+	y1 = x1 * w;
+	y2 = x2 * w;
+*/
+
+	double x1 = 2.0 * RandomGen_randomDouble(self) - 1.0;
+	double x2 = 2.0 * RandomGen_randomDouble(self) - 1.0;	
+	double y1 = sqrt( - 2.0 * log(x1) ) * cos( M_PI_2 * x2 );
+
+	return ( m + y1 * s );
+}
+
+/*
+double RandomGen_gaussian(RandomGen *self, double m, double s)
+{				        
+	// mean m, standard deviation s 
+	double x1, x2, w, y1;
+
+	if (self->use_last) // use value from previous call
+	{
+		y1 = self->y2;
+		self->use_last = 0;
+	}
+	else
+	{
+		do {
+			x1 = 2.0 * RandomGen_randomDouble(self) - 1.0;
+			x2 = 2.0 * RandomGen_randomDouble(self) - 1.0;
+			w = x1 * x1 + x2 * x2;
+		} while ( w >= 1.0 );
+
+		w = sqrt( (-2.0 * log( w ) ) / w );
+		y1 = x1 * w;
+		self->y2 = x2 * w;
+		self->use_last = 1;
+	}
+
+	return ( m + y1 * s );
+}
+*/
+

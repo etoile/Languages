@@ -294,6 +294,7 @@ void UTinstant_setTM_(UTinstant *self, struct tm *tm)
     self->year        = tm->tm_year + 1900; 
     self->month       = tm->tm_mon  + 1; /* [1-12] */
     self->day         = tm->tm_mday; /* [1-31] */
+    self->day_of_year = tm->tm_yday;    /* [1-365] */
     self->i_hour      = tm->tm_hour;    /* [0-23] */
     self->i_minute    = tm->tm_min;  /* [0-59] */
     self->second      = tm->tm_sec;  /* [0-59.9999] */

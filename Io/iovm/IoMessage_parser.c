@@ -91,24 +91,7 @@ IoMessage *IoMessage_newFromText_label_(void *state, const char *text, const cha
 	
 	msg = IoMessage_newParse(state, lexer);
 	
-	/*
-	if(lexer->errorToken)
-	{
-		IoToken *errorToken = lexer->errorToken;
-		IoLexer_free(lexer);
-		IoState_error_(state, 0x0, "compile error: %s %i", errorToken->error, errorToken->lineNumber);
-	}
-	*/
-	
-	//puts("Pre shuffle");
-	//IoMessage_deepDump(msg);
-	//puts("\n");
-	
 	IoMessage_opShuffle_(msg);
-	
-	//puts("Post shuffle");
-	//IoMessage_deepDump(msg);
-	//puts("\n");
 	
 	{
 		IoSymbol *labelSymbol = IoState_symbolWithCString_((IoState *)state, label);
@@ -116,13 +99,6 @@ IoMessage *IoMessage_newFromText_label_(void *state, const char *text, const cha
 	}
 	
 	IoLexer_free(lexer);
-	
-	//{
-	//	IoMessage *old = IoMessage_newFromText_label_old(state, text, label);
-	//	puts("Old Parse");
-	//	IoMessage_deepDump(old);
-	//	puts("\n");
-	//}
 		
 	return msg;
 }
@@ -173,10 +149,31 @@ IoMessage *IoMessage_newParse(void *state, IoLexer *lexer)
 	);
 }
 
+/*
+IoMessage *IoMessage_parseNextSAFE(IoMessage *self, IoLexer *lexer)
+{
+	IoState *state = IOSTATE;
+	
+	if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
+	{ 
+		IoCoroutine *newCoro = IoCoroutine_new(state);
+		IoCoroutine_try(newCoro, blockLocals, blockLocals, selfData->message);
+		result = IoCoroutine_rawResult(newCoro);
+	}
+	else
+	{
+		result = IoMessage_locals_performOn_(selfData->message, blockLocals, blockLocals);  
+	}
+	
+	return result;
+}
+*/
+
 IoMessage *IoMessage_newParseNextMessageChain(void *state, IoLexer *lexer)
 {
 	IoMessage *self = IoMessage_new(state);
 
+	
 	if (IoTokenType_isValidMessageName(IoLexer_topType(lexer)))
 	{
 		IoMessage_parseName(self, lexer);

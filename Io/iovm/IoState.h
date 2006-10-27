@@ -55,8 +55,8 @@ struct IoState
 	IoSymbol *callSymbol;
 	IoSymbol *updateSlotSymbol;
 	IoSymbol *typeSymbol;
-        IoSymbol *opShuffleSymbol;
-        IoSymbol *noShufflingSymbol;
+	IoSymbol *opShuffleSymbol;
+	IoSymbol *noShufflingSymbol;
 
 	IoObject *setSlotBlock;
 	IoObject *localsUpdateSlotCFunc;
@@ -132,6 +132,10 @@ struct IoState
 	// persistence
 	
 	IoStore *store; 
+	
+	// thread message queue 
+	
+	//List *threadMessageQueue;
 };
 
 #define IOSTATE_STRUCT_DEFINED

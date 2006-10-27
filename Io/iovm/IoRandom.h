@@ -19,8 +19,10 @@ IoRandom *IoRandom_proto(void *state);
 IoRandom *IoRandom_rawClone(IoRandom *self);
 void IoRandom_free(IoMessage *self);
 
+IoObject *IoRandom_flip(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoRandom_value(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoRandom_setSeed(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoRandom_gaussian(IoObject *self, IoObject *locals, IoMessage *m);
 
 #ifdef __cplusplus
 }

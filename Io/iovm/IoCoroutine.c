@@ -328,7 +328,7 @@ void IoCoroutine_try(IoObject *self, IoObject *target, IoObject *locals, IoMessa
 	IoCoroutine_rawSetRunLocals_(self, locals);
 	IoCoroutine_rawSetRunMessage_(self, message);
 	IoCoroutine_rawSetParentCoroutine_(self, currentCoro);
-	IoCoroutine_rawRun(self); // this will pause the current coro
+	IoCoroutine_rawRun(self);
 }
 
 IoCoroutine *IoCoroutine_newWithTry(void *state, 

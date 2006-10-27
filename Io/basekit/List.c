@@ -21,10 +21,10 @@ List *List_clone(List *self)
 {
     List *child = List_new();
     List_copy_(child, self);
-    /*
-	 List *child = cpalloc(self, sizeof(List));
-	 child->items = cpalloc(self->items, self->memSize);
-	 */
+	/*
+	List *child = cpalloc(self, sizeof(List));
+	child->items = cpalloc(self->items, self->memSize);
+	*/
     return child;
 }
 
@@ -86,6 +86,7 @@ size_t List_memorySize(List *self)
 void List_removeAll(List *self) 
 { 
     self->size = 0; 
+	List_compactIfNeeded(self);
 }
 
 void List_copy_(List *self, List *otherList)
@@ -120,7 +121,7 @@ void List_preallocateToSize_(List *self, size_t index)
     
     if (s >= self->memSize) 
     {
-		size_t newSize = self->memSize*LIST_RESIZE_FACTOR;
+		size_t newSize = self->memSize * LIST_RESIZE_FACTOR;
 		
 		if (s > newSize) 
 		{ 
@@ -143,7 +144,7 @@ void List_compact(List *self)
 
 void List_removeItemsAfterLastNULL_(List *self)
 {
-    int i;
+    long i;
     void **items = self->items;
     
     for (i = self->size - 1; i > -1; i --) 
@@ -155,6 +156,7 @@ void List_removeItemsAfterLastNULL_(List *self)
     }
     
     self->size = i;
+	List_compactIfNeeded(self);
 }
 
 void List_print(List *self)
@@ -175,7 +177,7 @@ void List_print(List *self)
 
 void List_target_do_(List *self, void *target, ListDoWithCallback *callback)
 {
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -191,7 +193,7 @@ void List_target_do_(List *self, void *target, ListDoWithCallback *callback)
 
 void List_do_(List *self, ListDoCallback *callback)
 {
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -207,7 +209,7 @@ void List_do_(List *self, ListDoCallback *callback)
 
 void List_do_with_(List *self, ListDoWithCallback *callback, void *arg)
 {
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -223,7 +225,7 @@ void List_do_with_(List *self, ListDoWithCallback *callback, void *arg)
 
 void List_mapInPlace_(List *self, ListCollectCallback *callback)
 {
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -237,7 +239,7 @@ void List_mapInPlace_(List *self, ListCollectCallback *callback)
 List *List_map_(List *self, ListCollectCallback *callback)
 {
     List *results = List_new();
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -254,7 +256,7 @@ List *List_map_(List *self, ListCollectCallback *callback)
 List *List_select_(List *self, ListSelectCallback *callback)
 {
     List *results = List_new();
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -272,7 +274,7 @@ List *List_select_(List *self, ListSelectCallback *callback)
 
 void *List_detect_(List *self, ListDetectCallback *callback)
 {
-    int i, count = self->size;
+    size_t i, count = self->size;
     void **items = self->items;
     
     for (i = 0; i < count; i ++) 
@@ -309,7 +311,7 @@ void *List_detect_(List *self, ListDetectCallback *callback)
 
 void *List_anyOne(List *self)
 { 
-    int i;
+    size_t i;
     
     if (self->size == 0) 
     {
@@ -328,7 +330,7 @@ void *List_anyOne(List *self)
 
 void List_shuffle(List *self)
 { 
-    int i, j;
+    size_t i, j;
     
     for (i = 0; i < self->size - 1; i ++)
     {
@@ -339,13 +341,14 @@ void List_shuffle(List *self)
 
 void *List_removeLast(List *self)
 {
-    void *item = List_at_(self, self->size-1);
+    void *item = List_at_(self, self->size - 1);
     
     if (item) 
     {
 		self->size --;
-    }
-    
+    	List_compactIfNeeded(self);
+	}
+	    
     return item;
 }
 
@@ -353,7 +356,7 @@ void List_append_sortedBy_(List *self, void *item, ListSortCallback *callback)
 {
     // sort lowest to highest 
     
-    int i;
+    size_t i;
     
     for (i = 0; i < self->size - 1; i ++)
     {

@@ -546,7 +546,7 @@ void ByteArray_insertBytes_size_at_(ByteArray *self, const unsigned char *bytes,
 	}
 	
 	ByteArray_setSize_(self, self->size + size);
-	memmove(self->bytes + pos + size, self->bytes+pos, oldSize - pos);
+	memmove(self->bytes + pos + size, self->bytes + pos, oldSize - pos);
 	memcpy(self->bytes + pos, bytes, size);
 }
 
@@ -2216,4 +2216,73 @@ char *string_caseSensitiveBoyerMooreSearch(char *buffer, size_t length, char *ne
 	
 	return NULL;
 }
+*/
+
+// cursor -------------------------------------------
+
+/*
+size_t ByteArray_bytesInCharacterAtByteOffset_(ByteArray *self, size_t offset)
+{
+	// utf8
+	
+	const char c = self->bytes[offset];
+
+	if ((c & 0xFE) == 0xFC) return 6;
+	if ((c & 0xFC) == 0xF8) return 5;
+	if ((c & 0xF8) == 0xF0) return 4;
+	if ((c & 0xF0) == 0xE0) return 3;
+	if ((c & 0xE0) == 0xC0) return 2;
+	if ((c & 0x80) == 0x00) return 1;
+
+	return 0;
+}
+
+size_t utf8_prev(const char *s, size_t o)
+{
+        while (o != 0 && (s[-- o] & 0xC0) == 0x80) {}
+        return o;
+}
+
+size_t utf8_next(const char *s, size_t l, size_t o)
+{
+        while (o != l && (s[++ o] & 0xC0) == 0x80) {}
+        return o;
+}
+
+typedef struct 
+{	
+	ByteArray *array;
+	size_t offset; // byte offset, not character offset 
+} ByteArrayCursor;
+
+ByteArrayCursor ByteArray_cursor(ByteArray *self)
+{
+	ByteArrayCursor lc;
+	lc.array = self;
+	lc.offset = 0;
+	return lc;
+}
+
+void ByteArrayCursor_next(ByteArrayCursor *self)
+{
+	size_t offset = self->p - ByteArray_bytes(self->array);
+	
+	if (self->offset >= (size_t)ByteArray_sizeInBytes(self->list))
+	{
+		return;
+	}
+	
+	self->offset += ByteArray_bytesInCharacterAtByteOffset_(self->array, self->offset);
+}
+
+IOINLINE size_t ByteArrayCursor_index(ByteArrayCursor *self)
+{
+	return self->index;
+}
+
+IOINLINE void *ByteArrayCursor_value(ByteArrayCursor *self)
+{
+	return List_at_(self->list, self->index);
+}
+
 */

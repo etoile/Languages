@@ -135,7 +135,7 @@ IoBlock *IoBlock_rawClone(IoBlock *proto)
 	DATA(self)->message  = IoMessage_deepCopyOf_(protoData->message);
 	DATA(self)->argNames = List_clone(protoData->argNames);
 	DATA(self)->scope    = protoData->scope;
-	self->isActivatable = 1;
+	self->isActivatable = proto->isActivatable;
 	return self;
 }
 
@@ -252,6 +252,7 @@ IoObject *IoBlock_method(IoObject *target, IoObject *locals, IoMessage *m)
 	int i;
 
 	DATA(self)->message = IOREF(message);
+	self->isActivatable = 1;
 	
 	for (i = 0; i < nargs - 1; i ++)
 	{
@@ -267,6 +268,7 @@ IoObject *IoObject_block(IoObject *target, IoObject *locals, IoMessage *m)
 {
 	IoBlock *self = (IoBlock *)IoBlock_method(target, locals, m);
 	DATA(self)->scope = IOREF(locals);
+	self->isActivatable = 0;
 	return self;
 }
 

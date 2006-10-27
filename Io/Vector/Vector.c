@@ -367,6 +367,80 @@ int Vector_addArray_(Vector *self, Vector *other)
 	return 0;
 }
 
+
+int Vector_addArray_at_(Vector *self, Vector *other, size_t index)
+{
+	NUM_TYPE *d1 = self->values + index;
+	NUM_TYPE *d2 = other->values;
+	size_t length;
+	
+	if (self->size < index)
+	{
+		return 0;
+	}
+
+	if (self->size - index < other->size)
+	{
+		length = self->size - index;
+	}	
+	else
+	{
+		length = other->size;
+	}
+	
+#ifdef HAS_ALTIVEC
+	#ifdef NUM_TYPE_IS_DOUBLE
+	vaddD(d1, 1, d2, 1, d1, 1, length);
+	#else
+	vadd(d1, 1, d2, 1, d1, 1, length);
+	#endif
+	//vaddfp(d1, 1, d2, 1, d1, 1, self->size);
+	//#elif HAS_SSE
+#else
+	{
+		size_t n = length;
+		while (n)
+		{
+			*d1 += *d2;
+			d1 ++; d2++;
+			n --;
+		}
+	}
+#endif
+	return 0;
+}
+
+int Vector_addArray_at_xscale_yscale_(Vector *self, Vector *other, long start, NUM_TYPE xscale, NUM_TYPE yscale)
+{
+	NUM_TYPE *d1 = self->values;
+	NUM_TYPE *d2 = other->values;
+	long length = self->size;
+	NUM_TYPE invxscale = 1.0 / xscale;
+	
+	long i = start;
+	
+	if (i < 0) i = 0;
+	
+	while (i < length)
+	{
+		long j = (((NUM_TYPE)i - (NUM_TYPE)start) * invxscale);
+		
+		if (j > other->size)
+		{
+			return 0;
+		}
+		
+		if (j > -1)
+		{
+			d1[i] += d2[j] * yscale;
+		}
+		
+		i ++;
+	}
+
+	return 0;
+}
+
 int Vector_subtractArray_(Vector *self, Vector *other)
 {
 	NUM_TYPE *d1 = self->values;
@@ -607,7 +681,7 @@ void Vector_pow(Vector *self, double p)
 	while (n)
 	{
 		*d1 = (NUM_TYPE)pow((double)(*d1), p);
-		d1 ++; 
+		d1 ++;
 		n --;
 	}
 }

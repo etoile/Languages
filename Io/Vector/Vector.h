@@ -54,6 +54,8 @@ void Vector_divideScalar_(Vector *self, NUM_TYPE v);
 
 /* ----------------------------------------------------------- */
 int Vector_addArray_(Vector *self, Vector *other);
+int Vector_addArray_at_(Vector *self, Vector *other, size_t index);
+int Vector_addArray_at_xscale_yscale_(Vector *self, Vector *other, long start, NUM_TYPE xscale, NUM_TYPE yscale);
 int Vector_subtractArray_(Vector *self, Vector *other);
 int Vector_multiplyArray_(Vector *self, Vector *other);
 int Vector_divideArray_(Vector *self, Vector *other);

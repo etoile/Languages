@@ -27,6 +27,7 @@ IoObject *IoCollector_proto(void *state)
 		
 	{"setSweepsPerGeneration", IoCollector_setSweepsPerGeneration},
 	{"sweepsPerGeneration", IoCollector_sweepsPerGeneration},
+	{"allObjects", IoCollector_allObjects},
 	{0x0, 0x0},
 	};
 	
@@ -122,4 +123,18 @@ IoObject *IoCollector_sweepsPerGeneration(IoObject *self, IoObject *locals, IoMe
 	*/
 	
 	return IONUMBER(Collector_sweepsPerGeneration(IOSTATE->collector));
+}
+
+#include "IoList.h"
+
+IoObject *IoCollector_allObjects(IoObject *self, IoObject *locals, IoMessage *m)
+{ 
+	/*#io
+	docSlot("allObjects", "Returns a List containing all objects known to the collector.")
+	*/
+	
+	IoList *allObjects = IoList_new(IOSTATE);
+	Collector *collector = IOSTATE->collector;
+	COLLECTOR_FOREACH(collector, v, IoList_rawAppend_(allObjects, (void *)v));
+	return allObjects;
 }

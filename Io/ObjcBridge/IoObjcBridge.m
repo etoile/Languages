@@ -246,7 +246,7 @@ void *IoObjcBridge_proxyForIoObject_(IoObjcBridge *self, IoObject *v)
 	Objc2Io *obj = Hash_at_(DATA(self)->objc2ios, v);
 	if (!obj)
 	{
-		obj = [[Objc2Io alloc] init];
+		obj = [[[Objc2Io alloc] init] autorelease];
 		[obj setBridge:self];
 		[obj setIoObject:v];
 		//Hash_at_put_(DATA(self)->objc2ios, IOREF(v), obj);
@@ -424,13 +424,13 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 	{
 		case '@':
 			if (ISMUTABLESEQ(value))
-				DATA(self)->cValue.o = [NSMutableString stringWithCString:CSTRING((IoSeq *)value)];
+				DATA(self)->cValue.o = [NSMutableString stringWithCString:CSTRING(value)];
 			else if (ISSYMBOL(value))
-				DATA(self)->cValue.o = [NSString stringWithCString:CSTRING((IoSymbol *)value)];
+				DATA(self)->cValue.o = [NSString stringWithCString:CSTRING(value)];
 			else if (ISNUMBER(value))
-				DATA(self)->cValue.o = [NSNumber numberWithInt:IoNumber_asInt((IoNumber *)value)];
+				DATA(self)->cValue.o = [NSNumber numberWithInt:IoNumber_asInt(value)];
 			else if (ISIO2OBJC(value))
-				DATA(self)->cValue.o = Io2Objc_object((Io2Objc *)value);
+				DATA(self)->cValue.o = Io2Objc_object(value);
 			else if (ISNIL(value))
 				DATA(self)->cValue.o = nil;
 			else if (ISLIST(value))
@@ -460,57 +460,51 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 			break;
 		case '#':
 			if (ISIO2OBJC(value))
-				DATA(self)->cValue.class = Io2Objc_object((Io2Objc *)value);
+				DATA(self)->cValue.class = Io2Objc_object(value);
 			else
 				DATA(self)->cValue.class = nil;
 			break;
 		case ':':
 			if (ISSYMBOL(value))
-			{
-				DATA(self)->cValue.sel = sel_getUid(CSTRING((IoSymbol *)value));
-				if (DATA(self)->cValue.sel)
-					break;
-				else
-					*error = "no selector found by that name";
-			}
+				DATA(self)->cValue.sel = sel_getUid(CSTRING(value));
 			else
 				*error = "requires a string";
 			break;
 		case 'c':case 'C':
 			if (ISNUMBER(value))
-				DATA(self)->cValue.c = (char)IoNumber_asDouble((IoNumber *)value);
+				DATA(self)->cValue.c = IoNumber_asInt(value);
 			else if (ISBOOL(value))
-				DATA(self)->cValue.c = (char)ISTRUE(value);
+				DATA(self)->cValue.c = ISTRUE(value);
 			else
 				*error = "requires a number or a boolean";
 			break;
 		case 's':case 'S':
 			if (ISNUMBER(value))
-				DATA(self)->cValue.s = IoNumber_asInt((IoNumber *)value);
+				DATA(self)->cValue.s = IoNumber_asInt(value);
 			else
 				*error = "requires a number";
 			break;
 		case 'i':case 'I':
 			if (ISNUMBER(value))
-				DATA(self)->cValue.i = IoNumber_asInt((IoNumber *)value);
+				DATA(self)->cValue.i = IoNumber_asInt(value);
 			else
 				*error = "requires a number";
 			break;
 		case 'l':case 'L':
 			if (ISNUMBER(value))
-				DATA(self)->cValue.l = (long)IoNumber_asDouble((IoNumber *)value);
+				DATA(self)->cValue.l = IoNumber_asDouble(value);
 			else
 				*error = "requires a number";
 			break;
 		case 'f':
 			if (ISNUMBER(value))
-				DATA(self)->cValue.f = (float)IoNumber_asDouble((IoNumber *)value);
+				DATA(self)->cValue.f = IoNumber_asDouble(value);
 			else
 				*error = "requires a number";
 			break;
 		case 'd':
 			if (ISNUMBER(value))
-				DATA(self)->cValue.d = IoNumber_asDouble((IoNumber *)value);
+				DATA(self)->cValue.d = IoNumber_asDouble(value);
 			else
 				*error = "requires a number";
 			break;
@@ -518,7 +512,10 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 		//case 'v':
 		//case 'r':
 		case '*':
-			DATA(self)->cValue.cp = (void *)CSTRING((IoSymbol *)value);
+			if (ISSYMBOL(value))
+				DATA(self)->cValue.cp = CSTRING(value);
+			else
+				*error = "requires a string";
 			break;
 		case '^':
 			if (!strncmp(cType, "^@", 2))
@@ -526,6 +523,11 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 					DATA(self)->cValue.v = &((Io2ObjcData *)IoObject_dataPointer(value))->object;
 				else
 					*error = "requires an Io2Objc";
+			else if (!strncmp(cType, "^v", 2))
+				if (ISSYMBOL(value))
+					DATA(self)->cValue.v = CSTRING(value);
+				else
+					*error = "requires a string";
 			else
 				*error = "no match for argument type";
 			break;
@@ -533,7 +535,7 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 			if (!strncmp(cType, "{_NSPoint=ff}", 13))
 				if (ISVECTOR(value))
 				{
-					IoVector *p = (IoVector *)value;
+					IoVector *p = value;
 					NUM_TYPE x, y, z;
 					IoVector_rawGetXYZ(p, &x, &y, &z);
 					DATA(self)->cValue.point.x = x;
@@ -544,7 +546,7 @@ void *IoObjcBridge_cValueForIoObject_ofType_error_(IoObjcBridge *self, IoObject 
 			else if (!strncmp(cType, "{_NSSize=ff}", 12))
 				if (ISVECTOR(value))
 				{
-					IoVector *p = (IoVector *)value;
+					IoVector *p = value;
 					NUM_TYPE x, y, z;
 					IoVector_rawGetXYZ(p, &x, &y, &z);
 					DATA(self)->cValue.size.width = x;

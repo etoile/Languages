@@ -66,6 +66,8 @@ IoRandom *IoRandom_proto(void *state)
 	IoMethodTable methodTable[] = {
 	{"value", IoRandom_value},
 	{"setSeed", IoRandom_setSeed},
+	{"flip", IoRandom_flip},
+	{"gaussian", IoRandom_gaussian},
 	{NULL, NULL},
 	};
 	
@@ -93,6 +95,12 @@ IoNumber *IoRandom_rawClone(IoRandom *proto)
 void IoRandom_free(IoMessage *self) 
 {
 	RandomGen_free(IVAR(self));
+}
+
+IoObject *IoRandom_flip(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	int r = RandomGen_randomInt(IVAR(self));
+	return IOBOOL(self, r & 0x1);
 }
 
 IoObject *IoRandom_value(IoObject *self, IoObject *locals, IoMessage *m)
@@ -162,3 +170,27 @@ IoObject *IoRandom_setSeed(IoObject *self, IoObject *locals, IoMessage *m)
 	RandomGen_setSeed(IVAR(self), v);
 	return self;
 }
+
+IoObject *IoRandom_gaussian(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("gaussian(optionalMean, optionalStandardDeviation)", 
+		   "Returns a pseudo random number between 0 and 1 with a gaussian distribution.")
+	*/
+	
+	double mean = 0;
+	double standardDeviation = 1;
+	
+	if (IoMessage_argCount(m) > 0)
+	{
+		mean = IoMessage_locals_doubleArgAt_(m, locals, 0);
+	}
+	
+	if (IoMessage_argCount(m) > 1)
+	{
+		standardDeviation = IoMessage_locals_doubleArgAt_(m, locals, 1);
+	}
+	
+	return IONUMBER(RandomGen_gaussian(IVAR(self), mean, standardDeviation));
+}
+		 

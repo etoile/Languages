@@ -13,7 +13,7 @@ IOINLINE IoObject *IoRange_getFirst(IoRange *self)
 
 IOINLINE void IoRange_setFirst(IoRange *self, IoObject *v)
 {
-    RANGEDATA(self)->start = v;
+    RANGEDATA(self)->start = IOREF(v);
 }
 
 IOINLINE IoObject *IoRange_getLast(IoRange *self)
@@ -23,7 +23,7 @@ IOINLINE IoObject *IoRange_getLast(IoRange *self)
 
 IOINLINE void IoRange_setLast(IoRange *self, IoObject *v)
 {
-    RANGEDATA(self)->end = v;
+    RANGEDATA(self)->end = IOREF(v);
 }
 
 IOINLINE IoObject *IoRange_getCurrent(IoRange *self)
@@ -33,7 +33,7 @@ IOINLINE IoObject *IoRange_getCurrent(IoRange *self)
 
 IOINLINE void IoRange_setCurrent(IoRange *self, IoObject *v)
 {
-    RANGEDATA(self)->curr = v;
+    RANGEDATA(self)->curr = IOREF(v);
 }
 
 IOINLINE IoObject *IoRange_getIncrement(IoRange *self)
@@ -43,7 +43,7 @@ IOINLINE IoObject *IoRange_getIncrement(IoRange *self)
 
 IOINLINE void IoRange_setIncrement(IoRange *self, IoObject *v)
 {
-    RANGEDATA(self)->increment = v;
+    RANGEDATA(self)->increment = IOREF(v);
 }
 
 IOINLINE IoObject *IoRange_getIndex(IoRange *self)
@@ -53,7 +53,7 @@ IOINLINE IoObject *IoRange_getIndex(IoRange *self)
 
 IOINLINE void IoRange_setIndex(IoRange *self, IoObject *v)
 {
-    RANGEDATA(self)->index = v;
+    RANGEDATA(self)->index = IOREF(v);
 }
 
 #undef IO_IN_C_FILE

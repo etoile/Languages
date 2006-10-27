@@ -86,6 +86,7 @@ IoNumber *IoNumber_proto(void *state)
 	{"asString", IoNumber_asString},
 	{"asBuffer", IoNumber_asBuffer},
 	{"asCharacter", IoNumber_asCharacter},
+	{"asUint32Buffer", IoNumber_asUint32Buffer},
     //{"asDate", IoNumber_asDate},
         
 	{"abs", IoNumber_abs},
@@ -108,8 +109,7 @@ IoNumber *IoNumber_proto(void *state)
 	//{"^", IoNumber_pow},
 	{"**", IoNumber_pow},
 	{"pow", IoNumber_pow},
-	{"roundDown", IoNumber_roundDown},
-	{"roundUp", IoNumber_roundUp},
+	{"round", IoNumber_round},
 	{"sin", IoNumber_sin},
 	{"sqrt", IoNumber_sqrt},
 	{"squared", IoNumber_squared},
@@ -120,6 +120,7 @@ IoNumber *IoNumber_proto(void *state)
     // logic operations 
         
 	{"&", IoNumber_bitwiseAnd},
+	{"^", IoNumber_bitwiseXor},
 	{"|", IoNumber_bitwiseOr},
         
 	{"bitwiseAnd", IoNumber_bitwiseAnd},
@@ -418,6 +419,18 @@ value is the ascii value of the first byte of the receiver.")
     return IoState_symbolWithCString_length_((IoState *)IOSTATE, s, 1);
 }
 
+IoObject *IoNumber_asUint32Buffer(IoNumber *self, IoObject *locals, IoMessage *m)
+{
+    /*#io
+    docSlot("asUint32Buffer", 
+            "Returns a Sequence containing a 4 byte representation of the uint32 value of the receiver.")
+    */
+    uint32_t i = (int)NIVAR(self);
+    return IoSeq_newWithData_length_(IOSTATE, (unsigned char *)&i, sizeof(uint32_t));
+}
+
+
+
 IoObject *IoNumber_asBuffer(IoNumber *self, IoObject *locals, IoMessage *m)
 {
     /*#io
@@ -676,29 +689,15 @@ IoObject *IoNumber_pow(IoNumber *self, IoObject *locals, IoMessage *m)
     return IONUMBER(pow(NIVAR(self), NIVAR(other)));
 }
 
-IoObject *IoNumber_roundDown(IoNumber *self, IoObject *locals, IoMessage *m)
+IoObject *IoNumber_round(IoNumber *self, IoObject *locals, IoMessage *m)
 {
     /*#io
-    docSlot("roundDown", 
-            "Returns the a number with the receiver's value rounded 
-down to the nearest integer if it's fraction component is <= .5.")
-    */
-    long n = NIVAR(self);
-    double v = NIVAR(self) > n + 0.5 ? n + 1 : n;
-    return IONUMBER(v);
-}
-
-IoObject *IoNumber_roundUp(IoNumber *self, IoObject *locals, IoMessage *m)
-{
-    /*#io
-    docSlot("roundUp", 
+    docSlot("round", 
             "Returns the a number with the receiver's value rounded up to 
 the nearest integer if it's fraction component is >= .5.")
     */
     
-    long n = NIVAR(self);
-    double v = NIVAR(self) >= n + 0.5 ? n + 1 : n;
-    return IONUMBER(v);
+    return IONUMBER(round(NIVAR(self)));
 }
 
 IoObject *IoNumber_sin(IoNumber *self, IoObject *locals, IoMessage *m)

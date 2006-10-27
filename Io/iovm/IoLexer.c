@@ -751,11 +751,24 @@ int IoLexer_readSlashStarComment(IoLexer *self)
 	
 	if (IoLexer_readString_(self, "/*"))
 	{
-		while (!IoLexer_readString_(self, "*/")) 
-		{ 
-			IoLexer_nextChar(self); 
+		unsigned int nesting = 1;
+
+		while (nesting > 0)
+		{
+			if (IoLexer_readString_(self, "/*"))
+			{
+				IoLexer_nextChar(self);
+				nesting++;
+			}
+			else if (IoLexer_readString_(self, "*/"))
+			{
+				// otherwise we end up trimming the last char
+				if (nesting > 1) IoLexer_nextChar(self);
+				nesting--;
+			}
+			else
+				IoLexer_nextChar(self);
 		}
-		//IoLexer_grabTokenType_(self, COMMENT_TOKEN);
 		IoLexer_popPos(self);
 		return 1;
 	 }

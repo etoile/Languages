@@ -146,6 +146,7 @@ int ByteArray_findAnyCase_(ByteArray *self, ByteArray *other);
 int ByteArray_find_from_(ByteArray *self, ByteArray *other, int from);
 int ByteArray_findCString_from_(ByteArray *self, const char *other, int from);
 int ByteArray_rFind_from_(ByteArray *self, ByteArray *other, int from);
+int ByteArray_rFindCString_from_(ByteArray *self, const char *other, int from);
 int ByteArray_rFindCharacters_from_(ByteArray *self, const char *chars, int from);
 int ByteArray_findAnyCase_from_(ByteArray *self, ByteArray *other, int from);
 size_t ByteArray_count_(ByteArray *self, ByteArray *other);

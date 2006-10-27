@@ -79,7 +79,12 @@ void IoRange_free(IoRange *self)
 
 void IoRange_mark(IoRange *self)
 {
-    /* XXX: I have the strongest feeling I should be doing something here. */
+	IoRangeData *dp = IoObject_dataPointer(self);
+	if(dp->start) IoObject_shouldMark(dp->start);
+	if(dp->curr) IoObject_shouldMark(dp->curr);
+	if(dp->end) IoObject_shouldMark(dp->end);
+	if(dp->increment) IoObject_shouldMark(dp->increment);
+	if(dp->index) IoObject_shouldMark(dp->index);
 }
 
 /* ----------------------------------------------------------- */
@@ -115,16 +120,24 @@ IoObject *IoRange_next(IoRange *self, IoObject *locals, IoMessage *m)
     IoRangeData *rd = DATA(self);
 	IoObject *context;
 	IoObject *v = IoObject_rawGetSlot_context_(rd->curr, IOSYMBOL("nextInSequence"), &context);
+	IoObject *lt = IoObject_rawGetSlot_context_(rd->curr, IOSYMBOL("compare"), &context);
+	IoObject *eq = IoObject_rawGetSlot_context_(rd->curr, IOSYMBOL("=="), &context);
 
-	if (v && rd->curr != rd->end)
+	if (v && lt && eq)
 	{
 		IoMessage *newMessage = IoMessage_new(IOSTATE);
-		IoObject *ret;
-		IoMessage_addCachedArg_(newMessage, rd->increment);
-		ret = IoObject_activate(v, rd->curr, locals, newMessage, context);
-		IoRange_setCurrent(self, ret);
-		IoRange_setIndex(self, IONUMBER(CNUMBER(rd->index) + CNUMBER(rd->increment)));
-		return self;
+		IoObject *r_lt, *r_eq, *ret;
+		IoMessage_addCachedArg_(newMessage, rd->end);
+		r_lt = IoObject_activate(lt, rd->curr, locals, newMessage, context);
+		r_eq = IoObject_activate(eq, rd->curr, locals, newMessage, context);
+		if (ISTRUE(r_lt) && ISFALSE(r_eq))
+		{
+			IoMessage_setCachedArg_to_(newMessage, 0, rd->increment);
+			ret = IoObject_activate(v, rd->curr, locals, newMessage, context);
+			IoRange_setCurrent(self, ret);
+			IoRange_setIndex(self, IONUMBER(CNUMBER(rd->index) + CNUMBER(rd->increment)));
+			return self;
+		}
 	}
 
 	return IONIL(self);

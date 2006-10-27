@@ -387,7 +387,7 @@ IoObject *IoBox_containsPoint(IoBox *self, IoObject *locals, IoMessage *m)
 IoObject *IoBox_intersectsBox(IoBox *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("IoBox_intersectsBox(aBox)", "Returns true if aBox is within the receiver's bounds, false otherwise.")
+	docSlot("intersectsBox(aBox)", "Returns true if aBox is within the receiver's bounds, false otherwise.")
 	*/
 	
 	int result = 0;

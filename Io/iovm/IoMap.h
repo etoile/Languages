@@ -38,7 +38,7 @@ IoObject *IoMap_at(IoMap *self, IoObject *locals, IoMessage *m);
 
 void IoMap_rawAtPut(IoMap *self, IoSymbol *k, IoObject *v);
 IoObject *IoMap_atPut(IoMap *self, IoObject *locals, IoMessage *m);
-IoObject *IoMap_atPutIfAbsent(IoMap *self, IoObject *locals, IoMessage *m);
+IoObject *IoMap_atIfAbsentPut(IoMap *self, IoObject *locals, IoMessage *m);
 IoObject *IoMap_removeAt(IoMap *self, IoObject *locals, IoMessage *m);
 IoObject *IoMap_size(IoMap *self, IoObject *locals, IoMessage *m);
 

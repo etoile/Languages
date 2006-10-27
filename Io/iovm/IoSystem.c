@@ -7,13 +7,62 @@ System ioDoc(
 		   docCategory("Core")
 		   */
 
-#if defined(unix) || defined(__APPLE__) || defined(__NetBSD__)
-#include <sys/utsname.h>
-#endif
-
 #include "IoSystem.h"
 #include "IoNumber.h"
 #include "IoMessage_parser.h"
+
+#if defined(linux)
+#include <unistd.h>
+#endif
+
+#if defined(unix) || defined(__APPLE__) || defined(__NetBSD__)
+#include <sys/utsname.h>
+#ifdef __NetBSD__
+# include <sys/param.h>
+#endif
+#include <sys/sysctl.h>
+#endif
+
+#ifdef WIN32
+#include <windows.h>
+
+static void setenv(const char *varName, const char* value, int force)
+{
+	const char *safeValue;
+	char *buf;
+
+	if (!varName)
+	{
+		return;
+	}
+	
+	if (!value)
+	{
+		safeValue = "";
+	}
+	else
+	{
+		safeValue = value;
+	}
+	
+	// buffer for var and value plus '=' and the \0
+	buf = (char*)malloc(strlen(varName) + strlen(safeValue) + 2);
+	
+	if (!buf)
+	{
+		return;
+	}
+	
+	strcpy(buf, varName);
+	strcat(buf, "=");
+	strcat(buf, safeValue);
+
+	_putenv(buf);
+	free(buf);
+}
+
+//#define setenv(k, v, o) SetEnvironmentVariable((k), (v))
+#endif
 
 #if defined(__CYGWIN__) || defined(_WIN32)
 #include <windows.h>
@@ -32,6 +81,9 @@ IoObject *IoSystem_proto(void *state)
 	{"platform", IoObject_platform},
 	{"platformVersion", IoObject_platformVersion},
 	{"sleep", IoObject_sleep},
+	{"activeCpus", IoObject_activeCpus},
+	{"createThread", IoObject_createThread},
+	{"threadCount", IoObject_threadCount},
 	{0x0, 0x0},
 	};
 	
@@ -249,6 +301,37 @@ IoObject *IoObject_platformVersion(IoObject *self, IoObject *locals, IoMessage *
 	return IoState_symbolWithCString_(self->state, platformVersion);
 }
 
+IoObject *IoObject_activeCpus(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	 docSlot("activeCpus", "Returns the number of active CPUs.")
+	 */
+	int cpus = 1;
+#if defined(CTL_HW)
+	int mib[2];
+	size_t len = sizeof(cpus);
+	mib[0] = CTL_HW;
+#if defined(HW_AVAILCPU)
+	mib[1] = HW_AVAILCPU;
+#elif defined(HW_NCPU)
+	mib[1] = HW_NCPU;
+#else
+#error
+#endif
+	sysctl(mib, 2, &cpus, &len, NULL, 0);
+#elif defined(_SC_NPROCESSORS_ONLN)
+	cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(_SC_NPROC_ONLN)
+	cpus = sysconf(_SC_NPROC_ONLN);
+#elif defined(WIN32)
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	cpus = si.dwNumberOfProcessors;
+#else
+#error
+#endif
+	return IONUMBER(cpus);
+}
 
 #include "PortableUsleep.h"
 
@@ -267,4 +350,21 @@ IoObject *IoObject_sleep(IoObject *self, IoObject *locals, IoMessage *m)
 /*#io
  docSlot("distribution", "Returns the Io distribution name as a string.")
  */
+
+#include "IoState_threads.h"
+
+IoObject *IoObject_createThread(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	IoSeq *s = IoMessage_locals_seqArgAt_(m, locals, 0);
+	IoState_createThreadAndEval(IOSTATE, CSTRING(s));
+	return self;
+}
+
+IoObject *IoObject_threadCount(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	Thread_Init(); // I don't like this call, but if it hasn't been called
+	               // before we get a crash.  I think when Io starts
+	               // Thread_Init should be called.
+	return IONUMBER(IoState_threadCount(IOSTATE));
+}
 

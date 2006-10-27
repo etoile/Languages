@@ -57,6 +57,7 @@ IoObject *IoNumber_asBuffer(IoNumber *self, IoObject *locals, IoMessage *m);
 IoObject *IoNumber_asString(IoNumber *self, IoObject *locals, IoMessage *m);
 IoObject *IoNumber_justAsString(IoNumber *self, IoObject *locals, IoMessage *m);
 IoObject *IoNumber_asCharacter(IoNumber *self, IoObject *locals, IoMessage *m);
+IoObject *IoNumber_asUint32Buffer(IoNumber *self, IoObject *locals, IoMessage *m);
 //IoObject *IoNumber_asDate(IoNumber *self, IoObject *locals, IoMessage *m);
 
 // no arg methods 
@@ -83,8 +84,7 @@ IoObject *IoNumber_mod(IoNumber *self, IoObject *locals, IoMessage *m);
 
 IoObject *IoNumber_pow(IoNumber *self, IoObject *locals, IoMessage *m);
 
-IoObject *IoNumber_roundDown(IoNumber *self, IoObject *locals, IoMessage *m);
-IoObject *IoNumber_roundUp(IoNumber *self, IoObject *locals, IoMessage *m);
+IoObject *IoNumber_round(IoNumber *self, IoObject *locals, IoMessage *m);
 
 IoObject *IoNumber_sin(IoNumber *self, IoObject *locals, IoMessage *m);
 IoObject *IoNumber_sqrt(IoNumber *self, IoObject *locals, IoMessage *m);

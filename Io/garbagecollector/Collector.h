@@ -13,6 +13,12 @@ docDescription("""A tricolor collector using a Baker treadmill.""")
 extern "C" {
 #endif
 
+
+#define COLLECTOR_FOREACH(self, v, code) \
+	COLLECTMARKER_FOREACH(self->whites,  v, code;); \
+	COLLECTMARKER_FOREACH(self->grays,   v, code;); \
+	COLLECTMARKER_FOREACH(self->blacks,  v, code;);
+
 typedef enum
 {
 	COLLECTOR_INITIAL_WHITE,

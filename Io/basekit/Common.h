@@ -15,6 +15,7 @@
 /*#define LOW_MEMORY_SYSTEM 1*/
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 
 #if defined (__SVR4) && defined (__sun)

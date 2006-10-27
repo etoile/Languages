@@ -818,7 +818,8 @@ IoObject *IoObject_activateFunc(IoObject *self,
 		
 		if (slotValue) 
 		{
-			return IoObject_activate(slotValue, self, locals, m, context);
+			//return IoObject_activate(slotValue, self, locals, m, context);
+			return IoObject_activate(slotValue, target, locals, m, context);
 		}	
 	}
 	return self;
@@ -1117,8 +1118,14 @@ IoObject *IoObject_duplicate(IoObject *self, IoObject *locals, IoMessage *m)
 	docSlot("duplicate", "Creates a new copy of the receiver, including its proto list.")
 	*/
 
-	IoObject *newObject = IoObject_new(IOSTATE); 
+	IoObject *newObject;
+	IoState *state = IOSTATE;
+
+	IoState_pushCollectorPause(state);
+	newObject = IoObject_new(state); 
 	memmove(newObject, self, sizeof(*self));
+	IoState_addValue_(state, newObject);
+	IoState_popCollectorPause(state);
 	return newObject;
 }
 
@@ -1515,7 +1522,7 @@ IoObject *IoObject_isIdenticalTo(IoObject *self, IoObject *locals, IoMessage *m)
 IoObject *IoObject_equals(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("== aValue", 
+	docSlot("==(aValue)", 
 			"Returns true if receiver and aValue are equal, false otherwise. ")
 	*/
 	
@@ -1530,7 +1537,7 @@ IoObject *IoObject_equals(IoObject *self, IoObject *locals, IoMessage *m)
 IoObject *IoObject_notEquals(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("!= aValue", 
+	docSlot("!=(aValue)", 
 			"Returns true the receiver is not equal to aValue, false otherwise. ")
 	*/
 	
@@ -1595,7 +1602,7 @@ done:
 IoObject *IoObject_subtract(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("- (aNumber)", 
+	docSlot("-(aNumber)", 
 			"Returns the negative version of aNumber. 
 Raises an exception if argument is not a number.")
 	*/
@@ -1607,7 +1614,7 @@ Raises an exception if argument is not a number.")
 IoObject *IoObject_self(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("self ", "Returns self.")
+	docSlot("self", "Returns self.")
 	*/
 	
 	return self; 
@@ -1616,7 +1623,7 @@ IoObject *IoObject_self(IoObject *self, IoObject *locals, IoMessage *m)
 IoObject *IoObject_locals(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("thisLocalContext ", "Returns current locals.")
+	docSlot("thisLocalContext", "Returns current locals.")
 	*/
 	
 	return locals; 
@@ -1767,7 +1774,7 @@ IoObject *IoObject_evalArgAndReturnNil(IoObject *self, IoObject *locals, IoMessa
 IoObject *IoObject_isLessThan_(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("< (expression)", "Evaluates argument and returns self if self is less or Nil if not.")
+	docSlot("<(expression)", "Evaluates argument and returns self if self is less or Nil if not.")
 	*/
 	
 	IoObject *v = IoMessage_locals_valueArgAt_(m, locals, 0);
@@ -1777,7 +1784,7 @@ IoObject *IoObject_isLessThan_(IoObject *self, IoObject *locals, IoMessage *m)
 IoObject *IoObject_isLessThanOrEqualTo_(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("<= (expression)", 
+	docSlot("<=(expression)", 
 			"Evaluates argument and returns self if self is less 
 than or equal to it, or Nil if not.")
 	*/
@@ -1789,7 +1796,7 @@ than or equal to it, or Nil if not.")
 IoObject *IoObject_isGreaterThan_(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("> (expression)", 
+	docSlot(">(expression)", 
 			"Evaluates argument and returns self if self is greater than it, or Nil if not.")
 	*/
 	
@@ -1800,7 +1807,7 @@ IoObject *IoObject_isGreaterThan_(IoObject *self, IoObject *locals, IoMessage *m
 IoObject *IoObject_isGreaterThanOrEqualTo_(IoObject *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot(">= (expression)", 
+	docSlot(">=(expression)", 
 			"Evaluates argument and returns self if self is greater 
 than or equal to it, or Nil if not.")
 	*/

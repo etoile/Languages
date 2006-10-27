@@ -28,6 +28,8 @@ IoObject *IoCollector_marksPerSweep(IoObject *self, IoObject *locals, IoMessage 
 IoObject *IoCollector_setSweepsPerGeneration(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoCollector_sweepsPerGeneration(IoObject *self, IoObject *locals, IoMessage *m);
 
+IoObject *IoCollector_allObjects(IoObject *self, IoObject *locals, IoMessage *m);
+
 #ifdef __cplusplus
 }
 #endif

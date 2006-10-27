@@ -21,7 +21,12 @@ docCredits("based on DllHandle.c, contributed by Daniel A. Koepke
 
 static void *dlopen(const char *path, int mode)
 {
-    return (void *)LoadLibraryEx(path, NULL, 0);
+    void *result;
+    result = (void *)LoadLibraryEx(path, NULL, 0);
+    if (result)
+        SetLastError(ERROR_SUCCESS);
+
+    return result;
 }
 
 static int dlclose(void *handle)
@@ -34,10 +39,15 @@ static const char *dlerror(void)
     // XXX this will leak the error string 
     
     LPSTR buf;
+    DWORD err;
+    err = GetLastError();
+    if (err == ERROR_SUCCESS)
+        return (char*)0;
+
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
 				  | FORMAT_MESSAGE_IGNORE_INSERTS
 				  | FORMAT_MESSAGE_FROM_SYSTEM,
-				  NULL, GetLastError(),
+				  NULL, err,
 				  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 				  (LPSTR)&buf, 0, NULL);
     return buf;
@@ -62,7 +72,7 @@ DynLib *DynLib_new(void)
 
 void DynLib_free(DynLib *self)
 {
-    DynLib_close(self);
+    //DynLib_close(self);
     if (self->path) free(self->path);
     if (self->initFuncName) free(self->initFuncName);
     if (self->freeFuncName) free(self->freeFuncName);

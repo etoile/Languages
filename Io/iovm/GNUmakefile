@@ -7,6 +7,7 @@ ADDITIONAL_INCLUDE_DIRS += \
 	-I../basekit \
 	-I../coroutine \
 	-I../skipdb \
+	-I../thread \
 	-I../garbagecollector
 
 SUBPROJECT_NAME = iovm
@@ -54,7 +55,10 @@ iovm_C_FILES = \
 	IoLexer.c \
 	IoState.c \
 	IoList.c \
+	IoState_threads.c \
 	IoState_callbacks.c 
+
+iovm_CFLAGS += -DINSTALL_PREFIX=\"$(GNUSTEP_LOCAL_ROOT)/Tools\"
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
 

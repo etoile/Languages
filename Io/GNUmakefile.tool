@@ -15,6 +15,7 @@ ADDITIONAL_INCLUDE_DIRS += \
         -Iskipdb \
         -Igarbagecollector \
         -Icoroutine \
+        -Ithread \
         -IVector \
         -IObjcBridge
 
@@ -25,6 +26,7 @@ ioobjc_SUBPROJECTS += \
 	coroutine \
         garbagecollector \
 	skipdb \
+	thread \
 	iovm \
 	Vector \
 	ObjcBridge

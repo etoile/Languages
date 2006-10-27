@@ -45,12 +45,12 @@ void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...)
 #ifdef NEEDX86MAKECONTEXT
 void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...)
 {
-	int *sp;
+	uintptr_t *sp;
 
-	sp = (int*)ucp->uc_stack.ss_sp + ucp->uc_stack.ss_size / 4;
+	sp = (uintptr_t *)ucp->uc_stack.ss_sp + ucp->uc_stack.ss_size / 4;
 	sp -= argc;
 	sp = (void*)((uintptr_t)sp - (uintptr_t)sp % 16);	/* 16-align for OS X */
-	memmove(sp, &argc + 1, argc * sizeof(int));
+	memmove(sp, &argc + 1, argc * sizeof(uintptr_t));
 
 	*--sp = 0;		/* return address */
 	ucp->uc_mcontext.mc_eip = (long)func;

@@ -49,7 +49,7 @@ void IoState_setupQuickAccessSymbols(IoState *self)
 	self->callSymbol         = IoState_retain_(self, SIOSYMBOL("call"));  
 	self->typeSymbol         = IoState_retain_(self, SIOSYMBOL("type"));  
 	self->opShuffleSymbol         = IoState_retain_(self, SIOSYMBOL("opShuffle"));  
-        self->noShufflingSymbol       = IoState_retain_(self, SIOSYMBOL("__noShuffling__"));
+	self->noShufflingSymbol       = IoState_retain_(self, SIOSYMBOL("__noShuffling__"));
 }
 
 IoState *IoState_new(void)
@@ -159,7 +159,12 @@ IoState *IoState_new(void)
 		IoState_setupCachedNumbers(self);
 
 		IoObject_setSlot_to_(vm, SIOSYMBOL("Random"), IoRandom_proto(self)); 
-		IoObject_setSlot_to_(vm, SIOSYMBOL("System"), IoSystem_proto(self));
+		
+		{
+			IoObject *systemProto = IoSystem_proto(self);
+			IoObject_setSlot_to_(vm, SIOSYMBOL("System"), systemProto);
+			IoObject_setSlot_to_(systemProto, SIOSYMBOL("installPrefix"), SIOSYMBOL(INSTALL_PREFIX));
+		}
 		
 		// nil
 		

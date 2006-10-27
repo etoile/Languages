@@ -15,7 +15,8 @@ int PortableTruncate_justHereToAvoidRanlibWarning(void) { return 0; }
 
 int truncate(const char *path, long length)
 {
-    HANDLE file = CreateFile(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+    HANDLE file = CreateFile(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
+    				FILE_SHARE_WRITE | FILE_SHARE_READ, NULL);
 	
     if (file == INVALID_HANDLE_VALUE)
     {

@@ -74,7 +74,7 @@ IoMap *IoMap_proto(void *state)
 	{"empty",    IoMap_empty}, 
 	{"at",       IoMap_at}, 
 	{"atPut",    IoMap_atPut}, 
-	{"atPutIfAbsent", IoMap_atPutIfAbsent}, 
+	{"atIfAbsentPut", IoMap_atIfAbsentPut}, 
 	{"size",     IoMap_size}, 
 	{"keys",     IoMap_keys}, 
 	{"values",   IoMap_values}, 
@@ -177,27 +177,22 @@ IoObject *IoMap_atPut(IoMap *self, IoObject *locals, IoMessage *m)
 	return self;
 }
 
-IoObject *IoMap_atPutIfAbsent(IoMap *self, IoObject *locals, IoMessage *m)
+IoObject *IoMap_atIfAbsentPut(IoMap *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("atPutIfAbsent(keyString, aValue)", 
+	docSlot("atIfAbsentPut(keyString, aValue)", 
 		   "Inserts/sets aValue with the key keyString if the 
 key is not already present. Returns self. ")
 	*/
 	
 	IoSymbol *k = IoMessage_locals_symbolArgAt_(m, locals, 0);
-	void *result = Hash_at_(HASHIVAR(self), k);
 	
-	if (result) 
-	{
-		return result;
-	}
-	else
+	if (Hash_at_(HASHIVAR(self), k) == NULL)
 	{
 		IoObject *v = IoMessage_locals_valueArgAt_(m, locals, 1);
 		IoMap_rawAtPut(self, k, v);
-		return v;
 	}
+	return self;
 }
 
 IoObject *IoMap_size(IoMap *self, IoObject *locals, IoMessage *m)

@@ -7,6 +7,7 @@ Sequence ioDoc(
     docCategory("Core")
 */
 
+#define _GNU_SOURCE // for NAN macro
 #include "IoSeq.h"
 #include "IoState.h"
 #include "IoCFunction.h"
@@ -16,6 +17,10 @@ Sequence ioDoc(
 #include "IoList.h"
 #include <ctype.h>
 #include <errno.h>
+#include <math.h> // for NAN macro
+#ifdef _MSC_VER
+#include <xmath.h> // XXX: C99 says NAN is supposed to be defined in math.h, someone needs to give Microsoft a clue
+#endif
 
 #define BIVAR(self) ((ByteArray *)IoObject_dataPointer(self))
 
@@ -561,7 +566,7 @@ Initial whitespace is ignored.")
     
     if (errno == ERANGE || endp == s) 
     { 
-		return IONIL(self); 
+		return IONUMBER(NAN);
     }
     
     return IONUMBER(d); 

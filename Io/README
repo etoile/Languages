@@ -1,5 +1,5 @@
 =========================
-Io (GNUstep) 0.1.1 README
+Io (GNUstep) 0.1.2 README
 =========================
 
 Io (GNUstep) is a module which provides Io language support in a convenient 
@@ -37,11 +37,11 @@ Directories structure
 ---------------------
 Due to the reorganization of Io since August, 2006, 
 the directories are mapped as:
-libs/basekit -> IoVM/base
-libs/coroutine -> IoVM/base
-libs/garbagecollector -> IoVM/base
-libs/iovm -> IoVM
-libs/skipdb -> IoVM/SkipDB
+libs/basekit -> basekit
+libs/coroutine -> coroutine
+libs/garbagecollector -> garbagecollector
+libs/iovm -> iovm
+libs/skipdb -> skipdb
 addons/Vector -> Vector
 addons/Vector/io/Vector.io -> Vector/IoVectorInit.c (manually)
 addons/ObjcBridge -> ObjcBridge

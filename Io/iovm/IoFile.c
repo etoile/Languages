@@ -27,6 +27,9 @@ file close</pre>
 #include "PortableTruncate.h"
 #include <errno.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 
 #if !defined(_MSC_VER) && !defined(__SYMBIAN32__)
 #include <unistd.h> /* ok, this isn't ANSI */
@@ -235,16 +238,8 @@ void IoFile_justClose(IoFile *self)
 
 int IoFile_justExists(IoFile *self)
 {
-	char *path = CSTRING(DATA(self)->path);
-	FILE *fp = fopen(path, "rb");
-    
-	if (fp) 
-	{ 
-		fclose(fp); 
-		return 1; 
-	}
-    
-	return 0;
+    struct stat statInfo;
+    return stat(CSTRING(DATA(self)->path), &statInfo) == 0;
 }
 
 int IoFile_create(IoFile *self)

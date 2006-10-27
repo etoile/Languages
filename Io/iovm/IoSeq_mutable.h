@@ -66,4 +66,5 @@ IoObject *IoSeq_appendPathSeq(IoObject *self, IoObject *locals, IoMessage *m);
 
 IoObject *IoSeq_asCapitalized(IoObject *self, IoObject *locals, IoMessage *m);
 
+IoObject *IoSeq_interpolateInPlace(IoSeq *self, IoObject *locals, IoMessage *m);
 

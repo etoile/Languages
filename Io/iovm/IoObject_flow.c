@@ -114,10 +114,12 @@ IoObject *IoObject_for(IoObject *self, IoObject *locals, IoMessage *m)
 			doMessage = IoMessage_rawArgAt_(m, 3); 
 		}
 		
+		/*
 		if (startValue > endValue) 
 		{
 			increment = -1;
 		}
+		*/
 		
 		IoState_resetStopStatus(state); 
 		IoState_pushRetainPool(state);

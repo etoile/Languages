@@ -279,7 +279,7 @@ point values in the current architecture's byte order and float format.")
 IoSeq *IoVector_equals(IoVector *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
-	docSlot("== aVector", 
+	docSlot("==(aVector)", 
 		   "Returns true if all elements of aVector are equal to 
 those of the receiver. Returns false otherwise.")
 	*/
@@ -385,7 +385,14 @@ If aValue is a vector, an in-place vector addition is performed on the receiver.
 	
 	IoObject *other = IoMessage_locals_valueArgAt_(m, locals, 0);
 	
-	if (ISVECTOR(other))
+	if (IoMessage_argCount(m) > 1)
+	{
+		long index   = IoMessage_locals_longArgAt_(m, locals, 1);
+		float xscale = IoMessage_locals_floatArgAt_(m, locals, 2);
+		float yscale = IoMessage_locals_floatArgAt_(m, locals, 3);
+		Vector_addArray_at_xscale_yscale_(VIVAR(self), VIVAR(other), index, xscale, yscale); 
+	}
+	else if (ISVECTOR(other))
 	{ 
 		Vector_addArray_(VIVAR(self), VIVAR(other)); 
 	}
@@ -1162,10 +1169,17 @@ IoObject *IoVector_rangeFill(IoVector *self, IoObject *locals, IoMessage *m)
 	")
 	*/
 	
-	IoVector *other = IoMessage_locals_vectorArgAt_(m, locals, 0);
-	size_t d = IoMessage_locals_intArgAt_(m, locals, 1);
-	
-	Vector_rangeFillWithShapeVectorDim(VIVAR(self), VIVAR(other), d);
+	if(IoMessage_argCount(m) == 0)
+	{
+		Vector_rangeFill(VIVAR(self));
+	}
+	else
+	{
+		IoVector *other = IoMessage_locals_vectorArgAt_(m, locals, 0);
+		size_t d = IoMessage_locals_intArgAt_(m, locals, 1);
+
+		Vector_rangeFillWithShapeVectorDim(VIVAR(self), VIVAR(other), d);
+	}
 	return self;
 }
 

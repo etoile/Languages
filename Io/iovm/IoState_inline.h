@@ -167,15 +167,18 @@ IOINLINE IoObject *IoMessage_locals_quickValueArgAt_(IoMessage *self, IoObject *
 
 IOINLINE IoObject *IoMessage_locals_valueArgAt_(IoMessage *self, IoObject *locals, int n)
 {
+	return IoMessage_locals_quickValueArgAt_(self, locals, n);
+	/*
 	List *args = IOMESSAGEDATA(self)->args;
 	IoMessage *m = (IoMessage *)List_at_(args, n);
 	
-	if (m) 
+	if (m)
 	{ 
 		return IoMessage_locals_performOn_(m, locals, locals); 
 	}
 	
 	return IOSTATE->ioNil;
+	*/
 }
 
 IOINLINE IoObject *IoMessage_locals_firstStringArg(IoMessage *self, IoObject *locals)
