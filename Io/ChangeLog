@@ -2,6 +2,7 @@
 
     * Reorganize to match current directories of Io.
     * Update to 20061026
+    * Put a note about INSTALL_PREFIX in iovm/GNUmakefile
 
 2006-08-30  Yen-Ju Chen <yjchenx at gmail>
 

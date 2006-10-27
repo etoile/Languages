@@ -47,6 +47,8 @@ addons/Vector/io/Vector.io -> Vector/IoVectorInit.c (manually)
 addons/ObjcBridge -> ObjcBridge
 tools/source/main.c -> main.m (manually)
 
+In iovm/GNUmakefile, INSTALL_PREFIX is defined manually.
+
 Automatically generated files
 -----------------------------
 
