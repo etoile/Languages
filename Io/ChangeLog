@@ -1,3 +1,7 @@
+2006-10-30  Yen-Ju Chen <yjchenx at gmail>
+
+    * Try to fix compilation with GNUstep/Darwin.
+
 2006-10-26  Yen-Ju Chen <yjchenx at gmail>
 
     * Reorganize to match current directories of Io.

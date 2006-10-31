@@ -2,7 +2,8 @@
    All Rights Reserved. See COPYING.*/
 
 /* Taken from IoVM/main.c */
-#include "IoState.h"
+#import "IoState.h"
+#import <Foundation/Foundation.h>
 
 void IoVectorInit(IoObject *context);
 void IoObjcBridgeInit(IoObject *context);
