@@ -3,7 +3,7 @@
 
 /* Taken from IoVM/main.c */
 #import "IoState.h"
-#import <Foundation/Foundation.h>
+#import <AppKit/AppKit.h>
 
 void IoVectorInit(IoObject *context);
 void IoObjcBridgeInit(IoObject *context);
