@@ -1,3 +1,8 @@
+2006-11-05  Yen-Ju Chen <yjchenx at gmail>
+
+    * Fix problem of main(). 
+      Patched by Yves de Champlain <yves gnu-darwin org>.
+
 2006-10-30  Yen-Ju Chen <yjchenx at gmail>
 
     * Try to fix compilation with GNUstep/Darwin.
