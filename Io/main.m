@@ -15,11 +15,7 @@ void IoBindingsInit(IoState *self, IoObject *context)
         IoObjcBridgeInit(context);
 }
 
-#ifdef GNUSTEP
-int main(int argc, const char *argv[])
-#else
 int main(int argc, const char* argv[], char **env_c)
-#endif
 {
     IoState *self = IoState_new();
     IoState_setBindingsInitCallback(self, (IoStateBindingsInitCallback *)IoBindingsInit);

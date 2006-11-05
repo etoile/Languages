@@ -2,6 +2,7 @@
 
     * Fix problem of main(). 
       Patched by Yves de Champlain <yves gnu-darwin org>.
+    * New patch works both on Cocoa and GNUstep.
 
 2006-10-30  Yen-Ju Chen <yjchenx at gmail>
 
