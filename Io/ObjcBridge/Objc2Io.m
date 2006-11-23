@@ -106,7 +106,7 @@
 		char *error;
 		void *cResult = IoObjcBridge_cValueForIoObject_ofType_error_(bridge, result, (char *)returnType, &error);
 		if (error)
-			IoState_error_(bridge->tag->state, message, "Io Objc2Io forwardInvocation: %s - return type:'%s'", error, returnType);
+			IoState_error_(bridge->tag->state, message, "Io Objc2Io forwardInvocation: %s %s - return type:'%s'", [[invocation description] cString], error, returnType);
 		[invocation setReturnValue:cResult];
 	}
 }

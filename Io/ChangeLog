@@ -1,3 +1,9 @@
+2006-11-23  Quentin Mathe <qmathe@club-internet.fr>
+
+    * ObjcBridge/Objc2Io.m:
+    * ObjcBridge/Io2Objc.m:
+    Improved logging for forward invocation related errors.
+
 2006-11-05  Yen-Ju Chen <yjchenx at gmail>
 
     * Fix problem of main(). 

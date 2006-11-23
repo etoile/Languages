@@ -223,7 +223,7 @@ void forwardInvocation(id self, SEL sel, NSInvocation *invocation)
 		char *error;
 		void *cResult = IoObjcBridge_cValueForIoObject_ofType_error_(bridge, result, (char *)returnType, &error);
 		if (error)
-			IoState_error_(state, message, "Io Io2Objc forwardInvocation %s - return type:'%s'", error, returnType);
+			IoState_error_(state, message, "Io Io2Objc forwardInvocation: %s %s - return type:'%s'", [[invocation description] cString], error, returnType);
 		[invocation setReturnValue:cResult];
 	}
 }
