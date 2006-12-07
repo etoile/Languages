@@ -7,56 +7,54 @@ ADDITIONAL_INCLUDE_DIRS += \
 	-I../basekit \
 	-I../coroutine \
 	-I../skipdb \
-	-I../thread \
 	-I../garbagecollector
 
 SUBPROJECT_NAME = iovm
 
 iovm_C_FILES = \
 	IoBlock.c \
-	IoMap.c \
-	IoState_coros.c \
-	IoCFunction.c \
-	IoMessage.c \
-	IoState_debug.c \
 	IoCall.c \
-	IoMessage_parser.c \
-	IoState_eval.c \
+	IoCFunction.c \
 	IoCollector.c \
-	IoNumber.c \
-	IoState_exceptions.c \
 	IoCompiler.c \
-	IoObject.c \
-	IoState_flowControl.c \
 	IoCoroutine.c \
-	IoObject_flow.c \
-	IoState_symbols.c \
 	IoDate.c \
-	IoObject_persistence.c \
-	IoStore.c \
 	IoDebugger.c \
-	IoRandom.c \
-	IoSystem.c \
 	IoDirectory.c \
-	IoRange.c \
-	IoTag.c \
 	IoDuration.c \
-	IoSandbox.c \
-	IoToken.c \
 	IoDynLib.c \
-	IoSeq.c \
-	IoToken_parser.c \
 	IoFile.c \
-	IoSeq_immutable.c \
-	IoVMInit.c \
 	IoFile_stat.c \
-	IoSeq_mutable.c \
-	IoWeakLink.c \
 	IoLexer.c \
-	IoState.c \
 	IoList.c \
-	IoState_threads.c \
-	IoState_callbacks.c 
+	IoMap.c \
+	IoMessage.c \
+	IoMessage_opShuffle.c \
+	IoMessage_parser.c \
+	IoNumber.c \
+	IoObject.c \
+	IoObject_flow.c \
+	IoObject_persistence.c \
+	IoRandom.c \
+	IoRange.c \
+	IoSandbox.c \
+	IoSeq.c \
+	IoSeq_immutable.c \
+	IoSeq_mutable.c \
+	IoState.c \
+	IoState_callbacks.c \
+	IoState_coros.c \
+	IoState_debug.c \
+	IoState_eval.c \
+	IoState_exceptions.c \
+	IoState_flowControl.c \
+	IoState_symbols.c \
+	IoStore.c \
+	IoSystem.c \
+	IoTag.c \
+	IoToken.c \
+	IoVMInit.c \
+	IoWeakLink.c 
 
 iovm_CFLAGS += -DINSTALL_PREFIX=\"$(GNUSTEP_LOCAL_ROOT)/Tools\"
 

@@ -69,7 +69,7 @@ void IoBlock_writeToStore_stream_(IoBlock *self, IoStore *store, BStream *stream
 
 void IoBlock_readFromStore_stream_(IoBlock *self, IoStore *store, BStream *stream)
 {
-	IoBlock *newBlock = 0x0;
+	IoBlock *newBlock = NULL;
 	ByteArray *ba = BStream_readTaggedByteArray(stream);
 	
 	//printf("read block [[[%s]]]]\n", ByteArray_asCString(ba));
@@ -77,7 +77,7 @@ void IoBlock_readFromStore_stream_(IoBlock *self, IoStore *store, BStream *strea
 	
 	if (!newBlock || !ISBLOCK(newBlock))
 	{
-		IoState_error_(IOSTATE, 0x0, "Store found bad block code: %s", (char *)ByteArray_bytes(ba));
+		IoState_error_(IOSTATE, NULL, "Store found bad block code: %s", (char *)ByteArray_bytes(ba));
 	}
 	
 	IoBlock_copy_(self, newBlock);
@@ -91,7 +91,7 @@ void IoBlock_readFromStore_stream_(IoBlock *self, IoStore *store, BStream *strea
 		}
 		else
 		{
-			DATA(self)->scope = 0x0;
+			DATA(self)->scope = NULL;
 		}
 	}
 }
@@ -119,7 +119,7 @@ IoBlock *IoBlock_proto(void *vState)
 	self->tag = IoBlock_tag(state);
 	DATA(self)->message  = ((IoState *)state)->nilMessage;
 	DATA(self)->argNames = List_new();
-	DATA(self)->scope    = 0x0;
+	DATA(self)->scope    = NULL;
 	IoState_registerProtoWithFunc_((IoState *)state, self, IoBlock_proto);
 
 	IoObject_addMethodTable_(self, methodTable);
@@ -213,6 +213,13 @@ IoObject *IoBlock_activate(IoBlock *self, IoObject *target, IoObject *locals, Io
 		IoObject_setSlot_to_(blockLocals, name, arg);
 	);
 	
+	/*
+	{
+		IoCoroutine *currentCoroutine = state->currentCoroutine;
+		Coro *coro = IoCoroutine_cid(currentCoroutine);
+		printf("%i bytes left\n", Coro_bytesLeftOnStack(coro));
+	}
+	*/
 	if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
 	{ 
 		/*
@@ -418,7 +425,7 @@ object. If Nil, it will set them to the target of the message. ")
 	*/
 	
 	IoObject *scope = IoMessage_locals_valueArgAt_(m, locals, 0);
-	DATA(self)->scope = ISNIL(scope) ? 0x0 : IOREF(scope);
+	DATA(self)->scope = ISNIL(scope) ? NULL : IOREF(scope);
 	return self;
 }
 

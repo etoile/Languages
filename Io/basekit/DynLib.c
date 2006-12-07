@@ -138,7 +138,7 @@ void DynLib_setError_(DynLib *self,const char *error)
     else
     {
 		if (self->error) free(self->error);
-		self->error = 0x0;
+		self->error = NULL;
     }
 }
 
@@ -192,7 +192,7 @@ void DynLib_open(DynLib *self)
 
 unsigned char DynLib_isOpen(DynLib *self) 
 { 
-    return self->handle != 0x0; 
+    return self->handle != NULL;
 }
 
 void DynLib_close(DynLib *self)
@@ -222,7 +222,7 @@ void DynLib_close(DynLib *self)
 		dlclose(self->handle);
     }
     
-    self->handle = 0x0;
+    self->handle = NULL;
 }
 
 void *DynLib_pointerForSymbolName_(DynLib *self, const char *symbolName)

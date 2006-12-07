@@ -5,8 +5,9 @@ extern "C" {
 
 
 #ifdef _WIN32
+#include "Common.h"
 
-    int truncate(const char *path, long length);
+BASEKIT_API    int truncate(const char *path, long length);
     
 #else
 

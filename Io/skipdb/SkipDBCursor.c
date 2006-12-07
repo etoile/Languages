@@ -11,6 +11,7 @@ SkipDBCursor ioDoc(
 SkipDBCursor *SkipDBCursor_new(void)
 {
 	SkipDBCursor *self = (SkipDBCursor *)calloc(1, sizeof(SkipDBCursor));
+	SkipDBCursor_retain(self);
 	return self;
 }
 
@@ -21,10 +22,25 @@ SkipDBCursor *SkipDBCursor_newWithDB_(SkipDB *sdb)
 	return self;
 }
 
-void SkipDBCursor_free(SkipDBCursor *self)
+void SkipDBCursor_retain(SkipDBCursor *self)
 {
-	SkipDB_freeCursor_(self->sdb, self);
+	self->refCount ++;
+}
+
+void SkipDBCursor_dealloc(SkipDBCursor *self)
+{
+	if (self->sdb) SkipDB_removeCursor_(self->sdb, self);
 	free(self);
+}
+
+void SkipDBCursor_release(SkipDBCursor *self)
+{
+	self->refCount --;
+	
+	if (self->refCount == 0)
+	{
+		SkipDBCursor_dealloc(self);
+	}
 }
 
 void SkipDBCursor_mark(SkipDBCursor *self)
@@ -63,7 +79,7 @@ SkipDBRecord *SkipDBCursor_previous(SkipDBCursor *self)
 		
 		if (self->record == SkipDB_headerRecord(self->sdb))
 		{
-			self->record = 0x0;
+			self->record = NULL;
 		}
 	}
 	return self->record;
@@ -73,7 +89,7 @@ SkipDBRecord *SkipDBCursor_next(SkipDBCursor *self)
 {
 	if (!self->record) 
 	{
-		return 0x0;
+		return NULL;
 	}
 	
 	return (self->record = SkipDBRecord_nextRecord(self->record));

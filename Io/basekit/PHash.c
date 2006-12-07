@@ -88,7 +88,7 @@ void PHash_collapseRecordsAndAddKey_value_(PHash *self, void *key, void *value)
 
 static void PHash_clearTable(PHash *self)
 {
-	memset(self->records, 0x0, sizeof(PHashRecord) * self->tableSize);
+	memset(self->records, 0, sizeof(PHashRecord) * self->tableSize);
 }
 
 void PHash_rehashWithCollapsedRecords(PHash *self)
@@ -100,7 +100,7 @@ void PHash_rehashWithCollapsedRecords(PHash *self)
 	self->cachedLookup = 0;
 #endif
 	
-	self->records = 0x0; 
+	self->records = NULL;
 	PHash_prepareRehash(self);
 	
 collision:
@@ -113,7 +113,7 @@ collision:
 		void *key = collapsedRecords[i].key;
 		unsigned int index = PHash_hash(self, key);
 		/*
-		 if (key = 0x0)
+		 if (key = NULL)
 		 {
 			 printf("ERROR: NULL key\n");
 			 exit(1);
@@ -159,7 +159,7 @@ void *PHash_nextValue(PHash *self)
 		}
 	}
 	
-	return (void *)0x0;
+	return (void *)NULL;
 }
 
 void PHash_removeValue_(PHash *self, void *value)
@@ -175,7 +175,7 @@ void PHash_removeValue_(PHash *self, void *value)
 		if (record->key && record->value == value)
 		{
 			self->numKeys --;
-			memset(record, 0x0, sizeof(PHashRecord));
+			memset(record, 0, sizeof(PHashRecord));
 			return;
 		}
 	}
@@ -202,7 +202,7 @@ void *PHash_nextKey(PHash *self)
 		}
 	}
 	
-	return (void *)0x0;
+	return (void *)NULL;
 }
 
 /*
@@ -262,7 +262,7 @@ PHashRecord *PHash_recordAtIndex_(PHash *self, unsigned int index)
 		i ++;
 	}
 	
-	return (PHashRecord *)0x0;
+	return (PHashRecord *)NULL;
 }
 
 void *PHash_keyAt_(PHash *self, unsigned int i)
@@ -357,7 +357,7 @@ void *PHash_detect_(PHash *self, PHashDetectCallback *callback)
 		}
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 void PHash_doOnKeys_(PHash *self, PHashDoCallback *callback)

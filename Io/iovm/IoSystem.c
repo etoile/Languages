@@ -20,7 +20,9 @@ System ioDoc(
 #ifdef __NetBSD__
 # include <sys/param.h>
 #endif
-#include <sys/sysctl.h>
+#ifndef __CYGWIN__
+# include <sys/sysctl.h>
+#endif
 #endif
 
 #ifdef WIN32
@@ -82,9 +84,7 @@ IoObject *IoSystem_proto(void *state)
 	{"platformVersion", IoObject_platformVersion},
 	{"sleep", IoObject_sleep},
 	{"activeCpus", IoObject_activeCpus},
-	{"createThread", IoObject_createThread},
-	{"threadCount", IoObject_threadCount},
-	{0x0, 0x0},
+	{NULL, NULL},
 	};
 	
 	IoObject *self = IoObject_new(state);
@@ -92,6 +92,7 @@ IoObject *IoSystem_proto(void *state)
 	
 	IoObject_setSlot_to_(self, IOSYMBOL("version"), IONUMBER(IO_VERSION_NUMBER));
 	IoObject_setSlot_to_(self, IOSYMBOL("distribution"), IOSYMBOL("Io"));
+	IoObject_setSlot_to_(self, IOSYMBOL("type"), IOSYMBOL("System"));
 	
 	return self;
 }
@@ -351,20 +352,4 @@ IoObject *IoObject_sleep(IoObject *self, IoObject *locals, IoMessage *m)
  docSlot("distribution", "Returns the Io distribution name as a string.")
  */
 
-#include "IoState_threads.h"
-
-IoObject *IoObject_createThread(IoObject *self, IoObject *locals, IoMessage *m)
-{
-	IoSeq *s = IoMessage_locals_seqArgAt_(m, locals, 0);
-	IoState_createThreadAndEval(IOSTATE, CSTRING(s));
-	return self;
-}
-
-IoObject *IoObject_threadCount(IoObject *self, IoObject *locals, IoMessage *m)
-{
-	Thread_Init(); // I don't like this call, but if it hasn't been called
-	               // before we get a crash.  I think when Io starts
-	               // Thread_Init should be called.
-	return IONUMBER(IoState_threadCount(IOSTATE));
-}
 

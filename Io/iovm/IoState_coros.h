@@ -2,11 +2,11 @@
 docCopyright("Steve Dekorte", 2002)
 docLicense("BSD revised")
 */
+#include "IoVMApi.h"
 
+IOVM_API IoObject *IoState_currentCoroutine(IoState *self);
+IOVM_API void IoState_setCurrentCoroutine_(IoState *self, IoObject *coroutine);
 
-IoObject *IoState_currentCoroutine(IoState *self);
-void IoState_setCurrentCoroutine_(IoState *self, IoObject *coroutine);
-
-void IoState_yield(IoState *self);
+IOVM_API void IoState_yield(IoState *self);
 
 

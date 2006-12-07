@@ -51,47 +51,47 @@ typedef struct
 	size_t index;
 } ListCursor;
 
-List *List_new(void);
-List *List_clone(List *self);
-List *List_cloneSlice(List *self, int startIndex, int endIndex);
+BASEKIT_API List *List_new(void);
+BASEKIT_API List *List_clone(List *self);
+BASEKIT_API List *List_cloneSlice(List *self, int startIndex, int endIndex);
 
-void List_free(List *self);
-void List_removeAll(List *self);
-void List_copy_(List *self, List *otherList);
-int  List_equals_(List *self, List *otherList);
-size_t List_memorySize(List *self);
+BASEKIT_API void List_free(List *self);
+BASEKIT_API void List_removeAll(List *self);
+BASEKIT_API void List_copy_(List *self, List *otherList);
+BASEKIT_API int  List_equals_(List *self, List *otherList);
+BASEKIT_API size_t List_memorySize(List *self);
 
 // sizing  
 
-void List_preallocateToSize_(List *self, size_t index);
-void List_setSize_(List *self, size_t index);
-void List_compact(List *self);
+BASEKIT_API void List_preallocateToSize_(List *self, size_t index);
+BASEKIT_API void List_setSize_(List *self, size_t index);
+BASEKIT_API void List_compact(List *self);
 
 // utility
 
-void List_print(List *self);
-void List_removeItemsAfterLastNULL_(List *self);
-void List_sliceInPlace(List *self, int startIndex, int endIndex);
+BASEKIT_API void List_print(List *self);
+BASEKIT_API void List_removeItemsAfterLastNULL_(List *self);
+BASEKIT_API void List_sliceInPlace(List *self, int startIndex, int endIndex);
 
 // enumeration
 
-void List_target_do_(List *self, void *target, ListDoWithCallback *callback);
-void List_do_(List *self, ListDoCallback *callback);
-void List_do_with_(List *self, ListDoWithCallback *callback, void *arg);
+BASEKIT_API void List_target_do_(List *self, void *target, ListDoWithCallback *callback);
+BASEKIT_API void List_do_(List *self, ListDoCallback *callback);
+BASEKIT_API void List_do_with_(List *self, ListDoWithCallback *callback, void *arg);
 
-List *List_map_(List *self, ListCollectCallback *callback);
-void List_mapInPlace_(List *self, ListCollectCallback *callback);
-void *List_detect_(List *self, ListDetectCallback *callback);
-void *List_detect_withArg_(List *self, ListDetectCallback *callback, void *arg);
-List *List_select_(List *self, ListSelectCallback *callback);
+BASEKIT_API List *List_map_(List *self, ListCollectCallback *callback);
+BASEKIT_API void List_mapInPlace_(List *self, ListCollectCallback *callback);
+BASEKIT_API void *List_detect_(List *self, ListDetectCallback *callback);
+BASEKIT_API void *List_detect_withArg_(List *self, ListDetectCallback *callback, void *arg);
+BASEKIT_API List *List_select_(List *self, ListSelectCallback *callback);
 
-void *List_anyOne(List *self);
-void List_shuffle(List *self);
-void *List_removeLast(List *self);
+BASEKIT_API void *List_anyOne(List *self);
+BASEKIT_API void List_shuffle(List *self);
+BASEKIT_API void *List_removeLast(List *self);
 
 #include "List_inline.h"
 
-void List_append_sortedBy_(List *self, void *item, ListSortCallback *callback);
+BASEKIT_API void List_append_sortedBy_(List *self, void *item, ListSortCallback *callback);
 
 #ifdef __cplusplus
 }

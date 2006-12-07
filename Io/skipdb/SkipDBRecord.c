@@ -1,6 +1,7 @@
 
-#include "SkipDBRecord.h"
+
 #include "SkipDB.h"
+#include "SkipDBRecord.h"
 
 static void SkipDBPointer_setRecord_(SkipDBPointer *self, SkipDBRecord *r)
 {
@@ -19,7 +20,7 @@ SkipDBRecord *SkipDBRecord_new(void)
 {
 	//SkipDBRecord *self = (SkipDBRecord *)calloc(1, sizeof(SkipDBRecord));
 	SkipDBRecord *self = (SkipDBRecord *)malloc(sizeof(SkipDBRecord));
-	memset(self, 0x0, sizeof(SkipDBRecord));
+	memset(self, 0, sizeof(SkipDBRecord));
 	self->key = ByteArray_new();
 	self->ownsKey = 1;
 	self->value = ByteArray_new();
@@ -128,7 +129,7 @@ void SkipDBRecord_removeReferencesToUnmarked(SkipDBRecord *self)
 			if (r && r->mark == 0)
 			{
 				pointers[i].pid = SkipDBRecord_pid(r);
-				pointers[i].record = 0x0;
+				pointers[i].record = NULL;
 			}
 		}
 	}
@@ -136,14 +137,14 @@ void SkipDBRecord_removeReferencesToUnmarked(SkipDBRecord *self)
 	if (self->previousRecord && self->previousRecord->mark == 0)
 	{
 		self->previousPid = SkipDBRecord_pid(self->previousRecord);
-		self->previousRecord = 0x0;
+		self->previousRecord = NULL;
 	}
 }
 
 //#define SKIPDB_DEBUG 1
 
 #ifdef SKIPDB_DEBUG
-static List *deallocedRecords = 0x0;
+static List *deallocedRecords = NULL;
 #endif
 
 void SkipDBRecord_dealloc(SkipDBRecord *self)
@@ -166,7 +167,7 @@ void SkipDBRecord_dealloc(SkipDBRecord *self)
 //
 //		if (next && next->record)
 //		{
-//			next->record->previousRecord = 0x0;
+//			next->record->previousRecord = NULL;
 //		}
 		
 		free(self->pointers);
@@ -288,7 +289,7 @@ void SkipDBRecord_level_(SkipDBRecord *self, int level)
 	
 	if (level > oldLevel)
 	{
-		memset(self->pointers + oldLevel, 0x0, (level - oldLevel) * sizeof(SkipDBPointer));
+		memset(self->pointers + oldLevel, 0, (level - oldLevel) * sizeof(SkipDBPointer));
 	}
 }
 
@@ -311,7 +312,7 @@ void SkipDBRecord_atLevel_setPid_setSuffix_(SkipDBRecord *self, int level, PID_T
 {
 	SkipDBPointer *p = SkipDBRecord_pointerAtLevel_(self, level);
 	p->pid = pid;
-	SkipDBPointer_setRecord_(p, 0x0);
+	SkipDBPointer_setRecord_(p, NULL);
 	p->matchingPrefixSize = sMatch;
 }
 
@@ -319,7 +320,7 @@ void SkipDBRecord_atLevel_setPid_(SkipDBRecord *self, int level, PID_TYPE pid)
 {
 	SkipDBPointer *p = SkipDBRecord_pointerAtLevel_(self, level);
 	p->pid = pid;
-	SkipDBPointer_setRecord_(p, 0x0);
+	SkipDBPointer_setRecord_(p, NULL);
 }
 
 PID_TYPE SkipDBRecord_allocedPidAtLevel_(SkipDBRecord *self, int level)
@@ -549,7 +550,7 @@ SkipDBRecord *SkipDBRecord_find_quick_(SkipDBRecord *self, Datum key, int quick)
 		}
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 SkipDBRecord *SkipDBRecord_findLastRecord(SkipDBRecord *self)
@@ -676,7 +677,7 @@ SkipDBRecord *SkipDBRecord_nextRecord(SkipDBRecord *self)
 void SkipDBRecord_previousPid_(SkipDBRecord *self, PID_TYPE pid)
 {
 	self->previousPid = pid;
-	self->previousRecord = 0x0;
+	self->previousRecord = NULL;
 }
 
 PID_TYPE SkipDBRecord_previousPid(SkipDBRecord *self)

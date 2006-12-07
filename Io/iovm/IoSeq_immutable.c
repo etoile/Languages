@@ -21,6 +21,9 @@ Sequence ioDoc(
 #ifdef _MSC_VER
 #include <xmath.h> // XXX: C99 says NAN is supposed to be defined in math.h, someone needs to give Microsoft a clue
 #endif
+#ifndef NAN
+#define NAN 0.0/0.0
+#endif
 
 #define BIVAR(self) ((ByteArray *)IoObject_dataPointer(self))
 

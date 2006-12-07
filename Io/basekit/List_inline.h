@@ -98,7 +98,7 @@ IOINLINE void *List_at_(List *self, int index)
 		return self->items[index]; 
 	}
 	
-	return (void *)0x0;
+	return (void *)NULL;
 }
 
 // --------------------------------
@@ -115,7 +115,7 @@ IOINLINE void *ListCursor_next(ListCursor *self)
 {
 	if (self->index == (size_t)List_size(self->list))
 	{
-		return 0x0;
+		return NULL;
 	}
 	
 	self->index ++;
@@ -391,7 +391,7 @@ IOINLINE void *List_pop(List *self)
 	
 	if (!self->size) 
 	{ 
-		return (void *)0x0; 
+		return (void *)NULL;
 	}
 	
 	self->size --;
@@ -404,7 +404,7 @@ IOINLINE void *List_top(List *self)
 { 
 	if (!self->size) 
 	{
-		return (void *)0x0;
+		return (void *)NULL;
 	}
 	
 	return self->items[self->size - 1]; 

@@ -29,28 +29,12 @@
 #include "IoCompiler.h"
 #include "IoDebugger.h"
 #include "IoCollector.h"
-#include "IoRandom.h"
 #include "IoSandbox.h"
 #include "IoDirectory.h"
 
 #include <stdlib.h>
 
 void IoVMCodeInit(IoObject *context);
-
-void IoState_setupQuickAccessSymbols(IoState *self)
-{
-	self->activateSymbol     = IoState_retain_(self, SIOSYMBOL("activate"));
-	self->forwardSymbol	     = IoState_retain_(self, SIOSYMBOL("forward"));
-	self->initSymbol	     = IoState_retain_(self, SIOSYMBOL("init"));
-	self->selfSymbol	     = IoState_retain_(self, SIOSYMBOL("self"));
-	self->setSlotSymbol	     = IoState_retain_(self, SIOSYMBOL("setSlot"));
-	self->setSlotWithTypeSymbol  = IoState_retain_(self, SIOSYMBOL("setSlotWithType"));
-	self->updateSlotSymbol   = IoState_retain_(self, SIOSYMBOL("updateSlot"));
-	self->callSymbol         = IoState_retain_(self, SIOSYMBOL("call"));  
-	self->typeSymbol         = IoState_retain_(self, SIOSYMBOL("type"));  
-	self->opShuffleSymbol         = IoState_retain_(self, SIOSYMBOL("opShuffle"));  
-	self->noShufflingSymbol       = IoState_retain_(self, SIOSYMBOL("__noShuffling__"));
-}
 
 IoState *IoState_new(void)
 {
@@ -77,6 +61,8 @@ IoState *IoState_new(void)
 	self->messageCountLimit = 0;
 	self->endTime = 0;
 	
+	// symbol table
+	
 	self->sdbm = SkipDBM_new();
 	self->symbols = SkipDBM_rootSkipDB(self->sdbm);
 		
@@ -100,7 +86,7 @@ IoState *IoState_new(void)
 	
 	self->mainCoroutine = IoCoroutine_proto(self);
 	Stack_free(self->currentIoStack);
-	self->currentIoStack = 0x0;
+	self->currentIoStack = NULL;
 	
 	IoState_setCurrentCoroutine_(self, self->mainCoroutine);
 	IoState_retain_(self, self->mainCoroutine);
@@ -115,7 +101,7 @@ IoState *IoState_new(void)
 	
 	cFunctionProto = IoCFunction_proto(self);
 	self->localsUpdateSlotCFunc = IoState_retain_(self, 
-										 IoCFunction_newWithFunctionPointer_tag_name_(self, IoObject_localsUpdateSlot, 0x0, "localsUpdate"));
+										 IoCFunction_newWithFunctionPointer_tag_name_(self, IoObject_localsUpdateSlot, NULL, "localsUpdate"));
 	
 	IoSeq_protoFinish(seqProto);
 	IoObject_protoFinish(self);
@@ -129,136 +115,163 @@ IoState *IoState_new(void)
 	{
 		IoObject *objectProto = self->objectProto; 
 		IoObject *protos = IOCLONE(objectProto);
-		IoObject *vm     = IOCLONE(objectProto);
+		IoObject *core = IOCLONE(objectProto);
 		
-		self->lobby      = IOCLONE(objectProto);
+		self->core = core;
+		self->lobby = IOCLONE(objectProto);
 		IoState_retain_(self, self->lobby);
+		IoState_retain_(self, self->core);
 		
 		// setup namespace
 		
 		IoObject_setSlot_to_(self->lobby, SIOSYMBOL("Lobby"), self->lobby);
 		IoObject_setSlot_to_(self->lobby, SIOSYMBOL("Protos"), protos);  
-		IoObject_setSlot_to_(protos, SIOSYMBOL("IoVM"), vm); 
+		IoObject_setSlot_to_(protos, SIOSYMBOL("Core"), core); 
+		IoObject_setSlot_to_(protos, SIOSYMBOL("Addons"), IOCLONE(objectProto)); 
 		
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Compiler"),  IoCompiler_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Collector"), IoCollector_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Exception"), IOCLONE(objectProto));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Compiler"),  IoCompiler_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Collector"), IoCollector_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Exception"), IOCLONE(objectProto));
 		
 		// setup proto chain
 		
 		IoObject_rawSetProto_(objectProto, self->lobby); 
 		IoObject_rawSetProto_(self->lobby, protos); 
-		IoObject_rawSetProto_(protos, vm); 
+		IoObject_rawSetProto_(protos, core); 
 		
 		// add protos to namespace
 		
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Object"), objectProto);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Sequence"), seqProto);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Number"), IoNumber_proto(self)); 
+		IoObject_setSlot_to_(core, SIOSYMBOL("Object"), objectProto);
+		IoObject_setSlot_to_(core, SIOSYMBOL("Sequence"), seqProto);
+		IoObject_setSlot_to_(core, SIOSYMBOL("Number"), IoNumber_proto(self)); 
 		
 		IoState_setupCachedNumbers(self);
-
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Random"), IoRandom_proto(self)); 
 		
 		{
 			IoObject *systemProto = IoSystem_proto(self);
-			IoObject_setSlot_to_(vm, SIOSYMBOL("System"), systemProto);
+			IoObject_setSlot_to_(core, SIOSYMBOL("System"), systemProto);
+			#ifndef INSTALL_PREFIX
+			#define INSTALL_PREFIX "/usr/local/"
+			#endif
 			IoObject_setSlot_to_(systemProto, SIOSYMBOL("installPrefix"), SIOSYMBOL(INSTALL_PREFIX));
 		}
-		
-		// nil
-		
-		self->ioNil = IOCLONE(objectProto);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Nil"), self->ioNil);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("nil"), self->ioNil);
-		IoObject_setSlot_to_(vm, self->noShufflingSymbol, self->ioNil);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Message"), IoMessage_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Call"),  IoCall_proto(self));
-		
-		self->nilMessage  = IoMessage_newWithName_(self, SIOSYMBOL("nil"));
-		IoMessage_cachedResult_(self->nilMessage, self->ioNil);
-		IoState_retain_(self, self->nilMessage);
-		
-		// true 
-		
-		self->ioTrue = IoObject_new(self);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("true"), self->ioTrue);
-		IoObject_setSlot_to_(self->ioTrue, SIOSYMBOL("type"), SIOSYMBOL("true"));
-		IoState_retain_(self, self->ioTrue);
-		
-		// false
-		
-		self->ioFalse = IoObject_new(self);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("false"), self->ioFalse);
-		IoObject_setSlot_to_(self->ioFalse, SIOSYMBOL("type"), SIOSYMBOL("false"));
-		IoState_retain_(self, self->ioFalse);
-		
-		// cached messages
 
-		self->collectedLinkMessage  = IoMessage_newWithName_(self, SIOSYMBOL("collectedLink"));
-		IoState_retain_(self, self->collectedLinkMessage);
-				
-		self->printMessage  = IoMessage_newWithName_(self, SIOSYMBOL("print"));
-		IoState_retain_(self, self->printMessage);
-		
-		self->initMessage   = IoMessage_newWithName_(self, SIOSYMBOL("init"));
-		IoState_retain_(self, self->initMessage);
-		
-		self->compareMessage = IoMessage_newWithName_(self, SIOSYMBOL("compare"));
-		IoState_retain_(self, self->compareMessage);
-		
-		self->runMessage = IoMessage_newWithName_(self, SIOSYMBOL("run"));
-		IoState_retain_(self, self->runMessage);
-		
-		self->mainMessage = IoMessage_newWithName_(self, SIOSYMBOL("main"));
-		IoState_retain_(self, self->mainMessage);
-
-                self->opShuffleMessage = IoMessage_newWithName_(self, self->opShuffleSymbol);
-                IoState_retain_(self, self->opShuffleMessage);
+		IoState_setupSingletons(self);
+		IoState_setupCachedMessages(self);
 		
 		{
 			self->debugger = IoState_retain_(self, IoDebugger_proto(self));
-			IoObject_setSlot_to_(vm, SIOSYMBOL("Debugger"), self->debugger);
+			IoObject_setSlot_to_(core, SIOSYMBOL("Debugger"), self->debugger);
 			
 			self->vmWillSendMessage  = IoMessage_newWithName_(self, SIOSYMBOL("vmWillSendMessage"));
 			IoMessage_cachedResult_(self->nilMessage, self->ioNil);
 			IoState_retain_(self, self->vmWillSendMessage);
 		}
 		
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Block"),      IoBlock_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("List"),       IoList_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Map"),        IoMap_proto(self));
-        IoObject_setSlot_to_(vm, SIOSYMBOL("Range"),      IoRange_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Coroutine"),  self->mainCoroutine);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("File"),       IoFile_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Directory"),  IoDirectory_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Date"),       IoDate_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Duration"),   IoDuration_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("WeakLink"),   IoWeakLink_proto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Sandbox"),    IoSandbox_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Block"),      IoBlock_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("List"),       IoList_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Map"),        IoMap_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Range"),      IoRange_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Coroutine"),  self->mainCoroutine);
+		IoObject_setSlot_to_(core, SIOSYMBOL("File"),       IoFile_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Directory"),  IoDirectory_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Date"),       IoDate_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Duration"),   IoDuration_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("WeakLink"),   IoWeakLink_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("Sandbox"),    IoSandbox_proto(self));
 		
 #if !defined(__SYMBIAN32__)
-		IoObject_setSlot_to_(vm, SIOSYMBOL("DynLib"),     IoDynLib_proto(self));
+		IoObject_setSlot_to_(core, SIOSYMBOL("DynLib"),     IoDynLib_proto(self));
 #endif
 		
 		self->store = IoStore_proto(self);		
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Store"),      self->store);
-		IoObject_setSlot_to_(vm, SIOSYMBOL("CFunction"),  cFunctionProto);
+		IoObject_setSlot_to_(core, SIOSYMBOL("Store"),      self->store);
+		IoObject_setSlot_to_(core, SIOSYMBOL("CFunction"),  cFunctionProto);
 		
 		self->localsProto = IoState_retain_(self, IoObject_localsProto(self));
-		IoObject_setSlot_to_(vm, SIOSYMBOL("Locals"),  self->localsProto);
+		IoObject_setSlot_to_(core, SIOSYMBOL("Locals"),  self->localsProto);
 		
 		self->stopStatus = MESSAGE_STOP_STATUS_NORMAL;
-		self->returnValue = (void *)0x0;
+		self->returnValue = (void *)NULL;
 						
 		IoState_clearRetainStack(self);
 		IoState_popCollectorPause(self);
 		
-		IoVMCodeInit(vm);
+		IoVMCodeInit(core);
 		IoState_clearRetainStack(self);
 	}
 	
 	return self;
+}
+
+void IoState_setupQuickAccessSymbols(IoState *self)
+{
+	self->activateSymbol     = IoState_retain_(self, SIOSYMBOL("activate"));
+	self->forwardSymbol	     = IoState_retain_(self, SIOSYMBOL("forward"));
+	self->initSymbol	     = IoState_retain_(self, SIOSYMBOL("init"));
+	self->selfSymbol	     = IoState_retain_(self, SIOSYMBOL("self"));
+	self->setSlotSymbol	     = IoState_retain_(self, SIOSYMBOL("setSlot"));
+	self->setSlotWithTypeSymbol  = IoState_retain_(self, SIOSYMBOL("setSlotWithType"));
+	self->updateSlotSymbol   = IoState_retain_(self, SIOSYMBOL("updateSlot"));
+	self->callSymbol         = IoState_retain_(self, SIOSYMBOL("call"));  
+	self->typeSymbol         = IoState_retain_(self, SIOSYMBOL("type"));  
+	self->opShuffleSymbol    = IoState_retain_(self, SIOSYMBOL("opShuffle"));  
+	self->noShufflingSymbol  = IoState_retain_(self, SIOSYMBOL("__noShuffling__"));
+	self->semicolonSymbol    = IoState_retain_(self, SIOSYMBOL(";"));
+}
+
+void IoState_setupSingletons(IoState *self)
+{
+	IoObject *core = self->core;
+	// nil
+
+	self->ioNil = IOCLONE(self->objectProto);
+	IoObject_setSlot_to_(core, SIOSYMBOL("nil"), self->ioNil);
+	//IoObject_setSlot_to_(core, self->noShufflingSymbol, self->ioNil);
+	IoObject_setSlot_to_(core, SIOSYMBOL("Message"), IoMessage_proto(self));
+	IoObject_setSlot_to_(core, SIOSYMBOL("Call"),  IoCall_proto(self));
+
+	self->nilMessage  = IoMessage_newWithName_(self, SIOSYMBOL("nil"));
+	IoMessage_cachedResult_(self->nilMessage, self->ioNil);
+	IoState_retain_(self, self->nilMessage);
+
+	// true 
+
+	self->ioTrue = IoObject_new(self);
+	IoObject_setSlot_to_(core, SIOSYMBOL("true"), self->ioTrue);
+	IoObject_setSlot_to_(self->ioTrue, SIOSYMBOL("type"), SIOSYMBOL("true"));
+	IoState_retain_(self, self->ioTrue);
+
+	// false
+
+	self->ioFalse = IoObject_new(self);
+	IoObject_setSlot_to_(core, SIOSYMBOL("false"), self->ioFalse);
+	IoObject_setSlot_to_(self->ioFalse, SIOSYMBOL("type"), SIOSYMBOL("false"));
+	IoState_retain_(self, self->ioFalse);
+}
+
+void IoState_setupCachedMessages(IoState *self)
+{
+	self->collectedLinkMessage  = IoMessage_newWithName_(self, SIOSYMBOL("collectedLink"));
+	IoState_retain_(self, self->collectedLinkMessage);
+	
+	self->printMessage  = IoMessage_newWithName_(self, SIOSYMBOL("print"));
+	IoState_retain_(self, self->printMessage);
+	
+	self->initMessage   = IoMessage_newWithName_(self, SIOSYMBOL("init"));
+	IoState_retain_(self, self->initMessage);
+	
+	self->compareMessage = IoMessage_newWithName_(self, SIOSYMBOL("compare"));
+	IoState_retain_(self, self->compareMessage);
+	
+	self->runMessage = IoMessage_newWithName_(self, SIOSYMBOL("run"));
+	IoState_retain_(self, self->runMessage);
+	
+	self->mainMessage = IoMessage_newWithName_(self, SIOSYMBOL("main"));
+	IoState_retain_(self, self->mainMessage);
+	
+	self->opShuffleMessage = IoMessage_newWithName_(self, self->opShuffleSymbol);
+	IoState_retain_(self, self->opShuffleMessage);
 }
 
 IoObject *IoObject_initBindings(IoObject *self, IoObject *locals, IoMessage *m)
@@ -270,11 +283,9 @@ IoObject *IoObject_initBindings(IoObject *self, IoObject *locals, IoMessage *m)
 void IoState_init(IoState *self)
 {
 	if (self->bindingsInitCallback)
-	{
-		IoObject *vm = IoObject_getSlot_(self->lobby, SIOSYMBOL("IoVM"));
-		
+	{		
 		IoState_pushCollectorPause(self);
-		self->bindingsInitCallback(self, vm);
+		self->bindingsInitCallback(self, self->core);
 		IoState_popCollectorPause(self);
 		IoState_clearRetainStack(self);
 	}
@@ -306,7 +317,7 @@ IoObject *IoState_protoWithName_(IoState *self, const char *name)
 		proto = Hash_nextValue(self->primitives);
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 List *IoState_tagList(IoState *self) // caller must free returned List 
@@ -330,7 +341,7 @@ void IoState_free(IoState *self)
 	
 	/*
 	Collector_removeAllRetainedValues(self->collector);
-	Collector_setMarkBeforeSweepValue_(self->collector, 0x0);
+	Collector_setMarkBeforeSweepValue_(self->collector, NULL);
 	Collector_collect(self->collector);
 	Collector_collect(self->collector); // needed?
 	*/
@@ -347,14 +358,15 @@ void IoState_free(IoState *self)
 	Hash_free(self->primitives);
 
 	SkipDBM_free(self->sdbm);
-	self->sdbm    = 0x0;
-	self->symbols = 0x0;
+	self->sdbm    = NULL;
+	self->symbols = NULL;
 	
+	LIST_DO_(self->recycledObjects, IoObject_dealloc);
 	List_free(self->recycledObjects);
 	List_free(self->cachedNumbers);
 	
 	MainArgs_free(self->mainArgs);
-	self->mainArgs = 0x0;
+	self->mainArgs = NULL;
 	
 	free(self);
 }
@@ -412,7 +424,7 @@ IoObject *IoState_rawOn_doCString_withLabel_(IoState *self,
 									const char *label)
 {
 	IoMessage *m = IoMessage_newFromText_label_(self, s, label);
-	return IoMessage_locals_performOn_(m, self->lobby, self->lobby);
+	return IoMessage_locals_performOn_(m, target, target);
 }
 
 // CLI ---------------------------------------------------------

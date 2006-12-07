@@ -6,6 +6,7 @@ docLicense("BSD revised")
 void IoState_break(IoState *self, IoObject *v);
 
 void IoState_continue(IoState *self);
+void IoState_eol(IoState *self);
 
 void IoState_return(IoState *self, IoObject *v);
 

@@ -150,7 +150,7 @@ void IoList_free(IoList *self)
 	//printf("IoList_free(%p) List_free(%p)\n", (void *)self, (void *)LISTIVAR(self));
 	
 	List_free(LISTIVAR(self));
-	IoObject_setDataPointer_(self, 0x0);
+	IoObject_setDataPointer_(self, NULL);
 
 }
 
@@ -529,7 +529,7 @@ list(1, 2, 3) foreach(v, writeln(v))</pre>
 	
 	IoState *state = IOSTATE;
 	IoObject *result = IONIL(self);
-	IoSymbol *slotName = 0x0;
+	IoSymbol *slotName = NULL;
 	IoSymbol *valueName;
 	IoMessage *doMessage;
 	List *list = LISTIVAR(self);

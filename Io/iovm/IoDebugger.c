@@ -13,10 +13,11 @@ IoObject *IoDebugger_proto(void *state)
 {
     IoMethodTable methodTable[] = 
     { 
-    {0x0, 0x0},
+    {NULL, NULL},
     };
     
     IoObject *self = IoObject_new(state);
+    IoObject_setSlot_to_(self, IOSYMBOL("type"), IOSYMBOL("Debugger"));
     IoObject_addMethodTable_(self, methodTable);
     return self;
 }

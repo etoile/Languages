@@ -50,42 +50,42 @@ typedef struct
     HashRecord *current;
 } Hash;
 
-Hash *Hash_new(void);
-Hash *Hash_clone(Hash *self);
-void Hash_copy_(Hash *self, Hash *other);
+BASEKIT_API Hash *Hash_new(void);
+BASEKIT_API Hash *Hash_clone(Hash *self);
+BASEKIT_API void Hash_copy_(Hash *self, Hash *other);
 
-void Hash_free(Hash *self);
-void Hash_freeRecords(Hash *self);
-void Hash_clean(Hash *self);
+BASEKIT_API void Hash_free(Hash *self);
+BASEKIT_API void Hash_freeRecords(Hash *self);
+BASEKIT_API void Hash_clean(Hash *self);
 
-void Hash_rehash(Hash *self);
+BASEKIT_API void Hash_rehash(Hash *self);
 
-void *Hash_firstKey(Hash *self);
-void *Hash_nextKey(Hash *self);
+BASEKIT_API void *Hash_firstKey(Hash *self);
+BASEKIT_API void *Hash_nextKey(Hash *self);
 
-void *Hash_firstValue(Hash *self);
-void *Hash_nextValue(Hash *self);
+BASEKIT_API void *Hash_firstValue(Hash *self);
+BASEKIT_API void *Hash_nextValue(Hash *self);
 
-void Hash_verify(Hash *self);
-size_t Hash_count(Hash *self);
+BASEKIT_API void Hash_verify(Hash *self);
+BASEKIT_API size_t Hash_count(Hash *self);
 
-HashRecord *Hash_recordAt_(Hash *self, int index);
-void *Hash_keyAt_(Hash *self, int index);
-void *Hash_valueAt_(Hash *self, int index);
-int Hash_indexForValue_(Hash *self, void *v);
+BASEKIT_API HashRecord *Hash_recordAt_(Hash *self, int index);
+BASEKIT_API void *Hash_keyAt_(Hash *self, int index);
+BASEKIT_API void *Hash_valueAt_(Hash *self, int index);
+BASEKIT_API int Hash_indexForValue_(Hash *self, void *v);
 
-void *Hash_at_(Hash *self, void *w);
-void Hash_at_put_(Hash *self, void *w, void *v);
-void Hash_removeKey_(Hash *self, void *w);
-void Hash_removeValue_(Hash *self, void *value);
+BASEKIT_API void *Hash_at_(Hash *self, void *w);
+BASEKIT_API void Hash_at_put_(Hash *self, void *w, void *v);
+BASEKIT_API void Hash_removeKey_(Hash *self, void *w);
+BASEKIT_API void Hash_removeValue_(Hash *self, void *value);
 
 // enumeration
 
 typedef void (HashDoCallback)(void *);
-void Hash_do_(Hash *self, HashDoCallback *callback);
+BASEKIT_API void Hash_do_(Hash *self, HashDoCallback *callback);
 //void Hash_doOnKeyAndValue_(Hash *self, HashDoCallback *callback);
 
-void Hash_doOnKey_(Hash *self, HashDoCallback *callback);
+BASEKIT_API void Hash_doOnKey_(Hash *self, HashDoCallback *callback);
 
 //void Hash_UnitTest(void);
 

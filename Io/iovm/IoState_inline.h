@@ -154,7 +154,7 @@ IOINLINE IoObject *IoMessage_locals_quickValueArgAt_(IoMessage *self, IoObject *
 		IoMessageData *md = IOMESSAGEDATA(m);
 		IoObject *v = md->cachedResult;
 		
-		if (v && !md->attachedMessage && !md->nextMessage) 
+		if (v && !md->next) 
 		{
 			return v;
 		}
@@ -194,14 +194,10 @@ IOINLINE IoObject *IoMessage_locals_firstStringArg(IoMessage *self, IoObject *lo
 		{ 
 			IoMessageData *md = IOMESSAGEDATA(m);
 			IoObject *v = md->cachedResult;
-			
-			//if (v && ISSYMBOL(v) && !md->attachedMessage && !md->nextMessage) 
-			
+						
 			// avoid calling IoMessage_locals, if possible 
 			
-			if (v && v->isSymbol && 
-			    (md->attachedMessage == 0x0) && 
-			    (md->nextMessage == 0x0)) 
+			if (v && v->isSymbol && (md->next == NULL)) 
 			{
 				return v;
 			}

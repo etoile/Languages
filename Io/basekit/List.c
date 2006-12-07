@@ -129,7 +129,7 @@ void List_preallocateToSize_(List *self, size_t index)
 		}
 		
 		self->items = (void **)realloc(self->items, newSize); 
-		memset(self->items + self->size, 0x0, (newSize - (self->size*sizeof(void *))));
+		memset(self->items + self->size, 0, (newSize - (self->size*sizeof(void *))));
 		self->memSize = newSize;
     }
 }
@@ -287,7 +287,7 @@ void *List_detect_(List *self, ListDetectCallback *callback)
 		}
     }
     
-    return (void *)0x0;
+    return (void *)NULL;
 }
 
 /*
@@ -305,7 +305,7 @@ void *List_detect_(List *self, ListDetectCallback *callback)
 		 }
      }
      
-     return (void *)0x0;
+     return (void *)NULL;
  }
  */
 
@@ -315,12 +315,12 @@ void *List_anyOne(List *self)
     
     if (self->size == 0) 
     {
-		return (void *)0x0; 
+		return (void *)NULL;
     }
     
     if (self->size == 1) 
     {
-		return LIST_AT_(self, 0); 
+		return LIST_AT_(self, 0);
     }
     
     i = (rand() >> 4) % (self->size); // without the shift, just get a sequence! 

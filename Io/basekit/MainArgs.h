@@ -7,7 +7,7 @@ docDescription("Structure for copying and storing command line arguments.")
 #ifndef MAINARGS_DEFINED
 #define MAINARGS_DEFINED 1
 
-//#include "Common.h"
+#include "Common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,10 +19,10 @@ typedef struct
     const char **argv;
 } MainArgs;
 
-MainArgs *MainArgs_new(void);
-void MainArgs_free(MainArgs *self);
+BASEKIT_API MainArgs *MainArgs_new(void);
+BASEKIT_API void MainArgs_free(MainArgs *self);
 
-void MainArgs_argc_argv_(MainArgs *self, int argc, const char **argv);
+BASEKIT_API void MainArgs_argc_argv_(MainArgs *self, int argc, const char **argv);
 #define MainArgs_argCount(self) self->argc
 #define MainArgs_argAt_(self, index) self->argv[index]
 

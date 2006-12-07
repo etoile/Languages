@@ -40,6 +40,7 @@ IoObject *IoDynLib_proto(void *state)
 	{"close", IoDynLib_close},
 	{"isOpen", IoDynLib_isOpen},
 	{"call", IoDynLib_call},
+	{"voidCall", IoDynLib_voidCall},
 	{"callPluginInit", IoDynLib_callPluginInitFunc},
 	{"returnsString", IoDynLib_returnsString},
 	{NULL, NULL},
@@ -304,55 +305,46 @@ IoObject *demarshal(IoObject *self, IoObject *arg, unsigned int n)
 	return IONIL(self);
 }
 
-IoDynLib *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m)
-{
-	int n, rc = 0;
-	unsigned int *params = NULL;
-	void *f = DynLib_pointerForSymbolName_(DATA(self), 
-								    CSTRING(IoMessage_locals_symbolArgAt_(m, locals, 0)));
-	if (f == NULL) 
+void IoDynLib_rawVoidCall(void *f, int argCount, unsigned int *params)
+{	
+	switch(argCount - 1) 
 	{
-		IoState_error_(IOSTATE, m, "Error resolving call '%s'.", 
-					CSTRING(IoMessage_locals_symbolArgAt_(m, locals, 0)));
-		return IONIL(self);
+		case 0:
+			((void (*)(void))f)();
+			break;
+		case 1:
+			((void (*)(int))f)(params[0]);
+			break;
+		case 2:
+			((void (*)(int,int))f)(params[0], params[1]);
+			break;
+		case 3:
+			((void (*)(int,int,int))f)(params[0], params[1], params[2]);
+			break;
+		case 4:
+			((void (*)(int,int,int,int))f)(params[0], params[1], params[2], params[3]);
+			break;
+		case 5:
+			((void (*)(int,int,int,int,int))f)(params[0], params[1], params[2], params[3], params[4]);
+			break;
+		case 6:
+			((void (*)(int,int,int,int,int,int))f)(params[0], params[1], params[2], params[3], params[4], params[5]);
+			break;
+		case 7:
+			((void (*)(int,int,int,int,int,int,int))f)(params[0], params[1], params[2], params[3], params[4], params[5], params[6]);
+			break;
+		case 8:
+			((void (*)(int,int,int,int,int,int,int,int))f)(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7]);
+			break;
 	}
-	
-	if (IoMessage_argCount(m) > 9) 
-	{
-		IoState_error_(IOSTATE, m, "Error, too many arguments (%i) to call '%s'.", 
-					IoMessage_argCount(m) - 1,
-					CSTRING(IoMessage_locals_symbolArgAt_(m, locals, 0)));
-		return IONIL(self);
-	}
-	
-	if (IoMessage_argCount(m) > 1)
-		params = malloc(IoMessage_argCount(m) * sizeof(unsigned int));
-	
-	for (n = 0; n < IoMessage_argCount(m) - 1; n++) 
-	{
-		IoObject *arg = IoMessage_locals_valueArgAt_(m, locals, n + 1);
-		params[n] = marshal(self, arg);
-		
-		if ((IoObject*)params[n] == IONIL(self)) 
-		{
-			IoState_error_(IOSTATE, m, "Error marshalling argument (%i) to call '%s'.", 
-						n + 1,
-						CSTRING(IoMessage_locals_symbolArgAt_(m, locals, 0)));
-			// FIXME this can leak memory.
-			free(params);
-			return IONIL(self);
-		}
-	}
-	
-#if 0
-	printf("calling %s with %i arguments\n", 
-		  CSTRING(IoMessage_locals_symbolArgAt_(m, locals, 0)),
-		  IoMessage_argCount(m) - 1);
-#endif
-	
-	IoState_pushCollectorPause(IOSTATE);
+}
 
-	switch(IoMessage_argCount(m) - 1) {
+int IoDynLib_rawNonVoidCall(void *f, int argCount, unsigned int *params)
+{
+	int rc;
+	
+	switch(argCount - 1) 
+	{
 		case 0:
 			rc = ((int (*)(void))f)();
 			break;
@@ -381,9 +373,73 @@ IoDynLib *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m)
 			rc = ((int (*)(int,int,int,int,int,int,int,int))f)(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7]);
 			break;
 	}
+	return rc;
+}
+
+IoDynLib *IoDynLib_justCall(IoDynLib *self, IoObject *locals, IoMessage *m, int isVoid)
+{
+	int n, rc = 0;
+	unsigned int *params = NULL;
+	IoSymbol *callName = IoMessage_locals_symbolArgAt_(m, locals, 0);
+	void *f = DynLib_pointerForSymbolName_(DATA(self), CSTRING(callName));
+
+	//printf("DynLib calling '%s'\n", CSTRING(callName));
+
+	if (f == NULL) 
+	{
+		IoState_error_(IOSTATE, m, "Error resolving call '%s'.", CSTRING(callName));
+		return IONIL(self);
+	}
+	
+	if (IoMessage_argCount(m) > 9) 
+	{
+		IoState_error_(IOSTATE, m, "Error, too many arguments (%i) to call '%s'.", 
+					IoMessage_argCount(m) - 1,
+					CSTRING(callName));
+		return IONIL(self);
+	}
+	
+	if (IoMessage_argCount(m) > 1)
+	{
+		params = malloc(IoMessage_argCount(m) * sizeof(unsigned int));
+	}
+	
+	for (n = 0; n < IoMessage_argCount(m) - 1; n++) 
+	{
+		IoObject *arg = IoMessage_locals_valueArgAt_(m, locals, n + 1);
+		unsigned int p = marshal(self, arg);
+
+		params[n] = p;
+		
+		if (p == 0) 
+		{
+			IoState_error_(IOSTATE, m, "DynLib error marshalling argument (%i) to call '%s'.", 
+						n + 1, CSTRING(callName));
+			// FIXME this can leak memory.
+			free(params);
+			return IONIL(self);
+		}
+	}
+	
+#if 0
+	printf("calling %s with %i arguments\n", 
+		  CSTRING(IoMessage_locals_symbolArgAt_(m, locals, 0)),
+		  IoMessage_argCount(m) - 1);
+#endif
+	
+	IoState_pushCollectorPause(IOSTATE);
+	
+	if (isVoid)
+	{
+		IoDynLib_rawVoidCall(f, IoMessage_argCount(m), params);
+	}
+	else
+	{
+		rc = IoDynLib_rawNonVoidCall(f, IoMessage_argCount(m), params); 
+	}
 	
 	IoState_popCollectorPause(IOSTATE);
-
+	
 	
 	for (n = 0; n < IoMessage_argCount(m) - 1; n ++) 
 	{
@@ -393,8 +449,19 @@ IoDynLib *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m)
 	
 	free(params);
 	
-	return IONUMBER(rc);
+	return isVoid ? IONIL(self) : IONUMBER(rc);
 }
+
+IoDynLib *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m)
+{
+	return IoDynLib_justCall(self, locals, m, 0);
+}
+
+IoDynLib *IoDynLib_voidCall(IoDynLib *self, IoObject *locals, IoMessage *m)
+{
+	return IoDynLib_justCall(self, locals, m, 1);
+}
+
 
 IoDynLib *IoDynLib_callPluginInitFunc(IoDynLib *self, IoObject *locals, IoMessage *m)
 {
@@ -416,11 +483,12 @@ IoDynLib *IoDynLib_callPluginInitFunc(IoDynLib *self, IoObject *locals, IoMessag
 	}
 	
 	params = malloc(sizeof(unsigned int) * 2);
-
+	
 	params[0] = (unsigned int)IOSTATE;
 	params[1] = (unsigned int)IOSTATE->lobby;
 	rc = ((int (*)(int,int))f)(params[0], params[1]);
-		
+	free(params);
+	
 	return IONUMBER(rc);
 }
 

@@ -6,6 +6,8 @@ docLicense("BSD revised")
 #ifndef IOSTATE_DEFINED 
 #define IOSTATE_DEFINED 1
 
+#include "IoVMApi.h"
+
 #include "Collector.h"
 #include "Stack.h"
 #include "Hash.h"
@@ -57,6 +59,7 @@ struct IoState
 	IoSymbol *typeSymbol;
 	IoSymbol *opShuffleSymbol;
 	IoSymbol *noShufflingSymbol;
+	IoSymbol *semicolonSymbol;
 
 	IoObject *setSlotBlock;
 	IoObject *localsUpdateSlotCFunc;
@@ -83,6 +86,7 @@ struct IoState
 
 	Collector *collector;
 	IoObject *lobby;
+	IoObject *core;
 
 	// recycling 
 
@@ -105,8 +109,8 @@ struct IoState
 	IoStateExceptionCallback    *exceptionCallback;
 	IoStateExitCallback         *exitCallback;
 	IoStateActiveCoroCallback   *activeCoroCallback;
-	IoStateThreadLockCallback   *threadLockCallback;
-	IoStateThreadUnlockCallback *threadUnlockCallback;
+	//IoStateThreadLockCallback   *threadLockCallback;
+	//IoStateThreadUnlockCallback *threadUnlockCallback;
 
 	// debugger
 
@@ -142,30 +146,34 @@ struct IoState
 
 // setup
 
-IoState *IoState_new(void);
-void IoState_init(IoState *self);
+IOVM_API IoState *IoState_new(void);
+IOVM_API void IoState_init(IoState *self);
+
+void IoState_setupQuickAccessSymbols(IoState *self);
+void IoState_setupCachedMessages(IoState *self);
+void IoState_setupSingletons(IoState *self);
 
 // setup tags 
 
-void IoState_registerProtoWithFunc_(IoState *self, IoObject *proto, IoStateProtoFunc *func);
-IoObject *IoState_protoWithInitFunction_(IoState *self, IoStateProtoFunc *func);
-IoObject *IoState_protoWithName_(IoState *self, const char *name);
+IOVM_API void IoState_registerProtoWithFunc_(IoState *self, IoObject *proto, IoStateProtoFunc *func);
+IOVM_API IoObject *IoState_protoWithInitFunction_(IoState *self, IoStateProtoFunc *func);
+IOVM_API IoObject *IoState_protoWithName_(IoState *self, const char *name);
 
-void IoState_free(IoState *self);
+IOVM_API void IoState_free(IoState *self);
 
 // lobby
 
-IoObject *IoState_lobby(IoState *self);
-void IoState_setLobby_(IoState *self, IoObject *obj);
+IOVM_API IoObject *IoState_lobby(IoState *self);
+IOVM_API void IoState_setLobby_(IoState *self, IoObject *obj);
 
 // command line 
 
-void IoState_argc_argv_(IoState *st, int argc, const char *argv[]);
-void IoState_runCLI(IoState *self);
+IOVM_API void IoState_argc_argv_(IoState *st, int argc, const char *argv[]);
+IOVM_API void IoState_runCLI(IoState *self);
 
 // store
 
-IoStore *IoState_store(IoState *self);
+IOVM_API IoStore *IoState_store(IoState *self);
 
 #include "IoState_coros.h"
 #include "IoState_debug.h"

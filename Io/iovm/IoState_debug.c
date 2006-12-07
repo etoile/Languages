@@ -38,7 +38,7 @@ IoObject *IoState_replacePerformFunc_with_(IoState *self,
 		proto = Hash_nextValue(self->primitives);
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 void IoState_debuggingOn(IoState *self)

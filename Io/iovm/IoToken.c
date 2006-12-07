@@ -11,29 +11,16 @@ docLicense("BSD revised")
 IoToken *IoToken_new(void)
 {
     IoToken *self = (IoToken *)calloc(1, sizeof(IoToken));
-    self->name = 0x0;
+    self->name = NULL;
     self->charNumber = -1;
     
-    // parsed 
-    
-    self->args = List_new();
     return self;
 }
 
 void IoToken_free(IoToken *self)
 {
-    //if (self->nextToken) IoToken_free(self->nextToken);
     if (self->name) free(self->name);
     if (self->error) free(self->error);
-    
-    // parsed 
-    //List_do_(self->args, (ListDoCallback *)IoToken_free);
-	
-    List_free(self->args);
-    /*
-	 if (self->attached) IoToken_free(self->attached);
-	 if (self->next) IoToken_free(self->next);
-	 */
     free(self);
 }
 
@@ -41,18 +28,17 @@ const char *IoToken_typeName(IoToken *self)
 { 
     switch (self->type)
     {
-		case NO_TOKEN:         return "NoToken"; 
-		case OPENPAREN_TOKEN:  return "OpenParen"; 
-		case COMMA_TOKEN:      return "Comma"; 
-		case CLOSEPAREN_TOKEN: return "CloseParen"; 
-		case MONOQUOTE_TOKEN:  return "MonoQuote"; 
-		case TRIQUOTE_TOKEN:   return "TriQuote"; 
-		case OPERATOR_TOKEN:   return "Operator"; 
-		case IDENTIFIER_TOKEN: return "Identifier"; 
-		case TERMINATOR_TOKEN: return "Terminator"; 
-		case COMMENT_TOKEN:    return "Comment";
-		case NUMBER_TOKEN:     return "Number"; 
-		case HEXNUMBER_TOKEN:  return "HexNumber";
+        case NO_TOKEN:         return "NoToken"; 
+        case OPENPAREN_TOKEN:  return "OpenParen"; 
+        case COMMA_TOKEN:      return "Comma"; 
+        case CLOSEPAREN_TOKEN: return "CloseParen"; 
+        case MONOQUOTE_TOKEN:  return "MonoQuote"; 
+        case TRIQUOTE_TOKEN:   return "TriQuote"; 
+        case IDENTIFIER_TOKEN: return "Identifier"; 
+        case TERMINATOR_TOKEN: return "Terminator"; 
+        case COMMENT_TOKEN:    return "Comment";
+        case NUMBER_TOKEN:     return "Number"; 
+        case HEXNUMBER_TOKEN:  return "HexNumber";
     }
     return "UNKNOWN_TOKEN";
 }
@@ -60,7 +46,7 @@ const char *IoToken_typeName(IoToken *self)
 void IoToken_name_length_(IoToken *self, const char *name, size_t len)
 { 
     self->name = strncpy(realloc(self->name, len + 1), name, len);
-    self->name[len] = (char)0x0;
+    self->name[len] = (char)0;
     self->length = len;
 }
 
@@ -75,11 +61,21 @@ char *IoToken_name(IoToken *self)
     return self->name ? self->name : (char *)""; 
 }
 
+void IoToken_error_(IoToken *self, const char *error)
+{ 
+    self->error = strcpy((char *)realloc(self->error, strlen(error) + 1), error); 
+}
+
+char *IoToken_error(IoToken *self) 
+{ 
+    return self->error ? self->error : (char *)""; 
+}
+
 int IoToken_nameIs_(IoToken *self, const char *name)
 { 
     if (strlen(self->name) == 0 && strlen(name) != 0) 
     {
-		return 0;
+        return 0;
     }
     //return !strncmp(self->name, name, self->length);
     return !strcmp(self->name, name);
@@ -109,8 +105,8 @@ void IoToken_quoteName_(IoToken *self, const char *name)
     
     if (old) 
     {
-	    free(old);
-	}
+        free(old);
+    }
 }
 
 void IoToken_type_(IoToken *self, IoTokenType type)
@@ -122,13 +118,13 @@ void IoToken_nextToken_(IoToken *self, IoToken *nextToken)
 {
     if (self == nextToken) 
     { 
-		printf("next == self!\n"); 
-		exit(1); 
+        printf("next == self!\n"); 
+        exit(1); 
     }
     
     if (self->nextToken) 
     {
-		IoToken_free(self->nextToken);
+        IoToken_free(self->nextToken);
     }
     
     self->nextToken = nextToken;
@@ -137,13 +133,6 @@ void IoToken_nextToken_(IoToken *self, IoToken *nextToken)
 void IoToken_print(IoToken *self)
 {
     IoToken_printSelf(self);
-    /*
-     if (self->nextToken) 
-     {
-		 printf(", ");
-		 IoToken_print(self->nextToken);
-     }
-     */
 }
 
 void IoToken_printSelf(IoToken *self)
@@ -153,7 +142,7 @@ void IoToken_printSelf(IoToken *self)
     
     for (i = 0; i < self->length; i ++) 
     {
-		putchar(self->name[i]);
+        putchar(self->name[i]);
     }
     
     printf("' ");
@@ -161,44 +150,17 @@ void IoToken_printSelf(IoToken *self)
 
 int IoTokenType_isValidMessageName(IoTokenType self)
 {
-	switch (self)
-	{
-		case IDENTIFIER_TOKEN:
-		case OPERATOR_TOKEN:
-		case MONOQUOTE_TOKEN:
-		case TRIQUOTE_TOKEN:
-		case NUMBER_TOKEN:
-		case HEXNUMBER_TOKEN:
-			return 1;
-		default:
-			return 0;
-	}
-	return 0;
+    switch (self)
+    {
+        case IDENTIFIER_TOKEN:
+        case MONOQUOTE_TOKEN:
+        case TRIQUOTE_TOKEN:
+        case NUMBER_TOKEN:
+        case HEXNUMBER_TOKEN:
+            return 1;
+        default:
+            return 0;
+    }
+    return 0;
 }
 
-/*
- void IoToken_valueFromState_(IoToken *self, IoState *state)
- {   
-	 IoSeq *name = IoSeq_newWithData_length_(self->name, self->length);
-	 
-	 switch ((int)IoToken_type(self))
-	 {
-		 case TRIQUOTE_TOKEN:
-			 return IoState_symbolWithCString_length_(state, 
-													  IoSeq_asCString(name) + 3, 
-													  IoSeq_rawSize(name) - 6); 
-			 
-		 case MONOQUOTE_TOKEN:
-			 return IoSeq_rawAsUnescapedSymbol(IoSeq_rawAsUnquotedSymbol(name)); 
-			 
-		 case NUMBER_TOKEN:
-			 return IONUMBER(IoSeq_asDouble(name));
-			 
-		 case HEXNUMBER_TOKEN:
-			 return IONUMBER(IoSeq_rawAsDoubleFromHex(name));
-			 
-	 }
-	 
-	 return state->ioNil; 
- }
- */

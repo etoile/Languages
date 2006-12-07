@@ -47,6 +47,8 @@ IoObject *IoDynLib_close(IoDynLib *self, IoObject *locals, IoMessage *m);
 IoObject *IoDynLib_isOpen(IoDynLib *self, IoObject *locals, IoMessage *m);
 
 IoObject *IoDynLib_call(IoDynLib *self, IoObject *locals, IoMessage *m);
+IoDynLib *IoDynLib_voidCall(IoDynLib *self, IoObject *locals, IoMessage *m);
+
 IoDynLib *IoDynLib_callPluginInitFunc(IoDynLib *self, IoObject *locals, IoMessage *m);
 IoSeq *IoDynLib_returnsString(IoDynLib *self, IoObject *locals, IoMessage *m);
 

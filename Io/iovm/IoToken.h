@@ -23,7 +23,6 @@ typedef enum
     MONOQUOTE_TOKEN, 
     TRIQUOTE_TOKEN, 
 
-    OPERATOR_TOKEN, 
     IDENTIFIER_TOKEN, 
     TERMINATOR_TOKEN, 
 
@@ -42,13 +41,6 @@ struct IoToken
     int charNumber;
     int lineNumber;
     IoToken *nextToken;
-
-    /* parsed */
-    IoToken *parent;
-    List *args;
-    IoToken *attached;
-    IoToken *next;
-    unsigned char openParen;
     char *error;
 };
 
@@ -61,6 +53,9 @@ void IoToken_name_length_(IoToken *self, const char *name, size_t len);
 void IoToken_name_(IoToken *self, const char *name);
 char *IoToken_name(IoToken *self);
 #define IOTOKEN_NAME(self)   (self->name ? self->name : (char *)"")
+
+void IoToken_error_(IoToken *self, const char *name);
+char *IoToken_error(IoToken *self);
 
 int IoToken_nameIs_(IoToken *self, const char *name);
 IoTokenType IoToken_type(IoToken *self);

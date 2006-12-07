@@ -28,8 +28,6 @@ IoObject *IoObject_platform(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_platformVersion(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_sleep(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_activeCpus(IoObject *self, IoObject *locals, IoMessage *m);
-IoObject *IoObject_createThread(IoObject *self, IoObject *locals, IoMessage *m);
-IoObject *IoObject_threadCount(IoObject *self, IoObject *locals, IoMessage *m);
 
 #ifdef __cplusplus
 }

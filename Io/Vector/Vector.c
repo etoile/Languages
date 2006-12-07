@@ -66,7 +66,7 @@ Vector *Vector_subarray_(Vector *self, size_t localStart, size_t length)
 		return c;
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 void Vector_copy_(Vector *self, Vector *other)
@@ -137,7 +137,7 @@ void Vector_setSize_(Vector *self, size_t size)
 #ifdef HAS_ALTIVEC
 	 size_t minSize = size > self->size ? self->size : size;
 	 NUM_TYPE *v = vec_malloc(newMemSize);
-	 memset(v, 0x0, newMemSize);
+	 memset(v, 0, newMemSize);
 	 memcpy(v, self->values, minSize);
 	 free(self->values);
 	 self->values = v;
@@ -162,7 +162,7 @@ void Vector_setSize_(Vector *self, size_t size)
 		/* if new size if bigger, make the new elements zeros */
 		if (self->size < size)
 		{
-			memset(self->values + self->size, 0x0, (size - self->size) * sizeof(NUM_TYPE));
+			memset(self->values + self->size, 0, (size - self->size) * sizeof(NUM_TYPE));
 		}
 	}
 	

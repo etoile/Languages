@@ -194,7 +194,7 @@ uint8_t BStream_readUint8(BStream *self)
 		return b;
 	}
 	
-	return 0x0;
+	return 0;
 }
 
 void BStream_readNumber_size_(BStream *self, unsigned char *v, int size)
@@ -259,7 +259,7 @@ unsigned char *BStream_readDataOfLength_(BStream *self, size_t length)
 		return b;
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 void BStream_readByteArray_(BStream *self, ByteArray *b)

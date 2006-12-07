@@ -33,21 +33,8 @@ since no Xcode project is provided (or will be).
 Developer notes
 ===============
 
-Directories structure
----------------------
-Due to the reorganization of Io since August, 2006, 
-the directories are mapped as:
-libs/basekit -> basekit
-libs/coroutine -> coroutine
-libs/garbagecollector -> garbagecollector
-libs/iovm -> iovm
-libs/skipdb -> skipdb
-addons/Vector -> Vector
-addons/Vector/io/Vector.io -> Vector/IoVectorInit.c (manually)
-addons/ObjcBridge -> ObjcBridge
-tools/source/main.c -> main.m (manually)
-
 In iovm/GNUmakefile, INSTALL_PREFIX is defined manually.
+main.m is copy from tools/main.c with some modification.
 
 Automatically generated files
 -----------------------------
@@ -55,7 +42,8 @@ Automatically generated files
 These are automatically generated files from Io language:
 
     * IoVM/IoVMInit.c
-    * Vector/IoVectorInit.c (Need to manually generated)
+    * Vector/IoVectorInit.c (manually generated using io2c in iovm/tools)
+    * ObjcBridge/IoObjcBridgeInit.c (manually generated using io2c in iovm/tools)
 
 They are included directly into Io (GNUstep) project, then not in source form 
 which would have to be regenerated with each compilation. The source version

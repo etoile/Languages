@@ -106,6 +106,18 @@ IoObject *IoObjcBridge_newClassNamed_withProto_(IoObjcBridge *self, IoObject *lo
 char *IoObjcBridge_nameForTypeChar_(IoObjcBridge *self, char type);
 
 // We need this so the runtime will know the correct method signatures
+
+@protocol AddressBook
+//ABActionDelegate
+- (NSString *)actionProperty;
+- (void)performActionForPerson:(id)person identifier:(NSString *)identifier;
+- (BOOL)shouldEnableActionForPerson:(id)person identifier:(NSString *)identifier;
+- (NSString *)titleForPerson:(id)person identifier:(NSString *)identifier;
+
+//ABImageClient
+- (void)consumeImageData:(NSData *)data forTag:(int)tag;
+@end
+
 @protocol AppKit
 //NSAccessibility
 - (NSString *)accessibilityActionDescription:(NSString *)action;

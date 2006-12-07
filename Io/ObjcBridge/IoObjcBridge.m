@@ -17,7 +17,7 @@
 
 #define DATA(self) ((IoObjcBridgeData *)IoObject_dataPointer(self))
 
-static IoObjcBridge *sharedBridge = 0x0;
+static IoObjcBridge *sharedBridge = NULL;
 
 IoObjcBridge *IoObjcBridge_sharedBridge(void)
 {
@@ -113,7 +113,7 @@ IoObjcBridge *IoObjcBridge_new(void *state)
 
 void IoObjcBridge_free(IoObjcBridge *self)
 {
-	sharedBridge = 0x0;
+	sharedBridge = NULL;
 	{
 		void *k = Hash_firstKey(DATA(self)->objc2ios);
 
@@ -312,6 +312,9 @@ void IoObjcBridge_addValue_(IoObjcBridge *self, IoObject *v, id obj)
 const char *IoObjcBridge_selectorEncoding(IoObjcBridge *self, SEL selector)
 {
 	struct objc_method_description *description;
+	description = [@protocol(AddressBook) descriptionForInstanceMethod:selector];
+	if (description)
+		return description->types;
 	description = [@protocol(AppKit) descriptionForInstanceMethod:selector];
 	if (description)
 		return description->types;
@@ -345,10 +348,10 @@ IoObject *IoObjcBridge_ioValueForCValue_ofType_error_(IoObjcBridge *self, void *
 			id object = *(id *)cValue;
 			if (!object)
 				return IONIL(self);
-			else if ([object isKindOfClass:[NSString class]])
-				return IOSYMBOL((char *)[object cString]);
-			else if ([object isKindOfClass:[NSNumber class]])
-				return IONUMBER([object doubleValue]);
+		//	else if ([object isKindOfClass:[NSString class]])
+		//		return IOSYMBOL((char *)[object cString]);
+		//	else if ([object isKindOfClass:[NSNumber class]])
+		//		return IONUMBER([object doubleValue]);
 			else if ([object isKindOfClass:[Objc2Io class]])
 				return [object ioValue];
 			else

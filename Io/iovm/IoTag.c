@@ -11,10 +11,11 @@
 #include "IoState.h"
 #include <string.h>
 
-IoTag *IoTag_new()
+IoTag *IoTag_new(void)
 {
 	IoTag *self = (IoTag *)calloc(1, sizeof(IoTag));
 	self->performFunc = (TagPerformFunc *)IoObject_perform;
+	//self->performFunc = NULL;
 	//self->recyclableInstances = Stack_new();
 	//self->maxRecyclableInstances = 10000;
 	return self;
@@ -40,7 +41,7 @@ void IoTag_free(IoTag *self)
 	if (self->name) 
 	{
 		free(self->name); 
-		self->name = 0x0;
+		self->name = NULL;
 	}
 	
 	//Stack_free(self->recyclableInstances);

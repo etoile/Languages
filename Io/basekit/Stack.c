@@ -105,7 +105,7 @@ void Stack_makeMarksNull(Stack *self)
     while (mark)
     { 
 		ptrdiff_t nextMark = (ptrdiff_t)self->items[mark];
-		self->items[mark] = 0x0;
+		self->items[mark] = NULL;
 		mark = nextMark;
     } 
 }

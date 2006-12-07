@@ -6,6 +6,7 @@ UDBRecords ioDoc(
 			  docDescription("")
 			  */
 
+#include "SkipDB.h"
 #include "UDB.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -130,7 +131,7 @@ UDBRecord *UDBRecords_recordAtPos_(UDBRecords *self, PID_TYPE pos)
 		return self->record;
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 void UDBRecords_removeRecord_(UDBRecords *self, UDBRecord *record)
@@ -179,7 +180,7 @@ UDBRecord *UDBRecords_findFirstEmptyRecord(UDBRecords *self)
 		record = UDBRecords_nextRecord(self);
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 /*
@@ -192,7 +193,7 @@ UDBRecord *UDBRecords_findFirstEmptyRecord(UDBRecords *self)
 		 if (UDBRecord_isEmpty(record)) return record;
 	 }
 	 
-	 return 0x0;
+	 return NULL;
  }
  */
 
@@ -225,7 +226,7 @@ UDBRecord *UDBRecords_firstEmptyRecord(UDBRecords *self)
 		}
 	}
 	
-	return 0x0;
+	return NULL;
 }
 
 void UDBRecords_truncate_(UDBRecords *self, off_t size)

@@ -187,7 +187,7 @@ long CalUTinstant( struct ut_instant *date )
 
 void UTinstant_setToStartOfYear_(UTinstant *self, int year)
 {  
-    memset(self, 0x0, sizeof(UTinstant));
+    memset(self, 0, sizeof(UTinstant));
     
     self->year        = year; 
     self->month       = 1;  /* [1-12] */

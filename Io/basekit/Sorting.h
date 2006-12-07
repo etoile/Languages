@@ -1,3 +1,4 @@
+#include "Common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +17,7 @@ typedef enum
 typedef int (SDSortCompareCallback)(void *context, int i, int j);
 typedef void (SDSortSwapCallback)(void *context, int i, int j);
 
-void Sorting_context_comp_swap_size_type_(void *context, 
+BASEKIT_API void Sorting_context_comp_swap_size_type_(void *context, 
 								  SDSortCompareCallback *comp, 
 								  SDSortSwapCallback *swap, 
 								  int size,

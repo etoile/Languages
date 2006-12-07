@@ -16,8 +16,8 @@
  * IMPORTANT: can't use this addon with multiple Io states.
  */
 
-static IoState *state = 0x0;
-static Hash *classProtos = 0x0;
+static IoState *state = NULL;
+static Hash *classProtos = NULL;
 
 @implementation ObjcSubclass
 

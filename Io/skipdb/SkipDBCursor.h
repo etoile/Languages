@@ -21,23 +21,26 @@ extern "C" {
 
 struct SkipDBCursor
 {
+    int refCount;
     SkipDB *sdb;
     SkipDBRecord *record;
 };
 
-SkipDBCursor *SkipDBCursor_new(void);
-SkipDBCursor *SkipDBCursor_newWithDB_(SkipDB *sdb);
-void SkipDBCursor_free(SkipDBCursor *self);
-void SkipDBCursor_mark(SkipDBCursor *self);
+SKIPDB_API SkipDBCursor *SkipDBCursor_new(void);
+SKIPDB_API SkipDBCursor *SkipDBCursor_newWithDB_(SkipDB *sdb);
+SKIPDB_API void SkipDBCursor_sdb_(SkipDB *sdb);
+SKIPDB_API void SkipDBCursor_retain(SkipDBCursor *self);
+SKIPDB_API void SkipDBCursor_release(SkipDBCursor *self);
+SKIPDB_API void SkipDBCursor_mark(SkipDBCursor *self);
 
-SkipDBRecord *SkipDBCursor_goto_(SkipDBCursor *self, Datum key);
+SKIPDB_API SkipDBRecord *SkipDBCursor_goto_(SkipDBCursor *self, Datum key);
 
-SkipDBRecord *SkipDBCursor_first(SkipDBCursor *self);
-SkipDBRecord *SkipDBCursor_last(SkipDBCursor *self);
+SKIPDB_API SkipDBRecord *SkipDBCursor_first(SkipDBCursor *self);
+SKIPDB_API SkipDBRecord *SkipDBCursor_last(SkipDBCursor *self);
 
-SkipDBRecord *SkipDBCursor_previous(SkipDBCursor *self);
-SkipDBRecord *SkipDBCursor_current(SkipDBCursor *self);
-SkipDBRecord *SkipDBCursor_next(SkipDBCursor *self);
+SKIPDB_API SkipDBRecord *SkipDBCursor_previous(SkipDBCursor *self);
+SKIPDB_API SkipDBRecord *SkipDBCursor_current(SkipDBCursor *self);
+SKIPDB_API SkipDBRecord *SkipDBCursor_next(SkipDBCursor *self);
 
 #ifdef __cplusplus
 }

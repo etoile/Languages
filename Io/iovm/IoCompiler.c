@@ -20,10 +20,11 @@ IoObject *IoCompiler_proto(void *state)
 	//{"messageForTokens", IoObject_messageForTokens},
 	{"messageForString", IoObject_messageForString},
 	{"messageForString2", IoObject_messageForString2},
-	{0x0, 0x0},
+	{NULL, NULL},
 	};
 	
 	IoObject *self = IoObject_new(state);
+	IoObject_setSlot_to_(self, IOSYMBOL("type"), IOSYMBOL("Compiler"));
 	IoObject_addMethodTable_(self, methodTable);
 	
 	return self;
@@ -51,7 +52,7 @@ IoObject *IoObject_tokensForString(IoObject *self, IoObject *locals, IoMessage *
 	{ 
 		IoSymbol *errorString  = IOSYMBOL(IoLexer_errorDescription(lexer));
 		IoLexer_free(lexer);
-		IoState_error_(IOSTATE, 0x0, "compile error: %s", CSTRING(errorString));
+		IoState_error_(IOSTATE, NULL, "compile error: %s", CSTRING(errorString));
 	}
 	else
 	{

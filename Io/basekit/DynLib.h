@@ -6,6 +6,8 @@
 #ifndef DYNLIB_DEFINED
 #define DYNLIB_DEFINED 1
 
+#include "Common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,27 +27,27 @@ typedef struct
 	int refCount;
 } DynLib;
 
-DynLib *DynLib_new(void);
-void DynLib_free(DynLib *self);
+BASEKIT_API DynLib *DynLib_new(void);
+BASEKIT_API void DynLib_free(DynLib *self);
 
-void DynLib_setPath_(DynLib *self, const char *path);
-char *DynLib_path(DynLib *self);
+BASEKIT_API void DynLib_setPath_(DynLib *self, const char *path);
+BASEKIT_API char *DynLib_path(DynLib *self);
 
-void DynLib_setInitFuncName_(DynLib *self, const char *name);
-char *DynLib_initFuncName(DynLib *self);
-void DynLib_setInitArg_(DynLib *self, void *arg);
+BASEKIT_API void DynLib_setInitFuncName_(DynLib *self, const char *name);
+BASEKIT_API char *DynLib_initFuncName(DynLib *self);
+BASEKIT_API void DynLib_setInitArg_(DynLib *self, void *arg);
 
-void DynLib_setFreeFuncName_(DynLib *self, const char *name);
-char *DynLib_freeFuncName(DynLib *self);
-void DynLib_setFreeArg_(DynLib *self, void *arg);
+BASEKIT_API void DynLib_setFreeFuncName_(DynLib *self, const char *name);
+BASEKIT_API char *DynLib_freeFuncName(DynLib *self);
+BASEKIT_API void DynLib_setFreeArg_(DynLib *self, void *arg);
 
-void DynLib_setError_(DynLib *self, const char *path);
-char *DynLib_error(DynLib *self);
+BASEKIT_API void DynLib_setError_(DynLib *self, const char *path);
+BASEKIT_API char *DynLib_error(DynLib *self);
 
-void DynLib_open(DynLib *self);
-unsigned char DynLib_isOpen(DynLib *self);
-void DynLib_close(DynLib *self);
-void *DynLib_pointerForSymbolName_(DynLib *self, const char *symbolName);
+BASEKIT_API void DynLib_open(DynLib *self);
+BASEKIT_API unsigned char DynLib_isOpen(DynLib *self);
+BASEKIT_API void DynLib_close(DynLib *self);
+BASEKIT_API void *DynLib_pointerForSymbolName_(DynLib *self, const char *symbolName);
 
 #ifdef __cplusplus
 }

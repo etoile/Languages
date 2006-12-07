@@ -42,6 +42,11 @@ SkipDB *SkipDB_new(void)
 	return self;
 }
 
+void SkipDB_sdbm_(SkipDB *self, void *dbm)
+{
+	self->dbm = dbm;
+}
+
 SkipDB *SkipDB_newWithDBM_(void *dbm)
 {
 	SkipDB *self = SkipDB_new();
@@ -66,10 +71,25 @@ SkipDB *SkipDB_newWithDBM_atPid_(void *dbm, PID_TYPE pid)
 	return SkipDB_newWithDBM_(dbm);
 }
 
-void SkipDB_retain(SkipDB *self)
+void SkipDB_dealloc(SkipDB *self)
 {
-	self->refCount ++;
+	if (self->dbm) SkipDBM_willFreeDB_(self->dbm, self);
+	SkipDB_clearUpdate(self);
+	
+	BStream_free(self->stream);
+	SkipDB_freeAllCachedRecords(self);
+	
+	// cursors are allocated and must be freed individually.
+	List_do_(self->cursors, (ListDoCallback *)SkipDBCursor_release);
+	List_free(self->cursors);
+	
+	List_free(self->pidsToRemove);
+	List_free(self->dirtyRecords);
+	Hash_free(self->pidToRecord);
+	RandomGen_free(self->randomGen);
+	free(self);
 }
+
 
 void SkipDB_release(SkipDB *self)
 {
@@ -81,24 +101,11 @@ void SkipDB_release(SkipDB *self)
 	}
 }
 
-void SkipDB_dealloc(SkipDB *self)
+void SkipDB_retain(SkipDB *self)
 {
-	SkipDBM_willFreeDB_(self->dbm, self);
-	SkipDB_clearUpdate(self);
-	
-	BStream_free(self->stream);
-	SkipDB_freeAllCachedRecords(self);
-
-	// cursors are allocated and must be freed individually.
-	List_do_(self->cursors, (ListDoCallback *)SkipDBCursor_free);
-	List_free(self->cursors);
-
-	List_free(self->pidsToRemove);
-	List_free(self->dirtyRecords);
-	Hash_free(self->pidToRecord);
-	RandomGen_free(self->randomGen);
-	free(self);
+	self->refCount ++;
 }
+
 
 void SkipDB_headerPid_(SkipDB *self, PID_TYPE pid)
 {
@@ -223,7 +230,7 @@ void SkipDB_freeAllCachedRecords(SkipDB *self)
 		SkipDBRecord_dealloc(self->youngestRecord);
 	}
 	
-	self->header = 0x0;
+	self->header = NULL;
 }
 
 // cache ------------------------------------- 
@@ -271,7 +278,7 @@ void SkipDB_freeExcessCachedRecords(SkipDB *self)
 	if (self->cachedRecordCount > self->cacheHighWaterMark)
 	{
 		SkipDBRecord *r;
-		SkipDBRecord *lastMarkedRecord = 0x0;
+		SkipDBRecord *lastMarkedRecord = NULL;
 		size_t lowMark = self->cacheLowWaterMark;
 		
 		//printf("SkipDB_freeExcessCachedRecords() start %i\n", (int)self->cachedRecordCount);
@@ -321,8 +328,8 @@ void SkipDB_freeExcessCachedRecords(SkipDB *self)
 			SkipDBRecord *next = r->olderRecord;
 			
 			// to avoid SkipDBRecord_removeFromAgeList() issues
-			r->olderRecord   = 0x0;
-			r->youngerRecord = 0x0;
+			r->olderRecord   = NULL;
+			r->youngerRecord = NULL;
 			
 			if (r->mark)
 			{
@@ -334,7 +341,7 @@ void SkipDB_freeExcessCachedRecords(SkipDB *self)
 			r = next;
 		}
 		
-		lastMarkedRecord->olderRecord = 0x0; // clip the list 
+		lastMarkedRecord->olderRecord = NULL; // clip the list 
 		
 		//printf("SkipDB_freeExcessCachedRecords() done %i\n", (int)self->cachedRecordCount);
 	}
@@ -465,7 +472,7 @@ SkipDBRecord *SkipDB_recordAtPid_(SkipDB *self, PID_TYPE pid)
 			UDB_at_(udb, pid);
 		}
 	}
-	return 0x0;
+	return NULL;
 }
 
 // lookups ----------------------------- 
@@ -482,7 +489,7 @@ void SkipDB_clearUpdate(SkipDB *self)
 	
 	for (i = 0; i < SKIPDB_MAX_LEVEL; i ++)
 	{
-		SkipDB_updateAt_put_(self, i, 0x0);
+		SkipDB_updateAt_put_(self, i, NULL);
 	} 
 }
 
@@ -608,7 +615,7 @@ void SkipDB_at_put_(SkipDB *self, Datum k, Datum v)
 void SkipDB_removeAt_(SkipDB *self, Datum k)
 {
 	SkipDBRecord *r = SkipDB_recordAt_(self, k);
-	SkipDBRecord *lastUr = 0x0;
+	SkipDBRecord *lastUr = NULL;
 	
 	if (r)
 	{
@@ -656,7 +663,7 @@ void SkipDB_removeAt_(SkipDB *self, Datum k)
 		
 		// nothing should be pointing to this record, so we can dealloc it 
 		
-		//SkipDBRecord_object_(r, 0x0);
+		//SkipDBRecord_object_(r, NULL);
 		SkipDBRecord_dealloc(r);
 		
 #ifdef DEBUG
@@ -730,7 +737,7 @@ int SkipDB_count(SkipDB *self)
 
 SkipDBRecord *SkipDB_firstRecord(SkipDB *self)
 {
-	if (SkipDBRecord_level(self->header) == 0) return 0x0;
+	if (SkipDBRecord_level(self->header) == 0) return NULL;
 	return SkipDBRecord_nextRecord(self->header);
 }
 
@@ -758,8 +765,9 @@ SkipDBCursor *SkipDB_createCursor(SkipDB *self)
 	return cursor;
 }
 
-void SkipDB_freeCursor_(SkipDB *self, SkipDBCursor *cursor)
+void SkipDB_removeCursor_(SkipDB *self, SkipDBCursor *cursor)
 {
+	SkipDBCursor_release(cursor);
 	List_remove_(self->cursors, cursor);
 	//SkipDBCursor_free(cursor);
 }

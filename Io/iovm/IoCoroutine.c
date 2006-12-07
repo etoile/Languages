@@ -90,7 +90,7 @@ IoCoroutine *IoCoroutine_rawClone(IoCoroutine *proto)
 	IoObject *self = IoObject_rawClonePrimitive(proto);
 	IoObject_setDataPointer_(self, calloc(1, sizeof(IoCoroutineData)));
 	DATA(self)->ioStack = Stack_new();
-	DATA(self)->cid = (Coro *)0x0;
+	DATA(self)->cid = (Coro *)NULL;
 	return self; 
 }
 

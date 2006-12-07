@@ -126,13 +126,13 @@ void JFile_close(JFile *self)
 	if (self->file) 
 	{
 		fclose(self->file);
-		self->file = 0x0;
+		self->file = NULL;
 	}
 	
 	if (self->log) 
 	{
 		fclose(self->log);
-		self->log = 0x0;
+		self->log = NULL;
 	}
 }
 

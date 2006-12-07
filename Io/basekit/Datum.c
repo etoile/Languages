@@ -62,7 +62,7 @@ Datum Datum_FromByteArray_(ByteArray *ba)
 Datum Datum_Empty(void)
 {
 	Datum d;
-	d.data = 0x0;
+	d.data = NULL;
 	d.size = 0;
 	return d;
 }
@@ -78,7 +78,7 @@ Datum Datum_datumAt_(Datum *self, size_t i)
 	}
 	else
 	{
-		d.data = 0x0;
+		d.data = NULL;
 		d.size = 0;
 	}
 	
@@ -179,7 +179,7 @@ Datum *Datum_newFrom_to_(Datum *self, size_t start, size_t end)
 		return d;
 	}
 	
-	d->data = 0x0;
+	d->data = NULL;
 	d->size = 0;
 	return d;
 }

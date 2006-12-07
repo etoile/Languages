@@ -6,6 +6,7 @@ docObject("UDBRecord")
 docDescription("")
 */
 
+#include "SkipDB.h"
 #include "UDB.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -50,6 +50,7 @@ void IoSeq_addMutableMethods(IoSeq *self)
 	{"atPut", IoSeq_atPut},
 	{"lowercase", IoSeq_lowercase},
 	{"uppercase", IoSeq_uppercase},
+    {"translate", IoSeq_translate},
 		
 	{"clipBeforeSeq", IoSeq_clipBeforeSeq},
 	{"clipAfterSeq",  IoSeq_clipAfterSeq},
@@ -58,6 +59,7 @@ void IoSeq_addMutableMethods(IoSeq *self)
 		
 	{"empty", IoSeq_empty},
 	{"sort", IoSeq_sort},
+    {"reverse", IoSeq_reverse},
 		
 	{"removeOddIndexes",  IoSeq_removeOddIndexes},
 	{"removeEvenIndexes", IoSeq_removeEvenIndexes},
@@ -125,7 +127,7 @@ IoObject *IoSeq_appendSeq(IoSeq *self, IoObject *locals, IoMessage *m)
 		{ 
 			double d = IoNumber_asDouble(other);
 			char s[24];
-			memset(s, 0x0, 24);
+			memset(s, 0, 24);
 			
 			if (d == (long)d)
 			{ 
@@ -142,7 +144,7 @@ IoObject *IoSeq_appendSeq(IoSeq *self, IoObject *locals, IoMessage *m)
 		{ 
 			ByteArray_append_(BIVAR(self), BIVAR(other)); 
 		}
-		else  
+		else if (!ISNIL(other))
 		{
 			IoState_error_(IOSTATE, m, 
 						   "argument 0 to method '%s' must be a number, string or buffer, not a '%s'",
@@ -240,7 +242,7 @@ void IoSeq_rawPreallocateToSize_(IoSeq *self, size_t size)
 {
 	if (ISSYMBOL(self))
 	{
-		IoState_error_(IOSTATE, 0x0, "attempt to resize an immutable Sequence");
+		IoState_error_(IOSTATE, NULL, "attempt to resize an immutable Sequence");
 	}
 	
 	ByteArray_sizeTo_(BIVAR(self), size);
@@ -519,6 +521,72 @@ IoObject *IoSeq_replaceMap(IoObject *self, IoObject *locals, IoMessage *m)
 	
 	return self;
 }
+
+// translate ------------------------------------------------------
+
+IoObject *IoSeq_translate(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("translate(fromChars, toChars)",
+		   "In the receiver, the characters in fromChars are replaced with those in the same positions in toChars. Returns self.")
+	*/
+
+	ByteArray *tc = BIVAR(IoMessage_locals_seqArgAt_(m, locals, 1));
+	ByteArray *fc = BIVAR(IoMessage_locals_seqArgAt_(m, locals, 0));
+	int tc_len = ByteArray_size(tc);
+	int fc_len = ByteArray_size(fc);
+	ByteArray *ba = BIVAR(self);
+	char lut[256], currChar;
+	int i;
+
+	IO_ASSERT_NOT_SYMBOL(self);
+
+	if (fc_len != tc_len)
+		IoState_error_(IOSTATE, m, "translation strings must be of the same length");
+
+	// Build the lookup table:
+	// for each char in fc, set lut[fc[i]] = bc[i]
+	for (i = 0; i <= 255; i ++) { lut[i] = i; } // init the lookup table
+	for (i = 0; i < fc_len; i ++) {
+		lut[(char)ByteArray_at_(fc, i)] = ByteArray_at_(tc,i);
+		//printf("%i\n", lut[i]);
+	}
+
+	// Step through the receiver's bytearray and make substitions,
+	//  replacing each char with the replacement from the lut
+	for (i = 0; i < ByteArray_size(ba); i ++)
+	{
+		currChar = ByteArray_at_(ba, i);
+		//printf("%c->%c\n", currChar, lut[currChar]);
+		ba->bytes[i] = lut[currChar];  // replace
+	}
+
+	return self;
+}
+
+// reverse --------------------------------------------------------
+
+IoObject *IoSeq_reverse(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+		   docSlot("reverse", "Reverses the bytes in the receiver, in-place.")
+	*/
+
+	int c, i, j;
+	ByteArray *ba = BIVAR(self);
+
+	IO_ASSERT_NOT_SYMBOL(self);
+
+	for (i=0, j=ByteArray_size(ba)-1; i < j; i++, j--)
+	{
+		c = ba->bytes[i];
+		ba->bytes[i] = ba->bytes[j];
+		ba->bytes[j] = c;
+	}
+
+	return self;
+}
+
 
 // strip ---------------------------------------------------------- 
 

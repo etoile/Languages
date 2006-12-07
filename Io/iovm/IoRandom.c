@@ -193,4 +193,3 @@ IoObject *IoRandom_gaussian(IoObject *self, IoObject *locals, IoMessage *m)
 	
 	return IONUMBER(RandomGen_gaussian(IVAR(self), mean, standardDeviation));
 }
-		 

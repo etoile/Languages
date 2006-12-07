@@ -14,8 +14,21 @@
      //#define CORO_STACK_SIZE     1048576
 	//#define CORO_STACK_SIZE     65536
 	#define CORO_STACK_SIZE     65536
+	//#define CORO_STACK_SIZE_MIN     32768
 	#define CORO_STACK_SIZE_MIN 8192
 #endif
+
+#if defined(WIN32)
+#if defined(BUILDING_CORO_DLL) || defined(BUILDING_IOVMALL_DLL)
+#define CORO_API __declspec(dllexport)
+#else
+#define CORO_API __declspec(dllimport)
+#endif
+
+#else
+#define CORO_API
+#endif
+
 
 #if defined(WIN32) && defined(HAS_FIBERS)
 	#define CORO_IMPLEMENTATION "fibers"
@@ -55,23 +68,23 @@ struct Coro
 	char isMain;
 };
 
-Coro *Coro_new(void);
-void Coro_free(Coro *self);
+CORO_API Coro *Coro_new(void);
+CORO_API void Coro_free(Coro *self);
 
 // stack
 
-void *Coro_stack(Coro *self);
-size_t Coro_stackSize(Coro *self);
-ptrdiff_t Coro_bytesLeftOnStack(Coro *self);
-int Coro_stackSpaceAlmostGone(Coro *self);
+CORO_API void *Coro_stack(Coro *self);
+CORO_API size_t Coro_stackSize(Coro *self);
+CORO_API ptrdiff_t Coro_bytesLeftOnStack(Coro *self);
+CORO_API int Coro_stackSpaceAlmostGone(Coro *self);
 
-void Coro_initializeMainCoro(Coro *self);
+CORO_API void Coro_initializeMainCoro(Coro *self);
 
 typedef void (CoroStartCallback)(void *);
 
-void Coro_startCoro_(Coro *self, Coro *other, void *context, CoroStartCallback *callback);
-void Coro_switchTo_(Coro *self, Coro *next);
-void Coro_setup(Coro *self, void *arg); // private
+CORO_API void Coro_startCoro_(Coro *self, Coro *other, void *context, CoroStartCallback *callback);
+CORO_API void Coro_switchTo_(Coro *self, Coro *next);
+CORO_API void Coro_setup(Coro *self, void *arg); // private
 
 #ifdef __cplusplus
 }

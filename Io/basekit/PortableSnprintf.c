@@ -797,7 +797,7 @@ int vasprintf(char **ptr, const char *format, va_list ap)
 {
     int ret;
 
-    ret = vsnprintf(0x0, 0, format, ap);
+    ret = vsnprintf(NULL, 0, format, ap);
     if (ret <= 0) return ret;
 
     (*ptr) = (char *)malloc(ret+1);

@@ -62,44 +62,44 @@ typedef struct
 #endif
 } PHash;
 
-PHash *PHash_new(void);
-void PHash_free(PHash *self);
-PHash *PHash_clone(PHash *self);
-void PHash_copy_(PHash *self, PHash *other);
+BASEKIT_API PHash *PHash_new(void);
+BASEKIT_API void PHash_free(PHash *self);
+BASEKIT_API PHash *PHash_clone(PHash *self);
+BASEKIT_API void PHash_copy_(PHash *self, PHash *other);
 
-unsigned int PHash_size(PHash *self);
-size_t PHash_memorySize(PHash *self);
-void PHash_compact(PHash *self);
-void PHash_collapseRecordsAndAddKey_value_(PHash *self, void *key, void *value);
-void PHash_rehashWithCollapsedRecords(PHash *self);
+BASEKIT_API unsigned int PHash_size(PHash *self);
+BASEKIT_API size_t PHash_memorySize(PHash *self);
+BASEKIT_API void PHash_compact(PHash *self);
+BASEKIT_API void PHash_collapseRecordsAndAddKey_value_(PHash *self, void *key, void *value);
+BASEKIT_API void PHash_rehashWithCollapsedRecords(PHash *self);
 
-void *PHash_firstValue(PHash *self);
-void *PHash_nextValue(PHash *self);
+BASEKIT_API void *PHash_firstValue(PHash *self);
+BASEKIT_API void *PHash_nextValue(PHash *self);
 
-void *PHash_firstKey(PHash *self);
-void *PHash_nextKey(PHash *self);
+BASEKIT_API void *PHash_firstKey(PHash *self);
+BASEKIT_API void *PHash_nextKey(PHash *self);
 
-unsigned int PHash_count(PHash *self);
-unsigned int PHash_doCount(PHash *self);
+BASEKIT_API unsigned int PHash_count(PHash *self);
+BASEKIT_API unsigned int PHash_doCount(PHash *self);
 /*
-unsigned int PHash_countRecords_size_(unsigned char *records, unsigned int size);
+BASEKIT_API unsigned int PHash_countRecords_size_(unsigned char *records, unsigned int size);
 */
 
-PHashRecord *PHash_recordAtIndex_(PHash *self, unsigned int index);
-void *PHash_keyAt_(PHash *self, unsigned int index);
-void *PHash_valueAt_(PHash *self, unsigned int index);
-int PHash_indexForValue_(PHash *self, void *v);
-void *PHash_firstKeyForValue_(PHash *self, void *v);
+BASEKIT_API PHashRecord *PHash_recordAtIndex_(PHash *self, unsigned int index);
+BASEKIT_API void *PHash_keyAt_(PHash *self, unsigned int index);
+BASEKIT_API void *PHash_valueAt_(PHash *self, unsigned int index);
+BASEKIT_API int PHash_indexForValue_(PHash *self, void *v);
+BASEKIT_API void *PHash_firstKeyForValue_(PHash *self, void *v);
 
 // --- perform -------------------------------------------------- 
 
-typedef void (PHashDoCallback)(void *);
-void PHash_do_(PHash *self, PHashDoCallback *callback);
+typedef BASEKIT_API void (PHashDoCallback)(void *);
+BASEKIT_API void PHash_do_(PHash *self, PHashDoCallback *callback);
 
 typedef int (PHashDetectCallback)(void *);
-void *PHash_detect_(PHash *self, PHashDetectCallback *callback); // returns matching key
-void PHash_doOnKeys_(PHash *self, PHashDoCallback *callback);
-void PHash_removeValue_(PHash *self, void *value);
+BASEKIT_API void *PHash_detect_(PHash *self, PHashDetectCallback *callback); // returns matching key
+BASEKIT_API void PHash_doOnKeys_(PHash *self, PHashDoCallback *callback);
+BASEKIT_API void PHash_removeValue_(PHash *self, void *value);
 
 // -------------------------------------------------------------- 
 

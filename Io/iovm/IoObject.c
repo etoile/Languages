@@ -42,7 +42,7 @@ IoTag *IoObject_tag(void *state)
 	IoTag *tag = IoTag_newWithName_("Object");
 	tag->state = state;
 	tag->cloneFunc = (TagCloneFunc *)IoObject_rawClone;
-	tag->activateFunc = (TagActivateFunc *)0x0; // IoObject_activateFunc;
+	tag->activateFunc = (TagActivateFunc *)NULL; // IoObject_activateFunc;
 	return tag;
 }
 
@@ -56,7 +56,7 @@ IoObject *IoObject_proto(void *state)
 	
 	self->tag = IoObject_tag(state);
 	self->state = state;
-	IoObject_setDataPointer_(self, 0x0);
+	IoObject_setDataPointer_(self, NULL);
 	IoState_registerProtoWithFunc_((IoState *)state, self, IoObject_proto);
 		
 	return self;
@@ -125,6 +125,7 @@ IoObject *IoObject_protoFinish(void *state)
 	{"while", IoObject_while},
 	{"break", IoObject_break},
 	{"continue", IoObject_continue},
+	{";", IoObject_eol},
 		
     // utility 
 		
@@ -153,6 +154,7 @@ IoObject *IoObject_protoFinish(void *state)
 	{"-", IoObject_subtract},
 				
 	{"thisContext", IoObject_self},
+	{"thisMessage", IoObject_thisMessage},
 	{"thisLocalContext", IoObject_locals},
 		
     // protos
@@ -171,7 +173,7 @@ IoObject *IoObject_protoFinish(void *state)
 	{"argIsActivationRecord", IoObject_argIsActivationRecord},
 	{"argIsCall", IoObject_argIsCall},
 		
-	{0x0, 0x0},
+	{NULL, NULL},
 	};
 	
 	IoObject *self = IoState_protoWithInitFunction_((IoState *)state, IoObject_proto);
@@ -208,7 +210,7 @@ IoObject *IoObject_addMethod_(IoObject *self, IoSymbol *slotName, IoMethodFunc *
 	
 	if (t == proto->tag)
 	{
-		t = 0x0;
+		t = NULL;
 	}
 	
 	f = IoCFunction_newWithFunctionPointer_tag_name_(IOSTATE, (IoUserFunction *)fp, t, CSTRING(slotName));
@@ -260,7 +262,7 @@ inline void IoObject_freeData(IoObject *self)
 		}
 	}
 	
-	IoObject_setDataPointer_(self, 0x0);
+	IoObject_setDataPointer_(self, NULL);
 }
 
 #define IOOBJECT_RECYCLE
@@ -271,7 +273,7 @@ inline void IoObject_freeData(IoObject *self)
 
 void IoObject_clearMark(IoObject *self)
 {
-	memset(&(self->marker), 0x0, sizeof(CollectorMarker));
+	memset(&(self->marker), 0, sizeof(CollectorMarker));
 	
 	self->hasDoneLookup = 0;
 	//self->ownsSlots = 0;
@@ -296,6 +298,8 @@ inline IoObject *IoObject_alloc(IoObject *self)
 
 	IoObject_clearMark(child);
 	
+	//memset(child->tag, 0x0, sizeof(IoTag));
+	//child->tag->performFunc = NULL;
 	child->state = self->tag->state;
 	return child;
 }
@@ -360,7 +364,7 @@ IoObject *IoObject_rawClonePrimitive(IoObject *proto)
 	IoObject *self = IoObject_alloc(proto);
 	self->tag = proto->tag;
 	IoObject_setProtoTo_(self, proto);
-	IoObject_setDataPointer_(self, 0x0);
+	IoObject_setDataPointer_(self, NULL);
 	self->isDirty = 1;
 	return self;
 }
@@ -389,7 +393,7 @@ void IoObject_setupProtos(IoObject *self)
 
 int IoObject_hasProtos(IoObject *self)
 {
-	return (self->protos[0] != 0x0);
+	return (self->protos[0] != NULL);
 }
 
 int IoObject_rawProtosCount(IoObject *self)
@@ -412,7 +416,7 @@ void IoObject_rawAppendProto_(IoObject *self, IoObject *p)
 	
 	self->protos = realloc(self->protos, (count + 2) * sizeof(IoObject *));
 	self->protos[count] = IOREF(p);
-	self->protos[count + 1] = 0x0;
+	self->protos[count + 1] = NULL;
 }
 
 void IoObject_rawPrependProto_(IoObject *self, IoObject *p)
@@ -468,14 +472,14 @@ void IoObject_testProtosCode(IoObject *self)
 	
 	IoObject_rawAppendProto_(self, o1);
 	assert(IoObject_rawProtoAt_(self, 0) == o1);
-	assert(IoObject_rawProtoAt_(self, 1) == 0x0);
+	assert(IoObject_rawProtoAt_(self, 1) == NULL);
 	assert(IoObject_rawProtosCount(self) == 1);
 	
 	IoObject_rawPrependProto_(self, (IoObject *)0x2);
 	assert(IoObject_rawProtosCount(self) == 2);
 	assert(IoObject_rawProtoAt_(self, 0) == o2);
 	assert(IoObject_rawProtoAt_(self, 1) == o1);
-	assert(IoObject_rawProtoAt_(self, 2) == 0x0);
+	assert(IoObject_rawProtoAt_(self, 2) == NULL);
 	
 	IoObject_rawRemoveAllProtos(self);
 	c = IoObject_rawProtosCount(self);
@@ -604,11 +608,11 @@ inline void IoObject_freeSlots(IoObject *self) // prepare for free and possibly 
 	if (self->ownsSlots) 
 	{ 
 		PHash_free(self->slots);
-		self->slots = 0x0;
+		self->slots = NULL;
 		self->ownsSlots = 0;
 	}
 	
-	self->slots = 0x0;
+	self->slots = NULL;
 }
 
 /*
@@ -633,14 +637,14 @@ void IoObject_free(IoObject *self) // prepare for free and possibly recycle
 	
 	if (self->listeners)
 	{
-		LIST_FOREACH(self->listeners, i, v, ((IoObject *)v)->tag->notificationFunc(v, 0x0));
+		LIST_FOREACH(self->listeners, i, v, ((IoObject *)v)->tag->notificationFunc(v, NULL));
 	}
 	
 	self->isLocals = 0;
 	
 	IoObject_freeData(self);
 	
-	//self->tag = 0x0;
+	//self->tag = NULL;
 	IoObject_rawRemoveAllProtos(self);
 	self->persistentId = 0;
 	
@@ -652,7 +656,7 @@ void IoObject_free(IoObject *self) // prepare for free and possibly recycle
 	}
 	else 
 	{ 
-		self->slots = 0x0; 
+		self->slots = NULL;
 	}
 	
 	IoObject_unalloc(self);
@@ -672,7 +676,7 @@ void IoObject_dealloc(IoObject *self) // really free it
 	}
 	
 	free(self->protos);
-	memset(self, 0x0, sizeof(IoObject)); // temp 
+	memset(self, 0, sizeof(IoObject)); // temp 
 	free(self);
 }
 
@@ -752,13 +756,13 @@ double IoObject_doubleGetSlot_(IoObject *self, IoSymbol *slotName)
 	
 	if (!v)
 	{
-		IoState_error_(IOSTATE, 0x0, "missing slot %s in %s", 
+		IoState_error_(IOSTATE, NULL, "missing slot %s in %s", 
 					CSTRING(slotName), IoObject_name(self));
 	}
 
 	if (!ISNUMBER(v))
 	{
-		IoState_error_(IOSTATE, 0x0, "slot %s in %s must be a number, not a %s", 
+		IoState_error_(IOSTATE, NULL, "slot %s in %s must be a number, not a %s", 
 					CSTRING(slotName), IoObject_name(self), IoObject_name(v));
 	}
 	
@@ -771,13 +775,13 @@ IoObject *IoObject_symbolGetSlot_(IoObject *self, IoSymbol *slotName)
 	
 	if (!v)
 	{
-		IoState_error_(IOSTATE, 0x0, "missing slot %s in %s", 
+		IoState_error_(IOSTATE, NULL, "missing slot %s in %s", 
 					CSTRING(slotName), IoObject_name(self));
 	}
 	
 	if (!ISSYMBOL(v))
 	{
-		IoState_error_(IOSTATE, 0x0, "slot %s in %s must be a symbol, not a %s", 
+		IoState_error_(IOSTATE, NULL, "slot %s in %s must be a symbol, not a %s", 
 					CSTRING(slotName), IoObject_name(self), IoObject_name(v));
 	}
 	
@@ -790,13 +794,13 @@ IoObject *IoObject_seqGetSlot_(IoObject *self, IoSymbol *slotName)
 	
 	if (!v)
 	{
-		IoState_error_(IOSTATE, 0x0, "missing slot %s in %s", 
+		IoState_error_(IOSTATE, NULL, "missing slot %s in %s", 
 					CSTRING(slotName), IoObject_name(self));
 	}
 	
 	if (!ISSEQ(v))
 	{
-		IoState_error_(IOSTATE, 0x0, "slot %s in %s must be a sequence, not a %s", 
+		IoState_error_(IOSTATE, NULL, "slot %s in %s must be a sequence, not a %s", 
 					CSTRING(slotName), IoObject_name(self), IoObject_name(v));
 	}
 	
@@ -822,6 +826,7 @@ IoObject *IoObject_activateFunc(IoObject *self,
 			return IoObject_activate(slotValue, target, locals, m, context);
 		}	
 	}
+	
 	return self;
 }
 
@@ -1158,7 +1163,7 @@ hold valueObject and sets the type slot of valueObject to be slotNameString. Ret
 	IoSymbol *slotName  = IoMessage_locals_symbolArgAt_(m, locals, 0);
 	IoObject *slotValue = IoMessage_locals_valueArgAt_(m, locals, 1);
 	IoObject_inlineSetSlot_to_(self, slotName, slotValue);
-	if (PHash_at_(slotValue->slots, IOSTATE->typeSymbol) == 0x0)
+	if (PHash_at_(slotValue->slots, IOSTATE->typeSymbol) == NULL)
 	{
 		IoObject_inlineSetSlot_to_(slotValue, IOSTATE->typeSymbol, slotName);
 	}
@@ -1272,7 +1277,7 @@ IoObject *IoObject_protoHasLocalSlot(IoObject *self, IoObject *locals, IoMessage
 	
 	IoSymbol *slotName = IoMessage_locals_symbolArgAt_(m, locals, 0);
 	IoObject_createSlotsIfNeeded(self);
-	return IOBOOL(self, PHash_at_(self->slots, slotName) != 0x0);
+	return IOBOOL(self, PHash_at_(self->slots, slotName) != NULL);
 }
 
 IoObject *IoObject_protoRemoveSlot(IoObject *self, IoObject *locals, IoMessage *m)
@@ -1354,7 +1359,7 @@ a slot of the specified name or Nil if none is found.")
 	
 	while (*proto)
 	{
-		IoObject *context = 0x0;
+		IoObject *context = NULL;
 		IoObject *v = IoObject_rawGetSlot_context_((*proto), slotName, &context);
 		
 		if (v) 
@@ -1377,7 +1382,7 @@ that contains a slot of the specified name or Nil if none is found.")
 	*/ 
 	
 	IoObject *slotName = IoMessage_locals_symbolArgAt_(m, locals, 0);
-	IoObject *context = 0x0;
+	IoObject *context = NULL;
 	IoObject_rawGetSlot_context_(self, slotName, &context);
 	return context ? context : IONIL(self);
 }
@@ -1393,7 +1398,7 @@ IoObject *IoObject_rawDoString_label_(IoObject *self, IoSymbol *string, IoSymbol
 	
 	if(!ISSEQ(string))
 	{ 
-		IoState_error_(state, 0x0, "IoObject_rawDoString_label_ requires a string argument");
+		IoState_error_(state, NULL, "IoObject_rawDoString_label_ requires a string argument");
 	}
 	
 	{
@@ -1404,7 +1409,8 @@ IoObject *IoObject_rawDoString_label_(IoObject *self, IoSymbol *string, IoSymbol
 		cm = IoMessage_newWithName_label_(state, IOSYMBOL("Compiler"), internal);
 		messageForString = IoMessage_newWithName_label_(state, IOSYMBOL("messageForString"), internal);
 		
-		IoMessage_rawSetAttachedMessage(cm, messageForString);
+		//IoMessage_rawSetAttachedMessage(cm, messageForString);
+		IoMessage_rawSetNext(cm, messageForString);
 		IoMessage_addCachedArg_(messageForString, string);
 		IoMessage_addCachedArg_(messageForString, label);
 		
@@ -1422,7 +1428,7 @@ IoObject *IoObject_rawDoString_label_(IoObject *self, IoSymbol *string, IoSymbol
 			return IoMessage_locals_performOn_(newMessage, self, self); 
 		}
 		
-		IoState_error_(state, 0x0, "no message compiled\n");
+		IoState_error_(state, NULL, "no message compiled\n");
 		return IONIL(self);
 	}
 }
@@ -1619,6 +1625,15 @@ IoObject *IoObject_self(IoObject *self, IoObject *locals, IoMessage *m)
 	
 	return self; 
 }
+
+IoObject *IoObject_thisMessage(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot("thisMessage", "Returns the calling message.")
+	*/
+	return m;
+}
+
 
 IoObject *IoObject_locals(IoObject *self, IoObject *locals, IoMessage *m)
 { 
@@ -1914,87 +1929,6 @@ IoObject *IoObject_isActivatable(IoObject *self, IoObject *locals, IoMessage *m)
 	return self->isActivatable ? IOTRUE(self) : IOFALSE(self);
 }
 
-IoObject *IoObject_rawDoMessage(IoObject *self, IoMessage *m)
-{
-	return IoObject_eval(self, m, self);
-}
-
-//#define IO_DEBUG_STACK
-
-inline IoObject *IoObject_evalAttached(IoObject *self, IoMessage *m, IoObject *locals)
-{
-	IoState *state = IOSTATE;
-	IoObject *c = self;
-	IoObject *r;
-
-	do
-	{
-		r = IOMESSAGEDATA(m)->cachedResult;
-		
-		if (r)
-		{
-			c = r;
-		}
-		else
-		{
-			c = c->tag->performFunc(c, locals, m);
-			if (state->stopStatus) return state->returnValue;
-		}
-	} while ((m = IOMESSAGEDATA(m)->attachedMessage));
-	
-	return r;
-}
-
-IoObject *IoObject_eval(IoObject *self, IoMessage *m, IoObject *locals)
-{
-	IoState *state = IOSTATE;
-	IoObject *r;
-	
-	state->stopStatus = 0;
-	
-	do
-	{
-		r = IoObject_evalAttached(self, m, locals);
-		if (state->stopStatus) return state->returnValue;
-	} while ((m = IOMESSAGEDATA(m)->nextMessage));
-	
-	return r;
-}
-
-IoObject *IoObject_eval2(IoObject *self, IoMessage *message, IoObject *locals)
-{
-	IoState *state = IOSTATE;
-	IoObject *r = state->ioNil;
-	IoMessage *m = message;
-	IoObject *c = self;
-	
-	do
-	{
-		do
-		{
-			r = IOMESSAGEDATA(m)->cachedResult;
-			
-			if (!r)
-			{
-				//printf("%s\n", CSTRING(IoMessage_name(m)));
-				r = c->tag->performFunc(c, locals, m);
-				
-				if (state->stopStatus != MESSAGE_STOP_STATUS_NORMAL)
-				{
-					return state->returnValue;
-				}
-			}
-			
-			c = r;
-			
-		} while ((m = IOMESSAGEDATA(m)->attachedMessage));
-		
-		c = locals;
-		
-	} while ((m = IOMESSAGEDATA(m)->nextMessage));
-	
-	return r;
-}
 
 /*
 IoNumber *IoObject_getNumberSlot(IoObject *self, 
@@ -2028,10 +1962,9 @@ ByteArray *IoObject_rawGetMutableByteArraySlot(IoObject *self,
 	return IoSeq_rawByteArray(seq);
 }
 
-
 IoObject *IoObject_argIsActivationRecord(IoObject *self, IoObject *locals, IoMessage *m)
 {
-	return IOBOOL(self, PHash_at_(self->slots, IOSTATE->callSymbol) != 0x0);
+	return IOBOOL(self, PHash_at_(self->slots, IOSTATE->callSymbol) != NULL);
 }
 
 IoObject *IoObject_argIsCall(IoObject *self, IoObject *locals, IoMessage *m)
@@ -2040,6 +1973,7 @@ IoObject *IoObject_argIsCall(IoObject *self, IoObject *locals, IoMessage *m)
 	//printf("v->tag->name = '%s'\n", v->tag->name);
 	return IOBOOL(self, ISACTIVATIONCONTEXT(v));
 }
+
 
 /*
 IoObject *IoObject_unpack(IoObject *self, IoObject *locals, IoMessage *m)
@@ -2053,7 +1987,7 @@ IoObject *IoObject_unpack(IoObject *self, IoObject *locals, IoMessage *m)
 
 void IoObject_addListener_(IoObject *self, void *listener)
 {		
-	if (self->listeners == 0x0) 
+	if (self->listeners == NULL)
 	{
 		self->listeners = List_new();
 	}
@@ -2070,7 +2004,7 @@ void IoObject_removeListener_(IoObject *self, void *listener)
 		if (List_size(self->listeners) == 0)
 		{
 			List_free(self->listeners);
-			self->listeners = 0x0;
+			self->listeners = NULL;
 		}
 	}
 }

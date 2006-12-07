@@ -9,6 +9,8 @@ docLicense("BSD revised")
 #include "Common_inline.h"
 #ifdef IO_DECLARE_INLINES
 
+#include "IoVMApi.h"
+
 #include "IoState.h"
 
 IOINLINE int IoObject_isWhite(IoObject *self)
@@ -40,7 +42,7 @@ IOINLINE void IoObject_rawRemoveAllProtos(IoObject *self)
 	IoObject_createSlotsIfNeeded(self);
 	{
 	int count = IoObject_rawProtosCount(self);
-	memset(self->protos, 0x0, count * sizeof(IoObject *));
+	memset(self->protos, 0, count * sizeof(IoObject *));
 	}
 }
 
@@ -81,7 +83,7 @@ IOINLINE void IoObject_inlineSetSlot_to_(IoObject *self,
 	 if (PHash_count(self->slots) > 200)
 	 { 
 		 printf("PHash %p slots %i\n", (void *)(self->slots), PHash_count(self->slots));
-		 IoState_error_(IOSTATE, 0x0, "too many slots");
+		 IoState_error_(IOSTATE, NULL, "too many slots");
 	 }
 	 */
 	
@@ -99,7 +101,7 @@ IOINLINE IoObject *IoObject_rawGetSlot_context_(IoObject *self,
                                                 IoSymbol *slotName, 
                                                 IoObject **context)
 {
-	register IoObject *v = (IoObject *)0x0;
+	register IoObject *v = (IoObject *)NULL;
 	
 	if (self->ownsSlots)
 	{
@@ -140,7 +142,7 @@ IOINLINE IoObject *IoObject_rawGetSlot_context_(IoObject *self,
 
 IOINLINE IoObject *IoObject_rawGetSlot_(IoObject *self, IoSymbol *slotName)
 {
-	register IoObject *v = (IoObject *)0x0;
+	register IoObject *v = (IoObject *)NULL;
 	
 	if (self->ownsSlots)
 	{
@@ -205,7 +207,7 @@ IOINLINE void IoObject_mark(IoObject *self)
 	{ 
 		IoObject **proto = self->protos;
 		
-		while (*proto != 0x0)
+		while (*proto != NULL)
 		{
 			IoObject_shouldMark(*proto);
 			proto ++;
@@ -223,7 +225,7 @@ IOINLINE void IoObject_mark(IoObject *self)
 }
 
 IoObject *IoObject_addingRef_(IoObject *self, IoObject *ref);
-int IoObject_hasCloneFunc_(IoObject *self, TagCloneFunc *func);
+IOVM_API int IoObject_hasCloneFunc_(IoObject *self, TagCloneFunc *func);
 
 IOINLINE IoObject *IoObject_activate(IoObject *self, 
                                      IoObject *target, 
@@ -236,6 +238,8 @@ IOINLINE IoObject *IoObject_activate(IoObject *self,
 	//printf("activate %s %i\n", self->tag->name, self->isActivatable);
 
 	return self->isActivatable ? (IoObject *)((self->tag->activateFunc)(self, target, locals, m, slotContext)) : self;
+	//return self->tag->activateFunc ? (IoObject *)((self->tag->activateFunc)(self, target, locals, m, slotContext)) : self;
+
 }
 
 IOINLINE IoObject *IoObject_forward(IoObject *self, IoObject *locals, IoMessage *m)

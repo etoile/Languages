@@ -142,7 +142,7 @@ IoFile *IoFile_rawClone(IoFile *proto)
 {
     IoObject *self = IoObject_rawClonePrimitive(proto);
     IoObject_setDataPointer_(self, cpalloc(IoObject_dataPointer(proto), sizeof(IoFileData)));
-    DATA(self)->info = 0x0;
+    DATA(self)->info = NULL;
     return self;
 }
 
@@ -551,7 +551,7 @@ IoObject *IoFile_rawAsString(IoFile *self)
     else
     {
 		ByteArray_free(ba);
-		IoState_error_(IOSTATE, 0x0, "unable to read file '%s'", CSTRING(DATA(self)->path));
+		IoState_error_(IOSTATE, NULL, "unable to read file '%s'", CSTRING(DATA(self)->path));
     }
     
     return IONIL(self);
@@ -811,7 +811,7 @@ ByteArray *IoFile_readByteArrayOfLength_(IoFile *self, IoObject *locals, IoMessa
     if (!ByteArray_size(ba))
     {
 		ByteArray_free(ba);
-		return 0x0;
+		return NULL;
     }
     
     return ba;

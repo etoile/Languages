@@ -24,7 +24,8 @@ SkipDBM *SkipDBM_new(void)
 void SkipDBM_freeDBs(SkipDBM *self)
 {
 	//Hash_do_(self->pidToDB, (HashDoCallback *)SkipDB_dealloc);
-	List_do_(self->dbs, (ListDoCallback *)SkipDB_dealloc);
+	LIST_FOREACH(self->dbs, i, sdb, SkipDB_sdbm_(sdb, NULL));
+	List_do_(self->dbs, (ListDoCallback *)SkipDB_release); 
 	List_removeAll(self->dbs);
 }
 
@@ -73,7 +74,7 @@ void SkipDBM_close(SkipDBM *self)
 {
 	SkipDBM_freeDBs(self);
 	UDB_close(self->udb);
-	self->rootDB = 0x0;
+	self->rootDB = NULL;
 }
 
 void SkipDBM_delete(SkipDBM *self)

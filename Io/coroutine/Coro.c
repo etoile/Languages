@@ -256,6 +256,10 @@ void Coro_setup(Coro *self, void *arg)
 	self->fiber = CreateFiber(Coro_stackSize(self), 
 						 (LPFIBER_START_ROUTINE)Coro_StartWithArg, 
 						 (LPVOID)arg);
+	if (!self->fiber) {
+		DWORD err = GetLastError();
+		exit(err);
+	}
 }
 
 #elif defined(__CYGWIN__) 

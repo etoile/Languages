@@ -26,7 +26,8 @@
 				int tz_dsttime;     /* type of dst correction to apply */
 			};
 
-			extern void gettimeofday(struct timeval *tv, struct timezone *tz);
+                        #include "Common.h"
+			BASEKIT_API extern void gettimeofday(struct timeval *tv, struct timezone *tz);
 		#endif
 
 	#else

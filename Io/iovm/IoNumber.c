@@ -7,7 +7,7 @@ Number ioDoc(
              docDescription("A container for a double (a 64bit floating point number on most platforms).")
 		   docCategory("Core")
              */
-
+#define _GNU_SOURCE // for round
 #include "IoNumber.h"
 #include "IoObject.h"
 #include "IoState.h"
@@ -34,6 +34,13 @@ Number ioDoc(
 #include <float.h>
 #endif
 
+#ifdef _MSC_VER
+#define isnan _isnan
+float round(float a)
+{
+    return floor(a+0.5f);
+}
+#endif
 
 #define NIVAR(self) CNUMBER(self)
 
@@ -169,6 +176,7 @@ IoNumber *IoNumber_proto(void *state)
 	{"unsignedIntMax", IoNumber_unsignedIntMax},
 	{"floatMax", IoNumber_floatMax},
 	{"floatMin", IoNumber_floatMin},
+	{"isNan", IoNumber_isNan},
         
 	{"repeatTimes", IoNumber_repeat},
 	{"repeat", IoNumber_repeat},
@@ -271,8 +279,8 @@ void IoNumber_Double_intoCString_(double n, char *s, size_t maxSize)
         
         while (l > 0)
         {
-            if (s[l] == '0') { s[l] = 0x0; l--; continue; }
-            if (s[l] == '.') { s[l] = 0x0; l--; break; }
+            if (s[l] == '0') { s[l] = 0; l--; continue; }
+            if (s[l] == '.') { s[l] = 0; l--; break; }
             break;
         }
     }
@@ -295,31 +303,31 @@ void IoNumber_print(IoNumber *self)
 #include <arpa/inet.h>
 #endif
 
-IoObject *IoNumber_htonl(IoNumber *self, IoObject *locals, IoMessage *m)
-{
-    /*#io
-    docSlot("htonl", 
-            "Returns a new number with the first 4 bytes of the receiver switched from
-host to network byte order.")
-    */
-    
-    IoNumber *num = IONUMBER(0);
-    IoObject_setDataUint32_(num, htonl(IoObject_dataUint32(self)));
-    return num;
-}
+//IoObject *IoNumber_htonl(IoNumber *self, IoObject *locals, IoMessage *m)
+//{
+//    /*#io
+//    docSlot("htonl", 
+//            "Returns a new number with the first 4 bytes of the receiver switched from
+//host to network byte order.")
+//    */
+//    
+//    IoNumber *num = IONUMBER(0);
+//    IoObject_setDataUint32_(num, htonl(IoObject_dataUint32(self)));
+//    return num;
+//}
 
-IoObject *IoNumber_ntohl(IoNumber *self, IoObject *locals, IoMessage *m)
-{
-    /*#io
-    docSlot("htonl", 
-            "Returns a new number with the first 4 bytes of the receiver switched from
-network to host byte order.")
-    */
-    
-	IoNumber *num = IONUMBER(0);
-	IoObject_setDataUint32_(num, ntohl(IoObject_dataUint32(self)));
-	return num;
-}
+//IoObject *IoNumber_ntohl(IoNumber *self, IoObject *locals, IoMessage *m)
+//{
+//    /*#io
+//    docSlot("ntohl", 
+//            "Returns a new number with the first 4 bytes of the receiver switched from
+//network to host byte order.")
+//    */
+//    
+//	IoNumber *num = IONUMBER(0);
+//	IoObject_setDataUint32_(num, ntohl(IoObject_dataUint32(self)));
+//	return num;
+//}
 
 // ----------------------------------------------------------- 
 
@@ -378,7 +386,7 @@ IoObject *IoNumber_printNumber(IoNumber *self, IoObject *locals, IoMessage *m)
     docSlot("print", "Prints the number.")
     */
     char s[24];
-    memset(s, 0x0, 24);
+    memset(s, 0, 24);
     IoNumber_Double_intoCString_(NIVAR(self), s, 24);
     IoState_print_((IoState *)IOSTATE, s);
     return self;
@@ -399,7 +407,7 @@ IoObject *IoNumber_justAsString(IoNumber *self, IoObject *locals, IoMessage *m)
     IoSymbol *string;
     int size = 1000;
     char *s = (char *)malloc(size);
-    memset(s, 0x0, size);
+    memset(s, 0, size);
     IoNumber_Double_intoCString_(NIVAR(self), s, 1000);
     string = IoState_symbolWithCString_((IoState *)IOSTATE, s);
     free(s);
@@ -415,7 +423,7 @@ value is the ascii value of the first byte of the receiver.")
     */
     char s[2];
     s[0] = (char)NIVAR(self);
-    s[1] = 0x0;
+    s[1] = 0;
     return IoState_symbolWithCString_length_((IoState *)IOSTATE, s, 1);
 }
 
@@ -1195,6 +1203,15 @@ IoObject *IoNumber_doubleMin(IoNumber *self, IoObject *locals, IoMessage *m)
     return IONUMBER(DBL_MIN);
 }
 
+IoObject *IoNumber_isNan(IoNumber *self, IoObject *locals, IoMessage *m)
+{
+    /*#io
+    docSlot("isNan", "Returns true if the receiver is not a number. Otherwise returns false.")
+    */
+    
+    return IOBOOL(self, isnan(CNUMBER(self)));
+}
+
 // looping --------------------------------------------- 
 
 IoObject *IoNumber_repeat(IoNumber *self, IoObject *locals, IoMessage *m)
@@ -1210,7 +1227,7 @@ integer value. This is significantly  faster than a for() or while() loop.")
         IoState *state = IOSTATE;
 	IoSymbol *indexSlotName;
         IoMessage *doMessage;
-        int i, max = CNUMBER(self);
+        double i, max = CNUMBER(self);
         IoObject *result = IONIL(self);
 
         if(IoMessage_argCount(m) > 1)

@@ -7,6 +7,8 @@ docLicense("BSD revised")
 #ifndef IOSEQ_DEFINED
 #define IOSEQ_DEFINED 1
 
+#include "IoVMApi.h"
+
 #include "Common.h"
 #include "ByteArray.h"
 #include "IoObject_struct.h"
@@ -16,7 +18,7 @@ docLicense("BSD revised")
 extern "C" {
 #endif
 
-int ISMUTABLESEQ(IoObject *self);
+IOVM_API int ISMUTABLESEQ(IoObject *self);
 
 #define IOSEQ(data, size)  IoSeq_newWithData_length_((IoState*)IOSTATE, data, size)
 #define IOSEQ_LENGTH(self) ByteArray_size((ByteArray *)(IoObject_dataPointer(self)))
@@ -47,61 +49,61 @@ typedef IoObject *(IoSplitFunction)(void *, ByteArray *, int);
 
 typedef IoObject IoSeq;
 
-int ioSeqCompareFunc(void *s1, void *s2);
-int ioSymbolFindFunc(void *s, void *ioSymbol);
+IOVM_API int ioSeqCompareFunc(void *s1, void *s2);
+IOVM_API int ioSymbolFindFunc(void *s, void *ioSymbol);
 
-int IoObject_isStringOrBuffer(IoObject *self);
-int IoObject_isNotStringOrBuffer(IoObject *self);
+IOVM_API int IoObject_isStringOrBuffer(IoObject *self);
+IOVM_API int IoObject_isNotStringOrBuffer(IoObject *self);
 
-IoSeq *IoSeq_proto(void *state);
-IoSeq *IoSeq_protoFinish(IoSeq *self);
+IOVM_API IoSeq *IoSeq_proto(void *state);
+IOVM_API IoSeq *IoSeq_protoFinish(IoSeq *self);
 
-IoSeq *IoSeq_rawClone(IoSeq *self);
-IoSeq *IoSeq_new(void *state);
-IoSeq *IoSeq_newWithByteArray_copy_(void *state, ByteArray *ba, int copy);
-IoSeq *IoSeq_newWithData_length_(void *state, const unsigned char *s, size_t length);
-IoSeq *IoSeq_newWithDatum_(void *state, Datum *d);
-IoSeq *IoSeq_newWithCString_length_(void *state, const char *s, size_t length);
-IoSeq *IoSeq_newWithCString_(void *state, const char *s);
-IoSeq *IoSeq_newFromFilePath_(void *state, const char *path);
-IoSeq *IoSeq_rawMutableCopy(IoSeq *self);
+IOVM_API IoSeq *IoSeq_rawClone(IoSeq *self);
+IOVM_API IoSeq *IoSeq_new(void *state);
+IOVM_API IoSeq *IoSeq_newWithByteArray_copy_(void *state, ByteArray *ba, int copy);
+IOVM_API IoSeq *IoSeq_newWithData_length_(void *state, const unsigned char *s, size_t length);
+IOVM_API IoSeq *IoSeq_newWithDatum_(void *state, Datum *d);
+IOVM_API IoSeq *IoSeq_newWithCString_length_(void *state, const char *s, size_t length);
+IOVM_API IoSeq *IoSeq_newWithCString_(void *state, const char *s);
+IOVM_API IoSeq *IoSeq_newFromFilePath_(void *state, const char *path);
+IOVM_API IoSeq *IoSeq_rawMutableCopy(IoSeq *self);
 
 // these Symbol creation methods should only be called by IoState 
 
-IoSymbol *IoSeq_newSymbolWithCString_(void *state, const char *s);
-IoSymbol *IoSeq_newSymbolWithData_length_(void *state, const char *s, size_t length);
-IoSymbol *IoSeq_newSymbolWithByteArray_copy_(void *state, ByteArray *ba, int copy);
+IOVM_API IoSymbol *IoSeq_newSymbolWithCString_(void *state, const char *s);
+IOVM_API IoSymbol *IoSeq_newSymbolWithData_length_(void *state, const char *s, size_t length);
+IOVM_API IoSymbol *IoSeq_newSymbolWithByteArray_copy_(void *state, ByteArray *ba, int copy);
 
 // these Symbol creation methods can be called by anyone
 
-IoSymbol *IoSeq_newSymbolWithFormat_(void *state, const char *format, ...);
+IOVM_API IoSymbol *IoSeq_newSymbolWithFormat_(void *state, const char *format, ...);
 
 //
 
-void IoSeq_free(IoSeq *self);
-int IoSeq_compare(IoSeq *self, IoSeq *v);
+IOVM_API void IoSeq_free(IoSeq *self);
+IOVM_API int IoSeq_compare(IoSeq *self, IoSeq *v);
 
-char *IoSeq_asCString(IoSeq *self);
-unsigned char *IoSeq_rawBytes(IoSeq *self);
-ByteArray *IoSeq_rawByteArray(IoSeq *self);
+IOVM_API char *IoSeq_asCString(IoSeq *self);
+IOVM_API unsigned char *IoSeq_rawBytes(IoSeq *self);
+IOVM_API ByteArray *IoSeq_rawByteArray(IoSeq *self);
 
-size_t IoSeq_rawSize(IoSeq *self);
-size_t IoSeq_rawSizeInBytes(IoSeq *self);
-void IoSeq_rawSetSize_(IoSeq *self, size_t size);
-void IoSeq_setIsSymbol_(IoSeq *self, int i);
+IOVM_API size_t IoSeq_rawSize(IoSeq *self);
+IOVM_API size_t IoSeq_rawSizeInBytes(IoSeq *self);
+IOVM_API void IoSeq_rawSetSize_(IoSeq *self, size_t size);
+IOVM_API void IoSeq_setIsSymbol_(IoSeq *self, int i);
 
 // conversion 
 
-double IoSeq_asDouble(IoSeq *self);
-Datum IoSeq_asDatum(IoSeq *self);
-IoSymbol *IoSeq_rawAsSymbol(IoSeq *self);
+IOVM_API double IoSeq_asDouble(IoSeq *self);
+IOVM_API Datum IoSeq_asDatum(IoSeq *self);
+IOVM_API IoSymbol *IoSeq_rawAsSymbol(IoSeq *self);
 
-IoSymbol *IoSeq_rawAsUnquotedSymbol(IoObject *self);
-IoSymbol *IoSeq_rawAsUnescapedSymbol(IoObject *self);
+IOVM_API IoSymbol *IoSeq_rawAsUnquotedSymbol(IoObject *self);
+IOVM_API IoSymbol *IoSeq_rawAsUnescapedSymbol(IoObject *self);
 
-int IoSeq_rawEqualsCString_(IoObject *self, const char *s);
-double IoSeq_rawAsDoubleFromHex(IoObject *self);
-double IoSeq_rawAsDoubleFromOctal(IoObject *self);
+IOVM_API int IoSeq_rawEqualsCString_(IoObject *self, const char *s);
+IOVM_API double IoSeq_rawAsDoubleFromHex(IoObject *self);
+IOVM_API double IoSeq_rawAsDoubleFromOctal(IoObject *self);
 
 #include "IoSeq_immutable.h"
 #include "IoSeq_mutable.h"

@@ -500,7 +500,7 @@ ByteArray *IoDirectory_CurrentWorkingDirectoryAsByteArray(void)
 #if defined(sparc) || defined(__sparc)
     char *buf = getcwd(NULL, FILENAME_MAX + 1);
 #else
-    char *buf = 0x0;
+    char *buf = NULL;
     buf = (char *)getcwd(buf, 1024);
 #endif /* sparc || _sparc */
     

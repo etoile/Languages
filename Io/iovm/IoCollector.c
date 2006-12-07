@@ -28,10 +28,11 @@ IoObject *IoCollector_proto(void *state)
 	{"setSweepsPerGeneration", IoCollector_setSweepsPerGeneration},
 	{"sweepsPerGeneration", IoCollector_sweepsPerGeneration},
 	{"allObjects", IoCollector_allObjects},
-	{0x0, 0x0},
+	{NULL, NULL},
 	};
 	
 	IoObject *self = IoObject_new(state);
+	IoObject_setSlot_to_(self, IOSYMBOL("type"), IOSYMBOL("Collector"));
 	IoObject_addMethodTable_(self, methodTable);
 	return self;
 }

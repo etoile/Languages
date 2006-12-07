@@ -56,6 +56,12 @@ typedef long long int64_t;
 // this also includes windows.h
 #include <winsock2.h>
 
+#if defined(BUILDING_BASEKIT_DLL) || defined(BUILDING_IOVMALL_DLL)
+#define BASEKIT_API __declspec(dllexport)
+#else
+#define BASEKIT_API __declspec(dllimport)
+#endif
+
 /*
 #ifndef _SYS_STDINT_H_
 #include "PortableStdint.h"
@@ -91,6 +97,11 @@ as errors in my dev settings */
 #include <string.h>
 #include <malloc.h> /* for calloc */
 #endif
+#else
+
+// Not on windows so define this away
+#define BASEKIT_API 
+
 #endif
 
 /*
@@ -123,7 +134,7 @@ as errors in my dev settings */
 extern "C" {
 #endif
 	
-	void *cpalloc(void *p, size_t size);
+	BASEKIT_API void *cpalloc(void *p, size_t size);
 	
 	
 #ifdef __cplusplus

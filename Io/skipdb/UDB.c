@@ -6,6 +6,7 @@ UDB ioDoc(
 		docDescription("")
 		*/
 
+#include "SkipDB.h"
 #include "UDB.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,7 +158,7 @@ void UDB_at_put_(UDB *self, PID_TYPE pid, Datum d)
 UDBRecord *UDB_recordAtPid_(UDB *self, PID_TYPE pid)
 {
 	PID_TYPE pos = UDBIndex_posForPid_(self->index, pid);
-	if (!pos) return 0x0;
+	if (!pos) return NULL;
 	return UDBRecords_recordAtPos_(self->records, pos);
 }
 
@@ -169,7 +170,7 @@ Datum UDB_at_(UDB *self, PID_TYPE pid)
 	if (!record)
 	{
 		d.size = 0;
-		d.data = 0x0;
+		d.data = NULL;
 		//printf("missing record with pid %i\n", pid);
 		return d;
 	}
@@ -206,7 +207,7 @@ UDBRecord *UDB_firstEmptyRecord(UDB *self)
 		if (UDBRecord_isEmpty(record)) return record;
 		record = UDBRecords_nextRecord(self->records);
 	}
-	return 0x0;
+	return NULL;
 }
 
 int UDB_compact(UDB *self)

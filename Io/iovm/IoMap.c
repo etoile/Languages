@@ -213,7 +213,7 @@ IoObject *IoMap_hasKey(IoMap *self, IoObject *locals, IoMessage *m)
 	*/
 	
 	IoSymbol *k = IoMessage_locals_symbolArgAt_(m, locals, 0);
-	return IOBOOL(self, Hash_at_(HASHIVAR(self), k) != 0x0);
+	return IOBOOL(self, Hash_at_(HASHIVAR(self), k) != NULL);
 }
 
 IoObject *IoMap_removeAt(IoMap *self, IoObject *locals, IoMessage *m)

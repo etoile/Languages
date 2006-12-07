@@ -136,66 +136,66 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                                 while (*buf != 0 && isspace((int)*buf))
                                         buf++;
                         else if (c != *buf++)
-                                return 0;
+                                return NULL;
                         continue;
                 }
 
                 c = *ptr++;
                 switch (c) {
                 case 0:
-                        return 0;
+                        return NULL;
 
                 case '%':
                         if (*buf++ != '%')
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'C':
                         buf = io_strptime(buf, En_US.ldate_format, tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'c':
                         buf = io_strptime(buf, "%x %X", tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'D':
                         buf = io_strptime(buf, "%m/%d/%y", tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'R':
                         buf = io_strptime(buf, "%H:%M", tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'r':
                         buf = io_strptime(buf, "%I:%M:%S %p", tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'T':
                         buf = io_strptime(buf, "%H:%M:%S", tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'X':
                         buf = io_strptime(buf, En_US.time_format, tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'x':
                         buf = io_strptime(buf, En_US.sdate_format, tm);
                         if (buf == 0)
-                                return 0;
+                                return NULL;
                         break;
 
                 case 'j':
@@ -204,7 +204,7 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
 
                         i = readndigits(&buf, 3);
                         if (i < 0 || i > 366)
-                                return 0;
+                                return NULL;
 
                         tm->tm_yday = i;
                         break;
@@ -215,7 +215,7 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
 
                         i = readndigits(&buf, 2);
                         if (i < 0 || i > 59)
-                                return 0;
+                                return NULL;
 
                         tm->tm_min = i;
 
@@ -228,7 +228,7 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
 
                         i = readndigits(&buf, 2);
                         if (i < 0 || i > 60) // Earlier 61 was also allowed.
-                                return 0;
+                                return NULL;
 
                         tm->tm_sec = i;
 
@@ -238,11 +238,11 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                 case 'H':
                 case 'k':
                         if (!isdigit((int)*buf))
-                                return 0;
+                                return NULL;
 
                         i = readndigits(&buf, 2);
                         if (i < 0 || i > 23)
-                                return 0;
+                                return NULL;
 
                         tm->tm_hour = i;
 
@@ -252,11 +252,11 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                 case 'I':
                 case 'l':
                         if (!isdigit((int)*buf))
-                                return 0;
+                                return NULL;
 
                         i = readndigits(&buf, 2);
                         if (i < 1 || i > 12)
-                                return 0;
+                                return NULL;
 
                         tm->tm_hour = i;
 
@@ -266,11 +266,11 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                 case 'd':
                 case 'e':
                         if (!isdigit((int)*buf))
-                                return 0;
+                                return NULL;
 
                         i = readndigits(&buf, 2);
                         if (i < 1 || i > 31)
-                                return 0;
+                                return NULL;
 
                         tm->tm_mday = i;
 
@@ -279,11 +279,11 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
 
                 case 'm':
                         if (!isdigit((int)*buf))
-                                return 0;
+                                return NULL;
 
                         i = readndigits(&buf, 2);
                         if (i < 1 || i > 12)
-                                return 0;
+                                return NULL;
 
                         tm->tm_mon = i - 1;
 
@@ -295,11 +295,11 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                                 break;
 
                         if (!isdigit((int)*buf))
-                                return 0;
+                                return NULL;
 
                         i = readndigits(&buf, 4);
                         if (i < 0 || i > 9999)
-                                return 0;
+                                return NULL;
 
                         tm->tm_year = i - 1900;
 
@@ -311,11 +311,11 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                                 break;
 
                         if (!isdigit((int)*buf))
-                                return 0;
+                                return NULL;
 
                         i = readndigits(&buf, 2);
                         if (i < 0 || i > 99)
-                                return 0;
+                                return NULL;
 
                         tm->tm_year = i;
 
@@ -327,7 +327,7 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                         len = strlen(En_US.am_string);
                         if (strncasecmp(buf, En_US.am_string, len) == 0) {
                                 if (tm->tm_hour > 12)
-                                        return 0;
+                                        return NULL;
                                 if (tm->tm_hour == 12)
                                         tm->tm_hour = 0;
                                 buf += len;
@@ -337,14 +337,14 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                         len = strlen(En_US.pm_string);
                         if (strncasecmp(buf, En_US.pm_string, len) == 0) {
                                 if (tm->tm_hour > 12)
-                                        return 0;
+                                        return NULL;
                                 if (tm->tm_hour != 12)
                                         tm->tm_hour += 12;
                                 buf += len;
                                 break;
                         }
 
-                        return 0;
+                        return NULL;
 
                 case 'A':
                 case 'a':
@@ -362,7 +362,7 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                                         break;
                         }
                         if (i == asizeof(En_US.weekday_names))
-                                return 0;
+                                return NULL;
 
                         tm->tm_wday = i;
                         buf += len;
@@ -385,7 +385,7 @@ char *io_strptime(char *buf, char *fmt, struct tm *tm)
                                         break;
                         }
                         if (i == asizeof(En_US.month_names))
-                                return 0;
+                                return NULL;
 
                         tm->tm_mon = i;
                         buf += len;

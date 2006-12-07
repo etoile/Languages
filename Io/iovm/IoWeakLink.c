@@ -62,7 +62,7 @@ IoObject *IoWeakLink_proto(void *state)
 	
 	IoObject_setDataPointer_(self, calloc(1, sizeof(IoWeakLinkData)));
 	self->tag = IoWeakLink_tag(state);
-	DATA(self)->link = 0x0;
+	DATA(self)->link = NULL;
 	IoState_registerProtoWithFunc_((IoState *)state, self, IoWeakLink_proto);
 		
 	IoObject_addMethodTable_(self, methodTable);
@@ -73,7 +73,7 @@ IoObject *IoWeakLink_rawClone(IoObject *proto)
 { 
 	IoObject *self = IoObject_rawClonePrimitive(proto);
 	IoObject_setDataPointer_(self, calloc(1, sizeof(IoWeakLinkData)));
-	DATA(self)->link = 0x0;
+	DATA(self)->link = NULL;
 	return self;
 }
 
@@ -103,7 +103,7 @@ IoObject *IoWeakLink_newWithValue_(void *state, IoObject *v)
 
 void IoWeakLink_notification(IoObject *self, void *notification) // called when link is freed
 {
-	DATA(self)->link = 0x0;
+	DATA(self)->link = NULL;
 	//IoMessage_locals_performOn_(IOSTATE->collectedLinkMessage, self, self);
 }
 
@@ -125,7 +125,7 @@ void IoWeakLink_rawSetLink(IoObject *self, IoObject *v)
 			
 	if (ISNIL(v)) 
 	{
-		DATA(self)->link = 0x0;
+		DATA(self)->link = NULL;
 	}
 	else
 	{

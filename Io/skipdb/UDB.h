@@ -14,6 +14,7 @@ docDescription("An unordered value database. (sort of like malloc for disk space
 #include "UDBRecord.h"
 #include "UDBIndex.h"
 #include "UDBRecords.h"
+#include "SkipDB.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,39 +29,39 @@ typedef struct
     int isOpen;
 } UDB;
 
-UDB *UDB_new(void);
-void UDB_free(UDB *self);
+SKIPDB_API UDB *UDB_new(void);
+SKIPDB_API void UDB_free(UDB *self);
 
-void UDB_setPath_(UDB *self, const char *s);
-void UDB_setLogPath_(UDB *self, const char *s);
-char *UDB_path(UDB *self);
+SKIPDB_API void UDB_setPath_(UDB *self, const char *s);
+SKIPDB_API void UDB_setLogPath_(UDB *self, const char *s);
+SKIPDB_API char *UDB_path(UDB *self);
 
-void UDB_delete(UDB *self);
-void UDB_open(UDB *self);
-int UDB_isOpen(UDB *self);
-void UDB_close(UDB *self);
+SKIPDB_API void UDB_delete(UDB *self);
+SKIPDB_API void UDB_open(UDB *self);
+SKIPDB_API int UDB_isOpen(UDB *self);
+SKIPDB_API void UDB_close(UDB *self);
 
 // transactions --------------------------------------------------- 
 
-void UDB_beginTransaction(UDB *self);
-void UDB_commitTransaction(UDB *self);
+SKIPDB_API void UDB_beginTransaction(UDB *self);
+SKIPDB_API void UDB_commitTransaction(UDB *self);
 
 // ops -------------------------------------------------- 
 
-PID_TYPE UDB_nextPid(UDB *self);
-PID_TYPE UDB_allocPid(UDB *self);
+SKIPDB_API PID_TYPE UDB_nextPid(UDB *self);
+SKIPDB_API PID_TYPE UDB_allocPid(UDB *self);
 
-PID_TYPE UDB_put_(UDB *self, Datum d);
-void UDB_at_put_(UDB *self, PID_TYPE pid, Datum d);
-Datum UDB_at_(UDB *self, PID_TYPE pid);
-void UDB_removeAt_(UDB *self, PID_TYPE id);
+SKIPDB_API PID_TYPE UDB_put_(UDB *self, Datum d);
+SKIPDB_API void UDB_at_put_(UDB *self, PID_TYPE pid, Datum d);
+SKIPDB_API Datum UDB_at_(UDB *self, PID_TYPE pid);
+SKIPDB_API void UDB_removeAt_(UDB *self, PID_TYPE id);
 
-int UDB_compact(UDB *self);
-int UDB_compactStep(UDB *self);
-int UDB_compactStepFor_(UDB *self, double maxSeconds);
+SKIPDB_API int UDB_compact(UDB *self);
+SKIPDB_API int UDB_compactStep(UDB *self);
+SKIPDB_API int UDB_compactStepFor_(UDB *self, double maxSeconds);
 
-void UDB_show(UDB *self);
-void UDB_showIndex(UDB *self);
+SKIPDB_API void UDB_show(UDB *self);
+SKIPDB_API void UDB_showIndex(UDB *self);
 
 #ifdef __cplusplus
 }

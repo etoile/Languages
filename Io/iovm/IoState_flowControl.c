@@ -17,6 +17,11 @@ void IoState_continue(IoState *self)
 	self->stopStatus = MESSAGE_STOP_STATUS_CONTINUE; 
 }
 
+void IoState_eol(IoState *self)
+{ 
+	self->stopStatus = MESSAGE_STOP_STATUS_EOL; 
+}
+
 void IoState_return(IoState *self, IoObject *v)
 { 
 	self->stopStatus = MESSAGE_STOP_STATUS_RETURN; 

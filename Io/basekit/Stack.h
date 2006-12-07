@@ -44,25 +44,25 @@ typedef struct
   ptrdiff_t lastMark;
 } Stack;
 
-Stack *Stack_new(void);
-void Stack_free(Stack *self);
-Stack *Stack_clone(Stack *self);
-void Stack_copy_(Stack *self, Stack *other);
+BASEKIT_API Stack *Stack_new(void);
+BASEKIT_API void Stack_free(Stack *self);
+BASEKIT_API Stack *Stack_clone(Stack *self);
+BASEKIT_API void Stack_copy_(Stack *self, Stack *other);
 
-size_t Stack_memorySize(Stack *self);
-void Stack_compact(Stack *self);
+BASEKIT_API size_t Stack_memorySize(Stack *self);
+BASEKIT_API void Stack_compact(Stack *self);
 
-void Stack_resize(Stack *self);
+BASEKIT_API void Stack_resize(Stack *self);
 
-void Stack_popToMark_(Stack *self, ptrdiff_t mark);
+BASEKIT_API void Stack_popToMark_(Stack *self, ptrdiff_t mark);
 
 // not high performance 
 
-void Stack_makeMarksNull(Stack *self);
-Stack *Stack_newCopyWithNullMarks(Stack *self);
-void Stack_do_on_(Stack *self, StackDoOnCallback *callback, void *target);
+BASEKIT_API void Stack_makeMarksNull(Stack *self);
+BASEKIT_API Stack *Stack_newCopyWithNullMarks(Stack *self);
+BASEKIT_API void Stack_do_on_(Stack *self, StackDoOnCallback *callback, void *target);
 
-List *Stack_asList(Stack *self);
+BASEKIT_API List *Stack_asList(Stack *self);
 
 #include "Stack_inline.h"
 

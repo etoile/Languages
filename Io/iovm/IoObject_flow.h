@@ -16,6 +16,7 @@ IoObject *IoObject_returnIfNonNil(IoObject *self, IoObject *locals, IoMessage *m
 IoObject *IoObject_return(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_break(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *IoObject_continue(IoObject *self, IoObject *locals, IoMessage *m);
+IoObject *IoObject_eol(IoObject *self, IoObject *locals, IoMessage *m);
 
 // branch 
 

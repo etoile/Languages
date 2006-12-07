@@ -192,7 +192,7 @@ IOINLINE void PHash_clean(PHash *self)
 		 newRecords = (PHashRecord *)realloc(newRecords, sizeof(PHashRecord)*8); 
 	 }
 	 */
-	memset(self->records, 0x0, sizeof(PHashRecord) * self->tableSize); 
+	memset(self->records, 0, sizeof(PHashRecord) * self->tableSize); 
 	self->numKeys = 0;
 }
 
@@ -243,7 +243,7 @@ IOINLINE void PHash_at_put_(PHash *self, void *key, void *value)
 {
 	PHashRecord *record = PHASH_RECORDAT_(self, PHash_hash(self, key));
 	
-	if (0x0 == record->key)
+	if (NULL == record->key)
 	{
 		record->key   = key;
 		record->value = value;
@@ -283,7 +283,7 @@ IOINLINE void PHash_removeKey_(PHash *self, void *key)
 	if (rkey && PHashKey_value(rkey) == PHashKey_value(key))
 	{
 		self->numKeys --;
-		memset(record, 0x0, sizeof(PHashRecord));
+		memset(record, 0, sizeof(PHashRecord));
 	}
 }
 

@@ -74,21 +74,21 @@ IOINLINE unsigned char ByteArray_at_(ByteArray *self, int pos)
 IOINLINE int *ByteArray_intPointerAt_(ByteArray *self, size_t i)
 {
 	size_t pos = (int)i * sizeof(int);
-	if ((pos + sizeof(int)) > self->size) return 0x0;
+	if ((pos + sizeof(int)) > self->size) return NULL;
 	return (int *)(self->bytes + pos);
 }
 
 IOINLINE float *ByteArray_floatPointerAt_(ByteArray *self, size_t i)
 {
 	size_t pos = (int)i * sizeof(float);
-	if ((pos + sizeof(float)) > self->size) return 0x0;
+	if ((pos + sizeof(float)) > self->size) return NULL;
 	return (float *)(self->bytes + pos);
 }
 
 IOINLINE double *ByteArray_doublePointerAt_(ByteArray *self, size_t i)
 {
 	size_t pos = (int)i * sizeof(double);
-	if ((pos + sizeof(double)) > self->size) return 0x0;
+	if ((pos + sizeof(double)) > self->size) return NULL;
 	return (double *)(self->bytes + pos);
 }
 

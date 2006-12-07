@@ -21,6 +21,7 @@ IoObject *IoSeq_replaceFirstSeq(IoSeq *self, IoObject *locals, IoMessage *m);
 IoObject *IoSeq_atPut(IoSeq *self, IoObject *locals, IoMessage *m);
 IoObject *IoSeq_lowercase(IoSeq *self, IoObject *locals, IoMessage *m);
 IoObject *IoSeq_uppercase(IoSeq *self, IoObject *locals, IoMessage *m);
+IoObject *IoSeq_translate(IoObject *self, IoObject *locals, IoMessage *m);
 
 // clip 
 
@@ -33,6 +34,10 @@ IoObject *IoSeq_empty(IoSeq *self, IoObject *locals, IoMessage *m);
 // sort 
 
 IoObject *IoSeq_sort(IoSeq *self, IoObject *locals, IoMessage *m);
+
+// reverse
+
+IoObject *IoSeq_reverse(IoObject *self, IoObject *locals, IoMessage *m);
 
 // removing indexwise
 

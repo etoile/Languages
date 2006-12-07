@@ -248,7 +248,7 @@ void IoSeq_free(IoSeq *self)
         IoState_removeSymbol_(IOSTATE, self); 
     }
     
-    if (BIVAR(self) != 0x0)
+    if (BIVAR(self) != NULL)
     {
         ByteArray_free(BIVAR(self));
     }
@@ -370,12 +370,12 @@ int IoSeq_rawEqualsCString_(IoObject *self, const char *s)
  {
      char *s = (char *)BIVAR(self)->bytes;
      
-     while (!isalnum((int)*s) && *s != 0x0) 
+     while (!isalnum((int)*s) && *s != 0) 
      { 
          s ++; 
      }
      
-     return (*s == 0x0);
+     return (*s == 0);
  }
  
  unsigned int IoSeq_rawHashCode(IoSeq *self)

@@ -17,28 +17,26 @@ Returns the result of the last message evaluated or Nil if none were evaluated."
 	IoMessage_assertArgCount_receiver_(m, 2, self);
 	
 	{
-		IoMessage *condition = IoMessage_rawArgAt_(m, 0);
-		IoMessage *doMessage = IoMessage_rawArgAt_(m, 1);
 		IoObject *result = IONIL(self);
 		IoState *state = IOSTATE;
 		unsigned char c;
 		
-		IoState_resetStopStatus(IOSTATE); 
+		IoState_resetStopStatus(IOSTATE);
 		IoState_pushRetainPool(IOSTATE);
 		
 		for (;;)
 		{ 
 			IoState_clearTopPool(IOSTATE);
-			c = ISTRUE(IoMessage_locals_performOn_(condition, locals, self));
+			c = ISTRUE(IoMessage_locals_valueArgAt_(m, locals, 0));
 			
 			if (!c) 
 			{
 				break;
 			}
 			
-			result = IoMessage_locals_performOn_(doMessage, locals, self);
+			result = (IoObject *)IoMessage_locals_valueArgAt_(m, locals, 1);
 			
-			if (IoState_handleStatus(IOSTATE)) 
+			if (IoState_handleStatus(IOSTATE))
 			{
 				goto done;
 			}
@@ -58,20 +56,19 @@ IoObject *IoObject_loop(IoObject *self, IoObject *locals, IoMessage *m)
 	
 	IoMessage_assertArgCount_receiver_(m, 1, self);
 	{
-		IoMessage *doMessage = IoMessage_rawArgAt_(m, 0);
 		IoState *state = IOSTATE;
 		IoObject *result;
 		
-		IoState_resetStopStatus(IOSTATE); 
+		IoState_resetStopStatus(IOSTATE);
 		IoState_pushRetainPool(state);
 		
 		for (;;)
 		{ 
 			IoState_clearTopPool(state);
 			
-			result = IoMessage_locals_performOn_(doMessage, locals, self);
+			result = IoMessage_locals_valueArgAt_(m, locals, 0);
 			
-			if (IoState_handleStatus(IOSTATE)) 
+			if (IoState_handleStatus(IOSTATE))
 			{
 				goto done;
 			}
@@ -102,7 +99,7 @@ IoObject *IoObject_for(IoObject *self, IoObject *locals, IoMessage *m)
 		double startValue = IoMessage_locals_doubleArgAt_(m, locals, 1);
 		double endValue   = IoMessage_locals_doubleArgAt_(m, locals, 2);
 		double increment  = 1;
-		IoNumber *num = 0x0;
+		IoNumber *num = NULL;
 		
 		if (IoMessage_argCount(m) > 4)
 		{ 
@@ -215,6 +212,14 @@ the next, if any. ")
 	return self; 
 }
 
+IoObject *IoObject_eol(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	/*#io
+	docSlot(";", "Reset the eval context to the locals. ")
+	*/
+	IOSTATE->stopStatus = MESSAGE_STOP_STATUS_EOL;
+}
+
 IoObject *IoObject_if(IoObject *self, IoObject *locals, IoMessage *m)
 {
 	/*#io
@@ -228,10 +233,8 @@ Returns the result of the evaluated message or Nil if none was evaluated.")
 	const int condition = ISTRUE((IoObject *)r);
 	const int index = condition ? 1 : 2;
 	
-	if (IoMessage_argCount(m) > index)
-	{ 
-		return IoMessage_locals_valueArgAt_(m, locals, index); 
-	}
+	if (index < IoMessage_argCount(m))
+		return IoMessage_locals_valueArgAt_(m, locals, index);
 	
 	return IOBOOL(self, condition);
 }

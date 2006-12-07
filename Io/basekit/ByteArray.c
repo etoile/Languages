@@ -140,7 +140,7 @@ void ByteArray_sizeTo_(ByteArray *self, size_t size)
 		self->memSize = size;
 	}
 	
-	self->bytes[size] = (unsigned char)0x0;
+	self->bytes[size] = (unsigned char)0;
 	
 	if (self->size > size) 
 	{
@@ -242,13 +242,13 @@ int ByteArray_at_put_(ByteArray *self, int pos, unsigned char c)
 
 unsigned char ByteArray_dropLastByte(ByteArray *self) 
 { 
-	unsigned char c = 0x0;
+	unsigned char c = 0;
 	
 	if (self->size)
 	{
 		self->size --; 
 		c = self->bytes[self->size];
-		self->bytes[self->size] = 0x0;
+		self->bytes[self->size] = 0;
 	}
 	
 	return c;
@@ -443,7 +443,7 @@ void ByteArray_appendAndEscapeCString_(ByteArray *self, const char *s)
 { 
 	char oneChar[2];
 	
-	oneChar[1] = (char)0x0;
+	oneChar[1] = (char)0;
 	
 	while (*s)
 	{
@@ -468,7 +468,7 @@ else
 s ++;
 	}
 
-self->bytes[self->size] = (unsigned char)0x0;
+self->bytes[self->size] = (unsigned char)0;
 }
 
 void ByteArray_appendBytes_size_(ByteArray *self, const unsigned char *bytes, size_t size)
@@ -481,7 +481,7 @@ void ByteArray_appendBytes_size_(ByteArray *self, const unsigned char *bytes, si
 	oldSize = self->size;
 	ByteArray_setSize_(self, oldSize + size);
 	memcpy(self->bytes + oldSize, bytes, size);
-	//self->bytes[self->size] = (unsigned char)0x0; // not needed? 
+	//self->bytes[self->size] = (unsigned char)0; // not needed? 
 }
 
 // prepend --------------------------------------------
@@ -1261,6 +1261,7 @@ int ByteArray_readFromCStream_(ByteArray *self, FILE *fp)
 	
 	if (!fp) 
 	{
+		perror("ByteArray_readFromCStream_");
 		return -1; 
 	}
 	
@@ -1291,6 +1292,7 @@ int ByteArray_readFromFilePath_(ByteArray *self, const char *path)
 	
 	if (!fp) 
 	{ 
+		perror("ByteArray_readFromFilePath_");
 		return -1;
 	}
 	
@@ -1336,8 +1338,8 @@ unsigned char ByteArray_readLineFromCStream_(ByteArray *self, FILE *stream)
 		
 		readSomething = 1;
 		
-		if (eol1) { *eol1 = 0x0; } // remove the \n return character
-		if (eol2) { *eol2 = 0x0; } // remove the \r return character
+		if (eol1) { *eol1 = 0; } // remove the \n return character
+		if (eol2) { *eol2 = 0; } // remove the \r return character
 		
 		if (*s)
 		{
@@ -1508,7 +1510,7 @@ unsigned char ByteArray_lastByte(ByteArray *self)
 {
 	if (!self->size) 
 	{
-		return 0x0;
+		return 0;
 	}
 	
 	return self->bytes[self->size - 1];
@@ -1728,7 +1730,7 @@ void ByteArray_bitShiftLeft_(ByteArray *self, int s)
 	{
 		int i = ByteArray_size(self);
 		unsigned char *b = ByteArray_bytes(self);
-		unsigned char carry = 0x0;
+		unsigned char carry = 0;
 		
 		while (i)
 		{
@@ -1748,7 +1750,7 @@ unsigned char ByteArray_byteAt_(ByteArray *self, size_t i)
 		return self->bytes[i];
 	}
 	
-	return 0x0;  
+	return 0;
 }
 
 int ByteArray_bitAt_(ByteArray *self, size_t i)
@@ -1766,11 +1768,11 @@ void ByteArray_setBit_at_(ByteArray *self, int state, size_t i)
 	
 	if (state) 
 	{ 
-		state = 0x1; 
+		state = 0x1;
 	} 
 	else 
 	{ 
-		state = 0x0; 
+		state = 0x0;
 	}
 	
 	if (charPos < self->size)
@@ -1919,7 +1921,7 @@ void ByteArray_float32ArrayMultiplyScalar_(ByteArray *self, float s)
 
 void ByteArray_zero(ByteArray *self)
 {
-	memset(self->bytes, 0x0, self->size);
+	memset(self->bytes, 0, self->size);
 }
 
 

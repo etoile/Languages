@@ -222,3 +222,8 @@ SET:
 	ldr	r0, [r0]
 	mov	pc, lr
 #endif
+
+#ifdef __ELF__
+.section .note.GNU-stack,"",%progbits
+#endif
+

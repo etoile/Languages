@@ -29,7 +29,7 @@ typedef struct
     List *tokenStream;
     size_t resultIndex;
     IoToken *errorToken;
-	char *errorDescription;
+    char *errorDescription;
 } IoLexer;
 
 IoLexer *IoLexer_new(void);

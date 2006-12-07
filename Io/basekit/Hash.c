@@ -75,7 +75,7 @@ void Hash_clean(Hash *self)
 	Hash_freeRecords(self);
 	self->first = (HashRecord *)NULL;
 	self->count = 0;
-	memset(self->records, (unsigned char)0x0, sizeof(HashRecord *) * self->size);
+	memset(self->records, (unsigned char)0, sizeof(HashRecord *) * self->size);
 }
 
 void Hash_rehash(Hash *self)
@@ -88,13 +88,13 @@ void Hash_rehash(Hash *self)
 	
 	while (record)
 	{
-		HashRecord_next_(record, (HashRecord *)0x0);
+		HashRecord_next_(record, (HashRecord *)NULL);
 		record = record->nextRecord;
 	}
 	
 	self->size = (size_t)(self->size * HASH_RESIZE_FACTOR) + 1;
 	self->records = (HashRecord **)realloc(self->records, sizeof(HashRecord *) * self->size);
-	memset(self->records, (unsigned char)0x0, sizeof(HashRecord *) * self->size);
+	memset(self->records, (unsigned char)0, sizeof(HashRecord *) * self->size);
 	
 	record = self->first;
 	
@@ -212,7 +212,7 @@ void Hash_removeKey_(Hash *self, void *key)
 { 
 	unsigned int hval = HASHFUNCTION(key, self->size);
 	HashRecord *record = self->records[hval];
-	HashRecord *lastRecord = (HashRecord *)0x0;
+	HashRecord *lastRecord = (HashRecord *)NULL;
 	
 	while (record)
 	{
@@ -280,13 +280,13 @@ void *Hash_nextKey(Hash *self)
 void *Hash_firstValue(Hash *self)
 {
 	void *k = Hash_firstKey(self);
-	return k ? Hash_at_(self, k) : 0x0;
+	return k ? Hash_at_(self, k) : NULL;
 }
 
 void *Hash_nextValue(Hash *self)
 {
 	void *k = Hash_nextKey(self);
-	return k ? Hash_at_(self, k) : 0x0;
+	return k ? Hash_at_(self, k) : NULL;
 }
 
 void Hash_verify(Hash *self)

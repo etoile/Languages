@@ -39,7 +39,7 @@ Class objc_makeClass(const char *name, const char *superName, BOOL isMetaClass)
 	class->info = (isMetaClass) ? CLS_META : CLS_CLASS;
 	class->instance_size = (isMetaClass) ? superClass->isa->instance_size : superClass->instance_size;
 #ifdef GNUSTEP
-	class->super_class = (Class)strdup(superName);
+	class->super_class = (isMetaClass) ? (Class)strdup(superName) : class->isa->super_class;
 #else
 	class->super_class = (isMetaClass) ? superClass->isa : superClass;
 	class->methodLists = objc_calloc(1, sizeof(struct objc_method_list *));

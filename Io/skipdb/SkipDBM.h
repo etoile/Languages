@@ -31,50 +31,50 @@ typedef struct
 	SkipDBMThreadUnlockFunc *threadUnlockCallback;
 } SkipDBM;
 
-SkipDBM *SkipDBM_new(void);
-void SkipDBM_free(SkipDBM *self);
+SKIPDB_API SkipDBM *SkipDBM_new(void);
+SKIPDB_API void SkipDBM_free(SkipDBM *self);
 
-UDB *SkipDBM_udb(SkipDBM *self);
+SKIPDB_API UDB *SkipDBM_udb(SkipDBM *self);
 
-void SkipDBM_setPath_(SkipDBM *self, const char *path);
-char *SkipDBM_path(SkipDBM *self);
+SKIPDB_API void SkipDBM_setPath_(SkipDBM *self, const char *path);
+SKIPDB_API char *SkipDBM_path(SkipDBM *self);
 
 // open/close
 
-void SkipDBM_open(SkipDBM *self);
-int SkipDBM_isOpen(SkipDBM *self);
-void SkipDBM_close(SkipDBM *self);
-void SkipDBM_delete(SkipDBM *self);
+SKIPDB_API void SkipDBM_open(SkipDBM *self);
+SKIPDB_API int SkipDBM_isOpen(SkipDBM *self);
+SKIPDB_API void SkipDBM_close(SkipDBM *self);
+SKIPDB_API void SkipDBM_delete(SkipDBM *self);
 
 // databases 
 
-SkipDB *SkipDBM_newSkipDB(SkipDBM *self);
-SkipDB *SkipDBM_rootSkipDB(SkipDBM *self);
-SkipDB *SkipDBM_skipDBAtPid_(SkipDBM *self, PID_TYPE pid);
-void SkipDBM_willFreeDB_(SkipDBM *self, SkipDB *sdb); // private 
+SKIPDB_API SkipDB *SkipDBM_newSkipDB(SkipDBM *self);
+SKIPDB_API SkipDB *SkipDBM_rootSkipDB(SkipDBM *self);
+SKIPDB_API SkipDB *SkipDBM_skipDBAtPid_(SkipDBM *self, PID_TYPE pid);
+SKIPDB_API void SkipDBM_willFreeDB_(SkipDBM *self, SkipDB *sdb); // private 
 
 // transactions
 
-void SkipDBM_beginTransaction(SkipDBM *self);
-void SkipDBM_commitTransaction(SkipDBM *self);
+SKIPDB_API void SkipDBM_beginTransaction(SkipDBM *self);
+SKIPDB_API void SkipDBM_commitTransaction(SkipDBM *self);
 
 // cache 
 
-void SkipDBM_clearCaches(SkipDBM *self);
+SKIPDB_API void SkipDBM_clearCaches(SkipDBM *self);
 
 // compact 
 
-int SkipDBM_compact(SkipDBM *self);
+SKIPDB_API int SkipDBM_compact(SkipDBM *self);
 
 // thread locking
 
-void SkipDBM_setCallbackContext_(SkipDBM *self, void *calbackContext);
+SKIPDB_API void SkipDBM_setCallbackContext_(SkipDBM *self, void *calbackContext);
 
-void SkipDBM_setThreadLockCallback_(SkipDBM *self, SkipDBMThreadLockFunc *calback);
-void SkipDBM_setThreadUnlockCallback_(SkipDBM *self, SkipDBMThreadUnlockFunc *calback);
+SKIPDB_API void SkipDBM_setThreadLockCallback_(SkipDBM *self, SkipDBMThreadLockFunc *calback);
+SKIPDB_API void SkipDBM_setThreadUnlockCallback_(SkipDBM *self, SkipDBMThreadUnlockFunc *calback);
 
-void SkipDBM_lockThread(SkipDBM *self);
-void SkipDBM_unlockThread(SkipDBM *self);
+SKIPDB_API void SkipDBM_lockThread(SkipDBM *self);
+SKIPDB_API void SkipDBM_unlockThread(SkipDBM *self);
 
 #ifdef __cplusplus
 }

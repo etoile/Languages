@@ -10,12 +10,7 @@ Terminology
 Example;
 A B(C D); E F
 In the above example:
-"A" is the "name" of the first message
-the B message is "attached" to the A message
-the C message is the first argument of the B message
-the D message is attached the C message
-the E message is the "next" message of the A message
-the F message is attached the E message
+...
 
 
 Important; Modifying the message tree of a block currently in use may cause 
@@ -42,6 +37,7 @@ docCategory("Core")
 #include <ctype.h>
 #include <stdarg.h>
 #include "IoMessage_parser.h"
+#include "IoMessage_opShuffle.h"
 
 #define DATA(self) ((IoMessageData *)IoObject_dataPointer(self))
 
@@ -89,17 +85,8 @@ IoMessage *IoMessage_proto(void *state)
 	{"name", IoMessage_protoName},
 	{"setName", IoMessage_protoSetName},
 		
-	{"next", IoMessage_nextMessage},
-	{"setNext", IoMessage_setNextMessage},
-		
-	{"attached", IoMessage_attachedMessage},
-	{"setAttached", IoMessage_setAttachedMessage},
-		
-	{"nextMessage", IoMessage_nextMessage},
-	{"setNextMessage", IoMessage_setNextMessage},
-		
-	{"attachedMessage", IoMessage_attachedMessage},
-	{"setAttachedMessage", IoMessage_setAttachedMessage},
+	{"next", IoMessage_next},
+	{"setNext", IoMessage_setNext},
 		
 	{"argAt", IoMessage_argAt},
 	{"arguments", IoMessage_arguments},
@@ -188,11 +175,9 @@ void IoMessage_copy_(IoMessage *self, IoMessage *other)
 		}
 	}
 	
-	if (DATA(other)->attachedMessage) IOREF(DATA(other)->attachedMessage);
-	DATA(self)->attachedMessage = DATA(other)->attachedMessage;
 	
-	if (DATA(other)->nextMessage) IOREF(DATA(other)->nextMessage);
-	DATA(self)->nextMessage = DATA(other)->nextMessage;
+	if (DATA(other)->next) IOREF(DATA(other)->next);
+	DATA(self)->next = DATA(other)->next;
 	
 	if (DATA(other)->cachedResult) IOREF(DATA(other)->cachedResult);
 	DATA(self)->cachedResult = DATA(other)->cachedResult;
@@ -219,14 +204,9 @@ IoMessage *IoMessage_deepCopyOf_(IoMessage *self)
 	DATA(child)->name = IOREF(DATA(self)->name);
 	IoMessage_cachedResult_(child, (IoObject *)DATA(self)->cachedResult);
 	
-	if (DATA(self)->nextMessage) 
+	if (DATA(self)->next) 
 	{
-		DATA(child)->nextMessage = IOREF(IoMessage_deepCopyOf_(DATA(self)->nextMessage));
-	}
-	
-	if (DATA(self)->attachedMessage) 
-	{
-		DATA(child)->attachedMessage = IOREF(IoMessage_deepCopyOf_(DATA(self)->attachedMessage));
+		DATA(child)->next = IOREF(IoMessage_deepCopyOf_(DATA(self)->next));
 	}
 	/*printf("deep copy result: %s\n", ByteArray_asCString(IoMessage_description(child)));*/
 	return child;
@@ -272,8 +252,7 @@ void IoMessage_mark(IoMessage *self)
 	}
 
 	IoObject_shouldMarkIfNonNull(DATA(self)->cachedResult); 
-	IoObject_shouldMarkIfNonNull((IoObject *)DATA(self)->attachedMessage); 
-	IoObject_shouldMarkIfNonNull((IoObject *)DATA(self)->nextMessage); 
+	IoObject_shouldMarkIfNonNull((IoObject *)DATA(self)->next); 
 	IoObject_shouldMarkIfNonNull((IoObject *)DATA(self)->label); 
 }
 
@@ -294,7 +273,7 @@ List *IoMessage_args(IoMessage *self)
 
 void IoMessage_cachedResult_(IoMessage *self, IoObject *v)
 { 
-	DATA(self)->cachedResult = v ? IOREF(v) : 0x0; 
+	DATA(self)->cachedResult = v ? IOREF(v) : NULL;
 }
 
 void IoMessage_label_(IoMessage *self, IoSymbol *ioSymbol) /* sets label for children too */
@@ -302,14 +281,9 @@ void IoMessage_label_(IoMessage *self, IoSymbol *ioSymbol) /* sets label for chi
 	DATA(self)->label = IOREF(ioSymbol);
 	List_do_with_(DATA(self)->args, (ListDoWithCallback *)IoMessage_label_, ioSymbol);
 	
-	if (DATA(self)->attachedMessage) 
+	if (DATA(self)->next) 
 	{
-		IoMessage_label_(DATA(self)->attachedMessage, ioSymbol); 
-	}
-	
-	if (DATA(self)->nextMessage) 
-	{
-		IoMessage_label_(DATA(self)->nextMessage, ioSymbol); 
+		IoMessage_label_(DATA(self)->next, ioSymbol); 
 	}
 }
 
@@ -346,24 +320,25 @@ unsigned char IoMessage_isNotCached(IoMessage *self)
 unsigned char IoMessage_needsEvaluation(IoMessage *self)
 {
 	List *args = DATA(self)->args;
-	int a = List_detect_(args, (ListDetectCallback *)IoMessage_isNotCached) != 0x0;
+	int a = List_detect_(args, (ListDetectCallback *)IoMessage_isNotCached) != NULL;
 	
 	if (a) 
 	{
 		return 1;
 	}
 	
-	if (DATA(self)->attachedMessage && IoMessage_needsEvaluation(DATA(self)->attachedMessage))
-	{
-		return 1;
-	}
-	
-	if (DATA(self)->nextMessage && IoMessage_needsEvaluation(DATA(self)->nextMessage)) 
+	if (DATA(self)->next && IoMessage_needsEvaluation(DATA(self)->next)) 
 	{
 		return 1;
 	}
 	
 	return 0;
+}
+
+unsigned char IoMessage_isEOL(IoMessage *self)
+{
+    return IoMessage_name(self) == 
+		IOSTATE->semicolonSymbol;
 }
 
 void IoMessage_addCachedArg_(IoMessage *self, IoObject *v)
@@ -389,7 +364,7 @@ void IoMessage_setCachedArg_toInt_(IoMessage *self, int n, int anInt)
 {
 	// optimized to avoid creating a number unless necessary 
 	
-	IoMessage *arg = 0x0;
+	IoMessage *arg = NULL;
 	
 	while (!(arg = List_at_(DATA(self)->args, n)))
 	{ 
@@ -482,111 +457,63 @@ IoObject *IoMessage_doInContext(IoMessage *self, IoObject *locals, IoMessage *m)
 IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObject *target)
 {
 	IoState *state = IOSTATE;
-	IoMessage *outer;
-	IoObject *result = state->ioNil;
-	//int debug = 0;
+	IoMessage *m = self;
+	IoObject *result = target;
+	//IoMessageData *md;
 	
-	/*
-	if (DATA(self)->cachedResult) 
+	do
 	{
-		result = DATA(self)->cachedResult;
-		goto stop;
-	}
-	*/
-	
-#ifdef IO_DEBUG_STACK
-	IoState_pushRetainPool(state); 
-	IoState_stackRetain_(state, target); 
-#endif
-
-	/*
-	{
-		IoCoroutine *currentCoroutine = state->currentCoroutine;
+		//md = DATA(m);
+		//printf("%s %i\n", CSTRING(IoMessage_name(m)), state->stopStatus);
+		//printf("%s\n", CSTRING(IoMessage_name(m)));
 		
-		if (Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine))) 
-		{ 
-			Coro *coro = IoCoroutine_cid(state->currentCoroutine);
-			//Coro_stackSpaceAlmostGone(IoCoroutine_cid(state->currentCoroutine));
-			//IoState_error_(state, self, "stack overflow while sending '%s' message to a '%s' object", 
-			//			CSTRING(IoMessage_name(self)), IoObject_name(target)); 
-			printf("%p-%p overflow %i/%i\n", 
-				  (void *)currentCoroutine, (void *)coro, Coro_bytesLeftOnStack(coro), Coro_stackSize(coro));
-			{
-				IoCoroutine *newCoro = IoCoroutine_new(state);
-				IoCoroutine_try(newCoro, target, locals, self);
-				result = IoCoroutine_rawResult(newCoro);
-				goto stop;
-			 }
-		}
-	}
-	*/
-		
-	for (outer = self; outer; outer = DATA(outer)->nextMessage)
-	{
-		IoMessage *inner = outer;
-		
-		for (inner = outer; inner; inner = DATA(inner)->attachedMessage)
+		if(DATA(m)->name == state->semicolonSymbol)
 		{
-			/*
-			if (debug)
-			{
-				printf("%s\n", CSTRING(IoMessage_name(inner)));
-				//printf("%s %i\n", CSTRING(IoMessage_name(inner)), 
-				//IoCoroutine_rawIoStackSize(IoState_currentCoroutine(state)));
-			}
-			*/
-			
-#ifdef IO_SANDBOX
-			if (state->messageCountLimit && state->messageCount == 0)
-			{
-				IoState_error_(IOSTATE, inner, "message limit exceeded (%d)", state->messageCountLimit);
-			}
-			
-			state->messageCount --;
-#endif
-			
-			result = DATA(inner)->cachedResult;
+			target = locals;
+		}
+		else
+		{
+			result = DATA(m)->cachedResult; // put it on the stack?
+			//printf("%s\n", CSTRING(DATA(m)->name));
 			
 			if (!result)
 			{
-				// No cached value -- must perform the message. 
-				//result = IoObject_perform(target, locals, inner);
-				//printf("%s %s\n", IoObject_name(target), CSTRING(IoMessage_name(inner)));
-				//printf("%s ",  CSTRING(IoMessage_name(inner)));
-				
-				IoState_pushRetainPool(state); 
-				result = target->tag->performFunc(target, locals, inner);
-				IoState_popRetainPoolExceptFor_(state, result); 
-				
-#ifdef IO_DEBUG_STACK
-				IoState_stackRetain_(state, result); 
-#endif
-				
-				if (state->stopStatus != MESSAGE_STOP_STATUS_NORMAL)
+				IoState_pushRetainPool(state);
+/*
+#ifdef IOMESSAGE_INLINE_PERFORM
+				if(target->tag->performFunc == NULL)
 				{ 
-					result = state->returnValue; 
+					result = IoObject_perform(target, locals, m);
+				}
+				else
+				{
+					result = target->tag->performFunc(target, locals, m);
+				}
+#elseif	
+*/			
+				result = target->tag->performFunc(target, locals, m);
+//#endif
+				IoState_popRetainPoolExceptFor_(state, result);
+			}
+			
+		
+			target = result;
+			
+			if (state->stopStatus != MESSAGE_STOP_STATUS_NORMAL)
+			{
+					result = state->returnValue;
 					
-					if (!result) 
+					if (result)
 					{
-						result = state->ioNil; 
+						//IoState_stackRetain_(state, result);
+						return result;
 					}
 					
-					goto stop; 
-				}
+					return state->ioNil; 
 			}
-			// The next attachedMessage uses this result as its target. 
-			target = result;
 		}
-		// The next nextMessage targets the local environment. 
-		target = locals;
-	}
+	} while (m = DATA(m)->next);
 	
-stop:
-#ifdef IO_DEBUG_STACK
-	IoState_popRetainPool(state); 
-	IoState_stackRetain_(state, result); 
-#endif 
-	//printf("\n");
 	return result;
 }
 
@@ -737,6 +664,7 @@ void IoMessage_print(IoMessage *self)
 {
 	ByteArray *ba = IoMessage_description(self);
 	
+	//printf("%s\n", ByteArray_asCString(ba));
 	IoState_print_(IOSTATE, ByteArray_asCString(ba));
 	ByteArray_free(ba);
 }
@@ -772,48 +700,41 @@ IoObject *IoMessage_asString(IoMessage *self, IoObject *locals, IoMessage *m)
 
 void IoMessage_appendDescriptionTo_follow_(IoMessage *self, ByteArray *ba, int follow)
 {
-	IoMessageData *data = DATA(self);
-	
-	ByteArray_appendCString_(ba, CSTRING(data->name));
-	
-	{
-		int i, max = List_size(DATA(self)->args);
+	do {
+		IoMessageData *data = DATA(self);
 		
-		if (max > 0) 
+		ByteArray_appendCString_(ba, CSTRING(data->name));
+		
 		{
-			ByteArray_appendCString_(ba, "(");
+			int i, max = List_size(DATA(self)->args);
 			
-			for (i = 0; i < max; i ++)
+			if (max > 0) 
 			{
-				IoMessage *arg = List_at_(DATA(self)->args, i);
-				IoMessage_appendDescriptionTo_follow_(arg, ba, 1);
+				ByteArray_appendCString_(ba, "(");
 				
-				if (i != max-1) 
-				{ 
-					ByteArray_appendCString_(ba, ", "); 
+				for (i = 0; i < max; i ++)
+				{
+					IoMessage *arg = List_at_(DATA(self)->args, i);
+					IoMessage_appendDescriptionTo_follow_(arg, ba, 1);
+					
+					if (i != max - 1) 
+					{ 
+						ByteArray_appendCString_(ba, ", "); 
+					}
 				}
+				
+				ByteArray_appendCString_(ba, ")");
 			}
-			
-			ByteArray_appendCString_(ba, ")");
 		}
-	}
-	
-	if (!follow) 
-	{
-		return;
-	}
-	
-	if (DATA(self)->attachedMessage) 
-	{ 
-		ByteArray_appendCString_(ba, " "); 
-		IoMessage_appendDescriptionTo_follow_(DATA(self)->attachedMessage, ba, 1); 
-	}
-	
-	if (DATA(self)->nextMessage) 
-	{ 
-		ByteArray_appendCString_(ba, ";\n"); 
-		IoMessage_appendDescriptionTo_follow_(DATA(self)->nextMessage, ba, 1); 
-	}
+		
+		if (!follow) 
+		{
+			return;
+		}
+		
+		if (DATA(self)->next && DATA(self)->name != IOSTATE->semicolonSymbol) ByteArray_appendCString_(ba, " ");
+		if (DATA(self)->name == IOSTATE->semicolonSymbol) ByteArray_appendCString_(ba, "\n");
+	} while (self = DATA(self)->next);
 }
 
 //  methods --------------------------------------------------- 
@@ -859,17 +780,25 @@ IoObject *IoMessage_descriptionString(IoMessage *self, IoObject *locals, IoMessa
 	return IoState_symbolWithByteArray_copy_(IOSTATE, ba, 0); 
 }
 
-IoObject *IoMessage_nextMessage(IoMessage *self, IoObject *locals, IoMessage *m)
+
+// next -------------------------
+
+IoObject *IoMessage_next(IoMessage *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("nextMessage", 
+	docSlot("next", 
 		   "Returns the next message in the message chain or Nil if there is no next message. ")
 	*/
 	
-	return DATA(self)->nextMessage ? (IoObject *)DATA(self)->nextMessage : IONIL(self); 
+	return DATA(self)->next ? (IoObject *)DATA(self)->next : IONIL(self); 
 }
 
-IoObject *IoMessage_setNextMessage(IoMessage *self, IoObject *locals, IoMessage *m)
+IoMessage *IoMessage_rawNext(IoMessage *self)
+{
+	return DATA(self)->next;
+}
+
+IoObject *IoMessage_setNext(IoMessage *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
 	docSlot("setNextMessage(aMessageOrNil)", 
@@ -878,77 +807,76 @@ aMessage or it removes the next message if aMessage is Nil. ")
 	*/
 	
 	IoObject *v = IoMessage_locals_valueArgAt_(m , locals, 0);
+	IOASSERT(ISMESSAGE(v) || ISNIL(v), "argument must be Message or Nil");
 	
-	if (ISNIL(v))
+	if (ISNIL(v)) 
 	{ 
-		DATA(self)->nextMessage = 0x0; 
+		v = NULL; 
 	}
-	else
-	{
-		IOASSERT(ISMESSAGE(v), "argument must be Message or Nil");
-		DATA(self)->nextMessage = IOREF(v);
-	}
+	
+	IoMessage_rawSetNext(self, v);
 	return self; 
 }
 
-IoObject *IoMessage_attachedMessage(IoMessage *self, IoObject *locals, IoMessage *m)
+void IoMessage_rawSetNext(IoMessage *self, IoMessage *m)
+{
+	DATA(self)->next = m ? IOREF(m) : NULL;
+	
+	if(m)
+	{
+		DATA(m)->previous = self;
+	}
+}
+
+// previous -------------------------
+
+IoObject *IoMessage_previous(IoMessage *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("attachedMessage", 
-		   "Returns the message attached to the receiver or Nil 
-if there is no message attached. ")
+	docSlot("previous", 
+		   "Returns the previous message in the message chain or Nil if there is no previous message. ")
 	*/
 	
-	return DATA(self)->attachedMessage ? (IoObject *)DATA(self)->attachedMessage : IONIL(self); 
+	return DATA(self)->previous ? (IoObject *)DATA(self)->previous : IONIL(self); 
 }
 
-void IoMessage_rawSetAttachedMessage(IoMessage *self, IoMessage *m)
-{ 
-	if (m)
-	{
-		DATA(self)->attachedMessage = IOREF(m);
-	}
-	else
-	{
-		DATA(self)->attachedMessage = 0x0;
-	}
-}
-
-void IoMessage_rawSetNextMessage(IoMessage *self, IoMessage *m)
+IoMessage *IoMessage_rawPrevious(IoMessage *self)
 {
-	if (m)
-	{
-		DATA(self)->nextMessage = IOREF(m);
-	}
-	else
-	{
-		DATA(self)->nextMessage = 0x0;
-	}
+	return DATA(self)->previous;
 }
 
-
-IoObject *IoMessage_setAttachedMessage(IoMessage *self, IoObject *locals, IoMessage *m)
+IoObject *IoMessage_setPrevious(IoMessage *self, IoObject *locals, IoMessage *m)
 { 
 	/*#io
-	docSlot("setAttachedMessage(aMessage)", 
-		   "Sets the message attached the message chain to a deep 
-copy of aMessage. If aMessage is Nil, it removes any attached message. ")
+	docSlot("setPrevious(aMessageOrNil)", 
+		   "Sets the previous message in the message chain to a deep copy of 
+aMessage or it removes the previous message if aMessage is Nil. ")
 	*/
 	
 	IoObject *v = IoMessage_locals_valueArgAt_(m , locals, 0);
+	IOASSERT(ISMESSAGE(v) || ISNIL(v), "argument must be Message or Nil");
 	
-	if (ISNIL(v))
+	if (ISNIL(v)) 
 	{ 
-		DATA(self)->attachedMessage = 0x0; 
+		v = NULL; 
 	}
-	else
-	{
-		IOASSERT(ISMESSAGE(v), "argument must be Message or Nil");
-		DATA(self)->attachedMessage = IOREF(v);
-	}
+	
+	IoMessage_rawSetPrevious(self, v);
 	
 	return self; 
 }
+
+void IoMessage_rawSetPrevious(IoMessage *self, IoMessage *m)
+{
+	DATA(self)->previous = m ? IOREF(m) : NULL;
+
+	if(m)
+	{
+		DATA(m)->next = self;
+	}
+}
+
+// ------------------------------------------------------
 
 IoObject *IoMessage_argAt(IoMessage *self, IoObject *locals, IoMessage *m)
 {
@@ -1084,7 +1012,7 @@ IoObject *IoMessage_removeCachedResult(IoMessage *self, IoObject *locals, IoMess
 	docSlot("removeCachedResult", "Removes the cached result of the Message.")
 	*/
 	
-	DATA(self)->cachedResult = 0x0;
+	DATA(self)->cachedResult = NULL;
 	return self;
 }
 
@@ -1185,7 +1113,7 @@ void IoMessage_foreachArgs(IoMessage *self,
 	}
 	else
 	{
-		*indexSlotName = 0x0; //IONIL(self);
+		*indexSlotName = NULL; //IONIL(self);
 		offset = 0;
 	}
 	

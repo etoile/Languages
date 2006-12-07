@@ -9,6 +9,8 @@ docLicense("BSD revised")
 #include "Common.h"
 #include "Stack.h"
 
+#include "IoVMApi.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,14 +62,14 @@ typedef struct
     */
 } IoTag;
 
-IoTag *IoTag_new(void);
-IoTag *IoTag_newWithName_(char *name);
-void IoTag_free(IoTag *self);
+IOVM_API IoTag *IoTag_new(void);
+IOVM_API IoTag *IoTag_newWithName_(char *name);
+IOVM_API void IoTag_free(IoTag *self);
 
-void IoTag_name_(IoTag *self, const char *name);
-const char *IoTag_name(IoTag *self);
+IOVM_API void IoTag_name_(IoTag *self, const char *name);
+IOVM_API const char *IoTag_name(IoTag *self);
 
-void IoTag_mark(IoTag *self);
+IOVM_API void IoTag_mark(IoTag *self);
 
 #include "IoTag_inline.h"
 

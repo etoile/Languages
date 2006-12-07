@@ -24,67 +24,67 @@ typedef struct
     struct timezone tz;
 } Date;
 
-Date *Date_new(void);
-void Date_copy_(Date *self, Date *other);
-void Date_free(Date *self);
-int Date_compare(Date *self, Date *other);
+BASEKIT_API Date *Date_new(void);
+BASEKIT_API void Date_copy_(Date *self, Date *other);
+BASEKIT_API void Date_free(Date *self);
+BASEKIT_API int Date_compare(Date *self, Date *other);
 
-void Date_now(Date *self);
-void Date_setTimevalue_(Date *self, struct timeval tv);
-void Date_setToLocalTimeZone(Date *self);
-double Date_Clock(void);
+BASEKIT_API void Date_now(Date *self);
+BASEKIT_API void Date_setTimevalue_(Date *self, struct timeval tv);
+BASEKIT_API void Date_setToLocalTimeZone(Date *self);
+BASEKIT_API double Date_Clock(void);
 
-void Date_fromLocalTime_(Date *self, struct tm *t);
-void Date_fromTime_(Date *self, time_t t);
-time_t Date_asTime(Date *self);
+BASEKIT_API void Date_fromLocalTime_(Date *self, struct tm *t);
+BASEKIT_API void Date_fromTime_(Date *self, time_t t);
+BASEKIT_API time_t Date_asTime(Date *self);
 
 /* --- Zone ----------------------------------------------------------- */
-void Date_setToLocalTimeZone(Date *self);
+BASEKIT_API void Date_setToLocalTimeZone(Date *self);
 struct timezone Date_timeZone(Date *self);
-void Date_setTimeZone_(Date *self, struct timezone tz);
-void Date_convertToTimeZone_(Date *self, struct timezone tz);
+BASEKIT_API void Date_setTimeZone_(Date *self, struct timezone tz);
+BASEKIT_API void Date_convertToTimeZone_(Date *self, struct timezone tz);
 
 /* --- Components ----------------------------------------------------- */
-void Date_setYear_(Date *self, long y);
-long Date_year(Date *self);
+BASEKIT_API void Date_setYear_(Date *self, long y);
+BASEKIT_API long Date_year(Date *self);
 
-void Date_setMonth_(Date *self, int m);
-int Date_month(Date *self);
+BASEKIT_API void Date_setMonth_(Date *self, int m);
+BASEKIT_API int Date_month(Date *self);
 
-void Date_setDay_(Date *self, int d);
-int Date_day(Date *self);
+BASEKIT_API void Date_setDay_(Date *self, int d);
+BASEKIT_API int Date_day(Date *self);
 
-void Date_setHour_(Date *self, int h);
-int Date_hour(Date *self);
+BASEKIT_API void Date_setHour_(Date *self, int h);
+BASEKIT_API int Date_hour(Date *self);
 
-void Date_setMinute_(Date *self, int m);
-int Date_minute(Date *self);
+BASEKIT_API void Date_setMinute_(Date *self, int m);
+BASEKIT_API int Date_minute(Date *self);
 
-void Date_setSecond_(Date *self, double s);
-double Date_second(Date *self);
+BASEKIT_API void Date_setSecond_(Date *self, double s);
+BASEKIT_API double Date_second(Date *self);
 
-unsigned char Date_isDaylightSavingsTime(Date *self);
-int Date_isLeapYear(Date *self);
+BASEKIT_API unsigned char Date_isDaylightSavingsTime(Date *self);
+BASEKIT_API int Date_isLeapYear(Date *self);
 
 /* --- Seconds -------------------------------------------------------- */
-double Date_asSeconds(Date *self);
-void Date_fromSeconds_(Date *self, double s);
+BASEKIT_API double Date_asSeconds(Date *self);
+BASEKIT_API void Date_fromSeconds_(Date *self, double s);
 
-void Date_addSeconds_(Date *self, double s);
-double Date_secondsSince_(Date *self, Date *other);
+BASEKIT_API void Date_addSeconds_(Date *self, double s);
+BASEKIT_API double Date_secondsSince_(Date *self, Date *other);
 
 /* --- Format --------------------------------------------------------- */
-void Date_fromString_format_(Date *self, const char *s, const char *format);
+BASEKIT_API void Date_fromString_format_(Date *self, const char *s, const char *format);
 
 /* --- Durations ------------------------------------------------------ */
-Duration *Date_newDurationBySubtractingDate_(Date *self, Date *other);
-void Date_addDuration_(Date *self, Duration *d);
-void Date_subtractDuration_(Date *self, Duration *d);
+BASEKIT_API Duration *Date_newDurationBySubtractingDate_(Date *self, Date *other);
+BASEKIT_API void Date_addDuration_(Date *self, Duration *d);
+BASEKIT_API void Date_subtractDuration_(Date *self, Duration *d);
 
 /* -------------------------------------------------------------------- */
-double Date_secondsSinceNow(Date *self);
+BASEKIT_API double Date_secondsSinceNow(Date *self);
 
-ByteArray *Date_asString(Date *self, const char *format);
+BASEKIT_API ByteArray *Date_asString(Date *self, const char *format);
 
 #ifdef __cplusplus
 }
