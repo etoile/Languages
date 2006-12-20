@@ -306,7 +306,10 @@ IoObject *Io2Objc_metaclass(Io2Objc *self, IoObject *locals, IoMessage *m)
 
 IoObject *Io2Objc_setSlot(Io2Objc *self, IoObject *locals, IoMessage *m)
 {
-	IoSymbol *slotName = IoMessage_locals_symbolArgAt_(m, locals, 0);
+	char *name = IoMessage_locals_cStringArgAt_(m, locals, 0);
+	if (*name == '"') *(++name + strlen(name) - 1) = 0;
+	IoSymbol *slotName = IOSYMBOL(name);
+//	IoSymbol *slotName = IoMessage_locals_symbolArgAt_(m, locals, 0);
 	IoObject *slotValue = IoMessage_locals_valueArgAt_(m, locals, 1);
 	if (ISBLOCK(slotValue))
 	{
@@ -363,7 +366,10 @@ IoObject *Io2Objc_setSlot(Io2Objc *self, IoObject *locals, IoMessage *m)
 
 IoObject *Io2Objc_updateSlot(Io2Objc *self, IoObject *locals, IoMessage *m)
 {
-	IoSymbol *slotName = IoMessage_locals_symbolArgAt_(m, locals, 0);
+	char *name = IoMessage_locals_cStringArgAt_(m, locals, 0);
+	if (*name == '"') *(++name + strlen(name) - 1) = 0;
+	IoSymbol *slotName = IOSYMBOL(name);
+//	IoSymbol *slotName = IoMessage_locals_symbolArgAt_(m, locals, 0);
 	IoObject *slotValue = IoMessage_locals_valueArgAt_(m, locals, 1);
 	if (ISBLOCK(slotValue))
 	{

@@ -1,3 +1,22 @@
+2006-12-20  Quentin Mathe <qmathe@club-internet.fr>
+
+    * iovm/Io_Lexer.c:
+    * ObjcBridge/Io2Objc.m:
+    Applied two patches by Baptiste Heyman, they makes possible to run Spot
+    again. The patches come from <http://baptisteheyman.dyndns.org/Io/> 
+    (Baptiste private Io repository).
+
+    Mon Dec 18 14:10:54 CET 2006  Baptiste Heyman <baptisteheyman@yahoo.fr>
+        * Fix to allow both old and new Objective-C syntax.
+
+    Sun Dec 17 14:26:09 CET 2006  Baptiste Heyman <baptisteheyman@yahoo.fr>
+        * Patch to simplify declarations of methods containing colons in their 
+          names.
+
+    Warning!
+    * ObjcBridge/IoObjcBridgeInit.m: This file should be updated too since
+    ObjcBridge.io has been modified by the previous patches also.
+
 2006-12-06  Yen-Ju Chen <yjchenx at gmail>
 
     * Update to latest Io.
