@@ -1,3 +1,9 @@
+2007-01-12  Quentin Mathe <qmathe@club-internet.fr>
+
+	* test.io: Modified run basic tests for direct call of objc methods written 
+	in Io, inheritance chain on Io side and bridge crossing. Moved Foundation 
+	classes test at the top and fixed them.
+
 2007-01-11  Quentin Mathe <qmathe@club-internet.fr>
 
 	* ObjcBridge/Io2Objc.h:

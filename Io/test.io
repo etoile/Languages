@@ -3,15 +3,15 @@
    docLicense("BSD revised") */
 
 ObjcBridge autoLookupClassNamesOn
+//ObjcBridge debugOn
 
-/* Io */
-"Test" println
+/*** Test basic classes of Foundation ***/
 
 /* NSDate */
-Date := ObjcBridge classNamed("NSDate")
+ObjcDate := ObjcBridge classNamed("NSDate")
 
-date := Date date
-date description println
+date := ObjcDate date
+date println
 
 /* NSNumber */
 N := ObjcBridge classNamed("NSNumber")
@@ -19,13 +19,69 @@ n := N numberWithInt:(200)
 n println
 
 /* NSString */
-String := ObjcBridge classNamed("NSString")
-string := String stringWithCString:("Test")
+ObjcString := ObjcBridge classNamed("NSString")
+string := ObjcString stringWithCString:("Test")
 string println
-/* Warning: string becomes io object automatically. 
-   Therefore, it is not a NSString anymore */
+/* Warning: string doesn't become io object automatically. 
+   Therefore, it is still NSString */
 
-/* Application */
+/*** Test bridge crossing and direct calls of Objc methods written in Io ***/
+
+TestObject := Object clone
+
+/* Create Io object */
+TestObject do(
+	myMethod := method(
+		return 5
+	)
+
+	test := method(
+		"Object clone test" println
+		self myMethod println
+	)
+)
+
+myTest := TestObject clone
+myTest test
+
+/* Create Objc class in Io as a subclass of NSObject */
+TestObject := NSObject newSubclassNamed:("TestObject")
+
+/* Add Objc methods written in Io */
+TestObject do(
+	myMethod := method(
+		return 5
+	)
+
+	test := method(
+		"NSObject newSubclassNamed alloc init test" println
+		self myMethod println
+	)
+)
+
+/* Run a bunch tests to check the inheritance chain set up for the previous
+   class on Io side */
+
+/* For the class first */
+"TestObject class slots " print
+TestObject slotNames println
+"TestObject class protos " print
+TestObject protos println
+"TestObject class "
+TestObject println
+
+/* Then for the instance */
+myTest := TestObject alloc init //myTest prependProto(TestObject)
+"TestObject instance slots " print
+myTest slotNames println
+"TestObject instance protos " print
+myTest protos println
+"TestObject instance " print
+myTest println
+myTest test
+
+/*** Test ApplicationKit ***/
+
 /* Does not work now
 application := ObjcBridge classNamed("NSApplication") sharedApplication
 frame := Box clone set( vector(200, 500), vector(420, 150) )
@@ -47,4 +103,3 @@ win orderFrontRegardless
 
 application run
 */
-
