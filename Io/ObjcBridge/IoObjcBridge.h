@@ -80,6 +80,8 @@ IoObject *IoObjcBridge_main(IoObjcBridge *self, IoObject *locals, IoMessage *m);
 /* ----------------------------------------------------------------- */
 IoObject *IoObjcBridge_classNamed(IoObjcBridge *self, IoObject *locals, IoMessage *m);
 
+void *IoObjcBridge_proxyWithoutInheritanceForId_(IoObjcBridge *self, id obj);
+void *IoObjcBridge_proxyWithInheritanceForId_(IoObjcBridge *self, id obj);
 void *IoObjcBridge_proxyForId_(IoObjcBridge *self, id obj);
 void *IoObjcBridge_proxyForIoObject_(IoObjcBridge *self, IoObject *v);
 

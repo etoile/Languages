@@ -227,13 +227,54 @@ IoObject *IoObjcBridge_classNamed(IoObjcBridge *self, IoObject *locals, IoMessag
 	return IoObjcBridge_proxyForId_(self, obj);
 }
 
-void *IoObjcBridge_proxyForId_(IoObjcBridge *self, id obj)
+// NOTE: May be good to implement the following function:
+// void *IoObjcBridge_proxyForId_inheritedFromClass_(IoObjcBridge *self, id obj, Class class)
+
+/* IoObjcBridge_proxyForId_ version to use when obj parameter is a class.
+   This is called by Io2Objc *Io2Objc_alloc to create an instance on Io side. */
+void *IoObjcBridge_proxyWithInheritanceForId_(IoObjcBridge *self, id obj)
+{
+	Io2Objc *v = Hash_at_(DATA(self)->io2objcs, obj);
+	Io2Objc *class = IoObjcBridge_proxyForId_(self, [obj class]);
+
+	if (!v)
+	{	
+		v = IOCLONE(class);
+		Io2Objc_setBridge(v, self);
+		Io2Objc_setObject(v, obj);
+		Hash_at_put_(DATA(self)->io2objcs, obj, v);
+	}
+	return v;
+}
+
+/* Basic version of IoObjcBridge_proxyForId_ */
+void *IoObjcBridge_proxyWithoutInheritanceForId_(IoObjcBridge *self, id obj)
 {
 	Io2Objc *v = Hash_at_(DATA(self)->io2objcs, obj);
 
 	if (!v)
 	{
 		v = Io2Objc_new(IOSTATE);
+		Io2Objc_setBridge(v, self);
+		Io2Objc_setObject(v, obj);
+		Hash_at_put_(DATA(self)->io2objcs, obj, v);
+	}
+	return v;
+}
+
+void *IoObjcBridge_proxyForId_(IoObjcBridge *self, id obj)
+{
+	Io2Objc *v = Hash_at_(DATA(self)->io2objcs, obj);
+
+	if (!v)
+	{
+		if (object_is_instance(obj))
+		{
+			Io2Objc *class = IoObjcBridge_proxyForId_(self, [obj class]);
+			v = IOCLONE(class);
+		}
+		else
+			v = Io2Objc_new(IOSTATE);
 		Io2Objc_setBridge(v, self);
 		Io2Objc_setObject(v, obj);
 		Hash_at_put_(DATA(self)->io2objcs, obj, v);

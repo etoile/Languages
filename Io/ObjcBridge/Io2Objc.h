@@ -43,6 +43,7 @@ void *Io2Objc_object(Io2Objc *self);
 
 /* ----------------------------------------------------------------- */
 IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m);
+Io2Objc *Io2Objc_alloc(Io2Objc *self, IoObject *locals, IoMessage *m);
 Io2Objc *Io2Objc_newSubclassNamed(IoObject *self, IoObject *locals, IoMessage *m);
 IoObject *Io2Objc_metaclass(Io2Objc *self, IoObject *locals, IoMessage *m);
 IoObject *Io2Objc_setSlot(Io2Objc *self, IoObject *locals, IoMessage *m);

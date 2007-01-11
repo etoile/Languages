@@ -1,3 +1,24 @@
+2007-01-11  Quentin Mathe <qmathe@club-internet.fr>
+
+	* ObjcBridge/Io2Objc.h:
+	* ObjcBridge/Io2Objc.m:
+	(IoState_registerProtoWithFunc_): Included 'alloc' in methodTable.
+	(IoObject *Io2Objc_perform): Improved to try a local message call before
+	crossing the bridge. Fixed NSLog statement in 'get the method signature'
+	section.
+	(Io2Objc_alloc): New function that returns an instance with an inheritance
+	chain on Io side (not just the inheritance chain of the objc side).
+	* ObjcBridge/IoObjcBridge.h:
+	* ObjcBridge/IoObjcBridge.m:
+	(IoObjcBridge_proxyWithInheritanceForId_): New function that returns a 
+	proxy for an instance. The proxy is created by cloning the proxy of the
+	associated class.
+	(IoObjcBridge_proxyWithoutInheritanceForId_): Copied from the previous 
+	IoObjcBridge_proxyForId_.
+	(IoObjcBridge_proxyForId_): Modified to support inheritance chain on Io
+	side if the parameter is an instance (exactly as it is done by 
+	IoObjcBridge_proxyWithInheritanceForId_).
+
 2006-12-20  Quentin Mathe <qmathe@club-internet.fr>
 
     * iovm/Io_Lexer.c:

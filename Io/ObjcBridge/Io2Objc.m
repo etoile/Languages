@@ -5,6 +5,7 @@
 #include "Io2Objc.h"
 #include "List.h"
 #include "IoBlock.h"
+#include "IoObject.h"
 
 #define DATA(self) ((Io2ObjcData *)IoObject_dataPointer(self))
 
@@ -34,6 +35,7 @@ Io2Objc *Io2Objc_proto(void *state)
 	IoState_registerProtoWithFunc_(state, self, Io2Objc_proto);
 
 	IoMethodTable methodTable[] = {
+		{"alloc", Io2Objc_alloc},
 		{"newSubclassNamed:", Io2Objc_newSubclassNamed},
 		{"metaclass", Io2Objc_metaclass},
 		{"setSlot", Io2Objc_setSlot},
@@ -113,8 +115,71 @@ void Io2Objc_nullObjcBridge(Io2Objc *self)
 
 /* ----------------------------------------------------------------- */
 
+/* Default IoObject perform from IoObject_inline.h
+
+IOINLINE IoObject *IoObject_perform(IoObject *self, IoObject *locals, IoMessage *m)
+{
+	IoObject *context;
+	IoObject *slotValue = IoObject_rawGetSlot_context_(self, IoMessage_name(m), &context);
+
+	// note: coro chaining was moved to IoBlock.c
+
+	if (slotValue) 
+	{
+		return IoObject_activate(slotValue, self, locals, m, context);
+	}
+
+	if (self->isLocals)
+	{
+		return IoObject_localsForward(self, locals, m);
+	}
+
+	return IoObject_forward(self, locals, m);
+} */
+
+// Below is the overriden version of IoObject_perform
 IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 {
+	IoObject *context;
+	IoObject *slotValue = IoObject_rawGetSlot_context_(self, IoMessage_name(m), &context);
+
+	/* --- try a local message call without using the bridge ------------ */
+
+	/* */
+
+
+	if (slotValue) 
+	{
+		//NSLog(@"Io2Objc activate with object %@ and method %s", DATA(self)->object, 
+		//	CSTRING(IoMessage_name(m)));
+		return IoObject_activate(slotValue, self, locals, m, context);
+	}
+
+	if (self->isLocals)
+	{
+		//NSLog(@"Io2Objc localsForward with object %@ and method %s", DATA(self)->object, CSTRING(IoMessage_name(m)));
+		return IoObject_localsForward(self, locals, m);
+	}
+
+	char *name = objc_malloc(2 + strlen(CSTRING(IoMessage_name(m))));
+	name[0] = '-';
+	name[1] = 0;
+	IoSymbol *symbol = IoState_symbolWithCString_(IOSTATE, strcat(name, CSTRING(IoMessage_name(m))));
+	//IoState_print_(IOSTATE, "Method name was %s and is now %s\n", CSTRING(IoMessage_name(m)), name);
+	objc_free(name);
+	slotValue = IoObject_rawGetSlot_context_(self, symbol, &context);
+
+	if (slotValue) 
+	{
+		//NSLog(@"Io2Objc activate with object %@ and method %s", DATA(self)->object, 
+		//	CSTRING(IoMessage_name(m)));
+		return IoObject_activate(slotValue, self, locals, m, context);
+	}
+
+	// Forward is not handled by Io but by the Objc forward mechanism
+
+	//NSLog(@"Message %s is going to cross the bridge", CSTRING(IoMessage_name(m)));
+
 	/* --- get the method signature ------------ */
 	NSInvocation *invocation = nil;
 	NSMethodSignature *methodSignature;
@@ -124,7 +189,7 @@ IoObject *Io2Objc_perform(Io2Objc *self, IoObject *locals, IoMessage *m)
 	BOOL debug = IoObjcBridge_rawDebugOn(DATA(self)->bridge);
 	IoObject *result;
 
-	//NSLog(@"[%@<%i> %s]", NSStringFromClass( [object class] ), object, CSTRING(m->method));
+	//NSLog(@"[%@<%i> %s]", NSStringFromClass( [object class] ), object, CSTRING(IoMessage_name(m)));
 
 	// see if receiver can handle message -------------
 
@@ -285,6 +350,37 @@ NSMethodSignature *methodSignatureForSelector(id self, SEL sel, SEL selector)
 		return [NSMethodSignature signatureWithObjCTypes:method->method_types];
 	else
 		return nil;
+}
+
+Io2Objc *Io2Objc_alloc(Io2Objc *self, IoObject *locals, IoMessage *m)
+{
+	id class = DATA(self)->object; // self is the class proxy
+	id newObject = nil;
+	Io2Objc *newProxy = NULL;
+
+	//NSLog(@"Io2Objc_alloc");
+
+	if (!(((Class)class)->info & CLS_CLASS))
+	{
+		NSLog(@"Impossible to allocate a new object from an object which is \
+			not a class.");
+	}
+	else
+	{
+		/* By calling IoObjcBridge_proxyWithInheritanceForId_  we add the class 
+		   of the object as its first proto, this allows direct method access 
+		   if the class has methods written in Io. Otherwise any calls of Io 
+		   methods on the instance would travel to Objc side trough the bridge 
+		   before coming back to Io side.
+		   In addition to be slow, this bridge crossing would trigger spurious 
+		   bridge conversion for objects like strings or numbers. */
+
+		newObject = [class alloc];
+		newProxy = IoObjcBridge_proxyWithInheritanceForId_(DATA(self)->bridge, newObject);
+		[newObject release]; // the object is retained by the previous function
+	}
+
+	return newProxy;
 }
 
 Io2Objc *Io2Objc_newSubclassNamed(Io2Objc *self, IoObject *locals, IoMessage *m)
