@@ -1,3 +1,17 @@
+2007-01-30  Quentin Mathe <qmathe@club-internet.fr>
+
+	* ObjcBridge/Io2Objc.h:
+	* ObjcBridge/Io2Objc.m:
+	(IoState_registerProtoWithFunc_): Turned on 'print' in methodTable.
+	(Io2Objc_print): Uncommented this method to have -description included in
+	output when Io2Objc are logged.
+	* ObjcBridge/IoObjcBridge.h:
+	Updated to include IoEtoile.h
+	* ObjcBridge/IoObjcBridge.m (IoObjcBridge_selectorEncoding): Updated to
+	lookup inside Etoile protocol.
+	* ObjcBridge/IoEtoile.h: New file (no more icon view crash in Space now).
+	* ObjcBridge/GNUmakefile: Added ADDITIONAL_CPPFLAGS to set __ETOILE__.
+
 2007-01-12  Quentin Mathe <qmathe@club-internet.fr>
 
 	* test.io: Modified run basic tests for direct call of objc methods written 

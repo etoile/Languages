@@ -353,6 +353,11 @@ void IoObjcBridge_addValue_(IoObjcBridge *self, IoObject *v, id obj)
 const char *IoObjcBridge_selectorEncoding(IoObjcBridge *self, SEL selector)
 {
 	struct objc_method_description *description;
+#ifdef __ETOILE__
+	description = [@protocol(Etoile) descriptionForInstanceMethod:selector];
+	if (description)
+		return description->types;
+#endif
 	description = [@protocol(AddressBook) descriptionForInstanceMethod:selector];
 	if (description)
 		return description->types;

@@ -42,7 +42,7 @@ Io2Objc *Io2Objc_proto(void *state)
 		{"updateSlot", Io2Objc_updateSlot},
 		{"super", Io2Objc_super},
 		{"ioValue", Io2Objc_ioValue},
-		//{"print", Io2Objc_print},
+		{"print", Io2Objc_print},
 		//{"slotSummary", Io2Objc_slotSummary},
 		{NULL, NULL}
 	};
@@ -504,11 +504,13 @@ IoObject *Io2Objc_ioValue(Io2Objc *self, IoObject *locals, IoMessage *m)
 		return IONIL(self);
 }
 
-/*IoObject *Io2Objc_print(Io2Objc *self, IoObject *locals, IoMessage *m)
+IoObject *Io2Objc_print(Io2Objc *self, IoObject *locals, IoMessage *m)
 {
+	IoObject_lobbyPrint(self, locals, m);
 	printf("%s", [[DATA(self)->object description] cString]);
+
 	return IONIL(self);
-}*/
+}
 
 /*IoObject *Io2Objc_slotSummary(Io2Objc *self, IoObject *locals, IoMessage *m)
 {

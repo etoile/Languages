@@ -109,6 +109,11 @@ char *IoObjcBridge_nameForTypeChar_(IoObjcBridge *self, char type);
 
 // We need this so the runtime will know the correct method signatures
 
+/* Etoile specific protocol declarations */
+#ifdef __ETOILE__
+#include "IoEtoile.h"
+#endif
+
 @protocol AddressBook
 //ABActionDelegate
 - (NSString *)actionProperty;
