@@ -6,5 +6,6 @@ ifeq ($(steptalk), yes)
 endif
 include GNUmakefile.tool
 include $(GNUSTEP_MAKEFILES)/aggregate.make
+-include ../../etoile.make
 -include GNUmakefile.postamble
 

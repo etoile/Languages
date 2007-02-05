@@ -1,3 +1,8 @@
+2007-02-06  Quentin Mathe <qmathe@club-internet.fr>
+
+	* GNUmakefile: Fixed DistributedView related error on compile by 
+	including etoile.make.
+
 2007-01-30  Quentin Mathe <qmathe@club-internet.fr>
 
 	* ObjcBridge/Io2Objc.h:
