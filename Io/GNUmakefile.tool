@@ -1,4 +1,4 @@
-ifeq ($(FOUNDATION_LIB), apple)
+ifeq ($(findstring darwin, $(GNUSTEP_TARGET_OS)), darwin)
   # For Vector
   ADDITIONAL_LDFLAGS += -framework Accelerate -faltivec
   # Only for Darwin 

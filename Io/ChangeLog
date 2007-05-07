@@ -1,3 +1,8 @@
+2007-05-07  Yen-Ju Chen <yjchenx gmail>
+
+	* GNUmakefile.tool:
+	  Apply patch for darwin by Yves de Champlain (Patch #9086).
+
 2007-02-17  Quentin Mathe <qmathe@club-internet.fr>
 
 	* Modified README to be reStructuredText
