@@ -1,0 +1,37 @@
+================
+libobjc (Etoile)
+================
+
+:Author: See license notices in each file
+:Copyright: GPL license with special clause allowing the library to be linked
+by programs which are not released under GPL
+:Version: 1.6.0 (GNUstep r25128)
+
+This is a snapshot of the GNUstep libobjc library, which includes new features 
+and patches that may not have made it into either GNUstep or GCC tree. GNUstep
+libobjc is itself a snapshot of GCC libobjc (official GNU ObjC runtime).
+This libobjc version can also be used as a playground to experiment new 
+features or improvements which could benefit to Etoile specific needs.
+
+
+Build and Install
+-----------------
+
+Read README.GNUstep document.
+
+
+Mac OS X support
+----------------
+
+Mac OS X doesn't use GNU runtime but NeXT runtime, which means you cannot use
+this tweaked runtime with Cocoa... However it shouldn't be very hard to 
+backport new features to the NeXT runtime.
+
+
+Developer notes
+===============
+
+Contribute 
+----------
+
+Read TODO document.

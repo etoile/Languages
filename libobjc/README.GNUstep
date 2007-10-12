@@ -1,0 +1,73 @@
+
+This is a snapshot of the GCC libobjc library, which includes some
+patches that may not have made it into the gcc tree.
+
+Note: You do not need this library if you are using gcc 3 or greater,
+UNLESS you are on a Windows machine (Windows with gcc > 4 may not need this
+at al). 
+
+In addition, a GNUmakefile file has been added so this library can be compiled
+stand-alone (i.e. without the rest of the gcc sources). However, you
+must have the gstep-make package installed first to do this. The library
+will compile as a shared library by default (on systems that support this),
+and install in the GNUstep directory structure. After doing this, recompile
+GNUstep - which will automatically use the new library rather than the
+default one installed with gcc.
+
+Note this library is only meant to be used with GNUstep, since it is missing
+the NXConstStr class (which GNUstep provides).
+
+To compile this library, don't run the configure script. First edit the
+GNUmakefile to set the type of threading you want, then type
+
+make
+make install
+
+------------------------------------------------------------------------
+Changes:
+------------------------------------------------------------------------
+Version 1.6.0
+-------------
+Update to latest gcc changes. 
+Fix makefiles for GNUstep make 2.0 release.
+
+Version 1.4.0
+-------------
+Fix the protocol initizization bug, various other protocol bugs.
+Don't use dllexport on mingw.
+Various memory leak fixes.
+Work on OpenBSD and NetBSD.
+
+Version 1.3.0
+-------------
+Add conditional threads on win32. Other win32 fixes.
+
+Version 1.2.0
+-------------
+Updated for changes in newer gnustep-make.
+
+Version 1.0.0
+-------------
+Set threading for mingw32. Use DEBUG_RUNTIME rather than DEBUG to add
+debugging statements.
+
+Version 0.9.2
+-------------
+Added objc_thread_add, objc_thread_remove, and a few more objc_EXPORTS for
+Windows.
+
+Version 0.9.2
+-------------
+Added more config dirs. Changed extern to objc_EXPORT for Windows machines.
+Changed package name to gnustep-objc to avoid possible conflicts
+
+Version 0.9.1
+-------------
+Comment out NXConstantString from linking.m so there won't be a reference
+to it (needed by MingW). Added config/ix86/generic
+
+Version 0.9.0
+-------------
+Added config directory with various platforms. Added GNUmakefile.
+Added libobjc.spec.in for RPM generation.
+
