@@ -304,6 +304,20 @@ struct objc_protocol_list {
 #define CLS_SETINITIALIZED(cls) __CLS_SETINFO(cls, _CLS_INITIALIZED)
 
 /*
+** The class handles message dispatch on its own.
+*/
+#define _CLS_CUSTOMMESSAGEDISPATCH 0x40L
+#define CLS_ISCUSTOMMESSAGEDISPATCH(cls) __CLS_ISINFO(cls, _CLS_CUSTOMMESSAGEDISPATCH)
+#define CLS_SETCUSTOMMESSAGEDISPATCH(cls) __CLS_SETINFO(cls, _CLS_CUSTOMMESSAGEDISPATCH)
+
+/*
+** The class handles message dispatch differently for different instances.
+*/
+#define _CLS_OBJECTMESSAGEDISPATCH 0x80L
+#define CLS_ISOBJECTMESSAGEDISPATCH(cls) __CLS_ISINFO(cls, _CLS_OBJECTMESSAGEDISPATCH)
+#define CLS_SETOBJECTMESSAGEDISPATCH(cls) __CLS_SETINFO(cls, _CLS_OBJECTMESSAGEDISPATCH)
+
+/*
 ** The class number of this class.  This must be the same for both the 
 ** class and its meta class object
 */

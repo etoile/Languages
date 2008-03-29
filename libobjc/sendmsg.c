@@ -145,43 +145,43 @@ get_imp (Class class, SEL sel)
     {
       /* Not a valid method */
       if (class->dtable == __objc_uninstalled_dtable)
-	{
-	  /* The dispatch table needs to be installed. */
-	  objc_mutex_lock (__objc_runtime_mutex);
+        {
+          /* The dispatch table needs to be installed. */
+          objc_mutex_lock (__objc_runtime_mutex);
 
-	   /* Double-checked locking pattern: Check
-	      __objc_uninstalled_dtable again in case another thread
-	      installed the dtable while we were waiting for the lock
-	      to be released.  */
+           /* Double-checked locking pattern: Check
+              __objc_uninstalled_dtable again in case another thread
+              installed the dtable while we were waiting for the lock
+              to be released.  */
          if (class->dtable == __objc_uninstalled_dtable)
            {
              __objc_install_dispatch_table_for_class (class);
            }
 
-	  objc_mutex_unlock (__objc_runtime_mutex);
-	  /* Call ourselves with the installed dispatch table
-	     and get the real method */
-	  res = get_imp (class, sel);
-	}
+          objc_mutex_unlock (__objc_runtime_mutex);
+          /* Call ourselves with the installed dispatch table
+             and get the real method */
+          res = get_imp (class, sel);
+        }
       else
-	{
-	  /* The dispatch table has been installed.  */
+        {
+          /* The dispatch table has been installed.  */
 
          /* Get the method from the dispatch table (we try to get it
-	    again in case another thread has installed the dtable just
-	    after we invoked sarray_get_safe, but before we checked
-	    class->dtable == __objc_uninstalled_dtable).
+            again in case another thread has installed the dtable just
+            after we invoked sarray_get_safe, but before we checked
+            class->dtable == __objc_uninstalled_dtable).
          */
-	  res = sarray_get_safe (class->dtable, (size_t) sel->sel_id);
-	  if (res == 0)
-	    {
-	      /* The dispatch table has been installed, and the method
-		 is not in the dispatch table.  So the method just
-		 doesn't exist for the class.  Return the forwarding
-		 implementation. */
+          res = sarray_get_safe (class->dtable, (size_t) sel->sel_id);
+          if (res == 0)
+            {
+              /* The dispatch table has been installed, and the method
+                 is not in the dispatch table.  So the method just
+                 doesn't exist for the class.  Return the forwarding
+                 implementation. */
              res = __objc_get_forward_imp ((id)class, sel);
-	    }
-	}
+            }
+        }
     }
   return res;
 }
@@ -200,9 +200,9 @@ __objc_responds_to (id object, SEL sel)
     {
       objc_mutex_lock (__objc_runtime_mutex);
       if (object->class_pointer->dtable == __objc_uninstalled_dtable)
-	{
-	  __objc_install_dispatch_table_for_class (object->class_pointer);
-	}
+        {
+          __objc_install_dispatch_table_for_class (object->class_pointer);
+        }
       objc_mutex_unlock (__objc_runtime_mutex);
     }
 
@@ -211,52 +211,132 @@ __objc_responds_to (id object, SEL sel)
   return (res != 0);
 }
 
+struct _sender_stack
+{
+        void * addr;
+        id object;
+};
+static struct _sender_stack sender_stack[100];
+static int stack_top = -1;
+
+IMP (*objc_msg_intercept_lookup)(id sender, id receiver, SEL op) = NULL;
+
 /* This is the lookup function.  All entries in the table are either a 
    valid method *or* zero.  If zero then either the dispatch table
    needs to be installed or it doesn't exist and forwarding is attempted. */
 inline
 IMP
-objc_msg_lookup (id receiver, SEL op)
+objc_real_msg_lookup (id receiver, SEL op)
 {
   IMP result;
   if (receiver)
     {
-      result = sarray_get_safe (receiver->class_pointer->dtable, 
-				(sidx)op->sel_id);
-      if (result == 0)
-	{
-	  /* Not a valid method */
-	  if (receiver->class_pointer->dtable == __objc_uninstalled_dtable)
-	    {
-	      /* The dispatch table needs to be installed.
-		 This happens on the very first method call to the class. */
-	      __objc_init_install_dtable (receiver, op);
+	  /* Check for per-object dispatch */
+      if(CLS_ISOBJECTMESSAGEDISPATCH(receiver->class_pointer))
+        {
+          static SEL selector = NULL;
+		  if (selector == NULL)
+		    {
+			  selector = sel_get_any_uid ("messageLookupForObject:selector:");
+			}
+          IMP alternate = objc_msg_lookup ((id)receiver->class_pointer, selector);
+          if (alternate != NULL)
+            {
+			  IMP method = (IMP)alternate ((id)receiver->class_pointer, selector, receiver, op);
+			  if(method != NULL)
+			    {
+                  return method;
+                }
+            }
+        }
 
-	      /* Get real method for this in newly installed dtable */
-	      result = get_imp (receiver->class_pointer, op);
-	    }
-	  else
-	    {
-	      /* The dispatch table has been installed.  Check again
-		 if the method exists (just in case the dispatch table
-		 has been installed by another thread after we did the
-		 previous check that the method exists).
-	      */
-	      result = sarray_get_safe (receiver->class_pointer->dtable,
-					(sidx)op->sel_id);
-	      if (result == 0)
-		{
-		  /* If the method still just doesn't exist for the
-		     class, attempt to forward the method. */
-		  result = __objc_get_forward_imp (receiver, op);
-		}
-	    }
-	}
+      /* Check for a custom message lookup mechanism */
+      if(CLS_ISCUSTOMMESSAGEDISPATCH(receiver->class_pointer))
+        {
+          static SEL selector = NULL;
+		  if (selector == NULL)
+		    {
+			  selector = sel_get_any_uid ("messageLookupForSelector:");
+			}
+          IMP alternate = objc_msg_lookup ((id)receiver->class_pointer, selector);
+          if (alternate != NULL)
+            {
+			  IMP method = (IMP)alternate ((id)receiver->class_pointer, selector, op);
+			  if(method != NULL)
+			    {
+                  return method;
+                }
+            }
+        }
+	  result = sarray_get_safe (receiver->class_pointer->dtable, 
+                        (sidx)op->sel_id);
+      if (result == 0)
+        {
+          /* Not a valid method */
+          if (receiver->class_pointer->dtable == __objc_uninstalled_dtable)
+            {
+              /* The dispatch table needs to be installed.
+                 This happens on the very first method call to the class. */
+              __objc_init_install_dtable (receiver, op);
+
+              /* Get real method for this in newly installed dtable */
+              result = get_imp (receiver->class_pointer, op);
+            }
+          else
+            {
+              /* The dispatch table has been installed.  Check again
+                 if the method exists (just in case the dispatch table
+                 has been installed by another thread after we did the
+                 previous check that the method exists).
+              */
+              result = sarray_get_safe (receiver->class_pointer->dtable,
+                                        (sidx)op->sel_id);
+              if (result == 0)
+                {
+                  /* If the method still just doesn't exist for the
+                     class, attempt to forward the method. */
+                  result = __objc_get_forward_imp (receiver, op);
+                }
+            }
+        }
       return result;
     }
   else
     return (IMP)nil_method;
 }
+
+inline
+IMP
+objc_msg_lookup (id receiver, SEL op)
+{
+  IMP result;
+  if(stack_top < 0)
+  {
+        sender_stack[0].object = nil;
+        sender_stack[0].addr = (void*)-1;
+        stack_top = 0;
+  }
+  if (objc_msg_intercept_lookup != NULL)
+        {
+          if((void*)&result < sender_stack[stack_top].addr)
+          {
+                  stack_top++;
+                  sender_stack[stack_top].object = receiver;
+                  sender_stack[stack_top].addr = &result;
+          }
+          else while(stack_top > 0 && (void*)&result > sender_stack[stack_top].addr)
+          {
+                  stack_top--;
+          }
+          result = objc_msg_intercept_lookup(sender_stack[stack_top-1].object, receiver, op);
+        }
+  else
+    {
+          result = objc_real_msg_lookup(receiver, op);
+        }
+  return result;
+}
+
 
 IMP
 objc_msg_lookup_super (Super_t super, SEL sel)
@@ -277,8 +357,8 @@ objc_msg_sendv (id object, SEL op, arglist_t arg_frame)
   *((id *) method_get_first_argument (m, arg_frame, &type)) = object;
   *((SEL *) method_get_next_argument (arg_frame, &type)) = op;
   return __builtin_apply ((apply_t) m->method_imp, 
-			  arg_frame,
-			  method_get_sizeof_arguments (m));
+                          arg_frame,
+                          method_get_sizeof_arguments (m));
 }
 
 void
@@ -312,7 +392,7 @@ __objc_init_install_dtable (id receiver, SEL op __attribute__ ((__unused__)))
       __objc_install_dispatch_table_for_class (receiver->class_pointer);
 
       /* call +initialize -- this will in turn install the factory 
-	 dispatch table if not already done :-) */
+         dispatch table if not already done :-) */
       __objc_send_initialize (receiver->class_pointer);
     }
   else
@@ -355,22 +435,22 @@ __objc_send_initialize (Class class)
       __objc_generate_gc_type_description (class);
 
       if (class->super_class)
-	__objc_send_initialize (class->super_class);
+        __objc_send_initialize (class->super_class);
 
       {
-	SEL 	     op = sel_register_name ("initialize");
-	IMP	     imp = 0;
+        SEL              op = sel_register_name ("initialize");
+        IMP             imp = 0;
         MethodList_t method_list = class->class_pointer->methods;
 
         while (method_list) {
-	  int i;
+          int i;
           Method_t method;
 
           for (i = 0; i < method_list->method_count; i++) {
-	    method = &(method_list->method_list[i]);
+            method = &(method_list->method_list[i]);
             if (method->method_name
                 && method->method_name->sel_id == op->sel_id) {
-	      imp = method->method_imp;
+              imp = method->method_imp;
               break;
             }
           }
@@ -380,10 +460,10 @@ __objc_send_initialize (Class class)
 
           method_list = method_list->method_next;
 
-	}
-	if (imp)
-	    (*imp) ((id) class, op);
-		
+        }
+        if (imp)
+            (*imp) ((id) class, op);
+                
       }
     }
 }
@@ -409,8 +489,8 @@ __objc_install_methods_in_dtable (Class class, MethodList_t method_list)
     {
       Method_t method = &(method_list->method_list[i]);
       sarray_at_put_safe (class->dtable,
-			  (sidx) method->method_name->sel_id,
-			  method->method_imp);
+                          (sidx) method->method_name->sel_id,
+                          method->method_imp);
     }
 }
 
@@ -457,12 +537,12 @@ __objc_update_dispatch_table_for_class (Class class)
 
   arr = class->dtable;
   __objc_install_premature_dtable (class); /* someone might require it... */
-  sarray_free (arr);			   /* release memory */
+  sarray_free (arr);                           /* release memory */
 
   /* could have been lazy... */
   __objc_install_dispatch_table_for_class (class); 
 
-  if (class->subclass_list)	/* Traverse subclasses */
+  if (class->subclass_list)        /* Traverse subclasses */
     for (next = class->subclass_list; next; next = next->sibling_class)
       __objc_update_dispatch_table_for_class (next);
 
@@ -651,16 +731,16 @@ __objc_forward (id object, SEL sel, arglist_t args)
              + strlen ((const char *) object->class_pointer->name)];
 
     sprintf (msg, "(%s) %s does not recognize %s",
-	     (CLS_ISMETA (object->class_pointer)
-	      ? "class"
-	      : "instance" ),
+             (CLS_ISMETA (object->class_pointer)
+              ? "class"
+              : "instance" ),
              object->class_pointer->name, sel_get_name (sel));
 
     err_sel = sel_get_any_uid ("error:");
     if (__objc_responds_to (object, err_sel))
       {
-	imp = get_imp (object->class_pointer, err_sel);
-	return (*imp) (object, sel_get_any_uid ("error:"), msg);
+        imp = get_imp (object->class_pointer, err_sel);
+        return (*imp) (object, sel_get_any_uid ("error:"), msg);
       }
 
     /* The object doesn't respond to doesNotRecognize: or error:;  Therefore,
@@ -685,14 +765,14 @@ __objc_print_dtable_stats ()
 #endif
 
   printf ("arrays: %d = %ld bytes\n", narrays, 
-	  (long) narrays * sizeof (struct sarray));
+          (long) narrays * sizeof (struct sarray));
   total += narrays * sizeof (struct sarray);
   printf ("buckets: %d = %ld bytes\n", nbuckets, 
-	  (long) nbuckets * sizeof (struct sbucket));
+          (long) nbuckets * sizeof (struct sbucket));
   total += nbuckets * sizeof (struct sbucket);
 
   printf ("idxtables: %d = %ld bytes\n",
-	  idxsize, (long) idxsize * sizeof (void *));
+          idxsize, (long) idxsize * sizeof (void *));
   total += idxsize * sizeof (void *);
   printf ("-----------------------------------\n");
   printf ("total: %d bytes\n", total);
