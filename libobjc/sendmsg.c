@@ -318,15 +318,15 @@ objc_msg_lookup (id receiver, SEL op)
   }
   if (objc_msg_intercept_lookup != NULL)
         {
-          if((void*)&result < sender_stack[stack_top].addr)
+          while(stack_top > 0 && (void*)&result > sender_stack[stack_top].addr)
+          {
+                  stack_top--;
+          }
+          if((void*)&result <= sender_stack[stack_top].addr)
           {
                   stack_top++;
                   sender_stack[stack_top].object = receiver;
                   sender_stack[stack_top].addr = &result;
-          }
-          else while(stack_top > 0 && (void*)&result > sender_stack[stack_top].addr)
-          {
-                  stack_top--;
           }
           result = objc_msg_intercept_lookup(sender_stack[stack_top-1].object, receiver, op);
         }
