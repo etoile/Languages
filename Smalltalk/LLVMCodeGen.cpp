@@ -321,18 +321,20 @@ public:
     Cmd = DeclPtr;
     ++AI;
 
+    Args.clear();
     //TODO: Handle non-id types
     for(Function::arg_iterator end = CurrentMethod->arg_end() ; AI != end ;
         ++AI) {
-      Value * arg = Builder->CreateAlloca(AI->getType());
+      Value * arg = Builder->CreateAlloca(AI->getType(), 0, "arg");
       Args.push_back(arg);
       // Initialise the local to nil
       Builder->CreateStore(AI, arg);
     }
 
+    Locals.clear();
     // Create the locals and initialise them to nil
     for (int i = 0 ; i < locals ; i++) {
-      Value * local = Builder->CreateAlloca(IdTy);
+      Value * local = Builder->CreateAlloca(IdTy, 0, "local");
       Locals.push_back(local);
       // Initialise the local to nil
       Builder->CreateStore(ConstantPointerNull::get(IdTy),
@@ -566,6 +568,7 @@ public:
     //ExecutionEngine *EE = ExecutionEngine::create(L->getModule());
     ExecutionEngine *EE = ExecutionEngine::create(TheModule);
     printf("Compiling...\n");
+    EE->runStaticConstructorsDestructors(false);
     void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
     printf("Loading...\n");
     f();

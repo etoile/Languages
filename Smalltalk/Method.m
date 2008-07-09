@@ -44,8 +44,17 @@
 	// FIXME: Should get method signature from superclass
 	const char *types = sel_get_type(sel_get_any_typed_uid(sel));
 	if (NULL == types) {
+		int args = [[signature arguments] count];
 		// FIXME: Make this @
-		types = "@12@0:8";
+		int offset = sizeof(id) + sizeof(SEL);
+		NSMutableString *ty = [NSMutableString stringWithFormat:@"@%d@0:%d",
+			sizeof(SEL) + sizeof(id) * (args + 2), offset];
+		for (int i=0 ; i<args ; i++)
+		{
+			offset += sizeof(id);
+			[ty appendFormat:@"@%d", offset];
+		}
+		types = [ty UTF8String];
 	}
 	[aGenerator beginMethod:sel
 				  withTypes:types

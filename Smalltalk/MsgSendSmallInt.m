@@ -51,8 +51,15 @@ void * BinaryMessageSmallInt(void * obj, const char * sel, void * other)
 #define NCAST(x, y) SCAST(x,y) UCAST(x,y)
 #define CAST(x) NCAST(x,x)
 
+@class NSString;
 void * UnaryMessageSmallInt(void * obj, const char * sel)
 {
+	if(strcmp(sel, "stringValue") == 0) return (void*)[NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
+	if(strcmp(sel, "log") == 0) 
+	{
+		NSLog(@"<SmallInt:%d>", (long long)(((intptr_t)obj)>>1));
+		return obj;
+	}
 	CAST(char);
 	CAST(short);
 	CAST(int);
@@ -60,5 +67,5 @@ void * UnaryMessageSmallInt(void * obj, const char * sel)
 	NCAST(longlong, long long);
   printf("Operation %s not yet supported on SmallInts\n", sel);
 	//TODO: Promote to BigInt and try sending message?
-	return 0;
+	return obj;
 }
