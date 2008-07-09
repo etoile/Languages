@@ -66,6 +66,20 @@ typedef unichar(*CIMP)(id, SEL,...);
 			}
         })
 		else CASE(isspace, isspace, if(c == '\n'){line++;})
+		else if ('\'' == c && i<[s length] - 2)
+		{
+			NSLog(@"String!");
+			int j = i + 1;
+			do
+			{
+				c=CHAR(++j);
+			} while (j<[s length]-1 && '\'' != c);
+			i++;
+			CALL_PARSER(STRING, WORD_TOKEN);
+			NSLog(@"String was: %@", WORD_TOKEN);
+			j++;
+			i = MAX(i,j-1);
+		}
 		else CASE(isdigit, isdigit, {CALL_PARSER(NUMBER, WORD_TOKEN);})
 		else
 		{

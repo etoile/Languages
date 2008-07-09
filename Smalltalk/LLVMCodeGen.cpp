@@ -35,7 +35,7 @@ const Type *SelTy;
 
 static const Type *LLVMTypeFromString(const char * typestr) {
   // FIXME: Other function type qualifiers
-  while(*typestr == 'V')
+  while(*typestr == 'V' || *typestr == 'r')
   {
     typestr++;
   }
@@ -62,8 +62,13 @@ static const Type *LLVMTypeFromString(const char * typestr) {
       return Type::DoubleTy;
     case 'B':
       return IntegerType::get(sizeof(bool) * 8);
-    case '^':
-      return PointerType::getUnqual(LLVMTypeFromString(typestr+1));
+    case '^': {
+      const Type *pointeeType = LLVMTypeFromString(typestr+1);
+      if (pointeeType == Type::VoidTy) {
+        pointeeType = Type::Int8Ty;
+      }
+      return PointerType::getUnqual(pointeeType);
+    }
       //FIXME:
     case ':':
     case '@':
@@ -519,18 +524,20 @@ public:
 
   Value *IntConstant(const char *value) {
     long long val = strtoll(value, NULL, 10);
-    void *ptrVal = (void*)(val << 1);
-    if ((0 == val && errno == EINVAL) || (((((long)ptrVal) >> 1)) != val)) {
+    intptr_t ptrVal = (val << 1);
+    if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val)) {
       //FIXME: Implement BigInt
       assert(false && "Number needs promoting to BigInt and BigInt isn't implemented yet");
     }
-    Constant *Val = ConstantInt::get(IntegerType::get(sizeof(void*)), (unsigned long)ptrVal);
-    return ConstantExpr::getIntToPtr(Val, IdTy);
+    ptrVal |= 1;
+    Constant *Val = ConstantInt::get(IntegerType::get(sizeof(void*) * 8), ptrVal);
+    Val = ConstantExpr::getIntToPtr(Val, IdTy);
+    Val->setName("SmallIntConstant");
+    fprintf(stderr, "Emitting small int %d", ptrVal);
+    return Val;
   }
   Value *StringConstant(const char *value) {
-    //FIXME: Create ObjC string.
-    assert(false && "Constant strings not implemented");
-    return NULL;
+    return Runtime->GenerateConstantString(value, strlen(value));
   }
 
   void compile(void) {

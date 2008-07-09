@@ -208,6 +208,10 @@ expression(E) ::= message_send(M).
 {
 	E = M;
 }
+expression(E) ::= STRING(N).
+{
+	E = [StringLiteral literalFromString:N];
+}
 expression(E) ::= NUMBER(N).
 {
 	E = [NumberLiteral literalFromString:N];

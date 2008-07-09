@@ -12,9 +12,9 @@ typedef struct
  */
 void * BinaryMessageSmallInt(void * obj, const char * sel, void * other)
 {
-	uint32_t val = (uint32_t)(unsigned long)obj;
+	intptr_t val = (intptr_t)(unsigned long)obj;
 	val >>= 1;
-	long otherval = (uint32_t)(unsigned long)other;
+	long otherval = (intptr_t)(unsigned long)other;
 	otherval >>= 1;
 	if (strcmp(sel, "ifTrue:") == 0)
 	{
@@ -32,7 +32,7 @@ void * BinaryMessageSmallInt(void * obj, const char * sel, void * other)
 	{
 		case '+':
 		{
-			uint32_t val = val+otherval;
+			val += otherval;
 			if(val>0xEFFFFFFF)
 			{
 				//TODO: Overflow
