@@ -16,6 +16,7 @@ domain parser generator, to produce an Objective-C parser.
 #import "Parser.h"
 #import "Return.h"
 #import "Subclass.h"
+#import "Literal.h"
 }
 %token_prefix TOKEN_
 %token_type {id}
@@ -206,6 +207,10 @@ expression(E) ::= block(B).
 expression(E) ::= message_send(M).
 {
 	E = M;
+}
+expression(E) ::= NUMBER(N).
+{
+	E = [NumberLiteral literalFromString:N];
 }
 
 block(B) ::= LSQBRACK argument_list(A)  statement_list(S) RSQBRACK.

@@ -13,6 +13,12 @@
 }
 @end
 
+typedef struct 
+{
+	@defs(BlockClosure);
+}
+* BlockClosure_t;
+
 static __thread BlockClosure *pool = nil;
 BlockClosure *NewBlock(void)
 {
@@ -21,12 +27,12 @@ BlockClosure *NewBlock(void)
 		return [BlockClosure new];
 	}
 	BlockClosure *next = pool;
-	pool = pool->bound[0];
+	pool = ((BlockClosure_t)pool)->bound[0];
 	return next;
 }
 void FreeBlock(BlockClosure* aBlock)
 {
 	//TODO: blocks are never freed, and this leeks badly on thread destruction.
-	aBlock->bound[0] = pool;
+	((BlockClosure_t)aBlock)->bound[0] = pool;
 	pool = aBlock;
 }

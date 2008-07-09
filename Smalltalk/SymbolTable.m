@@ -65,10 +65,6 @@
 {
 	return [arguments indexOfObject:aName];
 }
-- (void) setASTScope:(AST*)aNode
-{
-  ASSIGN(scope, aNode);
-}
 - (int) offsetOfLocal:(NSString*)aName
 {
 	return [localVariables indexOfObject:aName];
@@ -87,11 +83,6 @@
 {
 	return arguments;
 }
-- (AST*) scope;
-{
-	return scope;
-}
-
 - (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
 	if ([localVariables containsObject:aName])
@@ -103,15 +94,6 @@
 		return argument;
 	}
 	return invalid;
-}
-- (AST*) declScopeForSymbol:(NSString*)aSymbol
-{
-	if ([localVariables containsObject:aSymbol] 
-		  || [arguments containsObject:aSymbol])
-	{
-		return scope;
-	}
-	return [(MethodSymbolTable*)enclosingScope declScopeForSymbol:aSymbol];
 }
 @end
 @implementation BlockSymbolTable

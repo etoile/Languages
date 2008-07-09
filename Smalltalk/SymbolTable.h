@@ -69,8 +69,6 @@ typedef	enum
  * Symbol table for a method.
  */
 @interface MethodSymbolTable : SymbolTable {
-  /** The method or block for which this table is valid. */
-  AST *scope;
   /** Local variables declared in the current scope. */
 	NSMutableArray * localVariables;
   /** Arguments in the current scope. */

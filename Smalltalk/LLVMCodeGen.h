@@ -104,6 +104,14 @@ void SetBlockReturn(ModuleBuilder B, LLVMValue value);
  * Load an argument to the current block or method context.
  */
 LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index);
+/**
+ * Constructs an LLVM Constant for this integer.
+ */
+LLVMValue IntConstant(ModuleBuilder B, const char *value);
+/**
+ * Constructs an LLVM constant for this string.
+ */
+LLVMValue StringConstant(ModuleBuilder B, const char *value);
 
 /**
  * Compile the module and load it into the runtime system.

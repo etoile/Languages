@@ -123,4 +123,12 @@
  * Set the return value for a method.
  */
 - (void) setReturn:(void*)aValue;
+/**
+ * Returns a constant representing the string as an integer (either a SmallInt or a BigInt).
+ */
+- (void*) intConstant:(NSString*)aString;
+/**
+ * ReturnAs a constant representing the passed string.
+ */
+- (void*) stringConstant:(NSString*)aString;
 @end

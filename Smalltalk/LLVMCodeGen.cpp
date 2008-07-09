@@ -16,6 +16,7 @@
 
 
 #include <string>
+#include <errno.h>
 
 // C++ Implementation
 using namespace llvm;
@@ -516,6 +517,22 @@ public:
     return block->Block;
   }
 
+  Value *IntConstant(const char *value) {
+    long long val = strtoll(value, NULL, 10);
+    void *ptrVal = (void*)(val << 1);
+    if ((0 == val && errno == EINVAL) || (((((long)ptrVal) >> 1)) != val)) {
+      //FIXME: Implement BigInt
+      assert(false && "Number needs promoting to BigInt and BigInt isn't implemented yet");
+    }
+    Constant *Val = ConstantInt::get(IntegerType::get(sizeof(void*)), (unsigned long)ptrVal);
+    return ConstantExpr::getIntToPtr(Val, IdTy);
+  }
+  Value *StringConstant(const char *value) {
+    //FIXME: Create ObjC string.
+    assert(false && "Constant strings not implemented");
+    return NULL;
+  }
+
   void compile(void) {
     llvm::Function *init = Runtime->ModuleInitFunction();
     // Make the init function external so the optimisations won't remove it.
@@ -664,6 +681,13 @@ extern "C" {
   }
   LLVMValue LoadBlockVar(ModuleBuilder B, unsigned index, unsigned offset) {
     return B->LoadBlockVar(index, offset);
+  }
+
+  LLVMValue IntConstant(ModuleBuilder B, const char *value) {
+    return B->IntConstant(value);
+  }
+  LLVMValue StringConstant(ModuleBuilder B, const char *value) {
+    return B->StringConstant(value);
   }
 
   LLVMValue EndBlock(ModuleBuilder B) {

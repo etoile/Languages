@@ -66,6 +66,7 @@ typedef unichar(*CIMP)(id, SEL,...);
 			}
         })
 		else CASE(isspace, isspace, if(c == '\n'){line++;})
+		else CASE(isdigit, isdigit, {CALL_PARSER(NUMBER, WORD_TOKEN);})
 		else
 		{
 			switch(c)

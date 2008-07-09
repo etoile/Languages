@@ -23,6 +23,7 @@ ${TOOL_NAME}_OBJC_FILES = \
 	BlockClosure.m\
 	CodeGen.m\
 	DeclRef.m\
+	Literal.m\
 	MessageSend.m\
 	Method.m\
 	Module.m\

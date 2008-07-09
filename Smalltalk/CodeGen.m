@@ -120,6 +120,14 @@
 {
 	return LoadClass(Builder, [aClass UTF8String]);
 }
+- (void*) intConstant:(NSString*)aString
+{
+	return IntConstant(Builder, [aString UTF8String]);
+}
+- (void*) stringConstant:(NSString*)aString
+{
+	return StringConstant(Builder, [aString UTF8String]);
+}
 - (void) dealloc
 {
 	freeModuleBuilder(Builder);
