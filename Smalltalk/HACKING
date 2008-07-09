@@ -1,0 +1,39 @@
+Pragmatic Smalltalk
+===================
+
+Overview
+--------
+
+This is a smalltalk JIT and static compiler, producing native code running on
+top of an Objective-C runtime for the object model.  The code is in three main
+parts:
+
+1) The parser and AST takes a string as input and constructs a Smalltalk
+abstract syntax tree.
+
+2) The code generator, hidden behind an abstract interface, produces native
+code.  Currently, there is only one implementation of this.  It uses LLVM and
+shares code with the Objective-C front end for LLVM; clang.
+
+3) The support libraries, such as MsgSendSmallInt and BlockClosure implement
+parts of Smalltalk that are not already present in Objective-C / OpenStep.
+
+Building
+--------
+
+If you have LLVM, Lemon, and EtoileFoundation installed, GNUstep make should
+build without problems.  If it doesn't, please send me a bug report.
+
+Hacking
+-------
+
+At the time of writing, the code contains 39 'FIXME's and 12 'TODO's - patches
+for any of these are welcome, please post them on [the code review site
+](http://review.etoileos.com).  
+
+Note that MsgSendSmallInt.bc is an LLVM bitcode file.  This is used as a
+template for code generation of message sends to small integers, allowing them
+to be inlined.  If you modify the corresponding .m file, please use clang to
+regenerate this file.
+
+- David Chisnall

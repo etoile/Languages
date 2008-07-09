@@ -1,0 +1,22 @@
+Pragmantic Smalltalk
+====================
+
+This is an implementation of Smalltalk designed to run on top of an Objective-C runtime and 
+
+Status
+------
+
+Currently, JIT is working, static compilation is not.
+
+Large parts of Smalltalk don't work.  Methods which accept parameters which are
+not objects, instance variables which are not objects, and returns from blocks
+are the big things that are broken.  Grep the source code for 'FIXME' and
+'TODO' for a clearer picture.
+
+Dependencies
+------------
+
+The parser is generated using the Lemon parser generator from SQLite (public domain).
+Code generation uses the LLVM compiler infrastructure.
+Various parts of EtoileFoundation are used (mainly macros).
+These must all be installed to build.
