@@ -46,7 +46,6 @@ int main(void)
 	[testProg print];
 	printf("\n\nParsing generates:\n\n");
 	AST *ast = [p parseString: testProg];
-	[ast print];
 	id cg = [LLVMCodeGen new];
 	NSLog(@"Compiling %@", ast);
 	[ast compileWith:cg];

@@ -128,6 +128,10 @@
 {
 	return StringConstant(Builder, [aString UTF8String]);
 }
+- (void*) nilConstant
+{
+  return NilConstant();
+}
 - (void) dealloc
 {
 	freeModuleBuilder(Builder);

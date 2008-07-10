@@ -112,6 +112,10 @@ LLVMValue IntConstant(ModuleBuilder B, const char *value);
  * Constructs an LLVM constant for this string.
  */
 LLVMValue StringConstant(ModuleBuilder B, const char *value);
+/**
+ * Constructs an LLVM constant representing nil.
+ */
+LLVMValue NilConstant(void);
 
 /**
  * Compile the module and load it into the runtime system.

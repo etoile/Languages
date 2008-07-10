@@ -18,9 +18,9 @@ ${TOOL_NAME}_CC_FILES = \
 ${TOOL_NAME}_OBJC_FILES = \
 	smalltalk.m\
 	AST.m\
+	ArrayExpr.m\
 	AssignExpr.m\
 	BlockExpr.m\
-	BlockClosure.m\
 	CodeGen.m\
 	DeclRef.m\
 	Literal.m\
@@ -45,6 +45,8 @@ ${TOOL_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 #${TOOL_NAME}_LDFLAGS += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
 LD = g++
 
+${TOOL_NAME}_SUBPROJECTS += Support
+include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/tool.make
 # This is an ugly hack which wouldn't be required if GS Make sucked a bit less.
 CONFIG_SYSTEM_LIBS += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 

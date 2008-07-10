@@ -20,7 +20,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 
 
 typedef unichar(*CIMP)(id, SEL,...);
-#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self)//; NSLog(@"Parsing %s", #token)
+#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %s", #token)
 #define CHAR(x) charAt(s, charSel, x)
 #define WHILE(is) int j; for(j=i ; j<[s length]-1 && is(c) ; c=CHAR(++j)) {}
 #define WORD_TOKEN substr(s, substrSel, NSMakeRange(i, j-i))
@@ -68,7 +68,6 @@ typedef unichar(*CIMP)(id, SEL,...);
 		else CASE(isspace, isspace, if(c == '\n'){line++;})
 		else if ('\'' == c && i<[s length] - 2)
 		{
-			NSLog(@"String!");
 			int j = i + 1;
 			do
 			{
@@ -76,7 +75,6 @@ typedef unichar(*CIMP)(id, SEL,...);
 			} while (j<[s length]-1 && '\'' != c);
 			i++;
 			CALL_PARSER(STRING, WORD_TOKEN);
-			NSLog(@"String was: %@", WORD_TOKEN);
 			j++;
 			i = MAX(i,j-1);
 		}
@@ -86,9 +84,13 @@ typedef unichar(*CIMP)(id, SEL,...);
 			switch(c)
 			{
 				CHARCASE('|', BAR)
+				CHARCASE('#', HASH)
+				CHARCASE(',', COMMA)
 				CHARCASE(':', COLON)
 				CHARCASE('.', STOP)
 				CHARCASE('=', EQ)
+				CHARCASE('(', LBRACK)
+				CHARCASE(')', RBRACK)
 				CHARCASE('[', LSQBRACK)
 				CHARCASE(']', RSQBRACK)
 				CHARCASE('^', RETURN)
@@ -103,7 +105,6 @@ typedef unichar(*CIMP)(id, SEL,...);
 	}
 	Parse(parser, 0, nil, self);
 	ParseFree(parser, free);
-	NSLog(@"Returning delegate %@", delegate);
 	return delegate;
 }
 @end

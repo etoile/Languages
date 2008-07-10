@@ -131,4 +131,8 @@
  * ReturnAs a constant representing the passed string.
  */
 - (void*) stringConstant:(NSString*)aString;
+/**
+ * Returns nil as a constant.
+ */
+- (void*) nilConstant;
 @end

@@ -2,13 +2,16 @@ NSObject subclass: TestObject
 [ 
 	addObject: r
 	[ | a b c|
+		a := #(NSObject new, NSString new, NSNumber new).
+		a log.
+		b := a map:[ :x | x log. x class. ].
+		b map:[ :x | x log. x. ].
 		r log.
 		b := 12.
 		c := b + 5.
 		b stringValue log.
-		b := NSValue valueWithPointer:c.
 		'Wibble?' log.
-self wibble:c.
+		self wibble:c.
 		b log.
 		a := NSMutableArray array. 
 		a log.

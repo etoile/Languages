@@ -36,4 +36,18 @@ template for code generation of message sends to small integers, allowing them
 to be inlined.  If you modify the corresponding .m file, please use clang to
 regenerate this file.
 
+The big project still to do is add a type inference engine.  If we can
+guarantee that an object is or isn't a SmallInt, we can get some performance
+improvements.  Since methods never return SmallInts (although they might return
+unboxed integers, which are handled differently), we can use this information
+to eliminate a number of branches.  Beyond this, if we can guess (even if we
+are wrong some of the time) the class of an object then we can get another
+performance boost from speculative inlining of methods.
+
+There is currently no real garbage collection for Smalltalk.  This needs to be
+done in a way that can interoperate with non-GC'd Objective-C, to allow ObjC to
+be used for performance critical parts without GC overhead.  This should be
+done by integrating the cycle detector in GCKit and marking Smalltalk objects
+as black.
+
 - David Chisnall

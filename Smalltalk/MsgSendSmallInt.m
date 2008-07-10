@@ -1,6 +1,9 @@
 #include <sys/types.h>
 #include <string.h>
 
+@class NSNumber;
+@class NSString;
+
 typedef struct
 {
 	void* isa;
@@ -45,13 +48,24 @@ void * BinaryMessageSmallInt(void * obj, const char * sel, void * other)
 		return 0;
 	}
 }
+void *MakeSmallInt(long long val) {
+	uintptr_t ptr = val >> 1;
+	if ((ptr << 1) != val) {
+		// FIXME: Should be a BigInt object that responds to arrithmetic messages
+		return [NSNumber numberWithLongLong:val];
+	}
+	return (void*)(ptr | 1);
+}
+
+id BoxSmallInt(void *smallInt) {
+	return [NSNumber numberWithLong:(long)smallInt];
+}
 
 #define SCAST(x, y) if(strcmp(sel, "c" #x "Value") == 0) return (void*)(y)(long)obj;
 #define UCAST(x, y) if(strcmp(sel, "cu" #x "Value") == 0) return (void*)(unsigned y)(unsigned long)obj;
 #define NCAST(x, y) SCAST(x,y) UCAST(x,y)
 #define CAST(x) NCAST(x,x)
 
-@class NSString;
 void * UnaryMessageSmallInt(void * obj, const char * sel)
 {
 	if(strcmp(sel, "stringValue") == 0) return (void*)[NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];

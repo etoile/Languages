@@ -7,16 +7,17 @@ domain parser generator, to produce an Objective-C parser.
 #include <string.h>
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "AST.h"
+#import "ArrayExpr.h"
 #import "AssignExpr.h"
 #import "BlockExpr.h"
 #import "DeclRef.h"
+#import "Literal.h"
 #import "MessageSend.h"
 #import "Method.h"
 #import "Module.h"
 #import "Parser.h"
 #import "Return.h"
 #import "Subclass.h"
-#import "Literal.h"
 }
 %token_prefix TOKEN_
 %token_type {id}
@@ -131,7 +132,7 @@ statement(S) ::= assignment(A) STOP.
 {
 	S = A;
 }
-statement(S) ::= message_send(E) STOP.
+statement(S) ::= expression(E) STOP.
 {
 	S = E;
 }
@@ -216,11 +217,25 @@ expression(E) ::= NUMBER(N).
 {
 	E = [NumberLiteral literalFromString:N];
 }
+expression(E) ::= HASH LBRACK expression_list(L).
+{
+	E = [ArrayExpr arrayWithElements:L];
+}
+expression_list(L) ::= expression(E) COMMA expression_list(T).
+{
+	[T addObject:E];
+	L = T;
+}
+expression_list(L) ::= expression(E) RBRACK.
+{
+	L = [NSMutableArray arrayWithObject:E];
+}
 
 block(B) ::= LSQBRACK argument_list(A)  statement_list(S) RSQBRACK.
 {
 //FIXME: block locals
 	BlockSymbolTable *ST = [[BlockSymbolTable alloc] initWithLocals:nil args:A];
+NSLog(@"Block created with args: %@ (%@)", A, [ST args]);
 	B = [[[BlockExpr alloc] initWithSymbolTable:ST] autorelease];
 	[ST release];
 	[B setStatements:S];

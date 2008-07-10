@@ -30,8 +30,8 @@ using clang::CodeGen::CGObjCRuntime;
 PointerType *IdTy;
 const Type *IntTy;
 const Type *IntPtrTy;
-const Type *BlockTy;
 const Type *SelTy;
+const PointerType *IMPTy;
 
 static const Type *LLVMTypeFromString(const char * typestr) {
   // FIXME: Other function type qualifiers
@@ -72,6 +72,7 @@ static const Type *LLVMTypeFromString(const char * typestr) {
       //FIXME:
     case ':':
     case '@':
+    case '#':
     case '*':
       return PointerType::getUnqual(Type::Int8Ty);
     case 'v':
@@ -106,10 +107,12 @@ static FunctionType *LLVMFunctionTypeFromString(const char *typestr) {
 Constant *Zeros[2];
 
 class CodeGenBlock {
-public:
+  SmallVector<Value*, 8> Args;
+  const Type *BlockTy;
   Module *TheModule;
-  Value *Block;
   Value *BlockSelf;
+public:
+  Value *Block;
   Function *BlockFn;
   IRBuilder *Builder;
 
@@ -117,49 +120,62 @@ public:
       IRBuilder *MethodBuilder) {
     fprintf(stderr, "Creating block with %d args\n", args);
     TheModule = M;
-    PATypeHolder OpaqueBlockTy = OpaqueType::get();
-    Type *BlockPtrTy = PointerType::getUnqual(OpaqueBlockTy);
+    const Type *IdPtrTy = PointerType::getUnqual(IdTy);
+    BlockTy = StructType::get(
+        IdTy,                          // 0 - isa.
+        IMPTy,                         // 1 - Function pointer.
+        ArrayType::get(IdPtrTy, 5),    // 2 - Bound variables.
+        ArrayType::get(IdTy, 5),       // 3 - Promoted variables.
+        Type::Int32Ty,                 // 4 - Number of args.
+        IdTy,                          // 5 - Return value.
+        Type::Int8Ty,                  // 6 - Start of jump buffer.
+        (void*)0);
+    BlockTy = PointerType::getUnqual(BlockTy);
     std::vector<const Type*> argTy;
-    argTy.push_back(BlockPtrTy);
+    argTy.push_back(BlockTy);
     // FIXME: Broken on Etoile runtime.
     argTy.push_back(SelTy);
     for (int i=0 ; i<args ; ++i) {
       argTy.push_back(IdTy);
     }
-    const Type *IdPtrTy = PointerType::getUnqual(IdTy);
-    FunctionType *BlockFunctionTy = FunctionType::get(IdPtrTy, argTy, false);
-    BlockTy = StructType::get(
-        IdTy,                                     // 0 - isa.
-        PointerType::getUnqual(BlockFunctionTy),  // 1 - Function pointer.
-        ArrayType::get(IdPtrTy, 5),               // 2 - Bound variables.
-        ArrayType::get(IdTy, 5),                  // 3 - Promoted variables.
-        Type::Int32Ty,                            // 4 - Number of args.
-        IdTy,                                     // 5 - Return value.
-        Type::Int8Ty,                             // 6 - Start of jump buffer.
-        (void*)0);
-    cast<OpaqueType>(OpaqueBlockTy.get())->refineAbstractTypeTo(BlockTy);
-    BlockTy = cast<StructType>(OpaqueBlockTy.get());
-    BlockTy = PointerType::getUnqual(BlockTy);
+    BlockTy->dump();
+    FunctionType *BlockFunctionTy = FunctionType::get(IdTy, argTy, false);
 
+    fprintf(stderr, "Creating block function\n");
     // Create the block object
     Function *BlockCreate =
-      cast<Function>(TheModule->getOrInsertFunction("NewBlock", BlockTy,
+      cast<Function>(TheModule->getOrInsertFunction("NewBlock", IdTy,
             (void*)0));
+    fprintf(stderr, "Creating block \n");
     Block = MethodBuilder->CreateCall(BlockCreate);
+    Block = MethodBuilder->CreateBitCast(Block, BlockTy);
     // Create the block function
+    fprintf(stderr, "Creating block fn\n");
+    BlockFunctionTy->dump();
     BlockFn = Function::Create(BlockFunctionTy, GlobalValue::InternalLinkage,
         "BlockFunction", TheModule);
     BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", BlockFn);
     Builder = new IRBuilder(EntryBB);
 
-    // Store the block object.
+    // Set up the arguments
     llvm::Function::arg_iterator AI = BlockFn->arg_begin();
-    BlockSelf = Builder->CreateAlloca(BlockPtrTy, 0, "block_self");
+    BlockSelf = Builder->CreateAlloca(BlockTy, 0, "block_self");
     Builder->CreateStore(AI, BlockSelf);
+    ++AI; ++AI;
+    for(Function::arg_iterator end = BlockFn->arg_end() ; AI != end ;
+        ++AI) {
+      Value * arg = Builder->CreateAlloca(AI->getType(), 0, "arg");
+      Args.push_back(arg);
+      // Initialise the local to nil
+      Builder->CreateStore(AI, arg);
+    }
+    MethodBuilder->CreateStore(ConstantInt::get(Type::Int32Ty, args),
+        MethodBuilder->CreateStructGEP(Block, 4));
 
     // Store the block function in the object
     Value *FunctionPtr = MethodBuilder->CreateStructGEP(Block, 1);
-    MethodBuilder->CreateStore(BlockFn, FunctionPtr);
+    MethodBuilder->CreateStore(MethodBuilder->CreateBitCast(BlockFn, IMPTy),
+        FunctionPtr);
     
     //FIXME: I keep calling these promoted when I mean bound.  Change all of
     //the variable / method names to reflect this.
@@ -168,11 +184,13 @@ public:
     Value *promotedArray = MethodBuilder->CreateStructGEP(Block, 2);
     // FIXME: Reference self, promote self
     for (int i=1 ; i<count ; i++) {
-      promoted[i]->getType()->dump();
-      MethodBuilder->CreateStructGEP(promotedArray, i)->getType()->dump();
       MethodBuilder->CreateStore(promoted[i], 
           MethodBuilder->CreateStructGEP(promotedArray, i));
     }
+  }
+
+  Value *LoadArgumentAtIndex(unsigned index) {
+    return Builder->CreateLoad(Args[index]);
   }
 
   void SetReturn(Value* RetVal) {
@@ -343,7 +361,55 @@ public:
   }
 
   Value *LoadArgumentAtIndex(unsigned index) {
-    return Builder->CreateLoad(Args[index]);
+    if (BlockStack.empty()) {
+      return Builder->CreateLoad(Args[index]);
+    }
+    return BlockStack.back()->LoadArgumentAtIndex(index);
+  }
+
+  Value *BoxValue(IRBuilder *B, Value *V, const char *typestr) {
+    // Untyped selectors return id
+    if (NULL == typestr) return V;
+    // FIXME: Other function type qualifiers
+    while(*typestr == 'V' || *typestr == 'r')
+    {
+      typestr++;
+    }
+    switch(*typestr) {
+      // All integer primitives smaller than a 64-bit value
+      case 'B': case 'c': case 'C': case 's': case 'S': case 'i': case 'I':
+      case 'l': case 'L':
+        V = B->CreateSExt(V, Type::Int64Ty);
+      // Now V is 64-bits.
+      case 'q': case 'Q':
+      {
+        // This will return a SmallInt or a promoted integer.
+       Constant *BoxFunction = TheModule->getOrInsertFunction("MakeSmallInt",
+            IdTy, Type::Int64Ty, (void*)0);
+        return B->CreateCall(BoxFunction, V);
+      }
+      // Other types, just wrap them up in an NSValue
+      default:
+      {
+        // TODO: Store this in a global.
+        Value *NSValueClass = Runtime->LookupClass(*B,
+            MakeConstantString("NSValue"));
+        // TODO: We should probably copy this value somewhere, maybe with a
+        // custom object instead of NSValue?
+        // TODO: Should set sender to self.
+        fprintf(stderr, "Generating NSValue boxing type %s\n", typestr);
+        return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+            Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), &V, 1);
+      }
+      // Map void returns to nil
+      case 'v':
+      {
+        return ConstantPointerNull::get(IdTy);
+      }
+      // If it's already an object, we don't need to do anything
+      case '@': case '#':
+        return V;
+    }
   }
 
   // Preform a real message send.  Reveicer must be a real object, not a
@@ -352,8 +418,9 @@ public:
       const char *selTypes, Value **argv, unsigned argc) {
     FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
     llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-    return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(),
-        LoadSelf(), receiver, cmd, argv, argc);
+    return BoxValue(B, Runtime->GenerateMessageSend(*B,
+          MethodTy->getReturnType(), LoadSelf(), receiver, cmd, argv, argc),
+        selTypes);
   }
   Value *MessageSendId(Value *receiver, const char *selName, const char
       *selTypes, Value **argv, unsigned argc) {
@@ -610,6 +677,10 @@ extern "C" {
     Zeros[0] = Zeros[1] = llvm::ConstantInt::get(llvm::Type::Int32Ty, 0);
     //FIXME: 
     SelTy = IntPtrTy;
+    std::vector<const Type*> IMPArgs;
+    IMPArgs.push_back(IdTy);
+    IMPArgs.push_back(SelTy);
+    IMPTy = PointerType::getUnqual(FunctionType::get(IdTy, IMPArgs, true));
   }
 
   ModuleBuilder newModuleBuilder(const char *ModuleName) {
@@ -702,6 +773,9 @@ extern "C" {
 
   LLVMValue EndBlock(ModuleBuilder B) {
     return B->EndBlock();
+  }
+  LLVMValue NilConstant() {
+    return ConstantPointerNull::get(IdTy);
   }
   
   void SetBlockReturn(ModuleBuilder B, LLVMValue value) {

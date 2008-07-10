@@ -29,6 +29,10 @@
   jmp_buf nonLocalReturn;
 }
 - (id) value;
+- (id) value:(id)a1;
+- (id) value:(id)a1 value:(id)a2;
+- (id) value:(id)a1 value:(id)a2 value:(id)a3;
+- (id) value:(id)a1 value:(id)a2 value:(id)a3 value:(id)a4;
 @end
 
 /**
