@@ -1,8 +1,8 @@
 NSObject subclass: TestBlock
 [
-	run: aBlock
-	[
+	run: aBlock [
 		aBlock log.
+		'Evaluating block' log.
 		aBlock value log.
 	]
 ]
@@ -14,14 +14,13 @@ NSObject subclass: SmalltalkTool
 		self test:(TestBlock new).		
 	]
 
-	log:a and:b
-	[
+	log:a and:b [
 		a log.
 		b log.
 	]
 
-	test: r
-	[ | a b c|
+	test: r [
+	| a b c|
 		a := #(NSObject new, NSString new, NSNumber new).
 		a log.
 		b := a map:[ :x | x log. x class. ].
@@ -39,8 +38,7 @@ NSObject subclass: SmalltalkTool
 		nil log.
 	]
 
-	wibble: a
-	[
+	wibble: a [
 		'wibble called' log.
 		a log.
 		^a.
