@@ -47,6 +47,7 @@ static Class NSStringClass = Nil;
 }
 - (NSString*) selector
 {
+	NSLog(@"Selector is a %@", [selector class]);
 	return selector;
 }
 

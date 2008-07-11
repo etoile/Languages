@@ -6,7 +6,29 @@
 {
 	if (self == [LLVMCodeGen class])
 	{
-		LLVMinitialise();
+		const char *path;
+		NSFileManager *f = [NSFileManager defaultManager];
+		if ([f fileExistsAtPath:@"MsgSendSmallInt.bc"])
+		{
+			path = "MsgSendSmallInt.bc";
+		}
+		else 
+		{
+			NSArray *paths =
+				NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+						NSAllDomainsMask, YES);
+			FOREACH(paths, prefix, NSString*)
+			{
+				NSString * file = [prefix stringByAppendingString:
+					@"MsgSendSmallInt.bc"];
+				if ([f fileExistsAtPath:file]) 
+				{
+					path = [file UTF8String];
+					break;
+				}
+			}
+		}
+		LLVMinitialise(path);
 	}
 }
 - (void) startModule

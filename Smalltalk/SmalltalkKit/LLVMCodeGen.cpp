@@ -22,6 +22,12 @@
 using namespace llvm;
 using std::string;
 using clang::CodeGen::CGObjCRuntime;
+extern "C" {
+  int DEBUG_DUMP_MODULES = 0;
+}
+// Debugging macros:
+#define DUMP(x) do { if (DEBUG_DUMP_MODULES) x->dump(); } while(0)
+#define LOG(x,...) do { if (DEBUG_DUMP_MODULES) fprintf(stderr, x,##__VA_ARGS__); } while(0)
 
 //TODO: Static constructors should be moved into a function called from the
 //Objective-C code's +initialize method
@@ -32,6 +38,7 @@ const Type *IntTy;
 const Type *IntPtrTy;
 const Type *SelTy;
 const PointerType *IMPTy;
+const char *MsgSendSmallIntFilename;
 
 static const Type *LLVMTypeFromString(const char * typestr) {
   // FIXME: Other function type qualifiers
@@ -118,7 +125,6 @@ public:
 
   CodeGenBlock(Module *M, int args, int locals, Value **promoted, int count,
       IRBuilder *MethodBuilder) {
-    fprintf(stderr, "Creating block with %d args\n", args);
     TheModule = M;
     const Type *IdPtrTy = PointerType::getUnqual(IdTy);
     BlockTy = StructType::get(
@@ -138,20 +144,15 @@ public:
     for (int i=0 ; i<args ; ++i) {
       argTy.push_back(IdTy);
     }
-    BlockTy->dump();
     FunctionType *BlockFunctionTy = FunctionType::get(IdTy, argTy, false);
 
-    fprintf(stderr, "Creating block function\n");
     // Create the block object
     Function *BlockCreate =
       cast<Function>(TheModule->getOrInsertFunction("NewBlock", IdTy,
             (void*)0));
-    fprintf(stderr, "Creating block \n");
     Block = MethodBuilder->CreateCall(BlockCreate);
     Block = MethodBuilder->CreateBitCast(Block, BlockTy);
     // Create the block function
-    fprintf(stderr, "Creating block fn\n");
-    BlockFunctionTy->dump();
     BlockFn = Function::Create(BlockFunctionTy, GlobalValue::InternalLinkage,
         "BlockFunction", TheModule);
     BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", BlockFn);
@@ -206,14 +207,10 @@ public:
   }
 
   Value *LoadBlockVar(unsigned index, unsigned offset) {
-    fprintf(stderr, "Loading block var %d + %d\n", index, offset);
     Value *block = Builder->CreateLoad(BlockSelf);
-    block->dump();
     // Object array
     Value *object = Builder->CreateStructGEP(block, 2);
-    object->dump();
     object = Builder->CreateStructGEP(object, index);
-    object->dump();
     object = Builder->CreateLoad(object);
     if (offset > 0)
     {
@@ -223,7 +220,6 @@ public:
       return Builder->CreateLoad(addr);
     }
     object = Builder->CreateLoad(object);
-    object->dump();
     return object;
   }
 
@@ -269,7 +265,7 @@ private:
 
 public:
   CodeGen(const char *ModuleName) {
-    TheModule = ParseBitcodeFile(MemoryBuffer::getFile("MsgSendSmallInt.bc"));
+    TheModule = ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
     Runtime = clang::CodeGen::CreateObjCRuntime(*TheModule, IntTy,
         IntegerType::get(sizeof(long) * 8));
   }
@@ -397,7 +393,7 @@ public:
         // TODO: We should probably copy this value somewhere, maybe with a
         // custom object instead of NSValue?
         // TODO: Should set sender to self.
-        fprintf(stderr, "Generating NSValue boxing type %s\n", typestr);
+        LOG("Generating NSValue boxing type %s\n", typestr);
         return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
             Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), &V, 1);
       }
@@ -464,6 +460,12 @@ public:
         F);
     IRBuilder b = IRBuilder(RealObject);
     Value *ObjResult = MessageSendId(&b, receiver, selName, selTypes, argv, argc);
+
+    if ((Result->getType() != ObjResult->getType())
+        && (Result->getType() != Type::VoidTy)) {
+      Result = new BitCastInst(Result, ObjResult->getType(),
+          "cast_small_int_result", SmallInt);
+    }
     
     B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
     BasicBlock *Continue = BasicBlock::Create("Continue", F);
@@ -474,9 +476,6 @@ public:
     if (ObjResult->getType() != Type::VoidTy) {
       PHINode *Phi = B->CreatePHI(IdTy, "result");
       Phi->reserveOperandSpace(2);
-      if (Result->getType() != ObjResult->getType()) {
-        Result = B->CreateBitCast(Result, ObjResult->getType());
-      }
       Phi->addIncoming(Result, SmallInt);
       Phi->addIncoming(ObjResult, RealObject);
       return Phi;
@@ -508,7 +507,7 @@ public:
       }
     } else {
       if (RetTy == Type::VoidTy) {
-        fprintf(stderr, "Returning a value from a method expected to return void!\n");
+        LOG("Returning a value from a method expected to return void!\n");
         return;
       }
       if (RetVal->getType() != RetTy) {
@@ -520,10 +519,8 @@ public:
 
   void EndMethod() {
     if (0 == Builder->GetInsertBlock()->getTerminator()) {
-      fprintf(stderr, "Inserting implicit return.\n");
       SetReturn();
     }
-    //CurrentMethod->dump();
   }
 
   Value *LoadSelf(void) {
@@ -534,7 +531,6 @@ public:
     return Builder->CreateLoad(Locals[index]);
   }
 	Value *LoadPointerToLocalAtIndex(unsigned index) {
-    fprintf(stderr, "Returning address of local: "); Locals[index]->getType()->dump();
     return Locals[index];
   }
 
@@ -602,7 +598,6 @@ public:
     Constant *Val = ConstantInt::get(IntegerType::get(sizeof(void*) * 8), ptrVal);
     Val = ConstantExpr::getIntToPtr(Val, IdTy);
     Val->setName("SmallIntConstant");
-    fprintf(stderr, "Emitting small int %d", ptrVal);
     return Val;
   }
   Value *StringConstant(const char *value) {
@@ -616,8 +611,8 @@ public:
     // Set the small int messaging functions internal so they can be eliminated if not used.
     TheModule->getFunction("BinaryMessageSmallInt")->setLinkage(GlobalValue::InternalLinkage);
     TheModule->getFunction("UnaryMessageSmallInt")->setLinkage(GlobalValue::InternalLinkage);
-    TheModule->dump();
-    fprintf(stderr, "\n\n\n Optimises to:\n\n\n");
+    DUMP(TheModule);
+    LOG("\n\n\n Optimises to:\n\n\n");
     PassManager pm;
     pm.add(new TargetData(TheModule));
     pm.add(createPromoteMemoryToRegisterPass());
@@ -630,16 +625,16 @@ public:
     pm.add(createTailDuplicationPass());
     pm.add(createCFGSimplificationPass());
     pm.add(createStripDeadPrototypesPass());
-    pm.run(*TheModule);
-    TheModule->dump();
+    //pm.run(*TheModule);
+    DUMP(TheModule);
     //ExecutionEngine *EE = ExecutionEngine::create(L->getModule());
     ExecutionEngine *EE = ExecutionEngine::create(TheModule);
-    printf("Compiling...\n");
+    LOG("Compiling...\n");
     EE->runStaticConstructorsDestructors(false);
     void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
-    printf("Loading...\n");
+    LOG("Loading %x...\n", (unsigned)(unsigned long)f);
     f();
-    printf("Loaded.\n");
+    LOG("Loaded.\n");
   }
 
   void optimisedCompile(void) {
@@ -670,7 +665,8 @@ CGObjCRuntime::~CGObjCRuntime() {}
 extern "C" {
 #include "LLVMCodeGen.h"
 
-  void LLVMinitialise(void) {
+  void LLVMinitialise(const char *bcFilePath) {
+    MsgSendSmallIntFilename = strdup(bcFilePath);
     IdTy = PointerType::getUnqual(Type::Int8Ty);
     IntTy = IntegerType::get(sizeof(int) * 8);
     IntPtrTy = IntegerType::get(sizeof(void*) * 8);

@@ -18,6 +18,9 @@ shares code with the Objective-C front end for LLVM; clang.
 3) The support libraries, such as MsgSendSmallInt and BlockClosure implement
 parts of Smalltalk that are not already present in Objective-C / OpenStep.
 
+The first two of these are in the SmalltalkKit directory.  The last is in the
+Support directory.
+
 Building
 --------
 

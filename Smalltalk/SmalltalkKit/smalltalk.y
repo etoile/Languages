@@ -76,9 +76,8 @@ method(M) ::= messageSignature(S) LSQBRACK local_list(L) statement_list(E) RSQBR
 
 messageSignature(S) ::= WORD(M).
 {
-	M = [[MessageSend alloc] init];
-	[M addSelectorComponent:M];
-	S = M;
+	S = [[MessageSend alloc] init];
+	[S addSelectorComponent:M];
 }
 messageSignature(M) ::= method_signature_with_arguments(A).
 {
@@ -235,7 +234,6 @@ block(B) ::= LSQBRACK argument_list(A)  statement_list(S) RSQBRACK.
 {
 //FIXME: block locals
 	BlockSymbolTable *ST = [[BlockSymbolTable alloc] initWithLocals:nil args:A];
-NSLog(@"Block created with args: %@ (%@)", A, [ST args]);
 	B = [[[BlockExpr alloc] initWithSymbolTable:ST] autorelease];
 	[ST release];
 	[B setStatements:S];

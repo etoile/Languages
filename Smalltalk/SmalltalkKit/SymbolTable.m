@@ -1,5 +1,4 @@
 #import "SymbolTable.h"
-#import "StringMap.h"
 
 @implementation ObjectSymbolTable
 - (SymbolTable*) initForClass:(Class)aClass 

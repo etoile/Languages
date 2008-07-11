@@ -23,7 +23,6 @@
 	}
 	//Construct symbol table.
 	symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
-	NSLog(@"symbols: %@", symbols);
 	FOREACH(ivars, ivar, NSString*)
 	{
 		[symbols addSymbol:ivar];

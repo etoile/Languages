@@ -1,6 +1,10 @@
-NSObject subclass: TestObject 
-[ 
-	addObject: r
+NSObject subclass: SmalltalkTool
+[
+	run 
+	[
+		self test:(TestBlock new).		
+	]
+	test: r
 	[ | a b c|
 		a := #(NSObject new, NSString new, NSNumber new).
 		a log.
@@ -20,8 +24,8 @@ NSObject subclass: TestObject
 
 	wibble: a
 	[
-'wibble called' log.
-a log.
+		'wibble called' log.
+		a log.
 		^a.
 	]
 ]

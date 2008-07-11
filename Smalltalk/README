@@ -20,3 +20,8 @@ The parser is generated using the Lemon parser generator from SQLite (public dom
 Code generation uses the LLVM compiler infrastructure.
 Various parts of EtoileFoundation are used (mainly macros).
 These must all be installed to build.
+
+NOTE: Due to recent changes in LLVM APIs, LLVM 2.3 is not sufficient to build.
+A recent checkout of trunk is required.  The version of Pragmatic Smalltalk in
+trunk will track LLVM trunk.  Versions in releases will work with a specific
+LLVM release.

@@ -123,10 +123,15 @@ LLVMValue NilConstant(void);
 void Compile(ModuleBuilder B);
 /**
  * Initialise the code generator.  Should be called before any other LLVM
- * calls.
+ * calls.  Takes the name of the skeleton module file as an argument.
  */
-void LLVMinitialise(void);
+void LLVMinitialise(const char *bcFilename);
 
+/**
+ * Debug flag used to set whether excessive amounts of debugging info should be
+ * spammed to stderr.
+ */
+extern int DEBUG_DUMP_MODULES;
 #ifdef __OBJC__
 #import <Foundation/NSObject.h>
 #import <CodeGen.h>
