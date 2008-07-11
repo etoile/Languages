@@ -28,6 +28,11 @@ typedef	enum
 	SymbolTable *enclosingScope;
 }
 /**
+ * Adds a new class to the global symbol table.  Allows classes to be
+ * referenced before they have been compiled. 
+ */
++ (void) registerNewClass:(NSString*)aClass;
+/**
  * Sets the AST node where this symbol table is valid.
  */
 - (void) setASTScope:(AST*)aNode;

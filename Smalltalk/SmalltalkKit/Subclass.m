@@ -22,6 +22,7 @@
 		NSLog(@"Can not create new class %@ - a class of this name already exists.", classname);
 	}
 	//Construct symbol table.
+  [SymbolTable registerNewClass:classname];
 	symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
 	FOREACH(ivars, ivar, NSString*)
 	{

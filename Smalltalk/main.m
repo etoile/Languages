@@ -1,19 +1,8 @@
-#include <EtoileFoundation/EtoileFoundation.h>
+#import <EtoileFoundation/EtoileFoundation.h>
+#import <AppKit/AppKit.h>
 #import "SymbolTable.h"
 #import "Parser.h"
 #import "LLVMCodeGen.h"
-
-@interface TestBlock : NSObject{
-}
-- (id) run:(id)aBlock;
-@end
-@implementation TestBlock
-- (id) run:(id)aBlock
-{
-  NSLog(@"Block %@", aBlock);
-  return [aBlock value];
-}
-@end
 
 int main(int argc, char **argv)
 {

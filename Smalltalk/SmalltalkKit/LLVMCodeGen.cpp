@@ -275,14 +275,19 @@ public:
     ClassName = string(Class);
     SuperClassName = string(Super);
     CategoryName = "";
+    InstanceMethodNames.clear();
+    InstanceMethodTypes.clear();
+    IvarNames.clear();
     while (*Names) {
       IvarNames.push_back(*Names);
       Names++;
     }
+    IvarTypes.clear();
     while (*Types) {
       IvarTypes.push_back(*Types);
       Types++;
     }
+    IvarOffsets.clear();
     while (*Offsets) {
       IvarOffsets.push_back(*Offsets);
       Offsets++;

@@ -1,3 +1,11 @@
+NSObject subclass: TestBlock
+[
+	run: aBlock
+	[
+		aBlock log.
+		aBlock value log.
+	]
+]
 NSObject subclass: SmalltalkTool
 [
 	run [
