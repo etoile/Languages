@@ -3,12 +3,6 @@
 #import "Parser.h"
 #import "LLVMCodeGen.h"
 
-@implementation NSObject (log)
-- (void) log
-{
-  NSLog(@"%@", [self description]);
-}
-@end
 @interface TestBlock : NSObject{
 }
 - (id) run:(id)aBlock;
@@ -24,7 +18,7 @@
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
-	NSDictionary *opts = ETGetOptionsDictionary("f:b:", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("f:b:c:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	NSCAssert(nil == bundle, @"Smalltalk bundles are not yet supported.  Sorry.");
 	NSString *ProgramFile = [opts objectForKey:@"f"];
@@ -46,12 +40,18 @@ int main(int argc, char **argv)
 	DEBUG_DUMP_MODULES = 1;
 #endif
 	[ast compileWith:cg];
-	Class tool = NSClassFromString(@"SmalltalkTool");
+	NSString * className = [opts objectForKey:@"c"];
+	if (nil == className)
+	{
+		className = @"SmalltalkTool";
+	}
+	Class tool = NSClassFromString(className);
 	if (![tool instancesRespondToSelector:@selector(run)])
 	{
-		fprintf(stderr, "SmalltalkTool object must respond to run message\n");
+		fprintf(stderr, "%s instances must respond to run message\n",
+				[className UTF8String]);
 		return 2;
 	}
-	[[NSClassFromString(@"SmalltalkTool") new] run];
+	[[tool new] run];
 	return 0;
 }

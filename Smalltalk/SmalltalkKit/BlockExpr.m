@@ -94,7 +94,7 @@
 			case local:
 				promoted[index++] = 
 					[aGenerator loadPointerToLocalAtIndex:
-								   [symbols offsetOfLocal:symbol]];
+								   [symbols->enclosingScope offsetOfLocal:symbol]];
 				break;
 			case object:
 				// Instance variables are accessed relative to the self pointer.

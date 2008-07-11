@@ -33,6 +33,11 @@
 }
 - (void*) compileWith:(id<CodeGenerator>)aGenerator
 {
-	return [aGenerator stringConstant:value];
-}
+	NSMutableString *escaped = [value mutableCopy];
+	[escaped replaceOccurrencesOfString:@"\\n"
+	                         withString:@"\n" 
+	                            options:0
+	                              range:NSMakeRange(0, [escaped length])];
+
+	return [aGenerator stringConstant:escaped]; }
 @end

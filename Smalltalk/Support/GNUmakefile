@@ -12,6 +12,7 @@ ${SUBPROJECT_NAME}_CFLAGS += -std=c99
 # Class files
 #
 ${SUBPROJECT_NAME}_OBJC_FILES = \
+	NSObject+log.m\
 	BlockClosure.m\
 	NSArray+map.m
 
