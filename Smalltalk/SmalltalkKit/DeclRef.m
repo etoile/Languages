@@ -42,6 +42,10 @@
 			{
 				return [aGenerator loadSelf];
 			}
+			else if ([symbol isEqual:@"nil"] || [symbol isEqual:@"Nil"])
+			{
+				return [aGenerator nilConstant];
+			}
 		case global:
 			return [aGenerator loadClass:symbol];
 		case argument:

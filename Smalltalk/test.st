@@ -9,15 +9,17 @@ NSObject subclass: TestBlock
 NSObject subclass: SmalltalkTool
 [
 	run [
-	| task nil |
+	| task |
 		self log:'a' and:'b'.
 		self test:(TestBlock new).		
 	]
+
 	log:a and:b
-[
-a log.
-b log.
-]
+	[
+		a log.
+		b log.
+	]
+
 	test: r
 	[ | a b c|
 		a := #(NSObject new, NSString new, NSNumber new).
@@ -34,6 +36,7 @@ b log.
 		a := NSMutableArray array. 
 		a log.
 		r run:[ a log. ].
+		nil log.
 	]
 
 	wibble: a

@@ -171,6 +171,14 @@ static NSMutableSet *NewClasses;
 }
 static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
+	if ([aName isEqualToString:@"nil"])
+	{
+		return builtin;
+	}
+	if ([aName isEqualToString:@"Nil"])
+	{
+		return builtin;
+	}
 	if ([aName isEqualToString:@"self"])
 	{
 		return builtin;
