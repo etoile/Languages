@@ -28,6 +28,7 @@
 				}
 			}
 		}
+		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc.  This must be in either the current working directory or in one of the Library directories on your system.");
 		LLVMinitialise(path);
 	}
 }
