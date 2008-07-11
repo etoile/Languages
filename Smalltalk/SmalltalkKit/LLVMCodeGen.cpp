@@ -309,8 +309,8 @@ public:
     const Type *argTypes[argc];
     FunctionType::param_iterator arg = MethodTy->param_begin();
     ++arg; ++arg;
-    for (unsigned i=2 ; i<argc ; ++i) {
-      argTypes[i-2] = MethodTy->getParamType(i);
+    for (unsigned i=0 ; i<argc ; ++i) {
+      argTypes[i] = MethodTy->getParamType(i+2);
     }
 
 

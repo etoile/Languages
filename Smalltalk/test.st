@@ -1,9 +1,15 @@
 NSObject subclass: SmalltalkTool
 [
-	run 
-	[
+	run [
+	| task nil |
+		self log:'a' and:'b'.
 		self test:(TestBlock new).		
 	]
+	log:a and:b
+[
+a log.
+b log.
+]
 	test: r
 	[ | a b c|
 		a := #(NSObject new, NSString new, NSNumber new).

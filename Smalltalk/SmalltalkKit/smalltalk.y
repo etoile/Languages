@@ -68,7 +68,6 @@ method(M) ::= messageSignature(S) LSQBRACK local_list(L) statement_list(E) RSQBR
 	MethodSymbolTable *ST = [[MethodSymbolTable alloc] initWithLocals:L args:[(MessageSend*)S arguments]];
 	SmalltalkMethod *Meth = [[[SmalltalkMethod alloc] initWithSymbolTable:ST] autorelease];
 	[ST release];
-// FIXME: Set selector as string.
 	[Meth setSignature:S];
 	Meth->statements = E;
 	M = Meth;
@@ -86,16 +85,16 @@ messageSignature(M) ::= method_signature_with_arguments(A).
 method_signature_with_arguments(M) ::= method_signature_with_arguments(N) WORD(S) COLON WORD(E).
 {
 	[N addArgument:E];
-	[N addSelectorComponent:@":"];
 	[N addSelectorComponent:S];
+	[N addSelectorComponent:@":"];
 	M = N;
 }
 method_signature_with_arguments(M) ::= WORD(S) COLON WORD(E).
 { 
 	M = [[MessageSend alloc] init];
 	[M addArgument:E];
-	[M addSelectorComponent:@":"];
 	[M addSelectorComponent:S];
+	[M addSelectorComponent:@":"];
 }
 
 local_list(LL) ::= BAR locals(L) BAR. 
@@ -165,16 +164,16 @@ message(M) ::= WORD(S).
 message_with_arguments(M) ::= message_with_arguments(N) WORD(S) COLON expression(E).
 {
 	[N addArgument:E];
-	[N addSelectorComponent:@":"];
 	[N addSelectorComponent:S];
+	[N addSelectorComponent:@":"];
 	M = N;
 }
 message_with_arguments(M) ::= WORD(S) COLON expression(E).
 { 
 	M = [[MessageSend alloc] init];
 	[M addArgument:E];
-	[M addSelectorComponent:@":"];
 	[M addSelectorComponent:S];
+	[M addSelectorComponent:@":"];
 }
 
 assignment(A) ::= WORD(T) COLON EQ expression(E).

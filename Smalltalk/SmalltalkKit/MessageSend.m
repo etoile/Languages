@@ -28,7 +28,7 @@ static Class NSStringClass = Nil;
 	}
 	else
 	{
-		NSString * sel = [aSelector stringByAppendingString:selector];
+		NSString * sel = [selector stringByAppendingString:aSelector];
 		ASSIGN(selector, sel);
 	}
 }
@@ -47,7 +47,6 @@ static Class NSStringClass = Nil;
 }
 - (NSString*) selector
 {
-	NSLog(@"Selector is a %@", [selector class]);
 	return selector;
 }
 
