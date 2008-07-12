@@ -55,6 +55,12 @@
 			ClosedDeclRef *decl = [(BlockSymbolTable*)symbols promotedLocationOfSymbol:symbol];
 			return [aGenerator loadBlockVarAtIndex:decl->index offset:decl->offset];
 		}
+		case object:
+		{
+			return [aGenerator loadValueOfType:[symbols typeOfSymbol:symbol]
+			                           atOffset:[symbols offsetOfIVar:symbol]
+			                         fromObject:[aGenerator loadSelf]];
+		}
 		default:
 			NSLog(@"Compiling declref to symbol %@ of type %d",
 					symbol, [symbols scopeOfSymbol:symbol]);

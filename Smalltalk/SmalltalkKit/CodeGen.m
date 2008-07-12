@@ -93,6 +93,13 @@
 	StoreValueOfTypeAtOffsetFromObject(Builder, aValue, [aType UTF8String],
 			anOffset, anObject);
 }
+- (void*) loadValueOfType:(NSString*)aType
+                 atOffset:(unsigned)anOffset
+               fromObject:(void*)anObject
+{
+	return LoadValueOfTypeAtOffsetFromObject(Builder, [aType UTF8String],
+			anOffset, anObject);
+}
 - (void) beginBlockWithArgs:(unsigned)args
 					 locals:(unsigned)locals
 				  boundVars:(void**)promoted

@@ -65,6 +65,13 @@
             atOffset:(unsigned)anOffset
           fromObject:(void*)anObject;
 /**
+ * Loads a value at a specific offset from an object.  Used for instance
+ * variables.
+ */
+- (void*) loadValueOfType:(NSString*)aType
+                 atOffset:(unsigned)anOffset
+               fromObject:(void*)anObject;
+/**
  * Begin generating a block expression with the specified number of arguments
  * and locals.  The bound variables are pointers to variables declared outside
  * the block's scope.
