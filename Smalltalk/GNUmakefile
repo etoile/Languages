@@ -1,5 +1,7 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
+SUBPROJECTS += SmalltalkKit
+
 #
 # Application
 #
