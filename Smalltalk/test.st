@@ -29,6 +29,11 @@ NSObject subclass: SmalltalkTool
 		"Test passing Smalltalk blocks to Objective-C objects"
 		b := a map:[ :x | x log. x class. ].
 		b map:[ :x | x log. x. ].
+		a insertObject:'test' atIndex:2.
+		b := a objectAtIndex:2.
+		'This is the object inserted in the array, should be test:' log.
+		b log.
+		a log.
 		r log.
 		"Test SmallInt messaging"
 		b := 12.

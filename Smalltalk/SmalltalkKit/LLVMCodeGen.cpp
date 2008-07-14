@@ -10,6 +10,7 @@
 #include <llvm/Module.h>
 #include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
+#include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/IRBuilder.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Target/TargetData.h>
@@ -28,6 +29,7 @@ extern "C" {
 }
 // Debugging macros:
 #define DUMP(x) do { if (DEBUG_DUMP_MODULES) x->dump(); } while(0)
+#define DUMPT(x) DUMP((x->getType()))
 #define LOG(x,...) do { if (DEBUG_DUMP_MODULES) fprintf(stderr, x,##__VA_ARGS__); } while(0)
 
 //TODO: Static constructors should be moved into a function called from the
@@ -41,13 +43,18 @@ const Type *SelTy;
 const PointerType *IMPTy;
 const char *MsgSendSmallIntFilename;
 
+static void SkipTypeQualifiers(const char **typestr) {
+  if (*typestr == NULL) return;
+  while(**typestr == 'V' || **typestr == 'r')
+  {
+    (*typestr)++;
+  }
+}
+
+
 static const Type *LLVMTypeFromString(const char * typestr) {
   // FIXME: Other function type qualifiers
-  while(*typestr == 'V' || *typestr == 'r')
-  {
-    typestr++;
-  }
-  //TODO: Memoise this
+  SkipTypeQualifiers(&typestr);
   switch(*typestr) {
     case 'c':
     case 'C':
@@ -91,7 +98,7 @@ static const Type *LLVMTypeFromString(const char * typestr) {
   }
 }
 
-#define NEXT() \
+#define NEXT(typestr) \
   while (!isdigit(*typestr)) { typestr++; }\
   while (isdigit(*typestr)) { typestr++; }
 static FunctionType *LLVMFunctionTypeFromString(const char *typestr) {
@@ -104,10 +111,10 @@ static FunctionType *LLVMFunctionTypeFromString(const char *typestr) {
   // Function encodings look like this:
   // v12@0:4@8 - void f(id, SEL, id)
   const Type * ReturnTy = LLVMTypeFromString(typestr);
-  NEXT();
+  NEXT(typestr);
   while(*typestr) {
     ArgTypes.push_back(LLVMTypeFromString(typestr));
-    NEXT();
+    NEXT(typestr);
   }
   return FunctionType::get(ReturnTy, ArgTypes, false);
 }
@@ -282,6 +289,197 @@ private:
     }
   }
 
+  Value *BoxValue(IRBuilder *B, Value *V, const char *typestr) {
+    // Untyped selectors return id
+    if (NULL == typestr) return V;
+    // FIXME: Other function type qualifiers
+    while(*typestr == 'V' || *typestr == 'r')
+    {
+      typestr++;
+    }
+    switch(*typestr) {
+      // All integer primitives smaller than a 64-bit value
+      case 'B': case 'c': case 'C': case 's': case 'S': case 'i': case 'I':
+      case 'l': case 'L':
+        V = B->CreateSExt(V, Type::Int64Ty);
+      // Now V is 64-bits.
+      case 'q': case 'Q':
+      {
+        // This will return a SmallInt or a promoted integer.
+       Constant *BoxFunction = TheModule->getOrInsertFunction("MakeSmallInt",
+            IdTy, Type::Int64Ty, (void*)0);
+        return B->CreateCall(BoxFunction, V);
+      }
+      // Other types, just wrap them up in an NSValue
+      default:
+      {
+        // TODO: Store this in a global.
+        Value *NSValueClass = Runtime->LookupClass(*B,
+            MakeConstantString("NSValue"));
+        // TODO: We should probably copy this value somewhere, maybe with a
+        // custom object instead of NSValue?
+        // TODO: Should set sender to self.
+        LOG("Generating NSValue boxing type %s\n", typestr);
+        return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+            Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), &V, 1);
+      }
+      // Map void returns to nil
+      case 'v':
+      {
+        return ConstantPointerNull::get(IdTy);
+      }
+      // If it's already an object, we don't need to do anything
+      case '@': case '#':
+        return V;
+    }
+  }
+
+  void UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
+      unsigned argc, const char *selTypes) {
+    // FIXME: For objects, we need to turn SmallInts into ObjC objects
+    if (NULL == selTypes) {
+      // All types are id, so do nothing
+      memcpy(args, argv, sizeof(Value*) * argc);
+    } else {
+      SkipTypeQualifiers(&selTypes);
+      //Skip return, self, cmd
+      NEXT(selTypes);
+      NEXT(selTypes);
+      for (unsigned i=0 ; i<argc ; ++i) {
+        NEXT(selTypes);
+        SkipTypeQualifiers(&selTypes);
+        const char *castSelName;
+        // TODO: Factor this out into a name-for-type function
+        switch(*selTypes) {
+          case 'c':
+            castSelName = "charValue";
+            break;
+          case 'C':
+            castSelName = "unsignedCharValue";
+            break;
+          case 's':
+            castSelName = "shortValue";
+            break;
+          case 'S':
+            castSelName = "unsignedShortValue";
+            break;
+          case 'i':
+            castSelName = "intValue";
+            break;
+          case 'I':
+            castSelName = "unsignedIntValue";
+            break;
+          case 'l':
+            castSelName = "longValue";
+            break;
+          case 'L':
+            castSelName = "unsignedLongValue";
+            break;
+          case 'q':
+            castSelName = "longLongValue";
+            break;
+          case 'Q':
+            castSelName = "unsignedLongLongValue";
+            break;
+          case 'f':
+            castSelName = "floatValue";
+            break;
+          case 'd':
+            castSelName = "doubleValue";
+            break;
+          case 'B':
+            castSelName = "boolValue";
+            break;
+          case '@':
+            args[i] = argv[i];
+            continue;
+          default:
+            castSelName = "";
+            assert(false && "Unable to transmogriy object to compound type");
+        }
+        //TODO: We don't actually use the size numbers for anything, but someone else does, so make these sensible:
+        char typeStr[] = "I12@0:4";
+        typeStr[0] = *selTypes;
+        args[i] = MessageSend(B, F, argv[i], castSelName,
+            typeStr, 0, 0);
+      }
+    }
+  }
+
+  // Preform a real message send.  Reveicer must be a real object, not a
+  // SmallInt.
+  Value *MessageSendId(IRBuilder *B, Value *receiver, const char *selName,
+      const char *selTypes, Value **argv, unsigned argc) {
+    Value *Self = LoadSelf();
+    FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
+    llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
+    return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), Self,
+        receiver, cmd, argv, argc);
+  }
+  Value *MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
+      *selName, const char *selTypes, Value **argv, unsigned argc) {
+    Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
+    Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
+
+    // Basic block for messages to SmallInts.
+    BasicBlock *SmallInt = BasicBlock::Create(string("small_int_message") + selName, F);
+    IRBuilder SmallIntBuilder = IRBuilder(SmallInt);
+    Value *Result = 0;
+
+    // See if there is a function defined to implement this message
+    Value *SmallIntFunction =
+      TheModule->getFunction(FunctionNameFromSelector(selName));
+
+    if (0 != SmallIntFunction) {
+      SmallVector<Value*, 8> Args;
+      Args.push_back(receiver);
+      Args.insert(Args.end(), argv, argv+argc);
+      for (unsigned i=0 ; i<Args.size() ;i++) {
+        const Type *ParamTy =
+          cast<Function>(SmallIntFunction)->getFunctionType()->getParamType(i);
+        if (Args[i]->getType() != ParamTy) {
+          Args[i] = SmallIntBuilder.CreateBitCast(Args[i], ParamTy);
+        }
+      }
+      Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
+          Args.end(), "small_int_message_result");
+    } else {
+      //Promote to big int and send a real message.
+      Value *BoxFunction = TheModule->getFunction("BoxSmallInt");
+      Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
+      Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
+          "boxed_small_int");
+      Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes, argv,
+          argc);
+    }
+    BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") + selName,
+        F);
+    IRBuilder RealObjectBuilder = IRBuilder(RealObject);
+    Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
+        selTypes, argv, argc);
+
+    if ((Result->getType() != ObjResult->getType())
+        && (ObjResult->getType() != Type::VoidTy)) {
+      Result = new BitCastInst(Result, ObjResult->getType(),
+          "cast_small_int_result", SmallInt);
+    }
+    
+    B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
+    BasicBlock *Continue = BasicBlock::Create("Continue", F);
+    B->SetInsertPoint(Continue);
+
+    RealObjectBuilder.CreateBr(Continue);
+    SmallIntBuilder.CreateBr(Continue);
+    if (ObjResult->getType() != Type::VoidTy) {
+      PHINode *Phi = B->CreatePHI(Result->getType(),  selName);
+      Phi->reserveOperandSpace(2);
+      Phi->addIncoming(Result, SmallInt);
+      Phi->addIncoming(ObjResult, RealObject);
+      return Phi;
+    }
+    return ConstantPointerNull::get(IdTy);
+  }
+
 public:
   CodeGen(const char *ModuleName) {
     TheModule = ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
@@ -387,123 +585,19 @@ public:
     return BlockStack.back()->LoadArgumentAtIndex(index);
   }
 
-  Value *BoxValue(IRBuilder *B, Value *V, const char *typestr) {
-    // Untyped selectors return id
-    if (NULL == typestr) return V;
-    // FIXME: Other function type qualifiers
-    while(*typestr == 'V' || *typestr == 'r')
-    {
-      typestr++;
-    }
-    switch(*typestr) {
-      // All integer primitives smaller than a 64-bit value
-      case 'B': case 'c': case 'C': case 's': case 'S': case 'i': case 'I':
-      case 'l': case 'L':
-        V = B->CreateSExt(V, Type::Int64Ty);
-      // Now V is 64-bits.
-      case 'q': case 'Q':
-      {
-        // This will return a SmallInt or a promoted integer.
-       Constant *BoxFunction = TheModule->getOrInsertFunction("MakeSmallInt",
-            IdTy, Type::Int64Ty, (void*)0);
-        return B->CreateCall(BoxFunction, V);
-      }
-      // Other types, just wrap them up in an NSValue
-      default:
-      {
-        // TODO: Store this in a global.
-        Value *NSValueClass = Runtime->LookupClass(*B,
-            MakeConstantString("NSValue"));
-        // TODO: We should probably copy this value somewhere, maybe with a
-        // custom object instead of NSValue?
-        // TODO: Should set sender to self.
-        LOG("Generating NSValue boxing type %s\n", typestr);
-        return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-            Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), &V, 1);
-      }
-      // Map void returns to nil
-      case 'v':
-      {
-        return ConstantPointerNull::get(IdTy);
-      }
-      // If it's already an object, we don't need to do anything
-      case '@': case '#':
-        return V;
-    }
-  }
-
-  // Preform a real message send.  Reveicer must be a real object, not a
-  // SmallInt.
-  Value *MessageSendId(IRBuilder *B, Value *receiver, const char *selName,
-      const char *selTypes, Value **argv, unsigned argc) {
-    FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
-    llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-    return BoxValue(B, Runtime->GenerateMessageSend(*B,
-          MethodTy->getReturnType(), LoadSelf(), receiver, cmd, argv, argc),
-        selTypes);
-  }
   Value *MessageSendId(Value *receiver, const char *selName, const char
       *selTypes, Value **argv, unsigned argc) {
-    return MessageSendId(Builder, receiver, selName, selTypes, argv, argc);
-  }
-  
-  Value *MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
-      *selName, const char *selTypes, Value **argv, unsigned argc) {
-    if (argc > 1) {
-      // SmallInts only support binary and unary messages (at the moment)
-      return MessageSendId(B, receiver, selName, selTypes, argv, argc);
+    IRBuilder *B = Builder;
+    Function *F = CurrentMethod;
+    if (!BlockStack.empty()) {
+      CodeGenBlock *b = BlockStack.back();
+      B = b->Builder;
+      F = b->BlockFn;
     }
-    Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
-    Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
-
-    // Basic block for messages to SmallInts.
-    BasicBlock *SmallInt = BasicBlock::Create("small_int_message", F);
-    IRBuilder SmallIntBuilder = IRBuilder(SmallInt);
-    Value *Result = 0;
-
-    // See if there is a function defined to implement this message
-    Value *SmallIntFunction =
-      TheModule->getFunction(FunctionNameFromSelector(selName));
-
-    if (0 != SmallIntFunction) {
-      SmallVector<Value*, 8> Args;
-      Args.push_back(receiver);
-      Args.insert(Args.end(), argv, argv+argc);
-      Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
-          Args.end(), "small_int_message_result");
-    } else {
-      //Promote to big int and send a real message.
-      Value *BoxFunction = TheModule->getFunction("BoxSmallInt");
-      Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
-      Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
-          "boxed_small_int");
-      MessageSendId(&SmallIntBuilder, Result, selName, selTypes, argv, argc);
-    }
-    BasicBlock *RealObject = BasicBlock::Create("real_object_message",
-        F);
-    IRBuilder b = IRBuilder(RealObject);
-    Value *ObjResult = MessageSendId(&b, receiver, selName, selTypes, argv, argc);
-
-    if ((Result->getType() != ObjResult->getType())
-        && (Result->getType() != Type::VoidTy)) {
-      Result = new BitCastInst(Result, ObjResult->getType(),
-          "cast_small_int_result", SmallInt);
-    }
-    
-    B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
-    BasicBlock *Continue = BasicBlock::Create("Continue", F);
-    B->SetInsertPoint(Continue);
-
-    BranchInst::Create(Continue, SmallInt);
-    BranchInst::Create(Continue, RealObject);
-    if (ObjResult->getType() != Type::VoidTy) {
-      PHINode *Phi = B->CreatePHI(IdTy, "result");
-      Phi->reserveOperandSpace(2);
-      Phi->addIncoming(Result, SmallInt);
-      Phi->addIncoming(ObjResult, RealObject);
-      return Phi;
-    }
-    return ConstantPointerNull::get(IdTy);
+    Value *args[argc];
+    UnboxArgs(B, F, argv, args, argc, selTypes);
+    return BoxValue(B, MessageSendId(B, receiver, selName, selTypes, argv,
+          argc), selTypes);
   }
 
   Value *MessageSend(Value *receiver, const char *selName, const char
@@ -515,7 +609,10 @@ public:
       B = b->Builder;
       F = b->BlockFn;
     }
-    return MessageSend(B, F, receiver, selName, selTypes, argv, argc);
+    Value *args[argc];
+    UnboxArgs(B, F, argv, args, argc, selTypes);
+    return BoxValue(B, MessageSend(B, F, receiver, selName, selTypes, args,
+          argc), selTypes);
   }
 
   void SetReturn(Value * RetVal = 0) {
@@ -640,12 +737,10 @@ public:
     llvm::Function *init = Runtime->ModuleInitFunction();
     // Make the init function external so the optimisations won't remove it.
     init->setLinkage(GlobalValue::ExternalLinkage);
-    // Set the small int messaging functions internal so they can be eliminated if not used.
-    TheModule->getFunction("BinaryMessageSmallInt")->setLinkage(GlobalValue::InternalLinkage);
-    TheModule->getFunction("UnaryMessageSmallInt")->setLinkage(GlobalValue::InternalLinkage);
-    DUMP(TheModule);
+    //DUMP(TheModule);
     LOG("\n\n\n Optimises to:\n\n\n");
     PassManager pm;
+    pm.add(createVerifierPass());
     pm.add(new TargetData(TheModule));
     pm.add(createPromoteMemoryToRegisterPass());
     pm.add(createFunctionInliningPass());
@@ -657,7 +752,7 @@ public:
     pm.add(createTailDuplicationPass());
     pm.add(createCFGSimplificationPass());
     pm.add(createStripDeadPrototypesPass());
-    //pm.run(*TheModule);
+    pm.run(*TheModule);
     DUMP(TheModule);
     //ExecutionEngine *EE = ExecutionEngine::create(L->getModule());
     ExecutionEngine *EE = ExecutionEngine::create(TheModule);

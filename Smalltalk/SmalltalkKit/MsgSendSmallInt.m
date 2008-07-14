@@ -1,3 +1,4 @@
+#import <objc/objc-api.h>
 #include <sys/types.h>
 #include <string.h>
 
@@ -9,53 +10,25 @@ typedef struct
 	void* isa;
 	id(*value)(void*, SEL);
 } Block;
+
 /**
- * Function for sending messages to a small integer.  Selector is the constant
- * string representation of the selector.
+ * Preamble for a SmallInt message.  These are statically looked up and do not
+ * have a selector argument.  Ideally, they are small enough to inline.
+ * Replace : with _ in the selector name.
  */
-void * BinaryMessageSmallInt(void * obj, const char * sel, void * other)
-{
-	intptr_t val = (intptr_t)(unsigned long)obj;
-	val >>= 1;
-	long otherval = (intptr_t)(unsigned long)other;
-	otherval >>= 1;
-	if (strcmp(sel, "ifTrue:") == 0)
-	{
-		if (val == 0)
-		{
-			return 0;
-		}
-		else
-		{
-			Block *block = other;
-			return block->value(other, @selector(value));
-		}
-	}
-	switch(*sel)
-	{
-		case '+':
-		{
-			val += otherval;
-			if(val>0xEFFFFFFF)
-			{
-				//TODO: Overflow
-			}
-			return (void*)((val << 1) | 1);
-		}
-		default:
-    printf("Operation %s not yet supported on SmallInts\n", sel);
-		//TODO: Promote to BigInt and try sending message?
-		return 0;
-	}
-}
 #define MSG(name, ...) void *SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
 {\
 	intptr_t val = (intptr_t)obj;\
 	long otherval = (intptr_t)other;\
 	val >>= 1;\
 	otherval >>= 1;
-
+/**
+ * Small int message with no arguments.
+ */
 #define MSG0(name) MSG(name)
+/**
+ * Small int message with one argument.
+ */
 #define MSG1(name) MSG(name, void *other)
 
 MSG1(ifTrue_)
@@ -87,6 +60,16 @@ MSG1(timesRepeat_)
 		block->value(other, @selector(value));
 	}
 }
+
+BOOL SmallIntMsgisEqual_(void *obj, void *other)
+{
+	if (obj == other)
+	{
+		return YES;
+	}
+	return NO;
+}
+
 
 MSG1(add_)
 	val += otherval;
@@ -125,21 +108,22 @@ void *BoxSmallInt(void *obj) {
 #define UCAST(x, y) if(strcmp(sel, "cu" #x "Value") == 0) return (void*)(unsigned y)(unsigned long)obj;
 #define NCAST(x, y) SCAST(x,y) UCAST(x,y)
 #define CAST(x) NCAST(x,x)
+#define CASTMSG(type, name) type SmallIntMsg##name##Value(void *obj) { return (type) ((intptr_t)obj>>1); }
 
-void * UnaryMessageSmallInt(void * obj, const char * sel)
+CASTMSG(char, char)
+CASTMSG(unsigned char, unsignedChar)
+CASTMSG(short, short)
+CASTMSG(unsigned short, unsignedShort)
+CASTMSG(int, int)
+CASTMSG(unsigned int, unsignedInt)
+CASTMSG(long, long)
+CASTMSG(unsigned long, unsignedLong)
+CASTMSG(long long, longLong)
+CASTMSG(unsigned long long, unsignedLongLong)
+CASTMSG(BOOL, bool)
+CASTMSG(float, float)
+CASTMSG(double, double)
+NSString *SmallIntMsgstringValue_(void *obj)
 {
-	if(strcmp(sel, "stringValue") == 0) return (void*)[NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
-	if(strcmp(sel, "log") == 0) 
-	{
-		NSLog(@"<SmallInt:%d>", (long long)(((intptr_t)obj)>>1));
-		return obj;
-	}
-	CAST(char);
-	CAST(short);
-	CAST(int);
-	CAST(long);
-	NCAST(longlong, long long);
-  printf("Operation %s not yet supported on SmallInts\n", sel);
-	//TODO: Promote to BigInt and try sending message?
-	return obj;
+	return [NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
 }

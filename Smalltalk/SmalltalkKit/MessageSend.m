@@ -108,6 +108,21 @@ static Class NSStringClass = Nil;
 	const char *sel = [selector UTF8String];
 	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
 	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
+	// If the receiver is a global symbol, it is guaranteed to be an object.
+	// TODO: The same is arguments if their type is @
+	if ([target isKindOfClass:[DeclRef class]])
+	{
+		DeclRef *ref = SAFECAST(DeclRef, target);
+		NSString *symbol = ref->symbol;
+		if ([symbols scopeOfSymbol:symbol] == global)
+		{
+			return [aGenerator sendMessage:[selector UTF8String]
+			                         types:seltypes
+			                       toObject:receiver
+			                      withArgs:argv
+			                         count:argc];
+		}
+	}
 	return [aGenerator sendMessage:[selector UTF8String]
 	                         types:seltypes
 	                            to:receiver
