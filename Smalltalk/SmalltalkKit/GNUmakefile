@@ -4,13 +4,13 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # Library
 #
 VERSION = 0.5
-LIBRARY_NAME = SmalltalkKit
+FRAMEWORK_NAME = SmalltalkKit
 
-${LIBRARY_NAME}_CC_FILES = \
+${FRAMEWORK_NAME}_CC_FILES = \
 	CGObjCGNU.cpp\
 	LLVMCodeGen.cpp
 
-${LIBRARY_NAME}_OBJC_FILES = \
+${FRAMEWORK_NAME}_OBJC_FILES = \
 	smalltalk.m\
 	AST.m\
 	ArrayExpr.m\
@@ -29,18 +29,20 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	Subclass.m\
 	SymbolTable.m
 
-${LIBRARY_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${LIBRARY_NAME}_LDFLAGS += -g -lEtoileFoundation
-${LIBRARY_NAME}_CFLAGS += -Wno-implicit -g
+${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
+${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation
+${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM flags
 LLVM_LIBS=all
-${LIBRARY_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
+${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
-#${LIBRARY_NAME}_LDFLAGS += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
+#${FRAMEWORK_NAME}_LDFLAGS += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
 LD = g++
 
-include $(GNUSTEP_MAKEFILES)/library.make
+${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc
+
+include $(GNUSTEP_MAKEFILES)/framework.make
 
 smalltalk.m: smalltalk.y
 	@echo Generating parser...

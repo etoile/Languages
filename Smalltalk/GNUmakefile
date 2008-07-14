@@ -19,7 +19,7 @@ ${TOOL_NAME}_OBJC_FILES = \
 ${TOOL_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 # FIXME: The -gui requirement is only there because EtoileXML needs it, which it shouldn't
 ${TOOL_NAME}_LDFLAGS += -g -lEtoileFoundation -lgnustep-gui\
-   	-lSmalltalkKit -L./SmalltalkKit/obj
+   	-lSmalltalkKit -L./SmalltalkKit/SmalltalkKit.framework/Versions/Current
 ${TOOL_NAME}_CFLAGS += -Wno-implicit -g
 ${TOOL_NAME}_CPPFLAGS += -I./SmalltalkKit
 
