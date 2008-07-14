@@ -47,5 +47,5 @@ smalltalk.m: smalltalk.y
 # FIXME: The generated bc file should be installed in a Library directory somewhere.
 
 MsgSendSmallInt.bc: MsgSendSmallInt.m
-	@echo Generating LLVM bitcode for small int messages (requires clang)
-	@clang -emit-llvm-bc MsgSendSmallInt.bc
+	@echo "Generating LLVM bitcode for small int messages (requires clang)"
+	@clang -emit-llvm-bc MsgSendSmallInt.m

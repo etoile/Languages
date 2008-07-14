@@ -113,7 +113,10 @@ locals(L) ::= .
   L = [NSMutableArray array];
 }
 
-%syntax_error {NSLog(@"Syntax error.");}
+%syntax_error 
+{
+	[NSException raise:@"ParserError" format:@"Parsing failed"];
+}
 
 %type statement {AST*}
 statement_list(LL) ::= statement_list(L) statement(S).

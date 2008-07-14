@@ -22,7 +22,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 typedef unichar(*CIMP)(id, SEL,...);
 #define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %s", #token)
 #define CHAR(x) charAt(s, charSel, x)
-#define WHILE(is) int j; for(j=i ; j<[s length]-1 && is(c) ; c=CHAR(++j)) {}
+#define WHILE(is) for(j=i ; j<[s length]-1 && is(c) ; c=CHAR(++j)) {}
 #define WORD_TOKEN substr(s, substrSel, NSMakeRange(i, j-i))
 #define CASE(start, end, function)\
 	if(start(c))\
@@ -40,13 +40,17 @@ typedef unichar(*CIMP)(id, SEL,...);
 	SEL charSel = @selector(characterAtIndex:);
 	SEL substrSel = @selector(substringWithRange:);
 	CIMP charAt = (CIMP)[s methodForSelector:charSel];
-  
+
 	IMP substr = [s methodForSelector:substrSel];
 	/* Set up the parser */
 	void * parser = ParseAlloc( malloc );
 
 	int line = 1;
-	for(unsigned int i=0 ; i<[s length] ; i++)
+	unsigned int j;
+	int lineStart = 0;
+	unsigned int i;
+	NS_DURING
+	for(i=0 ; i<[s length] ; i++)
 	{
 		unichar c = [s characterAtIndex:i];
 		CASE(isalpha, isalnum, 
@@ -54,18 +58,29 @@ typedef unichar(*CIMP)(id, SEL,...);
 			NSString * word = WORD_TOKEN;
 			if([word isEqualToString:@"subclass"])
 			{
-			  CALL_PARSER(SUBCLASS, word);
+				CALL_PARSER(SUBCLASS, word);
 			}
 			else if([word isEqualToString:@"extend"])
 			{
-			  CALL_PARSER(EXTEND, word);
+				CALL_PARSER(EXTEND, word);
 			}
 			else
 			{
 			CALL_PARSER(WORD, word);
 			}
-        })
-		else CASE(isspace, isspace, if(c == '\n'){line++;})
+		})
+		else if (isspace(c))
+		{
+			int j; for(j=i ; j<[s length]-1 && isspace(c) ; c=CHAR(++j))
+		   	{
+				if (c == '\n')
+				{
+					line++;
+					lineStart = j;
+				}
+			}
+			i = MAX(i,j-1);
+		}
 		else if ('\'' == c && i<[s length] - 2)
 		{
 			int j = i + 1;
@@ -103,6 +118,22 @@ typedef unichar(*CIMP)(id, SEL,...);
 			}
 		}
 	}
+	NS_HANDLER
+		ParseFree(parser, free);
+		NSString * errorLine = [s substringFromIndex:lineStart+1];
+		NSRange lineEnd = [errorLine rangeOfString:@"\n"];
+		if (lineEnd.location != NSNotFound)
+		{
+			errorLine = [errorLine substringToIndex:lineEnd.location];
+		}
+		NSDictionary *userinfo = D(
+		                          [NSNumber numberWithInt:line], @"lineNumber",
+		                          [NSNumber numberWithInt:(i-lineStart)], @"character",
+		                          errorLine, @"line");
+		[[NSException exceptionWithName:@"ParseError"
+		                         reason:@"Unexpected token"
+		                       userInfo:userinfo] raise];
+	NS_ENDHANDLER
 	Parse(parser, 0, nil, self);
 	ParseFree(parser, free);
 	return delegate;

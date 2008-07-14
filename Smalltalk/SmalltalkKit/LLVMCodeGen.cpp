@@ -16,6 +16,7 @@
 
 
 #include <string>
+#include <algorithm>
 #include <errno.h>
 
 // C++ Implementation
@@ -262,6 +263,24 @@ private:
     return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
   }
 
+  string FunctionNameFromSelector(const char *sel) {
+    // Special cases
+    switch (*sel) {
+      case '+':
+        return "SmallIntMsgadd_";
+      case '-':
+        return "SmallIntMsgsub_";
+      case '/':
+        return "SmallIntMsgdiv_";
+      case '*':
+        return "SmallIntMsgmul_";
+      default: {
+        string str = "SmallIntMsg" + string(sel);
+        replace(str.begin(), str.end(), ':', '_');
+        return str;
+      }
+    }
+  }
 
 public:
   CodeGen(const char *ModuleName) {
@@ -427,7 +446,7 @@ public:
       *selTypes, Value **argv, unsigned argc) {
     return MessageSendId(Builder, receiver, selName, selTypes, argv, argc);
   }
-
+  
   Value *MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
       *selName, const char *selTypes, Value **argv, unsigned argc) {
     if (argc > 1) {
@@ -439,28 +458,28 @@ public:
 
     // Basic block for messages to SmallInts.
     BasicBlock *SmallInt = BasicBlock::Create("small_int_message", F);
+    IRBuilder SmallIntBuilder = IRBuilder(SmallInt);
     Value *Result = 0;
-    if (argc == 0) {
-      // Unary message.  e.g. 1 doubleValue
-      Value *Args[] = {receiver, MakeConstantString(selName) };
-      Constant *UnarySmallIntMessageFun;
-      UnarySmallIntMessageFun = TheModule->getOrInsertFunction(
-          "UnaryMessageSmallInt", Args[0]->getType(), Args[0]->getType(),
-          Args[1]->getType(), NULL);
-      Result = CallInst::Create(UnarySmallIntMessageFun, &Args[0], &Args[2],
-          "unary_message", SmallInt); 
-    } else if (argc == 1) {
-      Value *Args[] = {receiver, MakeConstantString(selName), argv[0] };
-      Constant *BinarySmallIntMessageFun;
-      BinarySmallIntMessageFun = TheModule->getOrInsertFunction(
-          "BinaryMessageSmallInt", Args[0]->getType(), Args[0]->getType(),
-          Args[1]->getType(), Args[2]->getType(), NULL);
-      Result = CallInst::Create(BinarySmallIntMessageFun, &Args[0], &Args[3],
-          "binary_message", SmallInt); 
+
+    // See if there is a function defined to implement this message
+    Value *SmallIntFunction =
+      TheModule->getFunction(FunctionNameFromSelector(selName));
+
+    if (0 != SmallIntFunction) {
+      SmallVector<Value*, 8> Args;
+      Args.push_back(receiver);
+      Args.insert(Args.end(), argv, argv+argc);
+      Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
+          Args.end(), "small_int_message_result");
     } else {
-      assert(0 && "Sending a complex message to a SmallInt?  Shame on you!");
-      //FIXME: Never reached?  Promote to big int?
+      //FIXME: Promote to big int and send a real message.
+      Value *BoxFunction = TheModule->getFunction("BoxSmallInt");
+      Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
+      Value *Args[] = {Result};
+      Result = CallInst::Create(BoxFunction, &Args[0], &Args[1],
+          "boxed_small_int", SmallInt);
     }
+    Result->dump();
     BasicBlock *RealObject = BasicBlock::Create("real_object_message",
         F);
     IRBuilder b = IRBuilder(RealObject);
