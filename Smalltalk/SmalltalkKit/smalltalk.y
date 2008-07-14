@@ -24,6 +24,7 @@ domain parser generator, to produce an Objective-C parser.
 %token_prefix TOKEN_
 %token_type {id}
 %left WORD.
+%left EQ.
 %extra_argument {Parser* p}
 
 file ::= module(M).
