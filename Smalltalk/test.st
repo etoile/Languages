@@ -10,7 +10,9 @@ NSObject subclass: SmalltalkTool
 [
 	run [
 	| task |
+		"Test that messages with two arguments are parsed correctly"
 		self log:'a' and:'b'.
+		"Test instantiation of other Smalltalk classes"
 		self test:(TestBlock new).		
 	]
 
@@ -21,11 +23,14 @@ NSObject subclass: SmalltalkTool
 
 	test: r [
 	| a b c|
+		"Test array creation."
 		a := #(NSObject new, NSString new, NSNumber new).
 		a log.
+		"Test passing Smalltalk blocks to Objective-C objects"
 		b := a map:[ :x | x log. x class. ].
 		b map:[ :x | x log. x. ].
 		r log.
+		"Test SmallInt messaging"
 		b := 12.
 		c := b + 5.
 		b stringValue log.
@@ -34,7 +39,9 @@ NSObject subclass: SmalltalkTool
 		b log.
 		a := NSMutableArray array. 
 		a log.
+		"Test passing blocks to other bits of Smalltalk code"
 		r run:[ a log. ].
+		"Test message sends to nil."
 		nil log.
 	]
 

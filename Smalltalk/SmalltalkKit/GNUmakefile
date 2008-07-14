@@ -17,6 +17,7 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	AssignExpr.m\
 	BlockExpr.m\
 	CodeGen.m\
+	Comment.m\
 	DeclRef.m\
 	Literal.m\
 	MessageSend.m\

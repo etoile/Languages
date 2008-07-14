@@ -81,6 +81,18 @@ typedef unichar(*CIMP)(id, SEL,...);
 			}
 			i = MAX(i,j-1);
 		}
+		else if ('"' == c && i<[s length] - 2)
+		{
+			int j = i + 1;
+			do
+			{
+				c=CHAR(++j);
+			} while (j<[s length]-1 && '"' != c);
+			i++;
+			CALL_PARSER(COMMENT, WORD_TOKEN);
+			j++;
+			i = MAX(i,j-1);
+		}
 		else if ('\'' == c && i<[s length] - 2)
 		{
 			int j = i + 1;

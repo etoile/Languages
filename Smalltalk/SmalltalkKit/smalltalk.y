@@ -10,6 +10,7 @@ domain parser generator, to produce an Objective-C parser.
 #import "ArrayExpr.h"
 #import "AssignExpr.h"
 #import "BlockExpr.h"
+#import "Comment.h"
 #import "DeclRef.h"
 #import "Literal.h"
 #import "MessageSend.h"
@@ -141,6 +142,11 @@ statement(S) ::= return(R) STOP.
 {
 	S = R;
 }
+statement(S) ::= COMMENT(C).
+{
+	S = [Comment commentForString:C];
+}
+statement ::= STOP.
 
 return(R) ::= RETURN expression(E).
 {
