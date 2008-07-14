@@ -472,12 +472,12 @@ public:
       Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
           Args.end(), "small_int_message_result");
     } else {
-      //FIXME: Promote to big int and send a real message.
+      //Promote to big int and send a real message.
       Value *BoxFunction = TheModule->getFunction("BoxSmallInt");
       Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
-      Value *Args[] = {Result};
-      Result = CallInst::Create(BoxFunction, &Args[0], &Args[1],
-          "boxed_small_int", SmallInt);
+      Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
+          "boxed_small_int");
+      MessageSendId(&SmallIntBuilder, Result, selName, selTypes, argv, argc);
     }
     Result->dump();
     BasicBlock *RealObject = BasicBlock::Create("real_object_message",
