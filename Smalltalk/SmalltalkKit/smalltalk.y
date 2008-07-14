@@ -165,7 +165,7 @@ message(M) ::= message_with_arguments(A).
 }
 message(M) ::= WORD(S).
 {
-	M = [[MessageSend alloc] init];
+	M = [[[MessageSend alloc] init] autorelease];
 	[M addSelectorComponent:S];
 }
 
@@ -179,12 +179,18 @@ message_with_arguments(M) ::= message_with_arguments(N) WORD(S) COLON expression
 }
 message_with_arguments(M) ::= WORD(S) COLON expression(E).
 { 
-	M = [[MessageSend alloc] init];
+	M = [[[MessageSend alloc] init] autorelease];
 	[M addArgument:E];
 	[M addSelectorComponent:S];
 	[M addSelectorComponent:@":"];
 }
-
+// Comparison
+message_with_arguments(E) ::= EQ EQ expression(R).
+{
+	E = [[[MessageSend alloc] init] autorelease];
+	[E addSelectorComponent:@"isEqual:"];
+	[E addArgument:R];
+}
 assignment(A) ::= WORD(T) COLON EQ expression(E).
 {
 	DeclRef * declref = [[DeclRef alloc] init];
@@ -224,7 +230,7 @@ expression(E) ::= NUMBER(N).
 {
 	E = [NumberLiteral literalFromString:N];
 }
-expression(E) ::= HASH LBRACK expression_list(L).
+expression(E) ::= LBRACE expression_list(L).
 {
 	E = [ArrayExpr arrayWithElements:L];
 }
@@ -233,7 +239,7 @@ expression_list(L) ::= expression(E) COMMA expression_list(T).
 	[T addObject:E];
 	L = T;
 }
-expression_list(L) ::= expression(E) RBRACK.
+expression_list(L) ::= expression(E) RBRACE.
 {
 	L = [NSMutableArray arrayWithObject:E];
 }

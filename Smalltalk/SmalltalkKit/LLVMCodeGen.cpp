@@ -479,7 +479,6 @@ public:
           "boxed_small_int");
       MessageSendId(&SmallIntBuilder, Result, selName, selTypes, argv, argc);
     }
-    Result->dump();
     BasicBlock *RealObject = BasicBlock::Create("real_object_message",
         F);
     IRBuilder b = IRBuilder(RealObject);

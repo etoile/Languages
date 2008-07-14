@@ -51,7 +51,7 @@ void Parse(void *yyp, int yymajor, id yyminor ,Parser* p);
 void ParseFree(void *p, void (*freeProc)(void*));
 
 
-#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self); NSLog(@"Parsing %@ (%s)", arg, #token)
+#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
 #define WHILE(is) for(j=i ; j<[s length]-1 && is(c) ; c=CHAR(++j)) {}
 #define WORD_TOKEN substr(TokenClass, substrSel, NSMakeRange(i, j-i), s)
@@ -143,7 +143,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 			switch(c)
 			{
 				CHARCASE('|', BAR)
-				CHARCASE('#', HASH)
+				//CHARCASE('#', HASH)
 				CHARCASE(',', COMMA)
 				CHARCASE(':', COLON)
 				CHARCASE('.', STOP)
@@ -152,6 +152,8 @@ void ParseFree(void *p, void (*freeProc)(void*));
 				CHARCASE(')', RBRACK)
 				CHARCASE('[', LSQBRACK)
 				CHARCASE(']', RSQBRACK)
+				CHARCASE('{', LBRACE)
+				CHARCASE('}', RBRACE)
 				CHARCASE('^', RETURN)
 				case '+':
 					CALL_PARSER(WORD, @"+");

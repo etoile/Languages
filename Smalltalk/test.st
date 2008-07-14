@@ -24,7 +24,7 @@ NSObject subclass: SmalltalkTool
 	test: r [
 	| a b c|
 		"Test array creation."
-		a := #(NSObject new, NSString new, NSNumber new).
+		a := {NSObject new, NSString new, NSNumber new}.
 		a log.
 		"Test passing Smalltalk blocks to Objective-C objects"
 		b := a map:[ :x | x log. x class. ].
@@ -34,6 +34,9 @@ NSObject subclass: SmalltalkTool
 		b := 12.
 		c := b + 5.
 		b stringValue log.
+'Comparison result:' log.
+('wibble' == 'wible') log.
+('wibble' == 'wibble') log.
 		'Wibble?' log.
 		self wibble:c.
 		b log.
