@@ -116,6 +116,10 @@ LLVMValue StringConstant(ModuleBuilder B, const char *value);
  * Constructs an LLVM constant representing nil.
  */
 LLVMValue NilConstant(void);
+/**
+ * Compare two pointers.  Returns a SmallInt representing the comparison result.
+ */
+LLVMValue ComparePointers(ModuleBuilder B, LLVMValue lhs, LLVMValue rhs);
 
 /**
  * Compile the module and load it into the runtime system.

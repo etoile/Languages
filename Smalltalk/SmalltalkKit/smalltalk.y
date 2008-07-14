@@ -11,6 +11,7 @@ domain parser generator, to produce an Objective-C parser.
 #import "AssignExpr.h"
 #import "BlockExpr.h"
 #import "Comment.h"
+#import "Comparison.h"
 #import "DeclRef.h"
 #import "Literal.h"
 #import "MessageSend.h"
@@ -214,6 +215,7 @@ expression(E) ::= WORD(V).
 	E = declref;
 }
 
+
 expression(E) ::= block(B).
 {
 	E = B;
@@ -242,6 +244,10 @@ expression_list(L) ::= expression(E) COMMA expression_list(T).
 expression_list(L) ::= expression(E) RBRACE.
 {
 	L = [NSMutableArray arrayWithObject:E];
+}
+expression(E) ::= expression(L) EQ expression(R).
+{
+  E = [Compare compare:L to:R];
 }
 
 block(B) ::= LSQBRACK argument_list(A)  statement_list(S) RSQBRACK.

@@ -142,4 +142,8 @@
  * Returns nil as a constant.
  */
 - (void*) nilConstant;
+/**
+ * Compares two pointers.
+ */
+- (void*) comparePointer:(void*)lhs to:(void*)rhs;
 @end

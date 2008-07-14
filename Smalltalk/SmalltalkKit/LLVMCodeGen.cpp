@@ -618,13 +618,22 @@ public:
       assert(false && "Number needs promoting to BigInt and BigInt isn't implemented yet");
     }
     ptrVal |= 1;
-    Constant *Val = ConstantInt::get(IntegerType::get(sizeof(void*) * 8), ptrVal);
+    Constant *Val = ConstantInt::get(IntPtrTy, ptrVal);
     Val = ConstantExpr::getIntToPtr(Val, IdTy);
     Val->setName("SmallIntConstant");
     return Val;
   }
   Value *StringConstant(const char *value) {
     return Runtime->GenerateConstantString(value, strlen(value));
+  }
+	Value *ComparePointers(Value *lhs, Value *rhs) {
+    lhs = Builder->CreatePtrToInt(lhs, IntPtrTy);
+    rhs = Builder->CreatePtrToInt(rhs, IntPtrTy);
+    Value *result = Builder->CreateICmpEQ(rhs, lhs, "pointer_compare_result");
+    result = Builder->CreateZExt(result, IntPtrTy);
+    result = Builder->CreateShl(result, ConstantInt::get(IntPtrTy, 1));
+    result = Builder->CreateOr(result, ConstantInt::get(IntPtrTy, 1));
+    return Builder->CreateIntToPtr(result, IdTy);
   }
 
   void compile(void) {
@@ -795,6 +804,9 @@ extern "C" {
   }
   LLVMValue NilConstant() {
     return ConstantPointerNull::get(IdTy);
+  }
+	LLVMValue ComparePointers(ModuleBuilder B, LLVMValue lhs, LLVMValue rhs) {
+    return B->ComparePointers(rhs, lhs);
   }
   
   void SetBlockReturn(ModuleBuilder B, LLVMValue value) {

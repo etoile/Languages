@@ -34,9 +34,12 @@ NSObject subclass: SmalltalkTool
 		b := 12.
 		c := b + 5.
 		b stringValue log.
-'Comparison result:' log.
-('wibble' == 'wible') log.
-('wibble' == 'wibble') log.
+		'Comparison result:' log.
+		('wibble' == 'wible') log.
+		('wibble' == 'wibble') log.
+		('wibble' = 'wible') log.
+		(12 = 12) log.
+		('wibble' = 'wibble') log.
 		'Wibble?' log.
 		self wibble:c.
 		b log.

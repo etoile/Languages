@@ -160,7 +160,11 @@
 }
 - (void*) nilConstant
 {
-  return NilConstant();
+	return NilConstant();
+}
+- (void*) comparePointer:(void*)lhs to:(void*)rhs
+{
+	return ComparePointers(Builder, lhs, rhs);
 }
 - (void) dealloc
 {
