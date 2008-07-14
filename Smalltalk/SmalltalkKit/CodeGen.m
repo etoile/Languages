@@ -14,21 +14,10 @@
 		}
 		else 
 		{
-			NSArray *paths =
-				NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
-						NSAllDomainsMask, YES);
-			FOREACH(paths, prefix, NSString*)
-			{
-				NSString * file = [prefix stringByAppendingString:
-					@"MsgSendSmallInt.bc"];
-				if ([f fileExistsAtPath:file]) 
-				{
-					path = [file UTF8String];
-					break;
-				}
-			}
+			path = [[[NSBundle bundleForClass: self] 
+				pathForResource: @"MsgSendSmallInt" ofType: @"bc"] UTF8String];
 		}
-		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc.  This must be in either the current working directory or in one of the Library directories on your system.");
+		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc.  This must be in either the current working directory or in the Resources directory of the SmalltalkKit framework installed on your system.");
 		LLVMinitialise(path);
 	}
 }
