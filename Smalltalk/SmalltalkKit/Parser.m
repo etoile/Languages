@@ -2,13 +2,45 @@
 #import "Parser.h"
 #include <ctype.h>
 #include "smalltalk.h"
-/*
-#define TOKEN_BAR                             1
-#define TOKEN_WORD                            2
-#define TOKEN_COLON                           3
-#define TOKEN_EQ                              4
-#define TOKEN_STOP                            5
-*/
+
+typedef unichar(*CIMP)(id, SEL, unsigned);
+
+@interface Token : NSString {
+	NSString *source;
+	NSRange range;
+	CIMP charAtIndex;
+}
++ (Token*) tokenWithRange:(NSRange)aRange inSource:(NSString*)aString;
+@end
+@implementation Token
+- (Token*) initWithRange:(NSRange)aRange inSource:(NSString*)aString
+{
+	SELFINIT;
+	charAtIndex = (CIMP)[aString methodForSelector:@selector(characterAtIndex:)];
+	ASSIGN(source, aString);
+	range = aRange;
+	return self;
+}
++ (Token*) tokenWithRange:(NSRange)aRange inSource:(NSString*)aString
+{
+	return [[[Token alloc] initWithRange:aRange inSource:aString] autorelease];
+}
+- (unsigned) length
+{
+	return range.length;
+}
+- (unichar) characterAtIndex:(unsigned)index
+{
+	return charAtIndex(source, @selector(characterAtIndex:), index +
+			range.location);
+}
+- (void) dealloc
+{
+	[source release];
+	[super dealloc];
+}
+@end
+
 
 
 
@@ -19,11 +51,10 @@ void Parse(void *yyp, int yymajor, id yyminor ,Parser* p);
 void ParseFree(void *p, void (*freeProc)(void*));
 
 
-typedef unichar(*CIMP)(id, SEL,...);
-#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %s", #token)
+#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self); NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
 #define WHILE(is) for(j=i ; j<[s length]-1 && is(c) ; c=CHAR(++j)) {}
-#define WORD_TOKEN substr(s, substrSel, NSMakeRange(i, j-i))
+#define WORD_TOKEN substr(TokenClass, substrSel, NSMakeRange(i, j-i), s)
 #define CASE(start, end, function)\
 	if(start(c))\
 	{\
@@ -38,10 +69,11 @@ typedef unichar(*CIMP)(id, SEL,...);
 {
 	/* Cache some IMPs of methods we call a lot */
 	SEL charSel = @selector(characterAtIndex:);
-	SEL substrSel = @selector(substringWithRange:);
+	SEL substrSel = @selector(tokenWithRange:inSource:);
 	CIMP charAt = (CIMP)[s methodForSelector:charSel];
 
-	IMP substr = [s methodForSelector:substrSel];
+	IMP substr = [Token methodForSelector:substrSel];
+	Class TokenClass = [Token class];
 	/* Set up the parser */
 	void * parser = ParseAlloc( malloc );
 

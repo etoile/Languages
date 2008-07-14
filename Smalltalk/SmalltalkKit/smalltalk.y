@@ -34,12 +34,12 @@ file ::= module(M).
 module(M) ::= module(O) subclass(S).
 {
 	[O addClass:S];
-M = O;
+	M = O;
 }
 module(M) ::= module(O) category(C).
 {
-  [O addCategory:C];
-  M = O;
+	[O addCategory:C];
+	M = O;
 }
 module(M) ::= .
 {
