@@ -8,7 +8,10 @@ FRAMEWORK_NAME = SmalltalkKit
 
 ${FRAMEWORK_NAME}_CC_FILES = \
 	CGObjCGNU.cpp\
-	LLVMCodeGen.cpp
+	CodeGenBlock.cpp\
+	CodeGenModule.cpp\
+	LLVMCodeGen.cpp\
+	LLVMCodeGenCAPI.cpp
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
 	smalltalk.m\

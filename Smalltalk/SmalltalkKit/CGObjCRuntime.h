@@ -16,6 +16,7 @@
 #ifndef CLANG_CODEGEN_OBCJRUNTIME_H
 #define CLANG_CODEGEN_OBCJRUNTIME_H
 #include "llvm/ADT/SmallVector.h"
+#include "CGObjCDelegates.h"
 #include <string>
 
 namespace llvm {
@@ -28,10 +29,8 @@ namespace llvm {
 }
 
 namespace clang {
-  class Selector;
   
 namespace CodeGen {
-  class CodeGenModule;
 
 //FIXME Several methods should be pure virtual but aren't to avoid the
 //partially-implemented subclass breaking.

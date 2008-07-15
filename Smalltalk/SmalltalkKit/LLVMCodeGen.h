@@ -7,7 +7,7 @@
  * interfaces with the LLVM components for generating the intermediate
  * representation code.
  */
-typedef struct CodeGen* ModuleBuilder;
+typedef struct CodeGenModule* ModuleBuilder;
 /**
  * Value of an LLVM register.
  */

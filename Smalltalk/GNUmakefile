@@ -17,7 +17,6 @@ ${TOOL_NAME}_OBJC_FILES = \
 	main.m
 
 ${TOOL_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-# FIXME: The -gui requirement is only there because EtoileXML needs it, which it shouldn't
 ${TOOL_NAME}_LDFLAGS += -g -lgmp -lEtoileFoundation -lgnustep-gui\
    	-lSmalltalkKit -L./SmalltalkKit/SmalltalkKit.framework/Versions/Current\
    	-L/usr/local/lib

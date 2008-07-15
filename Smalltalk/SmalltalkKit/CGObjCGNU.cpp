@@ -936,3 +936,4 @@ clang::CodeGen::CGObjCRuntime *clang::CodeGen::CreateObjCRuntime(
     const llvm::Type *LLVMLongType) {
   return new CGObjCGNU(M, LLVMIntType, LLVMLongType);
 }
+

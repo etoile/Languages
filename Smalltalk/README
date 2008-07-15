@@ -8,10 +8,9 @@ Status
 
 Currently, JIT is working, static compilation is not.
 
-Large parts of Smalltalk don't work.  Methods which accept parameters which are
-not objects, instance variables which are not objects, and returns from blocks
-are the big things that are broken.  Grep the source code for 'FIXME' and
-'TODO' for a clearer picture.
+Large parts of Smalltalk don't work.  Instance variables which are not objects,
+and returns from blocks are the big things that are broken.  Grep the source
+code for 'FIXME' and 'TODO' for a clearer picture.
 
 Dependencies
 ------------
@@ -20,6 +19,10 @@ The parser is generated using the Lemon parser generator from SQLite (public dom
 Code generation uses the LLVM compiler infrastructure.
 Various parts of EtoileFoundation are used (mainly macros).
 These must all be installed to build.
+
+If you are not developing the compiler, it is *strongly* recommended that you
+do a release build of LLVM (it defaults to a debug build).  Release builds run
+approximately 10 times faster and are significantly smaller.  
 
 NOTE: Due to recent changes in LLVM APIs, LLVM 2.3 is not sufficient to build.
 A recent checkout of trunk is required.  The version of Pragmatic Smalltalk in
