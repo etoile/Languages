@@ -7,11 +7,13 @@ SUBPROJECT_NAME = libSmalltalkSupport
 ${SUBPROJECT_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2
 ${SUBPROJECT_NAME}_OBJCFLAGS += -std=c99 
 ${SUBPROJECT_NAME}_CFLAGS += -std=c99
+${SUBPROJECT_NAME}_LDFLAGS += -lgmp -L/usr/local/lib
 
 #
 # Class files
 #
 ${SUBPROJECT_NAME}_OBJC_FILES = \
+	BigInt.m\
 	NSObject+log.m\
 	BlockClosure.m\
 	NSArray+map.m

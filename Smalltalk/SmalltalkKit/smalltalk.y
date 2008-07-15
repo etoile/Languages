@@ -237,10 +237,14 @@ expression(E) ::= LBRACE expression_list(L).
 {
 	E = [ArrayExpr arrayWithElements:L];
 }
-expression_list(L) ::= expression(E) COMMA expression_list(T).
+expression_list(L) ::= expression(E) STOP expression_list(T).
 {
 	[T addObject:E];
 	L = T;
+}
+expression_list(L) ::= expression(E) STOP RBRACE.
+{
+	L = [NSMutableArray arrayWithObject:E];
 }
 expression_list(L) ::= expression(E) RBRACE.
 {

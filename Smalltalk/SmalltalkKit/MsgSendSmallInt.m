@@ -2,8 +2,9 @@
 #include <sys/types.h>
 #include <string.h>
 
-@class NSNumber;
+@class BigInt;
 @class NSString;
+NSLog(NSString*, ...);
 
 typedef struct
 {
@@ -19,9 +20,7 @@ typedef struct
 #define MSG(name, ...) void *SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
 {\
 	intptr_t val = (intptr_t)obj;\
-	long otherval = (intptr_t)other;\
-	val >>= 1;\
-	otherval >>= 1;
+	val >>= 1;
 /**
  * Small int message with no arguments.
  */
@@ -29,7 +28,13 @@ typedef struct
 /**
  * Small int message with one argument.
  */
-#define MSG1(name) MSG(name, void *other)
+#define MSG1(name) MSG(name, void *other)\
+	long otherval = (intptr_t)other;\
+	otherval >>= 1;
+
+MSG0(log)
+	NSLog(@"%lld", (long long) ((intptr_t)obj >>1));
+}
 
 MSG1(ifTrue_)
 	if (val == 0)
@@ -92,8 +97,7 @@ MSG1(sub_)
 void *MakeSmallInt(long long val) {
 	uintptr_t ptr = val << 1;
 	if (((ptr >> 1)) != val) {
-		// FIXME: Should be a BigInt object that responds to arrithmetic messages
-		return [NSNumber numberWithLongLong:val];
+		return [BigInt bigIntWithLongLong:val];
 	}
 	return (void*)(ptr | 1);
 }
@@ -101,12 +105,9 @@ void *MakeSmallInt(long long val) {
 void *BoxSmallInt(void *obj) {
 	intptr_t val = (intptr_t)obj;
 	val >>= 1;
-	return [NSNumber numberWithLong:(long)val];
+	return [BigInt bigIntWithLongLong:(long long)val];
 }
 
-#define SCAST(x, y) if(strcmp(sel, "c" #x "Value") == 0) return (void*)(y)(long)obj;
-#define UCAST(x, y) if(strcmp(sel, "cu" #x "Value") == 0) return (void*)(unsigned y)(unsigned long)obj;
-#define NCAST(x, y) SCAST(x,y) UCAST(x,y)
 #define CAST(x) NCAST(x,x)
 #define CASTMSG(type, name) type SmallIntMsg##name##Value(void *obj) { return (type) ((intptr_t)obj>>1); }
 

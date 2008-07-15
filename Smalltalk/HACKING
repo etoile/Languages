@@ -53,4 +53,35 @@ be used for performance critical parts without GC overhead.  This should be
 done by integrating the cycle detector in GCKit and marking Smalltalk objects
 as black.
 
+Summary of Missing Features
+---------------------------
+
+Still missing for 1.0:
+
+- Autoboxing of incoming parameters.
+- Cleanup of blocks (they currently leak - very bad).
+- Blocks as upward funargs (if a block lives for longer than a method, it
+  currently breaks).
+- BigInt class.
+- Full implementation of Smalltalk-80 SmallInt messages.
+
+Still missing for 2.0:
+
+- Type inference engine.
+- More aggressive elimination of small int test on message sends (currently the
+  only reason we are slower than ObjC).
+	- Related: An LLVM opt that does partial-constant propagation, if there
+	  isn't one already.
+- More complete implementation of Smalltalk-80 objects (ideally as class-name
+  mappings and categories on OpenStep objects where possible.)
+- Working support for the new runtime.
+
+Still missing for 3.0:
+
+- Self-style prototype support.
+- World domination.
+
+
+Have fun!
+
 - David Chisnall
