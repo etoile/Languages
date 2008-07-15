@@ -59,7 +59,7 @@ op2(div, tdiv_q)
 {
 	char * cstr = mpz_get_str(NULL, 10, v);
 	NSString *str = [NSString stringWithUTF8String:cstr];
-	free(str);
+	free(cstr);
 	return str;
 }
 - (void) dealloc
