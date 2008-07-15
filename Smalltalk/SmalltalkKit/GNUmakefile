@@ -3,7 +3,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 #
 # Library
 #
-VERSION = 0.5
+VERSION = 0.6
 FRAMEWORK_NAME = SmalltalkKit
 
 ${FRAMEWORK_NAME}_CC_FILES = \
