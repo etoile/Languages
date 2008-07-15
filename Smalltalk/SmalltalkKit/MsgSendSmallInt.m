@@ -90,8 +90,8 @@ MSG1(sub_)
 	return (void*)((val << 1) | 1);
 }
 void *MakeSmallInt(long long val) {
-	uintptr_t ptr = val >> 1;
-	if ((ptr << 1) != val) {
+	uintptr_t ptr = val << 1;
+	if (((ptr >> 1)) != val) {
 		// FIXME: Should be a BigInt object that responds to arrithmetic messages
 		return [NSNumber numberWithLongLong:val];
 	}
