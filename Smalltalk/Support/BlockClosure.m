@@ -3,8 +3,6 @@
 @implementation BlockClosure
 - (id) value
 {
-	NSLog(@"Evaluating block.  Function is %x", function);
-	//NSLog(@"Bound values are: %@, %@, %@, %@, %@", bound[0], bound[1],bound[2],bound[3],bound[4]);
 	if (args > 0)
 	{
 		[NSException raise:@"InvalidBlockValueCall" format:@"Block expects %d arguments", args];

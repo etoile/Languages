@@ -37,7 +37,6 @@ ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 LLVM_LIBS=all
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
-#${FRAMEWORK_NAME}_LDFLAGS += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
 LD = g++
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc
@@ -47,8 +46,6 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 smalltalk.m: smalltalk.y
 	@echo Generating parser...
 	@lemon smalltalk.y ; mv smalltalk.c smalltalk.m
-
-# FIXME: The generated bc file should be installed in a Library directory somewhere.
 
 MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
