@@ -9,6 +9,8 @@ namespace llvm {
   class Value;
 }
 
+class CodeGenModule;
+
 class CodeGenBlock {
   llvm::SmallVector<llvm::Value*, 8> Args;
   llvm::SmallVector<llvm::Value*, 8> Locals;
@@ -23,7 +25,7 @@ public:
   llvm::BasicBlock *CleanupBB;
 
   CodeGenBlock(llvm::Module *M, int args, int locals, llvm::Value **promoted,
-    int count, llvm::IRBuilder *MethodBuilder);
+    int count, llvm::IRBuilder *MethodBuilder, CodeGenModule *CGM);
 
   llvm::Value *LoadArgumentAtIndex(unsigned index);
 

@@ -1,5 +1,7 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <AppKit/AppKit.h>
+#include <time.h>
+#include <sys/resource.h>
 #import "SymbolTable.h"
 #import "Parser.h"
 #import "LLVMCodeGen.h"
@@ -61,6 +63,15 @@ int main(int argc, char **argv)
 				[className UTF8String]);
 		return 3;
 	}
+	clock_t c1;
+	c1 = clock();
 	[[tool new] run];
+#ifdef DEBUG
+	clock_t c2 = clock();
+	struct rusage r;
+	getrusage(RUSAGE_SELF, &r);
+	NSLog(@"Smalltalk execution took %f seconds.  Peak used %dKB.",
+			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
+#endif
 	return 0;
 }

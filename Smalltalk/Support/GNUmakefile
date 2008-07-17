@@ -13,9 +13,10 @@ ${SUBPROJECT_NAME}_CFLAGS += -std=c99
 #
 ${SUBPROJECT_NAME}_OBJC_FILES = \
 	BigInt.m\
-	NSObject+log.m\
 	BlockClosure.m\
-	NSArray+map.m
+	NSArray+map.m\
+	NSObject+log.m\
+	NSString+casting.m
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/subproject.make

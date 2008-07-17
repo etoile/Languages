@@ -112,50 +112,5 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr) {
   return FunctionType::get(ReturnTy, ArgTypes, false);
 }
 
-void InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
-    SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
-    locals, Value *&RetVal, BasicBlock *&CleanupBB) {
-
-    // Set up the arguments
-    llvm::Function::arg_iterator AI = F->arg_begin();
-    Self = B->CreateAlloca(AI->getType(), 0, "block_self");
-    B->CreateStore(AI, Self);
-    ++AI; ++AI;
-    for(Function::arg_iterator end = F->arg_end() ; AI != end ;
-        ++AI) {
-      Value * arg = B->CreateAlloca(AI->getType(), 0, "arg");
-      Args.push_back(arg);
-      // Initialise the local to nil
-      B->CreateStore(AI, arg);
-    }
-    // Create the locals and initialise them to nil
-    for (unsigned i = 0 ; i < locals ; i++) {
-      Value * local = B->CreateAlloca(IdTy, 0, "local");
-      Locals.push_back(local);
-      // Initialise the local to nil
-      B->CreateStore(ConstantPointerNull::get(IdTy),
-          local);
-    }
-
-    // Create a basic block for returns, reached only from the cleanup block
-    RetVal = B->CreateAlloca(IdTy, 0, "return_value");
-    B->CreateStore(ConstantPointerNull::get(IdTy),
-        RetVal);
-    BasicBlock * RetBB = llvm::BasicBlock::Create("return", F);
-    IRBuilder ReturnBuilder = IRBuilder(RetBB);
-    if (F->getFunctionType()->getReturnType() != llvm::Type::VoidTy) {
-      Value * R = ReturnBuilder.CreateLoad(RetVal);
-      //UnboxArgs(&ReturnBuilder, F, &R, &R, 1, RetType);
-      ReturnBuilder.CreateRet(R);
-    } else {
-      ReturnBuilder.CreateRetVoid();
-    }
-
-    // Setup the cleanup block
-    CleanupBB = BasicBlock::Create("cleanup", F);
-    ReturnBuilder = IRBuilder(CleanupBB);
-    ReturnBuilder.CreateBr(RetBB);
-
-}
 
 CGObjCRuntime::~CGObjCRuntime() {}

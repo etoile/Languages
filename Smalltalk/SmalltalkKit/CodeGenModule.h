@@ -71,6 +71,11 @@ private:
   /**
    * Constructs a C primitive from a Smalltalk object.
    */
+  Value *Unbox(IRBuilder *B, Function *F, Value *val, const char *Type);
+
+  /**
+   * Construct C primitives from Smalltalk objects in an argument list.
+   */
   void UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
       unsigned argc, const char *selTypes);
 
@@ -206,6 +211,13 @@ public:
    * Compare two pointers for equality.
    */
 	Value *ComparePointers(Value *lhs, Value *rhs);
+  /**
+   * Intialises a Function object to be used as a Smalltalk method or block
+   * function.
+   */
+  void InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
+      SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
+      locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *RetTy="@");
 
   /**
    * Compile and load this module.

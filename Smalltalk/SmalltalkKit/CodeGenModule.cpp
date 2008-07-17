@@ -97,6 +97,62 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
 #define NEXT(typestr) \
   while (!isdigit(*typestr)) { typestr++; }\
   while (isdigit(*typestr)) { typestr++; }
+Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *Type) {
+  const char *castSelName;
+  // TODO: Factor this out into a name-for-type function
+  switch(*Type) {
+    case 'c':
+      castSelName = "charValue";
+      break;
+    case 'C':
+      castSelName = "unsignedCharValue";
+      break;
+    case 's':
+      castSelName = "shortValue";
+      break;
+    case 'S':
+      castSelName = "unsignedShortValue";
+      break;
+    case 'i':
+      castSelName = "intValue";
+      break;
+    case 'I':
+      castSelName = "unsignedIntValue";
+      break;
+    case 'l':
+      castSelName = "longValue";
+      break;
+    case 'L':
+      castSelName = "unsignedLongValue";
+      break;
+    case 'q':
+      castSelName = "longLongValue";
+      break;
+    case 'Q':
+      castSelName = "unsignedLongLongValue";
+      break;
+    case 'f':
+      castSelName = "floatValue";
+      break;
+    case 'd':
+      castSelName = "doubleValue";
+      break;
+    case 'B':
+      castSelName = "boolValue";
+      break;
+    case '@':
+    case 'v':
+      return val;
+    default:
+      castSelName = "";
+      assert(false && "Unable to transmogriy object to compound type");
+  }
+  //TODO: We don't actually use the size numbers for anything, but someone else does, so make these sensible:
+  char typeStr[] = "I12@0:4";
+  typeStr[0] = *Type;
+  return MessageSend(B, F, val, castSelName, typeStr, 0, 0);
+}
+
 void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
     unsigned argc, const char *selTypes) {
   // FIXME: For objects, we need to turn SmallInts into ObjC objects
@@ -111,61 +167,7 @@ void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value *
     for (unsigned i=0 ; i<argc ; ++i) {
       NEXT(selTypes);
       SkipTypeQualifiers(&selTypes);
-      const char *castSelName;
-      // TODO: Factor this out into a name-for-type function
-      switch(*selTypes) {
-        case 'c':
-          castSelName = "charValue";
-          break;
-        case 'C':
-          castSelName = "unsignedCharValue";
-          break;
-        case 's':
-          castSelName = "shortValue";
-          break;
-        case 'S':
-          castSelName = "unsignedShortValue";
-          break;
-        case 'i':
-          castSelName = "intValue";
-          break;
-        case 'I':
-          castSelName = "unsignedIntValue";
-          break;
-        case 'l':
-          castSelName = "longValue";
-          break;
-        case 'L':
-          castSelName = "unsignedLongValue";
-          break;
-        case 'q':
-          castSelName = "longLongValue";
-          break;
-        case 'Q':
-          castSelName = "unsignedLongLongValue";
-          break;
-        case 'f':
-          castSelName = "floatValue";
-          break;
-        case 'd':
-          castSelName = "doubleValue";
-          break;
-        case 'B':
-          castSelName = "boolValue";
-          break;
-        case '@':
-        case 'v':
-          args[i] = argv[i];
-          continue;
-        default:
-          castSelName = "";
-          assert(false && "Unable to transmogriy object to compound type");
-      }
-      //TODO: We don't actually use the size numbers for anything, but someone else does, so make these sensible:
-      char typeStr[] = "I12@0:4";
-      typeStr[0] = *selTypes;
-      args[i] = MessageSend(B, F, argv[i], castSelName,
-          typeStr, 0, 0);
+      args[i] = Unbox(B, F, argv[i], selTypes);
     }
   }
 }
@@ -309,7 +311,8 @@ void CodeGenModule::BeginMethod(const char *MethodName, const char
 
   Args.clear();
   Locals.clear();
-  InitialiseFunction(Builder, CurrentMethod, Self, Args, Locals, locals, RetVal, CleanupBB);
+  InitialiseFunction(Builder, CurrentMethod, Self, Args, Locals, locals,
+      RetVal, CleanupBB, MethodTypes);
 }
 
 Value *CodeGenModule::LoadArgumentAtIndex(unsigned index) {
@@ -407,7 +410,7 @@ void CodeGenModule::StoreValueOfTypeAtOffsetFromObject(Value *value,
 
 void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value **promoted, int count) {
   BlockStack.push_back(new CodeGenBlock(TheModule, args, locals, promoted,
-        count, Builder));
+        count, Builder, this));
 }
 Value *CodeGenModule::LoadBlockVar(unsigned index, unsigned offset) {
   return BlockStack.back()->LoadBlockVar(index, offset);
@@ -456,6 +459,52 @@ Value *CodeGenModule::ComparePointers(Value *lhs, Value *rhs) {
   result = Builder->CreateShl(result, ConstantInt::get(IntPtrTy, 1));
   result = Builder->CreateOr(result, ConstantInt::get(IntPtrTy, 1));
   return Builder->CreateIntToPtr(result, IdTy);
+}
+
+void CodeGenModule::InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
+    SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
+    locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *RetType) {
+
+    // Set up the arguments
+    llvm::Function::arg_iterator AI = F->arg_begin();
+    Self = B->CreateAlloca(AI->getType(), 0, "block_self");
+    B->CreateStore(AI, Self);
+    ++AI; ++AI;
+    for(Function::arg_iterator end = F->arg_end() ; AI != end ;
+        ++AI) {
+      Value * arg = B->CreateAlloca(AI->getType(), 0, "arg");
+      Args.push_back(arg);
+      // Initialise the local to nil
+      B->CreateStore(AI, arg);
+    }
+    // Create the locals and initialise them to nil
+    for (unsigned i = 0 ; i < locals ; i++) {
+      Value * local = B->CreateAlloca(IdTy, 0, "local");
+      Locals.push_back(local);
+      // Initialise the local to nil
+      B->CreateStore(ConstantPointerNull::get(IdTy),
+          local);
+    }
+
+    // Create a basic block for returns, reached only from the cleanup block
+    RetVal = B->CreateAlloca(IdTy, 0, "return_value");
+    B->CreateStore(ConstantPointerNull::get(IdTy),
+        RetVal);
+    BasicBlock * RetBB = llvm::BasicBlock::Create("return", F);
+    IRBuilder ReturnBuilder = IRBuilder(RetBB);
+    if (F->getFunctionType()->getReturnType() != llvm::Type::VoidTy) {
+      Value * R = ReturnBuilder.CreateLoad(RetVal);
+      R = Unbox(&ReturnBuilder, F, R, RetType);
+      ReturnBuilder.CreateRet(R);
+    } else {
+      ReturnBuilder.CreateRetVoid();
+    }
+
+    // Setup the cleanup block
+    CleanupBB = BasicBlock::Create("cleanup", F);
+    ReturnBuilder = IRBuilder(CleanupBB);
+    ReturnBuilder.CreateBr(RetBB);
+
 }
 
 void CodeGenModule::compile(void) {

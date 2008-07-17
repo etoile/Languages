@@ -7,7 +7,7 @@
 using namespace llvm;
 
 CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted, int count,
-    IRBuilder *MethodBuilder) {
+    IRBuilder *MethodBuilder, CodeGenModule *CGM) {
   TheModule = M;
   const Type *IdPtrTy = PointerType::getUnqual(IdTy);
   BlockTy = StructType::get(
@@ -42,8 +42,8 @@ CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted, in
   Builder = new IRBuilder(EntryBB);
 
   // Set up the arguments
-  InitialiseFunction(Builder, BlockFn, BlockSelf, Args, Locals,
-      locals, RetVal, CleanupBB);
+  CGM->InitialiseFunction(Builder, BlockFn, BlockSelf, Args, Locals, locals,
+      RetVal, CleanupBB);
   MethodBuilder->CreateStore(ConstantInt::get(Type::Int32Ty, args),
       MethodBuilder->CreateStructGEP(Block, 4));
 

@@ -31,6 +31,8 @@ NSObject subclass: SmalltalkTool
 		b map:[ :x | x log. x. ].
 		a insertObject:'test' atIndex:2.
 		b := a objectAtIndex:2.
+		"You can't do this in Objective-C:"
+		(a objectAtIndex:'2') log.
 		((a objectAtIndex:2) == 'test') ifTrue:[ 'Array insert (auto-unboxing) worked!' log. ].
 		a log.
 		r log.
