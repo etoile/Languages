@@ -90,7 +90,8 @@ private:
    * object.
    */
   Value *MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
-      *selName, const char *selTypes, Value **argv, unsigned argc);
+      *selName, const char *selTypes, Value **argv=0, Value **boxedArgs=0,
+      unsigned argc=0);
 
 public:
   /**

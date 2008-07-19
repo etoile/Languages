@@ -77,12 +77,20 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 
 
 MSG1(add_)
-	val += otherval;
-	if(val < 0)
+	intptr_t res = val +otherval;
+	//fprintf(stderr, "Adding %d to %d\n", (int)val, (int)otherval);
+	if((val<=res)==((((uintptr_t)otherval)>>((sizeof(uintptr_t)*8) - 1))))
 	{
-		//TODO: Overflow
+		//fprintf(stderr, "Add overflowed - promoting.\n");
+		[[BigInt bigIntWithLongLong:(long long)val] 
+					add:[BigInt bigIntWithLongLong:(long long)otherval]];
 	}
-	return (void*)((val << 1) | 1);
+	if((res << 1 >> 1) != res)
+	{
+		//fprintf(stderr, "Add overflowed - promoting.\n");
+		return [BigInt bigIntWithLongLong:(long long)res];
+	}
+	return (void*)((res << 1) | 1);
 }
 
 MSG1(sub_)
@@ -94,8 +102,20 @@ MSG1(sub_)
 	}
 	return (void*)((val << 1) | 1);
 }
+MSG1(mul_)
+	otherval >>= 1;
+	val *= otherval;
+	if(val < 0)
+	{
+		//TODO: Overflow
+	}
+	return (void*)((val << 1) | 1);
+}
+
 void *MakeSmallInt(long long val) {
-	uintptr_t ptr = val << 1;
+	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
+	intptr_t ptr = val << 1;
+	//fprintf(stderr, "Failing if it is not %lld \n", (long long)(ptr >> 1));
 	if (((ptr >> 1)) != val) {
 		return [BigInt bigIntWithLongLong:val];
 	}
@@ -104,6 +124,15 @@ void *MakeSmallInt(long long val) {
 
 void *BoxSmallInt(void *obj) {
 	intptr_t val = (intptr_t)obj;
+	val >>= 1;
+	//fprintf(stderr, "Boxing %d\n", (int) val);
+	return [BigInt bigIntWithLongLong:(long long)val];
+}
+void *BoxObject(void *obj) {
+	intptr_t val = (intptr_t)obj;
+	if (val == 0 || (val & 1) == 0) {
+		return obj;
+	}
 	val >>= 1;
 	return [BigInt bigIntWithLongLong:(long long)val];
 }

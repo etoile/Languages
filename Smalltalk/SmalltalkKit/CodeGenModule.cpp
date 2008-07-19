@@ -140,7 +140,11 @@ Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *T
     case 'B':
       castSelName = "boolValue";
       break;
-    case '@':
+    case '@': {
+      Value *BoxFunction = TheModule->getFunction("BoxObject");
+      val = B->CreateBitCast(val, IdTy);
+      return B->CreateCall(BoxFunction, val, "boxed_small_int");
+    }
     case 'v':
       return val;
     default:
@@ -150,7 +154,7 @@ Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *T
   //TODO: We don't actually use the size numbers for anything, but someone else does, so make these sensible:
   char typeStr[] = "I12@0:4";
   typeStr[0] = *Type;
-  return MessageSend(B, F, val, castSelName, typeStr, 0, 0);
+  return MessageSend(B, F, val, castSelName, typeStr);
 }
 
 void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
@@ -176,31 +180,41 @@ void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value *
 // SmallInt.
 Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char *selName,
     const char *selTypes, Value **argv, unsigned argc) {
-  Value *Self = LoadSelf();
+  Value *SelfPtr = B->CreateLoad(Self);
   FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
   llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-  return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), Self,
+  return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), SelfPtr,
       receiver, cmd, argv, argc);
 }
 
 Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
-    *selName, const char *selTypes, Value **argv, unsigned argc) {
+    *selName, const char *selTypes, Value **argv, Value **boxedArgs, unsigned argc) {
+  receiver->dump();
   Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
   Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
 
-  // Basic block for messages to SmallInts.
+  // Basic blocks for messages to SmallInts and ObjC objects:
   BasicBlock *SmallInt = BasicBlock::Create(string("small_int_message") + selName, F);
   IRBuilder SmallIntBuilder = IRBuilder(SmallInt);
+  BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") + selName,
+      F);
+  IRBuilder RealObjectBuilder = IRBuilder(RealObject);
+  // Branch to whichever is the correct implementation
+  B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
+  B->ClearInsertionPoint();
+
   Value *Result = 0;
 
   // See if there is a function defined to implement this message
   Value *SmallIntFunction =
     TheModule->getFunction(FunctionNameFromSelector(selName));
 
+  // Send a message to a small int, using a static function or by promoting to
+  // a big int.
   if (0 != SmallIntFunction) {
     SmallVector<Value*, 8> Args;
     Args.push_back(receiver);
-    Args.insert(Args.end(), argv, argv+argc);
+    Args.insert(Args.end(), boxedArgs, boxedArgs+argc);
     for (unsigned i=0 ; i<Args.size() ;i++) {
       const Type *ParamTy =
         cast<Function>(SmallIntFunction)->getFunctionType()->getParamType(i);
@@ -219,11 +233,12 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, co
     Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes, argv,
         argc);
   }
-  BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") + selName,
-      F);
-  IRBuilder RealObjectBuilder = IRBuilder(RealObject);
+  Value *args[argc];
+  UnboxArgs(&RealObjectBuilder, F, argv, args, argc, selTypes);
+  // This will create some branches - get the new basic block.
+  RealObject = RealObjectBuilder.GetInsertBlock();
   Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
-      selTypes, argv, argc);
+      selTypes, args, argc);
 
   if ((Result->getType() != ObjResult->getType())
       && (ObjResult->getType() != Type::VoidTy)) {
@@ -231,12 +246,12 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, co
         "cast_small_int_result", SmallInt);
   }
   
-  B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
+  // Join the two paths together again:
   BasicBlock *Continue = BasicBlock::Create("Continue", F);
-  B->SetInsertPoint(Continue);
 
   RealObjectBuilder.CreateBr(Continue);
   SmallIntBuilder.CreateBr(Continue);
+  B->SetInsertPoint(Continue);
   if (ObjResult->getType() != Type::VoidTy) {
     PHINode *Phi = B->CreatePHI(Result->getType(),  selName);
     Phi->reserveOperandSpace(2);
@@ -249,6 +264,7 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, co
 
 CodeGenModule::CodeGenModule(const char *ModuleName) {
   TheModule = ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
+  Builder = new IRBuilder();
   Runtime = clang::CodeGen::CreateObjCRuntime(*TheModule, IntTy,
      IntegerType::get(sizeof(long) * 8));
 }
@@ -307,7 +323,7 @@ void CodeGenModule::BeginMethod(const char *MethodName, const char
       MethodTy->getReturnType(), CurrentClassTy, 
       argTypes, argc, false, false);
   BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentMethod);
-  Builder = new IRBuilder(EntryBB);
+  Builder->SetInsertPoint(EntryBB);
 
   Args.clear();
   Locals.clear();
@@ -346,9 +362,11 @@ Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const ch
     B = b->Builder;
     F = b->BlockFn;
   }
+  /*
   Value *args[argc];
   UnboxArgs(B, F, argv, args, argc, selTypes);
-  return BoxValue(B, MessageSend(B, F, receiver, selName, selTypes, args,
+  */
+  return BoxValue(B, MessageSend(B, F, receiver, selName, selTypes, argv, argv,
         argc), selTypes);
 }
 
@@ -467,7 +485,7 @@ void CodeGenModule::InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
 
     // Set up the arguments
     llvm::Function::arg_iterator AI = F->arg_begin();
-    Self = B->CreateAlloca(AI->getType(), 0, "block_self");
+    Self = B->CreateAlloca(AI->getType(), 0, "self.addr");
     B->CreateStore(AI, Self);
     ++AI; ++AI;
     for(Function::arg_iterator end = F->arg_end() ; AI != end ;
@@ -511,7 +529,7 @@ void CodeGenModule::compile(void) {
   llvm::Function *init = Runtime->ModuleInitFunction();
   // Make the init function external so the optimisations won't remove it.
   init->setLinkage(GlobalValue::ExternalLinkage);
-  //DUMP(TheModule);
+  DUMP(TheModule);
   LOG("\n\n\n Optimises to:\n\n\n");
   PassManager pm;
   pm.add(createVerifierPass());

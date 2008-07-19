@@ -171,6 +171,7 @@ message(M) ::= WORD(S).
 	[M addSelectorComponent:S];
 }
 
+
 //message_with_arguments(M) ::= WORD(S) COLON expression(E) message_with_arguments(N).
 message_with_arguments(M) ::= message_with_arguments(N) WORD(S) COLON expression(E).
 {

@@ -156,8 +156,12 @@ void ParseFree(void *p, void (*freeProc)(void*));
 				CHARCASE('}', RBRACE)
 				CHARCASE('^', RETURN)
 				case '+':
-					CALL_PARSER(WORD, @"+");
-					CALL_PARSER(COLON, @"char");
+				case '-':
+				case '/':
+				case '*':
+					j = i+1;
+					CALL_PARSER(WORD, WORD_TOKEN);
+					CALL_PARSER(COLON, @":");
 					break;
 				default:
 					NSLog(@"Weird character '%c' found on line %d", c,line);
