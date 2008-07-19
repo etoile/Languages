@@ -2,6 +2,7 @@
 #import "DeclRef.h"
 
 static Class NSStringClass = Nil;
+static NSDictionary *MangledSelectors = nil;
 
 @implementation NSString (Print)
 - (void) print
@@ -13,6 +14,11 @@ static Class NSStringClass = Nil;
 + (void) initialize
 {
 	NSStringClass = [NSString class];
+	MangledSelectors = [D(
+			@"add:", @"+:",
+			@"sub:", @"-:",
+			@"div:", @"/:",
+			@"mul:", @"*:") retain];
 	[super initialize];
 }
 - (void) setTarget:(id)anObject
@@ -105,7 +111,16 @@ static Class NSStringClass = Nil;
 	}
 	void * receiver;
 	receiver = [target compileWith:aGenerator];
-	const char *sel = [selector UTF8String];
+	NSString * mangledSelector = [MangledSelectors objectForKey:selector];
+	const char *sel;
+	if (nil == mangledSelector)
+	{
+		sel = [selector UTF8String];
+	}
+	else
+	{
+		sel = [mangledSelector UTF8String];
+	}
 	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
 	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
 	// If the receiver is a global symbol, it is guaranteed to be an object.
@@ -116,14 +131,14 @@ static Class NSStringClass = Nil;
 		NSString *symbol = ref->symbol;
 		if ([symbols scopeOfSymbol:symbol] == global)
 		{
-			return [aGenerator sendMessage:[selector UTF8String]
+			return [aGenerator sendMessage:sel
 			                         types:seltypes
 			                       toObject:receiver
 			                      withArgs:argv
 			                         count:argc];
 		}
 	}
-	return [aGenerator sendMessage:[selector UTF8String]
+	return [aGenerator sendMessage:sel
 	                         types:seltypes
 	                            to:receiver
 	                      withArgs:argv
