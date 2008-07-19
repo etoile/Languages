@@ -44,6 +44,15 @@
 {
 	EndClass(Builder);
 }
+- (void) createCategoryOn:(NSString*)aClass
+                    named:(NSString*)aCategory
+{
+	BeginCategory(Builder, [aClass UTF8String], [aClass UTF8String]);
+}
+- (void) endCategory
+{
+	EndCategory(Builder);
+}
 
 - (void) beginMethod:(const char*) aName
            withTypes:(const char*)types

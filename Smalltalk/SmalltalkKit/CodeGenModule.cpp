@@ -300,6 +300,20 @@ void CodeGenModule::EndClass(void) {
       IvarNames, IvarTypes, IvarOffsets, InstanceMethodNames,
       InstanceMethodTypes, ClassMethodNames, ClassMethodTypes, Protocols);
 }
+void CodeGenModule::BeginCategory(const char *Class, const char *Category) {
+  ClassName = string(Class);
+  SuperClassName = "";
+  CategoryName = string(CategoryName); 
+  InstanceMethodNames.clear();
+  InstanceMethodTypes.clear();
+  IvarNames.clear();
+  CurrentClassTy = IdTy;
+}
+void CodeGenModule::EndCategory(void) {
+  Runtime->GenerateCategory(ClassName.c_str(), CategoryName.c_str(),
+      InstanceMethodNames, InstanceMethodTypes, ClassMethodNames,
+      ClassMethodTypes, Protocols);
+}
 
 void CodeGenModule::BeginMethod(const char *MethodName, const char
     *MethodTypes, int locals) {

@@ -19,6 +19,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	ArrayExpr.m\
 	AssignExpr.m\
 	BlockExpr.m\
+	Category.m\
 	CodeGen.m\
 	Comparison.m\
 	Comment.m\

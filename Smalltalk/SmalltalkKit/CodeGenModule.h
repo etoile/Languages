@@ -111,6 +111,16 @@ public:
   void EndClass(void);
 
   /**
+   * Start generating code for a category.
+   */
+  void BeginCategory(const char *Class, const char *CategoryName);
+
+  /**
+   * Finish generating a category.
+   */
+  void EndCategory(void);
+
+  /**
    * Start a method.
    */
   void BeginMethod(const char *MethodName, const char *MethodTypes, int locals);

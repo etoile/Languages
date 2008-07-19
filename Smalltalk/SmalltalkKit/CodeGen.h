@@ -30,6 +30,15 @@
  */
 - (void) endClass;
 /**
+ * Create a new category with the specified name on the named class.
+ */
+- (void) createCategoryOn:(NSString*)aClass
+                    named:(NSString*)aCategory;
+/**
+ * Finish the current category. 
+ */
+- (void) endCategory;
+/**
  * Begin a method with the specified type encoding and number of local
  * variables.  Local variables and arguments are indexed by number, the code
  * generator is not aware of any symbol table information.

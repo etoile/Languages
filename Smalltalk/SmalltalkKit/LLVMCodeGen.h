@@ -30,6 +30,8 @@ void BeginClass(ModuleBuilder B, const char *Class, const char *Super,
  * End the current class.
  */
 void EndClass(ModuleBuilder B);
+void BeginCategory(ModuleBuilder B, const char *cls, const char *cat);
+void EndCategory(ModuleBuilder B);
 /**
  * Generate a Smalltalk message send.
  */

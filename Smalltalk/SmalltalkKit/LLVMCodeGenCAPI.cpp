@@ -88,6 +88,13 @@ extern "C" {
   void EndClass(ModuleBuilder B) {
     B->EndClass();
   }
+	void BeginCategory(ModuleBuilder B, const char *cls, const char *cat) {
+    B->BeginCategory(cls, cat);
+  }
+
+	void EndCategory(ModuleBuilder B) {
+    B->EndCategory();
+  }
 
   LLVMValue LoadClass(ModuleBuilder B, const char *classname) {
     return B->LoadClass(classname);

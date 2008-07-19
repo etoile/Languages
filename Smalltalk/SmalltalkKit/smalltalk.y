@@ -10,6 +10,7 @@ domain parser generator, to produce an Objective-C parser.
 #import "ArrayExpr.h"
 #import "AssignExpr.h"
 #import "BlockExpr.h"
+#import "Category.h"
 #import "Comment.h"
 #import "Comparison.h"
 #import "DeclRef.h"
@@ -64,7 +65,10 @@ method_list(L) ::= .
 	L = [NSMutableArray array];
 }
 
-category(C) ::= WORD(C) EXTEND LSQBRACK method(M) RSQBRACK.
+category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
+{
+	D = [[[CategoryDef alloc] initWithClass:C methods:M] autorelease];
+}
 
 method(M) ::= messageSignature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
 {
