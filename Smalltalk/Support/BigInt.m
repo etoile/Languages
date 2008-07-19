@@ -3,11 +3,10 @@
 @implementation BigInt
 + (BigInt*) bigIntWithLongLong:(long long)aVal
 {
-	NSLog(@"Creating big int with %lld", aVal);
 	BigInt *b = [[[BigInt alloc] init] autorelease];
-	if (aVal < LONG_MAX)
+	if (aVal < LONG_MAX && aVal > -LONG_MAX)
 	{
-		mpz_init_set_ui(b->v, (long) aVal);
+		mpz_init_set_si(b->v, (long) aVal);
 	}
 	else
 	{
@@ -15,7 +14,7 @@
 		// When it does, replace this with something less ugly.
 		uint32_t low = (uint32_t)aVal;
 		int32_t high = (int32_t)(aVal >> 32);
-		mpz_init_set_ui(b->v, (long) high);
+		mpz_init_set_si(b->v, (long) high);
 		mpz_mul_2exp(b->v, b->v, 32);
 		mpz_add_ui(b->v, b->v, (unsigned long)low);
 	}

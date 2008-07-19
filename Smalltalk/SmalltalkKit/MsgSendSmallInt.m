@@ -2,8 +2,17 @@
 #include <sys/types.h>
 #include <string.h>
 
-@class BigInt;
-@class NSString;
+// Dummy interfaces to make warnings go away
+@interface BigInt {}
++ (id) bigIntWithLongLong:(long long)a;
+- (id) add:(id)a;
+- (id) sub:(id)a;
+- (id) div:(id)a;
+- (id) mul:(id)a;
+@end
+@interface NSString {}
++ (id) stringWithFormat:(NSString*)a, ...;
+@end
 NSLog(NSString*, ...);
 
 typedef struct
@@ -75,41 +84,50 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 	return NO;
 }
 
+#define BOX_AND_RETRY(op) [[BigInt bigIntWithLongLong:(long long)val] \
+                    op:[BigInt bigIntWithLongLong:(long long)otherval]]
 
+#define RETURN_INT(x)     if((x << 1 >> 1) != x)\
+    {\
+		return [BigInt bigIntWithLongLong:(long long)x];\
+	}\
+	return (void*)((x << 1) | 1);
+				
+// FIXME: These only work currently on SmallInt args
 MSG1(add_)
-	intptr_t res = val +otherval;
+	intptr_t res = val + otherval;
 	//fprintf(stderr, "Adding %d to %d\n", (int)val, (int)otherval);
 	if((val<=res)==((((uintptr_t)otherval)>>((sizeof(uintptr_t)*8) - 1))))
 	{
 		//fprintf(stderr, "Add overflowed - promoting.\n");
-		[[BigInt bigIntWithLongLong:(long long)val] 
-					add:[BigInt bigIntWithLongLong:(long long)otherval]];
+		BOX_AND_RETRY(add);
 	}
-	if((res << 1 >> 1) != res)
-	{
-		//fprintf(stderr, "Add overflowed - promoting.\n");
-		return [BigInt bigIntWithLongLong:(long long)res];
-	}
-	return (void*)((res << 1) | 1);
+	RETURN_INT(res);
 }
 
 MSG1(sub_)
-	otherval >>= 1;
-	val -= otherval;
-	if(val < 0)
+	intptr_t res = val - otherval;
+	// Check for overflow
+	if ((val & ~otherval & ~res) | (~val & otherval & res) < 0)
 	{
-		//TODO: Overflow
+		BOX_AND_RETRY(sub);
 	}
-	return (void*)((val << 1) | 1);
+	RETURN_INT(res);
 }
 MSG1(mul_)
-	otherval >>= 1;
-	val *= otherval;
-	if(val < 0)
+	// FIXME: Far too conservative - replace with something more efficient.
+	if (val != (short)val || otherval != (short) otherval)
 	{
-		//TODO: Overflow
+		return BOX_AND_RETRY(mul);
 	}
-	return (void*)((val << 1) | 1);
+	val *= otherval;
+	RETURN_INT(val);
+}
+MSG1(div_)
+	return ((val / otherval) << 1) | 1;
+}
+MSG1(mod_)
+	return ((val % otherval) << 1) | 1;
 }
 
 void *MakeSmallInt(long long val) {
