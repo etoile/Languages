@@ -58,7 +58,6 @@ Summary of Missing Features
 
 Still missing for 1.0:
 
-- Cleanup of blocks (they currently leak - very bad).
 - Blocks as upward funargs (if a block lives for longer than a method, it
   currently breaks).
 - Full implementation of Smalltalk-80 SmallInt messages.
