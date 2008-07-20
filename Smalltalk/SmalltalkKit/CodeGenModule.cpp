@@ -51,7 +51,7 @@ string CodeGenModule::FunctionNameFromSelector(const char *sel) {
 
 Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
   // Untyped selectors return id
-  if (NULL == typestr) return V;
+  if (NULL == typestr || '\0' == *typestr) return V;
   // FIXME: Other function type qualifiers
   while(*typestr == 'V' || *typestr == 'r')
   {
@@ -95,7 +95,7 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
 }
 
 #define NEXT(typestr) \
-  while (!isdigit(*typestr)) { typestr++; }\
+  while (!(*typestr == '\0') && !isdigit(*typestr)) { typestr++; }\
   while (isdigit(*typestr)) { typestr++; }
 Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *Type) {
   const char *castSelName;
@@ -494,19 +494,25 @@ Value *CodeGenModule::ComparePointers(Value *lhs, Value *rhs) {
 
 void CodeGenModule::InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
     SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
-    locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *RetType) {
+    locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *MethodTypes) {
 
+    const char *RetType = MethodTypes;
     // Set up the arguments
     llvm::Function::arg_iterator AI = F->arg_begin();
     Self = B->CreateAlloca(AI->getType(), 0, "self.addr");
     B->CreateStore(AI, Self);
     ++AI; ++AI;
+    // Skip return value, self, _cmd
+    NEXT(MethodTypes);
+    NEXT(MethodTypes);
+    NEXT(MethodTypes);
     for(Function::arg_iterator end = F->arg_end() ; AI != end ;
         ++AI) {
-      Value * arg = B->CreateAlloca(AI->getType(), 0, "arg");
+      Value * arg = B->CreateAlloca(IdTy, 0, "arg");
       Args.push_back(arg);
       // Initialise the local to nil
-      B->CreateStore(AI, arg);
+      B->CreateStore(BoxValue(B, AI, MethodTypes), arg);
+      NEXT(MethodTypes);
     }
     // Create the locals and initialise them to nil
     for (unsigned i = 0 ; i < locals ; i++) {

@@ -51,10 +51,17 @@ NSObject subclass: SmalltalkTool
 		b log.
 		a := NSMutableArray array. 
 		a log.
+		self objectAtIndex: 12.
 		"Test passing blocks to other bits of Smalltalk code"
 		r run:[ a log. ].
 		"Test message sends to nil."
 		nil log.
+	]
+	objectAtIndex: i [
+		"This parameter will be passed as an unsigned int, because NSArray
+		defines the type of this selector."
+		'Boxed then unboxed value: ' log.
+		i log.
 	]
 
 	wibble: a [
