@@ -189,7 +189,6 @@ Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char *s
 
 Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
     *selName, const char *selTypes, Value **argv, Value **boxedArgs, unsigned argc) {
-  receiver->dump();
   Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
   Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
 
