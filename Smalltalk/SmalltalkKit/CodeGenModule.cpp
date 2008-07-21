@@ -565,7 +565,6 @@ void CodeGenModule::compile(void) {
   pm.add(createStripDeadPrototypesPass());
   pm.run(*TheModule);
   DUMP(TheModule);
-  //ExecutionEngine *EE = ExecutionEngine::create(L->getModule());
   ExecutionEngine *EE = ExecutionEngine::create(TheModule);
   LOG("Compiling...\n");
   EE->runStaticConstructorsDestructors(false);

@@ -64,6 +64,7 @@ Still missing for 1.0:
 
 Still missing for 2.0:
 
+- Support for floating point values.
 - Type inference engine.
 - More aggressive elimination of small int test on message sends (currently the
   only reason we are slower than ObjC).

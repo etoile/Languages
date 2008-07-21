@@ -1,0 +1,51 @@
+.Dd July 24, 2008
+.Dt ST 1
+.Os
+.Sh NAME
+.Nm st
+.Nd pragmatic smalltalk compiler
+.Sh SYNOPSIS
+.Nm du
+.Op Fl t
+.Op Fl c Ar class
+{
+.Fl f Ar file | 
+.Fl b Ar bundle
+}
+.Sh DESCRIPTION
+The
+.Nm
+utility loads, compiles, and executes an OpenStep application written
+in Smalltalk.  Either the 
+.Fl f
+or
+.Fl b
+options must be specified, indicating a Smalltalk file or bundle to load,
+respectively.  Smalltalk bundles may contain resources, lists of frameworks to
+load, and may implement GUI applications or command-line tools.  Individual
+files may only implement command-line tools unless they handle the creation of
+the NSApplication and loading of resources themselves.
+.Pp
+Options are as follows:
+.Bl -tag -width Ds
+.It Fl b Ar bundle
+Specify the Smalltalk bundle to load.
+.It Fl c Ar class
+Specify the class to instantiate.  Instances of this class must respond to the
+run message.
+.It Fl f Ar file
+Specify the single Smalltalk source file to load.
+.It Fl t 
+Print summary of CPU time and memory usage after the command has executed.
+.Sh BUGS
+Smalltalk bundles are not yet working.
+.Sh HISTORY
+A
+.Nm
+command appeared in Etoile 0.4 .
+.Sh AUTHORS
+The Pragmatic Smalltalk Compiler was written by David Chisnall
+<csdavec@swan.ac.uk>
+.Sh Copyright
+The Pagmatic Smalltalk compiler is Copyright 2008 David Chisnall and is
+released under the MIT license.  See COPYING for more information.

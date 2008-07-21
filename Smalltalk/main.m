@@ -31,7 +31,7 @@ static BOOL compileString(NSString *s)
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
-	NSDictionary *opts = ETGetOptionsDictionary("f:b:c:", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("tf:b:c:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	NSCAssert(nil == bundle, @"Smalltalk bundles are not yet supported.  Sorry.");
 	NSString *ProgramFile = [opts objectForKey:@"f"];
@@ -66,12 +66,13 @@ int main(int argc, char **argv)
 	clock_t c1;
 	c1 = clock();
 	[[tool new] run];
-#ifdef DEBUG
-	clock_t c2 = clock();
-	struct rusage r;
-	getrusage(RUSAGE_SELF, &r);
-	NSLog(@"Smalltalk execution took %f seconds.  Peak used %dKB.",
-			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
-#endif
+	if ([[opts objectForKey:@"t"] boolValue])
+	{
+		clock_t c2 = clock();
+		struct rusage r;
+		getrusage(RUSAGE_SELF, &r);
+		NSLog(@"Smalltalk execution took %f seconds.  Peak used %dKB.",
+				((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
+	}
 	return 0;
 }

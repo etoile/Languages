@@ -8,13 +8,12 @@ SUBPROJECTS += SmalltalkKit
 VERSION = 0.1
 TOOL_NAME = st
 
-#
-# Resource files
-#
 ${TOOL_NAME}_LANGUAGES = English
 
 ${TOOL_NAME}_OBJC_FILES = \
 	main.m
+
+MAN1_PAGES = st.1
 
 ${TOOL_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${TOOL_NAME}_LDFLAGS += -g -lgmp -lEtoileFoundation -lgnustep-gui\
