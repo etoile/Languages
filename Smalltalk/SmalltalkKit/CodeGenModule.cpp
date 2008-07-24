@@ -385,6 +385,9 @@ Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const ch
 
 void CodeGenModule::SetReturn(Value * Ret) {
   if (Ret != 0) {
+	if (Ret->getType() != IdTy) {
+      Ret = Builder->CreateBitCast(Ret, IdTy);
+    }
     Builder->CreateStore(Ret, RetVal);
   }
   Builder->CreateBr(CleanupBB);
