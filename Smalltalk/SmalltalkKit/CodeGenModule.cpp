@@ -411,6 +411,9 @@ Value *CodeGenModule::LoadPointerToLocalAtIndex(unsigned index) {
 }
 
 void CodeGenModule::StoreValueInLocalAtIndex(Value * value, unsigned index) {
+  if (value->getType() != IdTy) {
+	value = Builder->CreateBitCast(value, IdTy);
+  }
   Builder->CreateStore(value, Locals[index]);
 }
 
