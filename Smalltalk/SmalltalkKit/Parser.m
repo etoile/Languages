@@ -143,6 +143,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 			switch(c)
 			{
 				CHARCASE('|', BAR)
+				CHARCASE('@', AT)
 				//CHARCASE('#', HASH)
 				//CHARCASE(',', COMMA)
 				CHARCASE(':', COLON)

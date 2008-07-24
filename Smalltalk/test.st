@@ -56,6 +56,8 @@ NSObject subclass: SmalltalkTool
 		r run:[ a log. ].
 		"Test message sends to nil."
 		nil log.
+		"Load an ObjC symbolic constant"
+		@NSViewMinXMargin log.
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray

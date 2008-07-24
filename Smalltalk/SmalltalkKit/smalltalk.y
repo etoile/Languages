@@ -238,6 +238,10 @@ expression(E) ::= NUMBER(N).
 {
 	E = [NumberLiteral literalFromString:N];
 }
+expression(E) ::= AT WORD(W).
+{
+	E = [NumberLiteral literalFromSymbol:W];
+}
 expression(E) ::= LBRACE expression_list(L).
 {
 	E = [ArrayExpr arrayWithElements:L];

@@ -19,7 +19,24 @@
 - (void) check {}
 @end
 
+static NSDictionary *ObjCConstants;
 @implementation NumberLiteral
++ (void) initialize
+{
+	NSString *plist = [[NSBundle bundleForClass:self]
+		pathForResource:@"ObjCConstants" ofType:@"plist"];
+	ObjCConstants = [[NSDictionary dictionaryWithContentsOfFile:plist] retain];
+}
++ (id) literalFromSymbol:(NSString*)aString
+{
+	NSString *val = [ObjCConstants objectForKey:aString];
+	if (nil != val)
+	{
+		return [self literalFromString:val];
+	}
+	[NSException raise:@"InvalidLiteral" format:@"Invalid symbolic constant %@",
+		aString];
+}
 - (void*) compileWith:(id<CodeGenerator>)aGenerator
 {
 	return [aGenerator intConstant:value];

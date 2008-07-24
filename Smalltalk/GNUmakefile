@@ -22,6 +22,7 @@ ${TOOL_NAME}_LDFLAGS += -g -lgmp -lEtoileFoundation -lgnustep-gui\
 ${TOOL_NAME}_CFLAGS += -Wno-implicit -g
 ${TOOL_NAME}_CPPFLAGS += -I./SmalltalkKit
 
+LD = g++
 
 ${TOOL_NAME}_SUBPROJECTS += Support 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
