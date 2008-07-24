@@ -36,6 +36,8 @@ static NSDictionary *ObjCConstants;
 	}
 	[NSException raise:@"InvalidLiteral" format:@"Invalid symbolic constant %@",
 		aString];
+	// Not reached:
+	return nil;
 }
 - (void*) compileWith:(id<CodeGenerator>)aGenerator
 {
