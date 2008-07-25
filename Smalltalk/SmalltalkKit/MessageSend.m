@@ -16,6 +16,8 @@ static NSDictionary *MangledSelectors = nil;
 	NSStringClass = [NSString class];
 	MangledSelectors = [D(
 			@"add:", @"+:",
+			@"isLessThan:", @"<:",
+			@"isGreaterThan:", @">:",
 			@"sub:", @"-:",
 			@"div:", @"/:",
 			@"mul:", @"*:") retain];

@@ -160,6 +160,8 @@ void ParseFree(void *p, void (*freeProc)(void*));
 				case '-':
 				case '/':
 				case '*':
+				case '<':
+				case '>':
 					j = i+1;
 					CALL_PARSER(WORD, WORD_TOKEN);
 					CALL_PARSER(COLON, @":");

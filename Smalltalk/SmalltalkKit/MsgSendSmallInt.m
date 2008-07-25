@@ -130,6 +130,13 @@ MSG1(mod_)
 	return ((val % otherval) << 1) | 1;
 }
 
+MSG1(isLessThan_)
+	RETURN_INT(val < otherval);
+}	
+MSG1(isGreaterThan_)
+	RETURN_INT(val > otherval);
+}	
+
 void *MakeSmallInt(long long val) {
 	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
 	intptr_t ptr = val << 1;
