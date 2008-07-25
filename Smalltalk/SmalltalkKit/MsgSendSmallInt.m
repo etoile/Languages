@@ -38,7 +38,7 @@ typedef struct
  * Small int message with one argument.
  */
 #define MSG1(name) MSG(name, void *other)\
-	long otherval = (intptr_t)other;\
+	intptr_t otherval = (intptr_t)other;\
 	otherval >>= 1;
 
 MSG0(log)
@@ -130,11 +130,21 @@ MSG1(mod_)
 	return ((val % otherval) << 1) | 1;
 }
 
-MSG1(isLessThan_)
-	RETURN_INT(val < otherval);
+BOOL SmallIntMsgisLessThan_(void *obj, void *other)
+{
+	intptr_t val = (intptr_t)obj;\
+	val >>= 1;
+	intptr_t otherval = (intptr_t)other;\
+	otherval >>= 1;
+	return val < otherval;
 }	
-MSG1(isGreaterThan_)
-	RETURN_INT(val > otherval);
+BOOL SmallIntMsgisGreaterThan_(void *obj, void *other)
+{
+	intptr_t val = (intptr_t)obj;\
+	val >>= 1;
+	intptr_t otherval = (intptr_t)other;\
+	otherval >>= 1;
+	return val < otherval;
 }	
 
 void *MakeSmallInt(long long val) {
@@ -148,6 +158,7 @@ void *MakeSmallInt(long long val) {
 }
 
 void *BoxSmallInt(void *obj) {
+	if (obj == NULL) return NULL;
 	intptr_t val = (intptr_t)obj;
 	val >>= 1;
 	//fprintf(stderr, "Boxing %d\n", (int) val);

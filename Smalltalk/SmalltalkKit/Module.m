@@ -52,6 +52,9 @@
 		[category compileWith:aGenerator];
 	}
 	[aGenerator endModule];
+	[[NSNotificationCenter defaultCenter]
+	   	postNotificationName:@"NewClassesCompiledNotification"
+		              object:nil];
 	return NULL;
 }
 @end

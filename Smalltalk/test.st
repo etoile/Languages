@@ -58,6 +58,7 @@ NSObject subclass: SmalltalkTool
 		nil log.
 		"Load an ObjC symbolic constant"
 		@NSViewMaxYMargin log.
+		(1 < 2) ifTrue:[ '1 < 2' log. ].
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray

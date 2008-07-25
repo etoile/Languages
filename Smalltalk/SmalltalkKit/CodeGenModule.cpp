@@ -61,6 +61,7 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
     // All integer primitives smaller than a 64-bit value
     case 'B': case 'c': case 'C': case 's': case 'S': case 'i': case 'I':
     case 'l': case 'L':
+      LOG("Boxing return value %s\n", typestr);
       V = B->CreateSExt(V, Type::Int64Ty);
     // Now V is 64-bits.
     case 'q': case 'Q':
@@ -244,6 +245,7 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, co
     Result = new BitCastInst(Result, ObjResult->getType(),
         "cast_small_int_result", SmallInt);
   }
+  DUMP(Result->getType());
   
   // Join the two paths together again:
   BasicBlock *Continue = BasicBlock::Create("Continue", F);

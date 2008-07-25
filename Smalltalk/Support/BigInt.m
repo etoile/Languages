@@ -36,7 +36,32 @@ op(sub)
 op(mul)
 op(mod)
 op2(div, tdiv_q)
-
+- (BOOL) isLessThan:(id)other
+{
+	if ([other isKindOfClass:isa])
+	{
+		BigInt *o = other;
+		return mpz_cmp(v, o->v) < 0;
+	}
+	if ([other respondsToSelector:@selector(intValue)])
+	{
+		return mpz_cmp_si(v, [other intValue]) < 0;
+	}
+	return NO;
+}
+- (BOOL) isGreaterThan:(id)other
+{
+	if ([other isKindOfClass:isa])
+	{
+		BigInt *o = other;
+		return mpz_cmp(v, o->v) > 0;
+	}
+	if ([other respondsToSelector:@selector(intValue)])
+	{
+		return mpz_cmp_si(v, [other intValue]) > 0;
+	}
+	return NO;
+}
 - (BOOL) isEqual:(id)other
 {
 	if ([other isKindOfClass:isa])
