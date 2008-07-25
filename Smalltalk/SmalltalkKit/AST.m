@@ -15,7 +15,6 @@ Class DeclRefClass;
 		return nil;
 	}
 	ASSIGN(symbols, aSymbolTable);
-	[symbols setASTScope:self];
 	return self;
 }
 - (void) print

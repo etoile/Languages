@@ -33,10 +33,6 @@ typedef	enum
  */
 + (void) registerNewClass:(NSString*)aClass;
 /**
- * Sets the AST node where this symbol table is valid.
- */
-- (void) setASTScope:(AST*)aNode;
-/**
  * Add a symbol to this table.
  */
 - (void) addSymbol:(NSString*)aSymbol;

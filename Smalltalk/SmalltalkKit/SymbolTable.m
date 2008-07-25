@@ -159,8 +159,6 @@ static NSMutableSet *NewClasses;
 }
 // You can't insert global symbols in Smalltalk.  
 - (void) addSymbol:(NSString*)aSymbol {}
-// Ignore AST scope for globals
-- (void) setASTScope:(AST*)aNode {}
 - (void) setScope:(SymbolTable*)scope
 {
 	ASSIGN(enclosingScope, scope);
