@@ -17,6 +17,10 @@
 	SymbolTable * symbols;
 }
 /**
+ * Returns the AST nodes available at runtime for subclasses and categories.
+ */
++ (NSMutableDictionary *) code;
+/**
  * Initialise a new AST node with the specified symbol table.
  */
 - (id) initWithSymbolTable:(SymbolTable*)aSymbolTable;

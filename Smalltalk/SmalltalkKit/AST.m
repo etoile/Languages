@@ -3,7 +3,19 @@
 
 Class DeclRefClass;
 
+static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
+
 @implementation AST
+
++ (NSMutableDictionary *) code
+{
+	if (ASTSubclassAndCategoryNodes == nil)
+	{
+		ASTSubclassAndCategoryNodes = [[NSMutableDictionary alloc] init];
+	}
+	return ASTSubclassAndCategoryNodes;
+}
+
 + (void) initialize
 {
 	DeclRefClass = [DeclRef class];

@@ -39,6 +39,11 @@
 		[method compileWith:aGenerator];
 	}
 	[aGenerator endCategory];
+	if ([[AST code] objectForKey: classname] == nil)
+	{
+		[[AST code] setObject: [NSMutableArray array] forKey: classname];
+	}
+	[[[AST code] objectForKey: classname] addObject: self];
 	return NULL;
 }
 @end
