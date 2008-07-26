@@ -68,6 +68,17 @@ CategoryDef extend
 
 ]
 
+SmalltalkMethod extend
+[
+	displayName [ ^ self methodName. ]
+
+	methodName [ ^ signature selector. ]
+
+	ASTType [ ^ 'Method'. ]
+
+	childNodes [ ^ statements. ]
+]
+
 
 NSObject subclass: SmalltalkTool
 [
