@@ -1,33 +1,40 @@
 AST extend 
 [
+	properties
+	[
+		^ { 'displayName'. 'icon'. 'ASTType'. }.
+	]
+
+	ASTType [ ^ nil. ]
+
+	code
+	[
+		^ self description.
+	]
+
 	isOrdered 
 	[
 		^ 0.
 	]
 
-	children
+	childNodes
 	[
 		^ nil.
 	]
 
 	isEmpty
 	[
-		^ self children count == 0.
+		^ self childNodes count == 0.
 	]
 
 	content
 	[
-		^ self children.
+		^ self childNodes.
 	]
 
 	contentArray
 	[
-		^ self children.
-	]
-
-	code
-	[
-		^ self description.
+		^ self childNodes.
 	]
 
 	conformsToProtocol: protocol
@@ -38,12 +45,11 @@ AST extend
 
 Subclass extend
 [
-	displayName
-	[
-		^ (classname stringByAppendingString: ' ') stringByAppendingString: 'Class'.
-	]
+	displayName [	^ classname. ]
 
-	children
+	ASTType [ ^ 'Class'. ]
+
+	childNodes
 	[
 		^ methods.
 	]
@@ -51,14 +57,13 @@ Subclass extend
 
 CategoryDef extend
 [
-	displayName
-	[
-		^ (classname stringByAppendingString: ' ') stringByAppendingString: 'Category'.
-	]
+	displayName [	^ classname. ]
 
-	children
+	ASTType [ ^ 'Category'. ]
+
+	childNodes
 	[
-		^ NSMutableArray arrayWithArray: methods.
+		^ methods.
 	]
 
 ]
@@ -70,7 +75,6 @@ NSObject subclass: SmalltalkTool
 
 	run 
 	[ | task |
-
 		ETApplication sharedApplication setDelegate: self.
 		ETApplication sharedApplication run.
 	]
@@ -78,12 +82,14 @@ NSObject subclass: SmalltalkTool
 	applicationDidFinishLaunching: notif 
 	[
 		browserItem := ETContainer alloc init layoutItem.
-		browserItem setLayout: (ETOutlineLayout layout).
+		browserItem container setDelegate: self.
 		browserItem container setSource: browserItem.
 		browserItem setRepresentedObject: (AST code).
+		browserItem setLayout: (ETOutlineLayout layout).
+		browserItem layout setDisplayedProperties: (self displayedPropertiesInBrowser).
+		browserItem layout setDisplayName: 'Type' forProperty: 'ASTType'.
 		browserItem setWidth: 700.
 		browserItem setHeight: 200.
-		browserItem container setDelegate: self.
 
 		codeEditorItem := ETLayoutItem textView.
 		codeEditorItem view setDelegate: self.
@@ -91,6 +97,7 @@ NSObject subclass: SmalltalkTool
 		codeEditorItem setHeight: 400.
 
 		objectMixerItem := ETContainer alloc init layoutItem.
+		objectMixerItem setName: 'Object Mixer (Smalltalk & cie)'.
 		objectMixerItem setLayout: (ETStackLayout layout).
 		objectMixerItem setWidth: 700.
 		objectMixerItem setHeight: 600.
@@ -101,8 +108,14 @@ NSObject subclass: SmalltalkTool
 
 		ETLayoutItem windowGroup addItem: objectMixerItem.
 
+		browserItem container release.
+		codeEditorItem container release.
+		objectMixerItem container release.
+
 		objectMixerItem inspect: nil.
 	]
+
+	displayedPropertiesInBrowser [ ^ { 'displayName'. 'ASTType' }. ]
 
 	containerSelectionDidChange: notif
 	[
