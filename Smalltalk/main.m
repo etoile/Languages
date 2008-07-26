@@ -28,14 +28,57 @@ static BOOL compileString(NSString *s)
 	return YES;
 }
 
+BOOL loadFramework(NSString *framework)
+{
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+			NSAllDomainsMask, YES);
+	FOREACH(dirs, dir, NSString*)
+	{
+		NSString *f = [NSString stringWithFormat:@"%@/Frameworks/%@.framework",
+				 dir, framework];
+		// Check that the framework exists and is a directory.
+		BOOL isDir = NO;
+		if ([fm fileExistsAtPath:f isDirectory:&isDir] && isDir)
+		{
+			NSBundle *bundle = [NSBundle bundleWithPath:f];
+			if ([bundle load]) 
+			{
+				NSLog(@"Loaded bundle %@", f);
+				return YES;
+			}
+		}
+	}
+	return NO;
+}
+
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
-	NSDictionary *opts = ETGetOptionsDictionary("tf:b:c:", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("tf:b:c:l:L:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	NSCAssert(nil == bundle, @"Smalltalk bundles are not yet supported.  Sorry.");
-	NSString *ProgramFile = [opts objectForKey:@"f"];
+	// Load specified framework
+	NSString *framework = [opts objectForKey:@"l"];
+	if (nil != framework)
+	{
+		loadFramework(framework);
+	}
+	// Load frameworks specified in plist.
+	NSString *frameworks = [opts objectForKey:@"L"];
+	if (nil != frameworks)
+	{
+		NSArray *frameworkarray = [NSArray arrayWithContentsOfFile:frameworks];
+		if (nil != frameworkarray)
+		{
+			FOREACH(frameworkarray, f, NSString*)
+			{
+				loadFramework(f);
+			}
+		}
+	}
 
+	NSString *ProgramFile = [opts objectForKey:@"f"];
 	if (nil == ProgramFile)
 	{
 #ifdef DEBUG
