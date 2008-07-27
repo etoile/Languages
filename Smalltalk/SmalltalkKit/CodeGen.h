@@ -156,3 +156,4 @@
  */
 - (void*) comparePointer:(void*)lhs to:(void*)rhs;
 @end
+id <CodeGenerator> defaultCodeGenerator(void);

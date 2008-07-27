@@ -245,7 +245,6 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, co
     Result = new BitCastInst(Result, ObjResult->getType(),
         "cast_small_int_result", SmallInt);
   }
-  DUMP(Result->getType());
   
   // Join the two paths together again:
   BasicBlock *Continue = BasicBlock::Create("Continue", F);
@@ -377,6 +376,7 @@ Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const ch
     B = b->Builder;
     F = b->BlockFn;
   }
+  LOG("Generating %s (%s)\n", selName, selTypes);
   /*
   Value *args[argc];
   UnboxArgs(B, F, argv, args, argc, selTypes);

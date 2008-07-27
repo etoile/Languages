@@ -33,8 +33,31 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	Subclass.m\
 	SymbolTable.m
 
+${FRAMEWORK_NAME}_HEADER_FILES = \
+	AST.h\
+	ArrayExpr.h\
+	AssignExpr.h\
+	BlockExpr.h\
+	Category.h\
+	CodeGen.h\
+	CodeGenBlock.h\
+	CodeGenModule.h\
+	Comment.h\
+	Comparison.h\
+	DeclRef.h\
+	Literal.h\
+	MessageSend.h\
+	Method.h\
+	Module.h\
+	Parser.h\
+	Return.h\
+	SmalltalkKit.h\
+	Subclass.h\
+	SymbolTable.h
+
+
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation
+${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM flags

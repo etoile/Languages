@@ -170,3 +170,7 @@
 	[super dealloc];
 }
 @end
+id <CodeGenerator> defaultCodeGenerator(void)
+{
+	return [LLVMCodeGen new];
+}

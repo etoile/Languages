@@ -2,10 +2,9 @@
 #import <AppKit/AppKit.h>
 #include <time.h>
 #include <sys/resource.h>
-#import "SymbolTable.h"
-#import "Parser.h"
-#import "LLVMCodeGen.h"
+#import <SmalltalkKit/SmalltalkKit.h>
 
+extern int DEBUG_DUMP_MODULES;
 static BOOL compileString(NSString *s)
 {
 	Parser * p = [[Parser alloc] init];
@@ -20,7 +19,7 @@ static BOOL compileString(NSString *s)
 										   [e objectForKey:@"line"]);
 		NS_VALUERETURN(NO, BOOL);
 	NS_ENDHANDLER	
-	id cg = [LLVMCodeGen new];
+	id cg = defaultCodeGenerator();
 #ifdef DEBUG
 	DEBUG_DUMP_MODULES = 1;
 #endif
