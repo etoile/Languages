@@ -1,5 +1,9 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
+# We reset PROJECT_DIR provided by etoile.make to match the subproject since 
+# etoile.make doesn't detect and handle such embedded project
+PROJECT_DIR = $(CURDIR)
+
 #
 # Library
 #
@@ -69,7 +73,6 @@ LD = g++
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc\
 	ObjCConstants.plist
 
-include $(GNUSTEP_MAKEFILES)/framework.make
 
 smalltalk.m: smalltalk.y
 	@echo Generating parser...
@@ -78,3 +81,6 @@ smalltalk.m: smalltalk.y
 MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
 	@clang -emit-llvm-bc MsgSendSmallInt.m
+
+-include ../../../etoile.make
+include $(GNUSTEP_MAKEFILES)/framework.make

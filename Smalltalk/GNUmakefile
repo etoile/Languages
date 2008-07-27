@@ -28,4 +28,5 @@ ${TOOL_NAME}_CFLAGS += -Wno-implicit -g
 ${TOOL_NAME}_CPPFLAGS += -I./SmalltalkKit/SmalltalkKit.framework
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
+-include ../../etoile.make
 include $(GNUSTEP_MAKEFILES)/tool.make

@@ -12,13 +12,15 @@ export etoile-extensions ?= yes
 ifeq ($(etoile-extensions), yes)
 
     export io ?= yes
+    export smalltalk ?= yes
 
 endif
 
 ifeq ($(etoile-extensions), no)
 
     export io ?= no
-    
+    export smalltalk ?= no
+
 endif
 
 #
@@ -27,6 +29,10 @@ endif
 
 ifeq ($(io), yes)
 	SUBPROJECTS += Io
+endif
+
+ifeq ($(smalltalk), yes)
+	SUBPROJECTS += Smalltalk
 endif
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
