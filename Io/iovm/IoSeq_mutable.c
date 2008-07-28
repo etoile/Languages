@@ -548,7 +548,7 @@ IoObject *IoSeq_translate(IoObject *self, IoObject *locals, IoMessage *m)
 	// for each char in fc, set lut[fc[i]] = bc[i]
 	for (i = 0; i <= 255; i ++) { lut[i] = i; } // init the lookup table
 	for (i = 0; i < fc_len; i ++) {
-		lut[(char)ByteArray_at_(fc, i)] = ByteArray_at_(tc,i);
+		lut[(int)(char)ByteArray_at_(fc, i)] = ByteArray_at_(tc,i);
 		//printf("%i\n", lut[i]);
 	}
 
@@ -558,7 +558,7 @@ IoObject *IoSeq_translate(IoObject *self, IoObject *locals, IoMessage *m)
 	{
 		currChar = ByteArray_at_(ba, i);
 		//printf("%c->%c\n", currChar, lut[currChar]);
-		ba->bytes[i] = lut[currChar];  // replace
+		ba->bytes[i] = lut[(int)currChar];  // replace
 	}
 
 	return self;

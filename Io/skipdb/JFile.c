@@ -150,7 +150,7 @@ size_t JFile_fwrite(JFile *self, void *buf, size_t size, size_t nobjs)
 #ifdef DEBUG
 	if (total == 4 && strcmp(self->path, "default.udbData")) 
 	{ 
-		printf("%s at %i writing int %i\n", self->path, self->pos, *((int *)(buf))); 
+		printf("%s at %i writing int %i\n", self->path, (int)self->pos, *((int *)(buf))); 
 	}
 #endif
 	
@@ -184,7 +184,7 @@ size_t JFile_fread(JFile *self, void *buf, size_t size, size_t nobjs)
 #ifdef DEBUG
 	if (size == 4 && strcmp(self->path, "default.udbData")) 
 	{ 
-		printf("%s at %i read int %i\n", self->path, self->pos, *((int *)(buf))); 
+		printf("%s at %i read int %i\n", self->path, (int)self->pos, *((int *)(buf))); 
 	}
 #endif
 	
@@ -354,7 +354,7 @@ void JFile_sync(JFile *self)
 #ifdef DEBUG
 			if (total == 4 && strcmp(self->path, "default.udbData")) 
 			{ 
-				printf("%s at %i committing int %i\n", self->path, pos, *((int *)(self->buf))); 
+				printf("%s at %i committing int %i\n", self->path, (int)pos, *((int *)(self->buf))); 
 			}
 #endif
 			

@@ -319,7 +319,7 @@ default: ByteArray_appendChar_(ba, c);
 		}
     }
 
-s[i] = (char)NULL;
+s[i] = (char)0;
 ByteArray_copy_(self, ba);
 ByteArray_free(ba);
 }
@@ -381,7 +381,7 @@ void ByteArray_unescape(ByteArray *self)
 		getIndex++;
 	}
 	
-	s[putIndex] = (char)NULL;
+	s[putIndex] = (char)0;
 	ByteArray_setSize_(self, putIndex);
 }
 
@@ -1934,9 +1934,9 @@ static inline int sameCompare(unsigned char *b1, unsigned char *b2, int size)
 			return 0;
 		}
 		
-		*b1 ++; 
-		*b2 ++;
-		size --;
+		b1++; 
+		b2++;
+		size--;
 	}
 	
 	return 1;

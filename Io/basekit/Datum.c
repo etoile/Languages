@@ -161,8 +161,8 @@ size_t Datum_matchingPrefixSizeWith_(Datum *self, Datum *other)
 	for (i = 0; i < min; i ++)
 	{
 		if (*b1 != *b2) break;
-		*b1 ++;
-		*b2 ++;
+		b1++;
+		b2++;
 	}
 	
 	return i;

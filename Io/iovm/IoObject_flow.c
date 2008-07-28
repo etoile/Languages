@@ -218,6 +218,7 @@ IoObject *IoObject_eol(IoObject *self, IoObject *locals, IoMessage *m)
 	docSlot(";", "Reset the eval context to the locals. ")
 	*/
 	IOSTATE->stopStatus = MESSAGE_STOP_STATUS_EOL;
+	return NULL;
 }
 
 IoObject *IoObject_if(IoObject *self, IoObject *locals, IoMessage *m)

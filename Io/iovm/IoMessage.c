@@ -512,7 +512,7 @@ IoObject *IoMessage_locals_performOn_(IoMessage *self, IoObject *locals, IoObjec
 					return state->ioNil; 
 			}
 		}
-	} while (m = DATA(m)->next);
+	} while ((m = DATA(m)->next));
 	
 	return result;
 }
@@ -734,7 +734,7 @@ void IoMessage_appendDescriptionTo_follow_(IoMessage *self, ByteArray *ba, int f
 		
 		if (DATA(self)->next && DATA(self)->name != IOSTATE->semicolonSymbol) ByteArray_appendCString_(ba, " ");
 		if (DATA(self)->name == IOSTATE->semicolonSymbol) ByteArray_appendCString_(ba, "\n");
-	} while (self = DATA(self)->next);
+	} while ((self = DATA(self)->next));
 }
 
 //  methods --------------------------------------------------- 
