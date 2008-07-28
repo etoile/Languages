@@ -60,6 +60,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	SymbolTable.h
 
 
+${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
