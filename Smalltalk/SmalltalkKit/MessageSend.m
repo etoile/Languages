@@ -125,6 +125,11 @@ static NSDictionary *MangledSelectors = nil;
 	}
 	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
 	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
+	// FIXME: This is a really ugly hack.
+	if ([selector isEqualToString:@"count"])
+	{
+		seltypes = "I8@0:4";
+	}
 	// If the receiver is a global symbol, it is guaranteed to be an object.
 	// TODO: The same is arguments if their type is @
 	if ([target isKindOfClass:[DeclRef class]])

@@ -74,6 +74,8 @@ LD = g++
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc\
 	ObjCConstants.plist
 
+-include ../../../etoile.make
+include $(GNUSTEP_MAKEFILES)/framework.make
 
 smalltalk.m: smalltalk.y
 	@echo Generating parser...
@@ -83,5 +85,3 @@ MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
 	@clang -emit-llvm-bc MsgSendSmallInt.m
 
--include ../../../etoile.make
-include $(GNUSTEP_MAKEFILES)/framework.make

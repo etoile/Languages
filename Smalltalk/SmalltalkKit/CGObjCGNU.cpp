@@ -230,7 +230,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder &Builder,
     // If it isn't, cache it.
     llvm::GlobalAlias *Sel = new llvm::GlobalAlias(
         llvm::PointerType::getUnqual(SelectorTy),
-        llvm::GlobalValue::InternalLinkage, ".objc_untyped_selector_alias",
+        llvm::GlobalValue::InternalLinkage, SelName,//".objc_untyped_selector_alias",
         NULL, &TheModule);
     UntypedSelectors[SelName] = Sel;
     // FIXME: Volatility
@@ -247,7 +247,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder &Builder,
   // If it isn't, cache it.
   llvm::GlobalAlias *Sel = new llvm::GlobalAlias(
       llvm::PointerType::getUnqual(SelectorTy),
-      llvm::GlobalValue::InternalLinkage, ".objc_typed_selector_alias",
+      llvm::GlobalValue::InternalLinkage, SelName,//".objc_typed_selector_alias",
       NULL, &TheModule);
   TypedSelectors[Selector] = Sel;
   // FIXME: Volatility
@@ -377,24 +377,12 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder &Builder,
 
   // Look up the method implementation.
   std::vector<const llvm::Type*> impArgTypes;
-  const llvm::Type *RetTy;
-  //TODO: Revisit this when LLVM supports aggregate return types.
-  if (ReturnTy->isSingleValueType() && ReturnTy != llvm::Type::VoidTy) {
-    RetTy = ReturnTy;
-  } else {
-    // For struct returns allocate the space in the caller and pass it up to
-    // the sender.
-    RetTy = llvm::Type::VoidTy;
-    if (ReturnTy != llvm::Type::VoidTy) {
-      impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
-    }
-  }
   impArgTypes.push_back(Receiver->getType());
   impArgTypes.push_back(Selector->getType());
   
   // Avoid an explicit cast on the IMP by getting a version that has the right
   // return type.
-  llvm::FunctionType *impType = llvm::FunctionType::get(RetTy, impArgTypes,
+  llvm::FunctionType *impType = llvm::FunctionType::get(ReturnTy, impArgTypes,
                                                         true);
   
   llvm::Constant *lookupFunction = 
@@ -405,20 +393,10 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder &Builder,
   llvm::Value *imp = Builder.CreateCall2(lookupFunction, Receiver, Selector);
 
   // Call the method.
-  bool structReturn = !ReturnTy->isSingleValueType() && ReturnTy !=
-    llvm::Type::VoidTy;
   llvm::SmallVector<llvm::Value*, 16> Args;
-  if (structReturn) {
-    llvm::Value *Return = Builder.CreateAlloca(ReturnTy);
-    Args.push_back(Return);
-  }
   Args.push_back(Receiver);
   Args.push_back(Selector);
   Args.insert(Args.end(), ArgV, ArgV+ArgC);
-  if (structReturn) {
-    Builder.CreateCall(imp, Args.begin(), Args.end());
-    return Args[0];
-  }
   return Builder.CreateCall(imp, Args.begin(), Args.end());
 }
 #include "llvm/ValueSymbolTable.h"
@@ -899,10 +877,6 @@ llvm::Function *CGObjCGNU::MethodPreamble(
                                          bool isClassMethod,
                                          bool isVarArg) {
   std::vector<const llvm::Type*> Args;
-  if (!ReturnTy->isSingleValueType() && ReturnTy != llvm::Type::VoidTy) {
-    Args.push_back(llvm::PointerType::getUnqual(ReturnTy));
-    ReturnTy = llvm::Type::VoidTy;
-  }
   Args.push_back(SelfTy);
   Args.push_back(SelectorTy);
   Args.insert(Args.end(), ArgTy, ArgTy+ArgC);
@@ -920,10 +894,6 @@ llvm::Function *CGObjCGNU::MethodPreamble(
   llvm::Function::arg_iterator AI = Method->arg_begin();
   // Name the struct return argument.
   // FIXME: This is probably the wrong test.
-  if (!ReturnTy->isFirstClassType() && ReturnTy != llvm::Type::VoidTy) {
-    AI->setName("agg.result");
-    ++AI;
-  }
   AI->setName("self");
   ++AI;
   AI->setName("_cmd");

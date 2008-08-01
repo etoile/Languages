@@ -23,7 +23,8 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	BlockClosure.m\
 	NSArray+map.m\
 	NSObject+log.m\
-	NSString+casting.m
+	NSString+casting.m\
+	NSValue+structs.m
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/library.make

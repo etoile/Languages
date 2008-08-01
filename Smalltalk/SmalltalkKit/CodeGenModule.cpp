@@ -71,6 +71,30 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
           IdTy, Type::Int64Ty, (void*)0);
       return B->CreateCall(BoxFunction, V);
     }
+  case '{': {
+    Value *NSValueClass = Runtime->LookupClass(*B,
+      MakeConstantString("NSValue"));
+    const char * castSelName = "valueWithBytes:objCType:";
+    bool passValue = false;
+    if (0 == strncmp(typestr, "{_NSRect", 8)) {
+      castSelName = "valueWithRect:";
+      passValue = true;
+    } else if (0 == strncmp(typestr, "{_NSRange", 9)) {
+      castSelName = "valueWithRange:";
+      passValue = true;
+    } else if (0 == strncmp(typestr, "{_NSPoint", 8)) {
+      castSelName = "valueWithPoint:";
+      passValue = true;
+    } else if (0 == strncmp(typestr, "{_NSSize", 9)) {
+      castSelName = "valueWithSize:";
+      passValue = true;
+    }
+    if (passValue) {
+      return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+        Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
+    }
+    assert(0 && "Boxing arbitrary structures doesn't work yet");
+  }
     // Other types, just wrap them up in an NSValue
     default:
     {
@@ -80,9 +104,12 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
       // TODO: We should probably copy this value somewhere, maybe with a
       // custom object instead of NSValue?
       // TODO: Should set sender to self.
-      LOG("Generating NSValue boxing type %s\n", typestr);
+    const char *end = typestr;
+    while (!isdigit(*end)) { end++; }
+    string typestring = string(typestr, end - typestr);
+    Value *args[] = {V, MakeConstantString(typestring.c_str())};
       return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-          Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), &V, 1);
+          Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), args, 2);
     }
     // Map void returns to nil
     case 'v':
@@ -99,6 +126,7 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
   while (!(*typestr == '\0') && !isdigit(*typestr)) { typestr++; }\
   while (isdigit(*typestr)) { typestr++; }
 Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *Type) {
+  string returnTypeString = string(1, *Type);
   const char *castSelName;
   // TODO: Factor this out into a name-for-type function
   switch(*Type) {
@@ -148,14 +176,36 @@ Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *T
     }
     case 'v':
       return val;
+  case '{': {
+    const char *end = Type;
+    while(!isdigit(*end)) { end++; }
+    returnTypeString = string(Type, (int)(end - Type));
+    //Special cases for NSRect and NSPoint
+    if (0 == strncmp(Type, "{_NSRect", 8)) {
+      castSelName = "rectValue";
+      break;
+    }
+    if (0 == strncmp(Type, "{_NSRange", 9)) {
+      castSelName = "rangeValue";
+      break;
+    }
+    if (0 == strncmp(Type, "{_NSPoint", 8)) {
+      castSelName = "pointValue";
+      break;
+    }
+    if (0 == strncmp(Type, "{_NSSize", 9)) {
+      castSelName = "sizeValue";
+      break;
+    }
+  }
     default:
+      LOG("Found type value: %s\n", Type);
       castSelName = "";
       assert(false && "Unable to transmogriy object to compound type");
   }
   //TODO: We don't actually use the size numbers for anything, but someone else does, so make these sensible:
-  char typeStr[] = "I12@0:4";
-  typeStr[0] = *Type;
-  return MessageSend(B, F, val, castSelName, typeStr);
+  returnTypeString += "12@0:4";
+  return MessageSend(B, F, val, castSelName, returnTypeString.c_str());
 }
 
 void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
@@ -181,23 +231,39 @@ void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value *
 // SmallInt.
 Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char *selName,
     const char *selTypes, Value **argv, unsigned argc) {
-  Value *SelfPtr = B->CreateLoad(Self);
+  Value *SelfPtr = 0; 
+  // FIXME: Sender in blocks should probably be sender in the enclosing scope.
+  if (BlockStack.empty()) {
+	SelfPtr = B->CreateLoad(Self);
+  } 
+
   FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
   llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
   return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), SelfPtr,
       receiver, cmd, argv, argc);
 }
 
-Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
-    *selName, const char *selTypes, Value **argv, Value **boxedArgs, unsigned argc) {
+Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
+    const char *selName, const char *selTypes, Value **argv, Value **boxedArgs,
+    unsigned argc) {
+  //LOG("Sending message to %s", selName);
+  //LOG(" (%s)\n", selTypes);
   Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
   Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
 
   // Basic blocks for messages to SmallInts and ObjC objects:
   BasicBlock *SmallInt = BasicBlock::Create(string("small_int_message") + selName, F);
   IRBuilder SmallIntBuilder = IRBuilder(SmallInt);
-  BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") + selName,
-      F);
+  BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") +
+      selName, F);
+
+  // FIXME: This is a hack to work around LLVM not handling aggregate type phi
+  // nodes.  Remove it when it does.
+  FunctionType *FTy = LLVMFunctionTypeFromString(selTypes);
+  Value * ret = 0;
+  if (FTy->getReturnType() != Type::VoidTy) {
+    ret = B->CreateAlloca(FTy->getReturnType());
+  }
   IRBuilder RealObjectBuilder = IRBuilder(RealObject);
   // Branch to whichever is the correct implementation
   B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
@@ -249,10 +315,16 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver, co
   // Join the two paths together again:
   BasicBlock *Continue = BasicBlock::Create("Continue", F);
 
+  if (ret != 0) {
+    RealObjectBuilder.CreateStore(ObjResult, ret);
+    SmallIntBuilder.CreateStore(Result, ret);
+  }
   RealObjectBuilder.CreateBr(Continue);
   SmallIntBuilder.CreateBr(Continue);
   B->SetInsertPoint(Continue);
   if (ObjResult->getType() != Type::VoidTy) {
+    return B->CreateLoad(ret);
+	// This is the correct implementation.  Uncomment it when LLVM is fixed.
     PHINode *Phi = B->CreatePHI(Result->getType(),  selName);
     Phi->reserveOperandSpace(2);
     Phi->addIncoming(Result, SmallInt);
@@ -343,6 +415,7 @@ void CodeGenModule::BeginMethod(const char *MethodName, const char
   Locals.clear();
   InitialiseFunction(Builder, CurrentMethod, Self, Args, Locals, locals,
       RetVal, CleanupBB, MethodTypes);
+  //StructType *sty = StructType::get(IntTy, IntTy, NULL);
 }
 
 Value *CodeGenModule::LoadArgumentAtIndex(unsigned index) {
@@ -352,8 +425,8 @@ Value *CodeGenModule::LoadArgumentAtIndex(unsigned index) {
   return BlockStack.back()->LoadArgumentAtIndex(index);
 }
 
-Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const char
-    *selTypes, Value **argv, unsigned argc) {
+Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const
+    char *selTypes, Value **argv, unsigned argc) {
   IRBuilder *B = Builder;
   Function *F = CurrentMethod;
   if (!BlockStack.empty()) {
@@ -363,7 +436,7 @@ Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const 
   }
   Value *args[argc];
   UnboxArgs(B, F, argv, args, argc, selTypes);
-  return BoxValue(B, MessageSendId(B, receiver, selName, selTypes, argv,
+  return BoxValue(B, MessageSendId(B, receiver, selName, selTypes, args,
         argc), selTypes);
 }
 
@@ -377,17 +450,13 @@ Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const ch
     F = b->BlockFn;
   }
   LOG("Generating %s (%s)\n", selName, selTypes);
-  /*
-  Value *args[argc];
-  UnboxArgs(B, F, argv, args, argc, selTypes);
-  */
   return BoxValue(B, MessageSend(B, F, receiver, selName, selTypes, argv, argv,
         argc), selTypes);
 }
 
 void CodeGenModule::SetReturn(Value * Ret) {
   if (Ret != 0) {
-	if (Ret->getType() != IdTy) {
+  if (Ret->getType() != IdTy) {
       Ret = Builder->CreateBitCast(Ret, IdTy);
     }
     Builder->CreateStore(Ret, RetVal);
@@ -414,7 +483,7 @@ Value *CodeGenModule::LoadPointerToLocalAtIndex(unsigned index) {
 
 void CodeGenModule::StoreValueInLocalAtIndex(Value * value, unsigned index) {
   if (value->getType() != IdTy) {
-	value = Builder->CreateBitCast(value, IdTy);
+  value = Builder->CreateBitCast(value, IdTy);
   }
   Builder->CreateStore(value, Locals[index]);
 }
@@ -561,16 +630,19 @@ void CodeGenModule::compile(void) {
   PassManager pm;
   pm.add(createVerifierPass());
   pm.add(new TargetData(TheModule));
+  pm.add(createAggressiveDCEPass());
+  /*
   pm.add(createPromoteMemoryToRegisterPass());
   pm.add(createFunctionInliningPass());
   pm.add(createIPConstantPropagationPass());
   pm.add(createSimplifyLibCallsPass());
+  pm.add(createPredicateSimplifierPass());
   pm.add(createCondPropagationPass());
-  pm.add(createAggressiveDCEPass());
   pm.add(createInstructionCombiningPass());
   pm.add(createTailDuplicationPass());
   pm.add(createCFGSimplificationPass());
   pm.add(createStripDeadPrototypesPass());
+  */
   pm.run(*TheModule);
   DUMP(TheModule);
   ExecutionEngine *EE = ExecutionEngine::create(TheModule);

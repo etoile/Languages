@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <errno.h>
 
-// FIXME: This file is a horrible, unstructured, mess.  Split it into separate parts.
 
 // C++ Implementation
 using namespace llvm;
@@ -85,6 +84,17 @@ const Type *LLVMTypeFromString(const char * typestr) {
       return PointerType::getUnqual(Type::Int8Ty);
     case 'v':
       return Type::VoidTy;
+    case '{': {
+      while (*typestr != '=') { typestr++; }
+      typestr++;
+      std::vector<const Type*> types;
+      while (*typestr != '}') {
+        // FIXME: Doesn't work with nested structs
+        types.push_back(LLVMTypeFromString(typestr));
+        typestr++;
+      }
+      return StructType::get(types);
+    }
     default:
     //FIXME: Structure and array types
       return NULL;
@@ -103,7 +113,7 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr) {
   }
   // Function encodings look like this:
   // v12@0:4@8 - void f(id, SEL, id)
-  const Type * ReturnTy = LLVMTypeFromString(typestr);
+  const Type * ReturnTy = LLVMTypeFromString(typestr);     
   NEXT(typestr);
   while(*typestr) {
     ArgTypes.push_back(LLVMTypeFromString(typestr));

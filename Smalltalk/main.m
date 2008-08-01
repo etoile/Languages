@@ -20,6 +20,7 @@ static BOOL compileString(NSString *s)
 		NS_VALUERETURN(NO, BOOL);
 	NS_ENDHANDLER	
 	id cg = defaultCodeGenerator();
+	DEBUG_DUMP_MODULES = 0;
 #ifdef DEBUG
 	DEBUG_DUMP_MODULES = 1;
 #endif
