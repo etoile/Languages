@@ -3,6 +3,8 @@
 
 static Class NSStringClass = Nil;
 static NSDictionary *MangledSelectors = nil;
+static NSMutableDictionary *SelectorConflicts = nil;
+
 
 @implementation NSString (Print)
 - (void) print
@@ -13,6 +15,10 @@ static NSDictionary *MangledSelectors = nil;
 @implementation MessageSend 
 + (void) initialize
 {
+	if (self != [MessageSend class])
+	{
+		return;
+	}
 	NSStringClass = [NSString class];
 	MangledSelectors = [D(
 			@"add:", @"+:",
@@ -21,8 +27,39 @@ static NSDictionary *MangledSelectors = nil;
 			@"sub:", @"-:",
 			@"div:", @"/:",
 			@"mul:", @"*:") retain];
-	[super initialize];
+	// Look up potential selector conflicts.
+	void *state = NULL;
+	Class nextClass;
+	NSMutableDictionary *types = [NSMutableDictionary new];
+	SelectorConflicts = [NSMutableDictionary new];
+	while(Nil != (nextClass = objc_next_class(&state)))
+	{
+		Class class = nextClass;
+		struct objc_method_list *methods = class->methods;
+		if (methods != NULL)
+		{
+			for (unsigned i=0 ; i<methods->method_count ; i++)
+			{
+				Method *m = &methods->method_list[i];
+
+				NSString *name =
+				   	[NSString stringWithCString:sel_get_name(m->method_name)];
+				NSString *type = [NSString stringWithCString:m->method_types];
+				NSString *oldType = [types objectForKey:name];
+				if (oldType && ![type isEqualToString:oldType])
+				{
+					[SelectorConflicts setObject:oldType forKey:name];
+				}
+				else
+				{
+					[types setObject:type forKey:name];
+				}
+			}
+		}
+	}
+	[types release];
 }
+
 - (void) setTarget:(id)anObject
 {
 	ASSIGN(target, anObject);
@@ -62,14 +99,18 @@ static NSDictionary *MangledSelectors = nil;
 {
 	[target setParent:self];
 	[target check];
-	//[self checkRValue:target];
+	NSString *types = [SelectorConflicts objectForKey:selector];
+	if (nil != types)
+	{
+		NSLog(@"Warning: Selector '%@' is polymorphic.  Assuming %@", selector,
+				types);
+	}
 	//SEL sel = sel_get_any_typed_uid([selector UTF8String]);
 	//NSLog(@"Selector %s types: %s", sel_get_name(sel), sel_get_type(sel));
 	FOREACH(arguments, arg, AST*)
 	{
 		[arg setParent:self];
 		[arg check];
-	//	[self checkRValue:arg];
 	}
 }
 
