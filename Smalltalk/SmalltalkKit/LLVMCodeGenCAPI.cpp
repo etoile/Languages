@@ -124,6 +124,10 @@ extern "C" {
     return B->ComparePointers(rhs, lhs);
   }
   
+  LLVMValue MessageSendSuper(ModuleBuilder B, const char *selName, const char
+		  *selTypes, LLVMValue *argv, unsigned argc) {
+	  return B->MessageSendSuper(selName, selTypes, argv, argc);
+  }
   void SetBlockReturn(ModuleBuilder B, LLVMValue value) {
     B->SetBlockReturn(value);
   }

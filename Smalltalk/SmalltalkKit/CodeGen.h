@@ -56,6 +56,13 @@
              withArgs:(void**)argv
                 count:(unsigned)argc;
 /**
+ * Sends a message to the superclass.
+ */
+- (void*) sendSuperMessage:(const char*)sel
+                     types:(const char*)seltypes
+                  withArgs:(void**)argv
+                     count:(unsigned)argc;
+/**
  * Sends a message to an object.  Similar to
  * sendMessage:type:to:withargs:count: but requires that receiver be an
  * Objective-C object, not a small integer.

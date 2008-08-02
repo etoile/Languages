@@ -227,10 +227,28 @@ void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value *
   }
 }
 
+Value *CodeGenModule::MessageSendSuper(IRBuilder *B, Function *F, const char
+		*selName, const char *selTypes, Value **argv, unsigned argc) {
+  Value *SelfPtr = B->CreateLoad(Self);
+  Value *Sender = 0;
+  // FIXME: Sender in blocks should probably be sender in the enclosing scope.
+  if (BlockStack.empty()) {
+	SelfPtr = SelfPtr;
+  } 
+
+  Value *args[argc];
+  UnboxArgs(B, F, argv, args, argc, selTypes);
+
+  FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
+  llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
+  return Runtime->GenerateMessageSendSuper(*B, MethodTy->getReturnType(),
+		  Sender, SuperClassName.c_str(), SelfPtr, cmd, args, argc);
+}
+
 // Preform a real message send.  Reveicer must be a real object, not a
 // SmallInt.
-Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char *selName,
-    const char *selTypes, Value **argv, unsigned argc) {
+Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char
+	*selName, const char *selTypes, Value **argv, unsigned argc) {
   Value *SelfPtr = 0; 
   // FIXME: Sender in blocks should probably be sender in the enclosing scope.
   if (BlockStack.empty()) {
@@ -440,6 +458,18 @@ Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const
         argc), selTypes);
 }
 
+Value *CodeGenModule::MessageSendSuper(const char *selName, const char
+		*selTypes, Value **argv, unsigned argc) {
+  IRBuilder *B = Builder;
+  Function *F = CurrentMethod;
+  if (!BlockStack.empty()) {
+    CodeGenBlock *b = BlockStack.back();
+    B = b->Builder;
+    F = b->BlockFn;
+  }
+  return BoxValue(B, MessageSendSuper(B, F, selName, selTypes, argv, argc),
+		  selTypes);
+}
 Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const char
     *selTypes, Value **argv, unsigned argc) {
   IRBuilder *B = Builder;

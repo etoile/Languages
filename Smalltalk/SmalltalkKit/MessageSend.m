@@ -177,13 +177,32 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		DeclRef *ref = SAFECAST(DeclRef, target);
 		NSString *symbol = ref->symbol;
-		if ([symbols scopeOfSymbol:symbol] == global)
+		SymbolScope scope = [symbols scopeOfSymbol:symbol];
+		if (scope == global)
 		{
 			return [aGenerator sendMessage:sel
 			                         types:seltypes
 			                       toObject:receiver
 			                      withArgs:argv
 			                         count:argc];
+		}
+		if (scope == builtin)
+		{
+			if ([symbol isEqualToString:@"self"])
+			{
+				return [aGenerator sendMessage:sel
+										 types:seltypes
+									   toObject:receiver
+									  withArgs:argv
+										 count:argc];
+			}
+			if ([symbol isEqualToString:@"super"])
+			{
+				return [aGenerator sendSuperMessage:sel
+										      types:seltypes
+									       withArgs:argv
+										      count:argc];
+			}
 		}
 	}
 	return [aGenerator sendMessage:sel

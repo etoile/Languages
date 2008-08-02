@@ -80,6 +80,11 @@ private:
       unsigned argc, const char *selTypes);
 
   /**
+   * Send a message to the superclass.
+   */
+  Value *MessageSendSuper(IRBuilder *B, Function *F, const char
+		*selName, const char *selTypes, Value **argv, unsigned argc);
+  /**
    * Preform a real message send.  Reveicer must be a real object, not a
    * SmallInt.
    */
@@ -129,6 +134,12 @@ public:
    * Load an argument at the specified index.
    */
   Value *LoadArgumentAtIndex(unsigned index);
+
+  /**
+   * Send a message to the superclass.
+   */
+  Value *MessageSendSuper(const char *selName, const char *selTypes, Value
+		  **argv, unsigned argc);
 
   /**
    * Send a message to an Objective-C object.

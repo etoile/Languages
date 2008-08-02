@@ -38,7 +38,7 @@
 		case local:
 			return [aGenerator loadLocalAtIndex:[symbols offsetOfLocal:symbol]];
 		case builtin:
-			if ([symbol isEqual:@"self"])
+			if ([symbol isEqual:@"self"] || [symbol isEqual:@"super"])
 			{
 				return [aGenerator loadSelf];
 			}

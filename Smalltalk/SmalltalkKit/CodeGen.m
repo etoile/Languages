@@ -70,6 +70,13 @@
   return MessageSendId(Builder, receiver, aMessage, types, (LLVMValue*)argv,
       argc);
 }
+- (void*) sendSuperMessage:(const char*)sel
+                     types:(const char*)seltypes
+                  withArgs:(void**)argv
+                     count:(unsigned)argc
+{
+	return MessageSendSuper(Builder, sel, seltypes, (LLVMValue*)argv, argc);
+}
 - (void*) sendMessage:(const char*)aMessage
                 types:(const char*)types
                    to:(void*)receiver

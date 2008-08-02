@@ -33,6 +33,11 @@ void EndClass(ModuleBuilder B);
 void BeginCategory(ModuleBuilder B, const char *cls, const char *cat);
 void EndCategory(ModuleBuilder B);
 /**
+ * Generate message send to the superclass.
+ */
+LLVMValue MessageSendSuper(ModuleBuilder B, const char *selName, const char
+	  *selTypes, LLVMValue *argv, unsigned argc);
+/**
  * Generate a Smalltalk message send.
  */
 LLVMValue MessageSend(ModuleBuilder B, LLVMValue receiver, const char *selname,
