@@ -109,7 +109,7 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
     string typestring = string(typestr, end - typestr);
     Value *args[] = {V, MakeConstantString(typestring.c_str())};
       return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-          Runtime->GetSelector(*B, "valueWithBytes:objCType:", NULL), args, 2);
+          Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL), args, 2);
     }
     // Map void returns to nil
     case 'v':
