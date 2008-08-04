@@ -67,9 +67,11 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
     case 'q': case 'Q':
     {
       // This will return a SmallInt or a promoted integer.
-     Constant *BoxFunction = TheModule->getOrInsertFunction("MakeSmallInt",
+      Constant *BoxFunction = TheModule->getOrInsertFunction("MakeSmallInt",
           IdTy, Type::Int64Ty, (void*)0);
-      return B->CreateCall(BoxFunction, V);
+      CallInst *boxed = B->CreateCall(BoxFunction, V);
+      boxed->setOnlyReadsMemory();
+      return boxed;
     }
   case '{': {
     Value *NSValueClass = Runtime->LookupClass(*B,
@@ -90,8 +92,12 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
       passValue = true;
     }
     if (passValue) {
-      return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+      Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
         Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
+      if (CallInst *call = dyn_cast<llvm::CallInst>(boxed)) {
+          call->setOnlyReadsMemory();
+      }
+      return boxed;
     }
     assert(0 && "Boxing arbitrary structures doesn't work yet");
   }
@@ -228,12 +234,12 @@ void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value *
 }
 
 Value *CodeGenModule::MessageSendSuper(IRBuilder *B, Function *F, const char
-		*selName, const char *selTypes, Value **argv, unsigned argc) {
+        *selName, const char *selTypes, Value **argv, unsigned argc) {
   Value *SelfPtr = B->CreateLoad(Self);
   Value *Sender = 0;
   // FIXME: Sender in blocks should probably be sender in the enclosing scope.
   if (BlockStack.empty()) {
-	SelfPtr = SelfPtr;
+    SelfPtr = SelfPtr;
   } 
 
   Value *args[argc];
@@ -242,17 +248,17 @@ Value *CodeGenModule::MessageSendSuper(IRBuilder *B, Function *F, const char
   FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
   llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
   return Runtime->GenerateMessageSendSuper(*B, MethodTy->getReturnType(),
-		  Sender, SuperClassName.c_str(), SelfPtr, cmd, args, argc);
+          Sender, SuperClassName.c_str(), SelfPtr, cmd, args, argc);
 }
 
 // Preform a real message send.  Reveicer must be a real object, not a
 // SmallInt.
 Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char
-	*selName, const char *selTypes, Value **argv, unsigned argc) {
+    *selName, const char *selTypes, Value **argv, unsigned argc) {
   Value *SelfPtr = 0; 
   // FIXME: Sender in blocks should probably be sender in the enclosing scope.
   if (BlockStack.empty()) {
-	SelfPtr = B->CreateLoad(Self);
+    SelfPtr = B->CreateLoad(Self);
   } 
 
   FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
@@ -342,7 +348,7 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
   B->SetInsertPoint(Continue);
   if (ObjResult->getType() != Type::VoidTy) {
     return B->CreateLoad(ret);
-	// This is the correct implementation.  Uncomment it when LLVM is fixed.
+    // This is the correct implementation.  Uncomment it when LLVM is fixed.
     PHINode *Phi = B->CreatePHI(Result->getType(),  selName);
     Phi->reserveOperandSpace(2);
     Phi->addIncoming(Result, SmallInt);
@@ -459,7 +465,7 @@ Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const
 }
 
 Value *CodeGenModule::MessageSendSuper(const char *selName, const char
-		*selTypes, Value **argv, unsigned argc) {
+        *selTypes, Value **argv, unsigned argc) {
   IRBuilder *B = Builder;
   Function *F = CurrentMethod;
   if (!BlockStack.empty()) {
@@ -468,7 +474,7 @@ Value *CodeGenModule::MessageSendSuper(const char *selName, const char
     F = b->BlockFn;
   }
   return BoxValue(B, MessageSendSuper(B, F, selName, selTypes, argv, argc),
-		  selTypes);
+          selTypes);
 }
 Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const char
     *selTypes, Value **argv, unsigned argc) {

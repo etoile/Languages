@@ -357,6 +357,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder &Builder,
   llvm::Value *lookupArgs[] = {ObjCSuper, Selector};
   llvm::Value *imp = Builder.CreateCall(lookupFunction, lookupArgs,
       lookupArgs+2);
+  llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
 
   // Call the method
   llvm::SmallVector<llvm::Value*, 8> callArgs;
@@ -391,6 +392,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder &Builder,
                                    Receiver->getType(), Selector->getType(),
                                    (void*)0);
   llvm::Value *imp = Builder.CreateCall2(lookupFunction, Receiver, Selector);
+  llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
 
   // Call the method.
   llvm::SmallVector<llvm::Value*, 16> Args;
