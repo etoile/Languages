@@ -281,13 +281,6 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
   BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") +
       selName, F);
 
-  // FIXME: This is a hack to work around LLVM not handling aggregate type phi
-  // nodes.  Remove it when it does.
-  FunctionType *FTy = LLVMFunctionTypeFromString(selTypes);
-  Value * ret = 0;
-  if (FTy->getReturnType() != Type::VoidTy) {
-    ret = B->CreateAlloca(FTy->getReturnType());
-  }
   IRBuilder RealObjectBuilder = IRBuilder(RealObject);
   // Branch to whichever is the correct implementation
   B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
@@ -339,16 +332,10 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
   // Join the two paths together again:
   BasicBlock *Continue = BasicBlock::Create("Continue", F);
 
-  if (ret != 0) {
-    RealObjectBuilder.CreateStore(ObjResult, ret);
-    SmallIntBuilder.CreateStore(Result, ret);
-  }
   RealObjectBuilder.CreateBr(Continue);
   SmallIntBuilder.CreateBr(Continue);
   B->SetInsertPoint(Continue);
   if (ObjResult->getType() != Type::VoidTy) {
-    return B->CreateLoad(ret);
-    // This is the correct implementation.  Uncomment it when LLVM is fixed.
     PHINode *Phi = B->CreatePHI(Result->getType(),  selName);
     Phi->reserveOperandSpace(2);
     Phi->addIncoming(Result, SmallInt);
@@ -667,7 +654,6 @@ void CodeGenModule::compile(void) {
   pm.add(createVerifierPass());
   pm.add(new TargetData(TheModule));
   pm.add(createAggressiveDCEPass());
-  /*
   pm.add(createPromoteMemoryToRegisterPass());
   pm.add(createFunctionInliningPass());
   pm.add(createIPConstantPropagationPass());
@@ -678,7 +664,6 @@ void CodeGenModule::compile(void) {
   pm.add(createTailDuplicationPass());
   pm.add(createCFGSimplificationPass());
   pm.add(createStripDeadPrototypesPass());
-  */
   pm.run(*TheModule);
   DUMP(TheModule);
   ExecutionEngine *EE = ExecutionEngine::create(TheModule);
