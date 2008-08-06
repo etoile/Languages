@@ -84,10 +84,10 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
     } else if (0 == strncmp(typestr, "{_NSRange", 9)) {
       castSelName = "valueWithRange:";
       passValue = true;
-    } else if (0 == strncmp(typestr, "{_NSPoint", 8)) {
+    } else if (0 == strncmp(typestr, "{_NSPoint", 9)) {
       castSelName = "valueWithPoint:";
       passValue = true;
-    } else if (0 == strncmp(typestr, "{_NSSize", 9)) {
+    } else if (0 == strncmp(typestr, "{_NSSize", 8)) {
       castSelName = "valueWithSize:";
       passValue = true;
     }
@@ -195,11 +195,11 @@ Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *T
       castSelName = "rangeValue";
       break;
     }
-    if (0 == strncmp(Type, "{_NSPoint", 8)) {
+    if (0 == strncmp(Type, "{_NSPoint", 9)) {
       castSelName = "pointValue";
       break;
     }
-    if (0 == strncmp(Type, "{_NSSize", 9)) {
+    if (0 == strncmp(Type, "{_NSSize", 8)) {
       castSelName = "sizeValue";
       break;
     }
