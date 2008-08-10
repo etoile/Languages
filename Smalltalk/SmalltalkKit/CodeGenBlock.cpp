@@ -7,7 +7,7 @@
 using namespace llvm;
 
 CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted, int count,
-    IRBuilder *MethodBuilder, CodeGenModule *CGM) {
+    IRBuilder<> *MethodBuilder, CodeGenModule *CGM) {
   TheModule = M;
   const Type *IdPtrTy = PointerType::getUnqual(IdTy);
   BlockTy = StructType::get(
@@ -39,7 +39,7 @@ CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted, in
   BlockFn = Function::Create(BlockFunctionTy, GlobalValue::InternalLinkage,
       "BlockFunction", TheModule);
   BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", BlockFn);
-  Builder = new IRBuilder(EntryBB);
+  Builder = new IRBuilder<>(EntryBB);
 
   // Set up the arguments
   CGM->InitialiseFunction(Builder, BlockFn, BlockSelf, Args, Locals, locals,

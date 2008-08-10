@@ -32,7 +32,7 @@ private:
   const Type *CurrentClassTy;
   Function *CurrentMethod;
   Value *Self;
-  IRBuilder *Builder;
+  IRBuilder<> *Builder;
   string ClassName;
   string SuperClassName;
   string CategoryName;
@@ -66,35 +66,35 @@ private:
   /**
    * Constructs a Smalltalk object from the specified Objective-C type.
    */
-  Value *BoxValue(IRBuilder *B, Value *V, const char *typestr);
+  Value *BoxValue(IRBuilder<> *B, Value *V, const char *typestr);
 
   /**
    * Constructs a C primitive from a Smalltalk object.
    */
-  Value *Unbox(IRBuilder *B, Function *F, Value *val, const char *Type);
+  Value *Unbox(IRBuilder<> *B, Function *F, Value *val, const char *Type);
 
   /**
    * Construct C primitives from Smalltalk objects in an argument list.
    */
-  void UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
+  void UnboxArgs(IRBuilder<> *B, Function *F,  Value ** argv, Value **args,
       unsigned argc, const char *selTypes);
 
   /**
    * Send a message to the superclass.
    */
-  Value *MessageSendSuper(IRBuilder *B, Function *F, const char
+  Value *MessageSendSuper(IRBuilder<> *B, Function *F, const char
 		*selName, const char *selTypes, Value **argv, unsigned argc);
   /**
    * Preform a real message send.  Reveicer must be a real object, not a
    * SmallInt.
    */
-  Value *MessageSendId(IRBuilder *B, Value *receiver, const char *selName,
+  Value *MessageSendId(IRBuilder<> *B, Value *receiver, const char *selName,
       const char *selTypes, Value **argv, unsigned argc);
   /**
    * Send a message to something that may be a SmallInt or an Objective-C
    * object.
    */
-  Value *MessageSend(IRBuilder *B, Function *F, Value *receiver, const char
+  Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
       *selName, const char *selTypes, Value **argv=0, Value **boxedArgs=0,
       unsigned argc=0);
 
@@ -237,7 +237,7 @@ public:
    * Intialises a Function object to be used as a Smalltalk method or block
    * function.
    */
-  void InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
+  void InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self,
       SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
       locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *RetTy="@");
 
@@ -253,7 +253,7 @@ public:
 void SkipTypeQualifiers(const char **typestr);
 const Type *LLVMTypeFromString(const char * typestr);
 llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr);
-void InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
+void InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self,
     SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
     locals, Value *&RetVal, BasicBlock *&CleanupBB);
 

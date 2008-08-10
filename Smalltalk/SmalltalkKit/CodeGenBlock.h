@@ -1,9 +1,9 @@
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/IRBuilder.h"
 
 namespace llvm {
   class BasicBlock;
   class Function;
-  class IRBuilder;
   class Module;
   class Type;
   class Value;
@@ -20,12 +20,12 @@ class CodeGenBlock {
 public:
   llvm::Value *Block;
   llvm::Function *BlockFn;
-  llvm::IRBuilder *Builder;
+  llvm::IRBuilder<> *Builder;
   llvm::Value *RetVal;
   llvm::BasicBlock *CleanupBB;
 
   CodeGenBlock(llvm::Module *M, int args, int locals, llvm::Value **promoted,
-    int count, llvm::IRBuilder *MethodBuilder, CodeGenModule *CGM);
+    int count, llvm::IRBuilder<> *MethodBuilder, CodeGenModule *CGM);
 
   llvm::Value *LoadArgumentAtIndex(unsigned index);
 

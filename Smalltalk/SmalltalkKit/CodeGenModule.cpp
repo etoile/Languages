@@ -49,7 +49,7 @@ string CodeGenModule::FunctionNameFromSelector(const char *sel) {
   }
 }
 
-Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
+Value *CodeGenModule::BoxValue(IRBuilder<> *B, Value *V, const char *typestr) {
   // Untyped selectors return id
   if (NULL == typestr || '\0' == *typestr) return V;
   // FIXME: Other function type qualifiers
@@ -131,7 +131,7 @@ Value *CodeGenModule::BoxValue(IRBuilder *B, Value *V, const char *typestr) {
 #define NEXT(typestr) \
   while (!(*typestr == '\0') && !isdigit(*typestr)) { typestr++; }\
   while (isdigit(*typestr)) { typestr++; }
-Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *Type) {
+Value *CodeGenModule::Unbox(IRBuilder<> *B, Function *F, Value *val, const char *Type) {
   string returnTypeString = string(1, *Type);
   const char *castSelName;
   // TODO: Factor this out into a name-for-type function
@@ -214,7 +214,7 @@ Value *CodeGenModule::Unbox(IRBuilder *B, Function *F, Value *val, const char *T
   return MessageSend(B, F, val, castSelName, returnTypeString.c_str());
 }
 
-void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value **args,
+void CodeGenModule::UnboxArgs(IRBuilder<> *B, Function *F,  Value ** argv, Value **args,
     unsigned argc, const char *selTypes) {
   // FIXME: For objects, we need to turn SmallInts into ObjC objects
   if (NULL == selTypes) {
@@ -233,7 +233,7 @@ void CodeGenModule::UnboxArgs(IRBuilder *B, Function *F,  Value ** argv, Value *
   }
 }
 
-Value *CodeGenModule::MessageSendSuper(IRBuilder *B, Function *F, const char
+Value *CodeGenModule::MessageSendSuper(IRBuilder<> *B, Function *F, const char
         *selName, const char *selTypes, Value **argv, unsigned argc) {
   Value *SelfPtr = B->CreateLoad(Self);
   Value *Sender = 0;
@@ -253,7 +253,7 @@ Value *CodeGenModule::MessageSendSuper(IRBuilder *B, Function *F, const char
 
 // Preform a real message send.  Reveicer must be a real object, not a
 // SmallInt.
-Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char
+Value *CodeGenModule::MessageSendId(IRBuilder<> *B, Value *receiver, const char
     *selName, const char *selTypes, Value **argv, unsigned argc) {
   Value *SelfPtr = 0; 
   // FIXME: Sender in blocks should probably be sender in the enclosing scope.
@@ -267,7 +267,7 @@ Value *CodeGenModule::MessageSendId(IRBuilder *B, Value *receiver, const char
       receiver, cmd, argv, argc);
 }
 
-Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
+Value *CodeGenModule::MessageSend(IRBuilder<> *B, Function *F, Value *receiver,
     const char *selName, const char *selTypes, Value **argv, Value **boxedArgs,
     unsigned argc) {
   //LOG("Sending message to %s", selName);
@@ -277,11 +277,11 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
 
   // Basic blocks for messages to SmallInts and ObjC objects:
   BasicBlock *SmallInt = BasicBlock::Create(string("small_int_message") + selName, F);
-  IRBuilder SmallIntBuilder = IRBuilder(SmallInt);
+  IRBuilder<> SmallIntBuilder = IRBuilder<>(SmallInt);
   BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") +
       selName, F);
 
-  IRBuilder RealObjectBuilder = IRBuilder(RealObject);
+  IRBuilder<> RealObjectBuilder = IRBuilder<>(RealObject);
   // Branch to whichever is the correct implementation
   B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
   B->ClearInsertionPoint();
@@ -347,7 +347,7 @@ Value *CodeGenModule::MessageSend(IRBuilder *B, Function *F, Value *receiver,
 
 CodeGenModule::CodeGenModule(const char *ModuleName) {
   TheModule = ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
-  Builder = new IRBuilder();
+  Builder = new IRBuilder<>();
   Runtime = clang::CodeGen::CreateObjCRuntime(*TheModule, IntTy,
      IntegerType::get(sizeof(long) * 8));
 }
@@ -438,7 +438,7 @@ Value *CodeGenModule::LoadArgumentAtIndex(unsigned index) {
 
 Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const
     char *selTypes, Value **argv, unsigned argc) {
-  IRBuilder *B = Builder;
+  IRBuilder<> *B = Builder;
   Function *F = CurrentMethod;
   if (!BlockStack.empty()) {
     CodeGenBlock *b = BlockStack.back();
@@ -453,7 +453,7 @@ Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const
 
 Value *CodeGenModule::MessageSendSuper(const char *selName, const char
         *selTypes, Value **argv, unsigned argc) {
-  IRBuilder *B = Builder;
+  IRBuilder<> *B = Builder;
   Function *F = CurrentMethod;
   if (!BlockStack.empty()) {
     CodeGenBlock *b = BlockStack.back();
@@ -465,7 +465,7 @@ Value *CodeGenModule::MessageSendSuper(const char *selName, const char
 }
 Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const char
     *selTypes, Value **argv, unsigned argc) {
-  IRBuilder *B = Builder;
+  IRBuilder<> *B = Builder;
   Function *F = CurrentMethod;
   if (!BlockStack.empty()) {
     CodeGenBlock *b = BlockStack.back();
@@ -592,7 +592,7 @@ Value *CodeGenModule::ComparePointers(Value *lhs, Value *rhs) {
   return Builder->CreateIntToPtr(result, IdTy);
 }
 
-void CodeGenModule::InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
+void CodeGenModule::InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self,
     SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
     locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *MethodTypes) {
 
@@ -628,7 +628,7 @@ void CodeGenModule::InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
     B->CreateStore(ConstantPointerNull::get(IdTy),
         RetVal);
     BasicBlock * RetBB = llvm::BasicBlock::Create("return", F);
-    IRBuilder ReturnBuilder = IRBuilder(RetBB);
+    IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
     if (F->getFunctionType()->getReturnType() != llvm::Type::VoidTy) {
       Value * R = ReturnBuilder.CreateLoad(RetVal);
       R = Unbox(&ReturnBuilder, F, R, RetType);
@@ -639,7 +639,7 @@ void CodeGenModule::InitialiseFunction(IRBuilder *B, Function *F, Value *&Self,
 
     // Setup the cleanup block
     CleanupBB = BasicBlock::Create("cleanup", F);
-    ReturnBuilder = IRBuilder(CleanupBB);
+    ReturnBuilder = IRBuilder<>(CleanupBB);
     ReturnBuilder.CreateBr(RetBB);
 
 }

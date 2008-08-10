@@ -17,7 +17,6 @@
 #include "CGObjCRuntime.h"
 #include "llvm/Module.h"
 #include "llvm/Support/Compiler.h"
-#include "llvm/Support/IRBuilder.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include <map>
@@ -90,14 +89,14 @@ public:
     const llvm::Type *LLVMLongType);
   virtual llvm::Constant *GenerateConstantString(const char *String, 
       const size_t length);
-  virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                            const llvm::Type *ReturnTy,
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
                                            llvm::Value *Selector,
                                            llvm::Value** ArgV,
                                            unsigned ArgC);
-  virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             const llvm::Type *ReturnTy,
                                             llvm::Value *Sender,
                                             const char *SuperClassName,
@@ -105,12 +104,12 @@ public:
                                             llvm::Value *Selector,
                                             llvm::Value** ArgV,
                                             unsigned ArgC);
-  virtual llvm::Value *LookupClass(llvm::IRBuilder &Builder, llvm::Value
+  virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder, llvm::Value
       *ClassName);
-  virtual llvm::Value *GetSelector(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
       llvm::Value *SelName,
       llvm::Value *SelTypes);
-  virtual llvm::Value *GetSelector(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
       const char *SelName,
       const char *SelTypes);
 
@@ -142,7 +141,7 @@ public:
            const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
            const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
            const llvm::SmallVectorImpl<std::string> &Protocols);
-  virtual llvm::Value *GenerateProtocolRef(llvm::IRBuilder &Builder, const char
+  virtual llvm::Value *GenerateProtocolRef(llvm::IRBuilder<> &Builder, const char
       *ProtocolName);
   virtual void GenerateProtocol(const char *ProtocolName,
       const llvm::SmallVectorImpl<std::string> &Protocols,
@@ -206,7 +205,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 }
 // This has to perform the lookup every time, since posing and related
 // techniques can modify the name -> class mapping.
-llvm::Value *CGObjCGNU::LookupClass(llvm::IRBuilder &Builder,
+llvm::Value *CGObjCGNU::LookupClass(llvm::IRBuilder<> &Builder,
     llvm::Value *ClassName) {
   llvm::Constant *ClassLookupFn =
     TheModule.getOrInsertFunction("objc_lookup_class", IdTy, PtrToInt8Ty,
@@ -215,7 +214,7 @@ llvm::Value *CGObjCGNU::LookupClass(llvm::IRBuilder &Builder,
 }
 
 /// Statically looks up the selector for the specified name / type pair.
-llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder &Builder,
+llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
     const char *SelName,
     const char *SelTypes) {
   // For static selectors, we return an alias for now then storeV them all in a
@@ -254,7 +253,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder &Builder,
   return Builder.CreateLoad(Sel);
 }
 /// Dynamically looks up the selector for the specified name / type pair.
-llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder &Builder,
+llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
     llvm::Value *SelName,
     llvm::Value *SelTypes) {
   // Dynamically look up selectors from non-constant sources
@@ -321,7 +320,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String, const
 ///Generates a message send where the super is the receiver.  This is a message
 ///send to self with special delivery semantics indicating which class's method
 ///should be called.
-llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder &Builder,
+llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             const llvm::Type *ReturnTy,
                                             llvm::Value *Sender,
                                             const char *SuperClassName,
@@ -368,7 +367,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder &Builder,
 }
 
 /// Generate code for a message send expression.  
-llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder &Builder,
+llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                             const llvm::Type *ReturnTy,
                                             llvm::Value *Sender,
                                             llvm::Value *Receiver,
@@ -610,7 +609,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
   return MakeGlobal(ProtocolListTy, Elements, ".objc_protocol_list");
 }
 
-llvm::Value *CGObjCGNU::GenerateProtocolRef(llvm::IRBuilder &Builder, const
+llvm::Value *CGObjCGNU::GenerateProtocolRef(llvm::IRBuilder<> &Builder, const
     char *ProtocolName) {
   return ExistingProtocols[ProtocolName];
 }
@@ -860,7 +859,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction() {
       llvm::GlobalValue::InternalLinkage, ".objc_load_function",
       &TheModule);
   llvm::BasicBlock *EntryBB = llvm::BasicBlock::Create("entry", LoadFunction);
-  llvm::IRBuilder Builder;
+  llvm::IRBuilder<> Builder;
   Builder.SetInsertPoint(EntryBB);
   llvm::Value *Register = TheModule.getOrInsertFunction("__objc_exec_class",
       llvm::Type::VoidTy, llvm::PointerType::getUnqual(ModuleTy), (void*)0);

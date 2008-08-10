@@ -16,11 +16,10 @@
 #ifndef CLANG_CODEGEN_OBCJRUNTIME_H
 #define CLANG_CODEGEN_OBCJRUNTIME_H
 #include "llvm/ADT/SmallVector.h"
-#include "CGObjCDelegates.h"
+#include "llvm/Support/IRBuilder.h"
 #include <string>
 
 namespace llvm {
-  class IRBuilder;
   class Constant;
   class Type;
   class Value;
@@ -41,7 +40,7 @@ public:
   virtual ~CGObjCRuntime();
   
   /// Generate an Objective-C message send operation
-  virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                            const llvm::Type *ReturnTy,
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
@@ -52,11 +51,11 @@ public:
   /// this compilation unit with the runtime library.
   virtual llvm::Function *ModuleInitFunction() =0;
   /// Get a selector for the specified name and type values
-  virtual llvm::Value *GetSelector(llvm::IRBuilder &Builder, 
+  virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder, 
                                    llvm::Value *SelName, 
                                    llvm::Value *SelTypes) = 0;
   /// Get a selector whose names and types are known at compile time
-  virtual llvm::Value *GetSelector(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
       const char *SelName,
       const char *SelTypes) =0;
   /// Generate a constant string object
@@ -84,9 +83,9 @@ public:
              const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
              const llvm::SmallVectorImpl<std::string> &Protocols) =0;
   /// Generate a reference to the named protocol.
-  virtual llvm::Value *GenerateProtocolRef(llvm::IRBuilder &Builder, const char
+  virtual llvm::Value *GenerateProtocolRef(llvm::IRBuilder<> &Builder, const char
       *ProtocolName) =0;
-  virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder &Builder,
+  virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                                 const llvm::Type *ReturnTy,
                                                 llvm::Value *Sender,
                                                 const char *SuperClassName,
@@ -114,7 +113,7 @@ public:
                                          bool isClassMethod,
                                          bool isVarArg) = 0;
   /// Look up the class for the specified name
-  virtual llvm::Value *LookupClass(llvm::IRBuilder &Builder, llvm::Value
+  virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder, llvm::Value
       *ClassName) =0;
   /// If instance variable addresses are determined at runtime then this should
   /// return true, otherwise instance variables will be accessed directly from
