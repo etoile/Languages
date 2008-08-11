@@ -175,6 +175,7 @@ Value *CodeGenModule::Unbox(IRBuilder<> *B, Function *F, Value *val, const char 
     case 'B':
       castSelName = "boolValue";
       break;
+	case '#':
     case '@': {
       Value *BoxFunction = TheModule->getFunction("BoxObject");
       val = B->CreateBitCast(val, IdTy);
@@ -256,10 +257,7 @@ Value *CodeGenModule::MessageSendSuper(IRBuilder<> *B, Function *F, const char
 Value *CodeGenModule::MessageSendId(IRBuilder<> *B, Value *receiver, const char
     *selName, const char *selTypes, Value **argv, unsigned argc) {
   Value *SelfPtr = 0; 
-  // FIXME: Sender in blocks should probably be sender in the enclosing scope.
-  if (BlockStack.empty()) {
-    SelfPtr = B->CreateLoad(Self);
-  } 
+  SelfPtr = B->CreateLoad(Self);
 
   FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
   llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
@@ -494,6 +492,9 @@ void CodeGenModule::EndMethod() {
 }
 
 Value *CodeGenModule::LoadSelf(void) {
+  if (!BlockStack.empty()) {
+    return BlockStack.back()->LoadBlockVar(0, 0);
+  }
   return Builder->CreateLoad(Self);
 }
 
@@ -512,7 +513,11 @@ void CodeGenModule::StoreValueInLocalAtIndex(Value * value, unsigned index) {
 }
 
 Value *CodeGenModule::LoadClass(const char *classname) {
-  return Runtime->LookupClass(*Builder, MakeConstantString(classname));
+  IRBuilder<> *B = Builder;
+  if (!BlockStack.empty()) {
+    B = BlockStack.back()->Builder;
+  }
+  return Runtime->LookupClass(*B, MakeConstantString(classname));
 }
 
 Value *CodeGenModule::LoadValueOfTypeAtOffsetFromObject( const char* type, unsigned offset,
@@ -520,7 +525,7 @@ Value *CodeGenModule::LoadValueOfTypeAtOffsetFromObject( const char* type, unsig
   // FIXME: This is really ugly.  We should really create an LLVM type for
   // the object and use a GEP.
   // FIXME: Non-id loads
-  assert(*type == '@');
+  assert(*type == '@' || *type == '#');
   Value *addr = Builder->CreatePtrToInt(object, IntTy);
   addr = Builder->CreateAdd(addr, ConstantInt::get(IntTy, offset));
   addr = Builder->CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
@@ -532,7 +537,7 @@ void CodeGenModule::StoreValueOfTypeAtOffsetFromObject(Value *value,
   // FIXME: This is really ugly.  We should really create an LLVM type for
   // the object and use a GEP.
   // FIXME: Non-id stores
-  assert(*type == '@');
+  assert(*type == '@' || *type == '#');
   Value *addr = Builder->CreatePtrToInt(object, IntTy);
   addr = Builder->CreateAdd(addr, ConstantInt::get(IntTy, offset));
   addr = Builder->CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
@@ -541,7 +546,7 @@ void CodeGenModule::StoreValueOfTypeAtOffsetFromObject(Value *value,
 
 void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value **promoted, int count) {
   BlockStack.push_back(new CodeGenBlock(TheModule, args, locals, promoted,
-        count, Builder, this));
+        count, LoadSelf(), Builder, this));
 }
 Value *CodeGenModule::LoadBlockVar(unsigned index, unsigned offset) {
   return BlockStack.back()->LoadBlockVar(index, offset);

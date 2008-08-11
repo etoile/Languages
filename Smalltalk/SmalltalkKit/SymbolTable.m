@@ -2,6 +2,23 @@
 
 static NSMutableSet *NewClasses;
 
+static SymbolScope lookupUnscopedSymbol(NSString *aName)
+{
+	NSLog(@"Looking up scope of %@", aName);
+	if ([aName isEqualToString:@"nil"]
+	   || [aName isEqualToString:@"Nil"]
+	   || [aName isEqualToString:@"self"]
+	   || [aName isEqualToString:@"super"])
+	{
+		return builtin;
+	}
+	if(NSClassFromString(aName) != NULL || [NewClasses containsObject:aName])
+	{
+		return global;
+	}
+	return invalid;
+}
+
 @implementation ObjectSymbolTable
 - (SymbolTable*) initForClass:(Class)aClass 
 {
@@ -133,6 +150,14 @@ static NSMutableSet *NewClasses;
 }
 - (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
+	switch (lookupUnscopedSymbol(aName))
+	{
+		case builtin:
+			return builtin;
+		case global:
+			return global;
+		default: {}
+	}
 	if ([localVariables containsObject:aName])
 	{
 		return local;
@@ -166,21 +191,6 @@ static NSMutableSet *NewClasses;
 - (int) indexOfArgument:(NSString*)aName
 {
 	return [enclosingScope indexOfArgument:aName];
-}
-static SymbolScope lookupUnscopedSymbol(NSString *aName)
-{
-	if ([aName isEqualToString:@"nil"]
-	   || [aName isEqualToString:@"Nil"]
-	   || [aName isEqualToString:@"self"]
-	   || [aName isEqualToString:@"super"])
-	{
-		return builtin;
-	}
-	if(NSClassFromString(aName) != NULL || [NewClasses containsObject:aName])
-	{
-		return global;
-	}
-	return invalid;
 }
 - (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {

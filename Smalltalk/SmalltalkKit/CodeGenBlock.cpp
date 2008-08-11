@@ -6,8 +6,8 @@
 
 using namespace llvm;
 
-CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted, int count,
-    IRBuilder<> *MethodBuilder, CodeGenModule *CGM) {
+CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted,
+    int count, Value *Self, IRBuilder<> *MethodBuilder, CodeGenModule *CGM) {
   TheModule = M;
   const Type *IdPtrTy = PointerType::getUnqual(IdTy);
   BlockTy = StructType::get(
@@ -55,13 +55,19 @@ CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted, in
   //FIXME: I keep calling these promoted when I mean bound.  Change all of
   //the variable / method names to reflect this.
 
-  //Store the promoted vars in the block
-  Value *promotedArray = MethodBuilder->CreateStructGEP(Block, 2);
-  // FIXME: Reference self, promote self
+  //Store pointers to the bound vars in the block
+  Value *boundArray = MethodBuilder->CreateStructGEP(Block, 2);
+  Value *promotedArray = MethodBuilder->CreateStructGEP(Block, 3);
+
   for (int i=1 ; i<count ; i++) {
     MethodBuilder->CreateStore(promoted[i], 
-        MethodBuilder->CreateStructGEP(promotedArray, i));
+        MethodBuilder->CreateStructGEP(boundArray, i));
   }
+  //Reference self, promote self
+  MethodBuilder->CreateStore(Self,
+      MethodBuilder->CreateStructGEP(promotedArray, 0));
+  MethodBuilder->CreateStore(MethodBuilder->CreateStructGEP(promotedArray, 0),
+      MethodBuilder->CreateStructGEP(boundArray, 0));
 }
 
 Value *CodeGenBlock::LoadArgumentAtIndex(unsigned index) {

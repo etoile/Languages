@@ -50,6 +50,10 @@
 			[SAFECAST(BlockSymbolTable, symbols) promoteSymbol:aSymbol toLocation:ref];
 			break;
 		}
+		case builtin:
+		{
+			return;
+		}
 		case promoted:
 			  //FIXME: Reference the enclosing block
 		default:

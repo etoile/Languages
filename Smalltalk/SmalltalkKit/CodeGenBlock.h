@@ -25,7 +25,8 @@ public:
   llvm::BasicBlock *CleanupBB;
 
   CodeGenBlock(llvm::Module *M, int args, int locals, llvm::Value **promoted,
-    int count, llvm::IRBuilder<> *MethodBuilder, CodeGenModule *CGM);
+    int count, llvm::Value *Self, llvm::IRBuilder<> *MethodBuilder,
+    CodeGenModule *CGM);
 
   llvm::Value *LoadArgumentAtIndex(unsigned index);
 
