@@ -56,12 +56,24 @@
 }
 - (void*) compileWith:(id<CodeGenerator>)aGenerator
 {
-	void * none[1] = {NULL};
+	const char *ivarNames[[ivars count] + 1];
+	const char *ivarTypes[[ivars count] + 1];
+	int ivarOffsets[[ivars count] + 1];
+	for (int i=0; i<[ivars count]; i++)
+	{
+		ivarNames[i] = [[ivars objectAtIndex: i] UTF8String];
+		ivarTypes[i] = "@";
+		ivarOffsets[i] = [symbols offsetOfIVar: [ivars objectAtIndex: i]];
+	}
+	ivarNames[[ivars count]] = NULL;
+	ivarTypes[[ivars count]] = NULL;
+	ivarOffsets[[ivars count]] = 0;
+
 	[aGenerator createSubclass:classname
                    subclassing:superclass
-                 withIvarNames:(const char**)none
-                         types:(const char**)none
-                       offsets:(int*)none];
+                 withIvarNames:ivarNames
+                         types:ivarTypes
+                       offsets:ivarOffsets];
 	FOREACH(methods, method, AST*)
 	{
 		[method compileWith:aGenerator];
