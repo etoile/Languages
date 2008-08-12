@@ -24,7 +24,8 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	NSArray+map.m\
 	NSObject+log.m\
 	NSString+casting.m\
-	NSValue+structs.m
+	NSValue+structs.m\
+	Symbol.m
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/library.make

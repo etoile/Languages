@@ -73,34 +73,41 @@ Value *CodeGenModule::BoxValue(IRBuilder<> *B, Value *V, const char *typestr) {
       boxed->setOnlyReadsMemory();
       return boxed;
     }
-  case '{': {
-    Value *NSValueClass = Runtime->LookupClass(*B,
-      MakeConstantString("NSValue"));
-    const char * castSelName = "valueWithBytes:objCType:";
-    bool passValue = false;
-    if (0 == strncmp(typestr, "{_NSRect", 8)) {
-      castSelName = "valueWithRect:";
-      passValue = true;
-    } else if (0 == strncmp(typestr, "{_NSRange", 9)) {
-      castSelName = "valueWithRange:";
-      passValue = true;
-    } else if (0 == strncmp(typestr, "{_NSPoint", 9)) {
-      castSelName = "valueWithPoint:";
-      passValue = true;
-    } else if (0 == strncmp(typestr, "{_NSSize", 8)) {
-      castSelName = "valueWithSize:";
-      passValue = true;
+	case ':': {
+      // TODO: Store this in a global.
+      Value *SymbolCalss = Runtime->LookupClass(*B,
+          MakeConstantString("Symbol"));
+      return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
+              Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
     }
-    if (passValue) {
-      Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-        Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
-      if (CallInst *call = dyn_cast<llvm::CallInst>(boxed)) {
-          call->setOnlyReadsMemory();
+    case '{': {
+      Value *NSValueClass = Runtime->LookupClass(*B,
+        MakeConstantString("NSValue"));
+      const char * castSelName = "valueWithBytes:objCType:";
+      bool passValue = false;
+        if (0 == strncmp(typestr, "{_NSRect", 8)) {
+        castSelName = "valueWithRect:";
+        passValue = true;
+      } else if (0 == strncmp(typestr, "{_NSRange", 9)) {
+        castSelName = "valueWithRange:";
+        passValue = true;
+      } else if (0 == strncmp(typestr, "{_NSPoint", 9)) {
+        castSelName = "valueWithPoint:";
+        passValue = true;
+      } else if (0 == strncmp(typestr, "{_NSSize", 8)) {
+        castSelName = "valueWithSize:";
+        passValue = true;
       }
-      return boxed;
+      if (passValue) {
+        Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+          Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
+        if (CallInst *call = dyn_cast<llvm::CallInst>(boxed)) {
+            call->setOnlyReadsMemory();
+        }
+        return boxed;
+      }
+      assert(0 && "Boxing arbitrary structures doesn't work yet");
     }
-    assert(0 && "Boxing arbitrary structures doesn't work yet");
-  }
     // Other types, just wrap them up in an NSValue
     default:
     {
@@ -110,12 +117,13 @@ Value *CodeGenModule::BoxValue(IRBuilder<> *B, Value *V, const char *typestr) {
       // TODO: We should probably copy this value somewhere, maybe with a
       // custom object instead of NSValue?
       // TODO: Should set sender to self.
-    const char *end = typestr;
-    while (!isdigit(*end)) { end++; }
-    string typestring = string(typestr, end - typestr);
-    Value *args[] = {V, MakeConstantString(typestring.c_str())};
+      const char *end = typestr;
+      while (!isdigit(*end)) { end++; }
+      string typestring = string(typestr, end - typestr);
+      Value *args[] = {V, MakeConstantString(typestring.c_str())};
       return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-          Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL), args, 2);
+              Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL),
+              args, 2);
     }
     // Map void returns to nil
     case 'v':
@@ -175,7 +183,10 @@ Value *CodeGenModule::Unbox(IRBuilder<> *B, Function *F, Value *val, const char 
     case 'B':
       castSelName = "boolValue";
       break;
-	case '#':
+    case ':':
+      castSelName = "selValue";
+      break;
+    case '#':
     case '@': {
       Value *BoxFunction = TheModule->getFunction("BoxObject");
       val = B->CreateBitCast(val, IdTy);
@@ -647,6 +658,21 @@ void CodeGenModule::InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self
     ReturnBuilder = IRBuilder<>(CleanupBB);
     ReturnBuilder.CreateBr(RetBB);
 
+}
+Value *CodeGenModule::SymbolConstant(const char *symbol) {
+  // FIXME: This pattern is used all over the place.  Factor it out somewhere.
+  IRBuilder<> *B = Builder;
+  if (!BlockStack.empty()) {
+    B = BlockStack.back()->Builder;
+  }
+
+  // FIXME: Make constant symbols global objects instead of creating them once
+  // for every use.
+  Value *SymbolCalss = Runtime->LookupClass(*B,
+      MakeConstantString("Symbol"));
+  Value *V = MakeConstantString(symbol);
+  return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
+          Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
 }
 
 void CodeGenModule::compile(void) {

@@ -176,6 +176,10 @@
 	freeModuleBuilder(Builder);
 	[super dealloc];
 }
+- (void*) generateConstantSymbol:(NSString*)aSymbol
+{
+	return SymbolConstant(Builder, [aSymbol UTF8String]);
+}
 @end
 id <CodeGenerator> defaultCodeGenerator(void)
 {

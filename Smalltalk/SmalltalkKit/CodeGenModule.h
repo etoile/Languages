@@ -230,6 +230,10 @@ public:
    */
   Value *StringConstant(const char *value);
   /**
+   * Create a symbol object.
+   */
+  Value *SymbolConstant(const char *symbol);
+  /**
    * Compare two pointers for equality.
    */
 	Value *ComparePointers(Value *lhs, Value *rhs);

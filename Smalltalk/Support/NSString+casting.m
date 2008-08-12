@@ -5,4 +5,8 @@
 {
 	return (unsigned)[self intValue];
 }
+- (SEL) selValue
+{
+	return NSSelectorFromString(self);
+}
 @end

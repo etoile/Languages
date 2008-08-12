@@ -132,4 +132,7 @@ extern "C" {
     B->SetBlockReturn(value);
   }
 
+  LLVMValue SymbolConstant(ModuleBuilder B, const char *symbol) {
+	  return B->SymbolConstant(symbol);
+  }
 }

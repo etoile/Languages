@@ -137,7 +137,10 @@ void Compile(ModuleBuilder B);
  * calls.  Takes the name of the skeleton module file as an argument.
  */
 void LLVMinitialise(const char *bcFilename);
-
+/**
+ * Construct a Smalltalk symbol (a boxed selector)
+ */
+LLVMValue SymbolConstant(ModuleBuilder B, const char *symbol);
 /**
  * Debug flag used to set whether excessive amounts of debugging info should be
  * spammed to stderr.

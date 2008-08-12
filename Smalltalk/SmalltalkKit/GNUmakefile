@@ -35,6 +35,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	Parser.m\
 	Return.m\
 	Subclass.m\
+	SymbolRef.m\
 	SymbolTable.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
@@ -57,6 +58,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	Return.h\
 	SmalltalkKit.h\
 	Subclass.h\
+	SymbolRef.h\
 	SymbolTable.h
 
 

@@ -103,7 +103,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		})
 		else if (isspace(c))
 		{
-			int j; for(j=i ; j<[s length]-1 && isspace(c) ; c=CHAR(++j))
+			for(j=i ; j<[s length]-1 && isspace(c) ; c=CHAR(++j))
 		   	{
 				if (c == '\n')
 				{
@@ -115,7 +115,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		}
 		else if ('"' == c && i<[s length] - 2)
 		{
-			int j = i + 1;
+			j = i + 1;
 			do
 			{
 				c=CHAR(++j);
@@ -127,7 +127,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		}
 		else if ('\'' == c && i<[s length] - 2)
 		{
-			int j = i + 1;
+			j = i + 1;
 			do
 			{
 				c=CHAR(++j);
@@ -166,6 +166,15 @@ void ParseFree(void *p, void (*freeProc)(void*));
 					CALL_PARSER(WORD, WORD_TOKEN);
 					CALL_PARSER(COLON, @":");
 					break;
+				case '#':
+					j = i++;
+					do
+					{
+						c=CHAR(++j);
+					} while (j<[s length]-1 && !isspace(c));
+					CALL_PARSER(SYMBOL, WORD_TOKEN);
+					NSLog(@"Symbol: %@", WORD_TOKEN);
+					i = j;
 				default:
 					NSLog(@"Weird character '%c' found on line %d", c,line);
 			}

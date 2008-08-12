@@ -162,5 +162,9 @@
  * Compares two pointers.
  */
 - (void*) comparePointer:(void*)lhs to:(void*)rhs;
+/**
+ * Generates a constant symbol (a boxed selector).
+ */
+- (void*) generateConstantSymbol:(NSString*)aSymbol;
 @end
 id <CodeGenerator> defaultCodeGenerator(void);

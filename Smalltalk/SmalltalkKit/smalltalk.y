@@ -21,6 +21,7 @@ domain parser generator, to produce an Objective-C parser.
 #import "Parser.h"
 #import "Return.h"
 #import "Subclass.h"
+#import "SymbolRef.h"
 }
 %token_prefix TOKEN_
 %token_type {id}
@@ -216,11 +217,17 @@ expression(E) ::= LBRACK expression(X) RBRACK.
 
 expression(E) ::= WORD(V).
 {
-	DeclRef * declref = [[DeclRef alloc] init];
+	DeclRef * declref = [[[DeclRef alloc] init] autorelease];
 	declref->symbol = V;
 	E = declref;
 }
 
+expression(E) ::= SYMBOL(S).
+{
+	SymbolRef *symbolRef = [[[SymbolRef alloc] init] autorelease];
+	symbolRef->symbol = S;
+	E = symbolRef;
+}
 
 expression(E) ::= block(B).
 {
