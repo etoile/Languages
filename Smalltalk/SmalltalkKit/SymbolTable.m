@@ -4,7 +4,6 @@ static NSMutableSet *NewClasses;
 
 static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
-	NSLog(@"Looking up scope of %@", aName);
 	if ([aName isEqualToString:@"nil"]
 	   || [aName isEqualToString:@"Nil"]
 	   || [aName isEqualToString:@"self"]

@@ -75,7 +75,7 @@ static char *ReleaseTypes;
 			break;
 		}
 		default:
-			NSLog(@"Scope of %@ is %d", target->symbol, [symbols scopeOfSymbol:target->symbol]);
+			NSLog(@"Scope of %@ is %d.", target->symbol, [symbols scopeOfSymbol:target->symbol]);
 			// Throws exception
 			[super compileWith:aGenerator];
 	}
