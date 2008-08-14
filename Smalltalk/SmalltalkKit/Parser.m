@@ -175,6 +175,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 					CALL_PARSER(SYMBOL, WORD_TOKEN);
 					NSLog(@"Symbol: %@", WORD_TOKEN);
 					i = j;
+					break;
 				default:
 					NSLog(@"Weird character '%c' found on line %d", c,line);
 			}
