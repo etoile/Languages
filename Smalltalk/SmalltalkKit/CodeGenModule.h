@@ -108,7 +108,7 @@ public:
    * Start generating code for a class.
    */
   void BeginClass(const char *Class, const char *Super, const char ** Names,
-      const char ** Types, int *Offsets);
+      const char ** Types, int *Offsets, int SuperclassSize);
 
   /**
    * End a class.

@@ -25,7 +25,7 @@ void freeModuleBuilder(ModuleBuilder aModule);
  * Begin a class, subclassing Super.  
  */
 void BeginClass(ModuleBuilder B, const char *Class, const char *Super, 
-    const char ** Names, const char ** Types, int *Offsets);
+    const char ** Names, const char ** Types, int *Offsets, int SuperclassSize);
 /**
  * End the current class.
  */

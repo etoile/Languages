@@ -37,8 +37,14 @@
                   types:(const char**)iVarTypes
                 offsets:(int*)offsets
 {
+	int supersize = 0;
+	Class sup = NSClassFromString(aSuperclass);
+	if (Nil != sup)
+	{
+		supersize = sup->instance_size;
+	}
 	BeginClass(Builder, [aClass UTF8String], [aSuperclass UTF8String],
-			iVarNames, iVarTypes, offsets);
+			iVarNames, iVarTypes, offsets, supersize);
 }
 - (void) endClass
 {

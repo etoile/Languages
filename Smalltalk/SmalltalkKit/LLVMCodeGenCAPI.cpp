@@ -32,8 +32,8 @@ extern "C" {
     B->compile();
   }
   void BeginClass(ModuleBuilder B, const char *Class, const char *Super, const
-      char ** Names, const char ** Types, int *Offsets) {
-    B->BeginClass(Class, Super, Names, Types, Offsets);
+      char ** Names, const char ** Types, int *Offsets, int SuperclassSize) {
+    B->BeginClass(Class, Super, Names, Types, Offsets, SuperclassSize);
   }
 
   LLVMValue MessageSend(ModuleBuilder B, LLVMValue receiver, const char *selname,

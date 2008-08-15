@@ -73,7 +73,7 @@ Value *CodeGenModule::BoxValue(IRBuilder<> *B, Value *V, const char *typestr) {
       boxed->setOnlyReadsMemory();
       return boxed;
     }
-	case ':': {
+    case ':': {
       // TODO: Store this in a global.
       Value *SymbolCalss = Runtime->LookupClass(*B,
           MakeConstantString("Symbol"));
@@ -361,8 +361,8 @@ CodeGenModule::CodeGenModule(const char *ModuleName) {
      IntegerType::get(sizeof(long) * 8));
 }
 
-void CodeGenModule::BeginClass(const char *Class, const char *Super, const char ** Names,
-    const char ** Types, int *Offsets) {
+void CodeGenModule::BeginClass(const char *Class, const char *Super, const
+  char ** Names, const char ** Types, int *Offsets, int SuperclassSize) {
   ClassName = string(Class);
   SuperClassName = string(Super);
   CategoryName = "";
@@ -383,14 +383,14 @@ void CodeGenModule::BeginClass(const char *Class, const char *Super, const char 
     IvarOffsets.push_back(*Offsets);
     Offsets++;
   }
+  InstanceSize = SuperclassSize + sizeof(void*) * IvarNames.size();
   CurrentClassTy = IdTy;
 }
 
 void CodeGenModule::EndClass(void) {
-  // FIXME: Get the instance size from somewhere sensible.
-  Runtime->GenerateClass(ClassName.c_str(), SuperClassName.c_str(), 100,
-      IvarNames, IvarTypes, IvarOffsets, InstanceMethodNames,
-      InstanceMethodTypes, ClassMethodNames, ClassMethodTypes, Protocols);
+  Runtime->GenerateClass(ClassName.c_str(), SuperClassName.c_str(),
+    InstanceSize, IvarNames, IvarTypes, IvarOffsets, InstanceMethodNames,
+    InstanceMethodTypes, ClassMethodNames, ClassMethodTypes, Protocols);
 }
 void CodeGenModule::BeginCategory(const char *Class, const char *Category) {
   ClassName = string(Class);
@@ -562,7 +562,7 @@ void CodeGenModule::StoreValueOfTypeAtOffsetFromObject(Value *value,
   if (type[0] == '@') {
     Runtime->GenerateMessageSend(*B, IdTy, NULL, box,
           Runtime->GetSelector(*B, "retain", NULL), 0, 0);
-	Value *old = B->CreateLoad(addr);
+    Value *old = B->CreateLoad(addr);
     Runtime->GenerateMessageSend(*B, Type::VoidTy, NULL, old,
           Runtime->GetSelector(*B, "release", NULL), 0, 0);
   }
