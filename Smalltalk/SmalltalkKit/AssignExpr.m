@@ -74,6 +74,9 @@ static char *ReleaseTypes;
 			            fromObject:[aGenerator loadSelf]];
 			break;
 		}
+		case promoted:
+		{
+		}
 		default:
 			NSLog(@"Scope of %@ is %d.", target->symbol, [symbols scopeOfSymbol:target->symbol]);
 			// Throws exception
