@@ -50,25 +50,8 @@ static char *ReleaseTypes;
 				[NSException raise:@"InvalidAssignmentException"
 				            format:@"Can not yet generate code for assignment"];
 			}
-			// FIXME: Handle non-object types.  
-			// Retain the new value.
-			void * new = [aGenerator sendMessage:"retain"
-			                                 types:RetainTypes
-			                              toObject:rval
-			                              withArgs:NULL
-			                                 count:0];
-			// Note: We are assuming only real objects are stored in ivars.
-			// This will be true of ivars declared in ObjC, but not necessarily
-			// in Smalltalk.
-			// FIXME: We should explicitly cast SmallInts to objects
-			// Release the old value
-			[aGenerator sendMessage:"release"
-			                  types:ReleaseTypes
-			                     to:rval
-			               withArgs:NULL
-			                  count:0];
 			// Assign
-			[aGenerator storeValue:new
+			[aGenerator storeValue:rval
 			                ofType:@"@"
 			              atOffset:[symbols offsetOfIVar:target->symbol]
 			            fromObject:[aGenerator loadSelf]];

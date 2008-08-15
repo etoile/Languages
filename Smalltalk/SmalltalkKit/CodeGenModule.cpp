@@ -545,14 +545,28 @@ Value *CodeGenModule::LoadValueOfTypeAtOffsetFromObject( const char* type, unsig
 
 void CodeGenModule::StoreValueOfTypeAtOffsetFromObject(Value *value,
     const char* type, unsigned offset, Value *object) {
-  // FIXME: This is really ugly.  We should really create an LLVM type for
-  // the object and use a GEP.
-  // FIXME: Non-id stores
-  assert(*type == '@' || *type == '#');
-  Value *addr = Builder->CreatePtrToInt(object, IntTy);
-  addr = Builder->CreateAdd(addr, ConstantInt::get(IntTy, offset));
-  addr = Builder->CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
-  Builder->CreateStore(value, addr);
+  IRBuilder<> *B = Builder;
+  Function *F = CurrentMethod;
+  if (!BlockStack.empty()) {
+    CodeGenBlock *b = BlockStack.back();
+    B = b->Builder;
+    F = b->BlockFn;
+  }
+  // Turn the value into something valid for storing in this ivar
+  Value *box = Unbox(B, F, value, type);
+  // Calculate the offset of the ivar
+  Value *addr = B->CreatePtrToInt(object, IntTy);
+  addr = B->CreateAdd(addr, ConstantInt::get(IntTy, offset));
+  addr = B->CreateIntToPtr(addr, PointerType::getUnqual(box->getType()));
+  // Do the ASSIGN() thing if it's an object.
+  if (type[0] == '@') {
+    Runtime->GenerateMessageSend(*B, IdTy, NULL, box,
+          Runtime->GetSelector(*B, "retain", NULL), 0, 0);
+	Value *old = B->CreateLoad(addr);
+    Runtime->GenerateMessageSend(*B, Type::VoidTy, NULL, old,
+          Runtime->GetSelector(*B, "release", NULL), 0, 0);
+  }
+  B->CreateStore(box, addr);
 }
 
 void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value **promoted, int count) {
