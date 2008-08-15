@@ -22,12 +22,12 @@
 		NSLog(@"Can not create new class %@ - a class of this name already exists.", classname);
 	}
 	//Construct symbol table.
-  [SymbolTable registerNewClass:classname];
 	symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
 	FOREACH(ivars, ivar, NSString*)
 	{
 		[symbols addSymbol:ivar];
 	}
+    [(ObjectSymbolTable*)symbols registerNewClass:classname];
 	FOREACH(methods, method, AST*)
 	{
 		[method setParent:self];

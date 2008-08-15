@@ -1,6 +1,6 @@
 #import "SymbolTable.h"
 
-static NSMutableSet *NewClasses;
+static NSMutableDictionary *NewClasses;
 
 static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
@@ -11,7 +11,7 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	{
 		return builtin;
 	}
-	if(NSClassFromString(aName) != NULL || [NewClasses containsObject:aName])
+	if(NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName])
 	{
 		return global;
 	}
@@ -19,6 +19,18 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 
 @implementation ObjectSymbolTable
++ (void) initialize
+{
+	NewClasses = [[NSMutableDictionary alloc] init];
+}
++ (SymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass
+{
+	return [NewClasses objectForKey:aClass];
+}
+- (void) registerNewClass:(NSString*)aClass
+{
+	[NewClasses setObject:self forKey:aClass];
+}
 - (SymbolTable*) initForClass:(Class)aClass 
 {
 	SELFINIT;
@@ -173,14 +185,6 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 @end
 @implementation SymbolTable
-+ (void) initialize
-{
-	NewClasses = [[NSMutableSet alloc] init];
-}
-+ (void) registerNewClass:(NSString*)aClass
-{
-	[NewClasses addObject:aClass];
-}
 // You can't insert global symbols in Smalltalk.  
 - (void) addSymbol:(NSString*)aSymbol {}
 - (void) setScope:(SymbolTable*)scope

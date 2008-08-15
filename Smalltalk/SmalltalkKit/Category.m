@@ -10,9 +10,17 @@
 }
 - (void) check
 {
-	Class SuperClass = NSClassFromString(classname);
+	Class class = NSClassFromString(classname);
 	//Construct symbol table.
-	symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
+	if (Nil != class)
+	{
+		symbols = [[ObjectSymbolTable alloc] initForClass:class];
+	}
+	else
+	{
+		ASSIGN(symbols,
+			   	[ObjectSymbolTable symbolTableForNewClassNamed:classname]);
+	}
 	FOREACH(methods, method, AST*)
 	{
 		[method setParent:self];

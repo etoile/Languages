@@ -28,11 +28,6 @@ typedef	enum
 	SymbolTable *enclosingScope;
 }
 /**
- * Adds a new class to the global symbol table.  Allows classes to be
- * referenced before they have been compiled. 
- */
-+ (void) registerNewClass:(NSString*)aClass;
-/**
  * Add a symbol to this table.
  */
 - (void) addSymbol:(NSString*)aSymbol;
@@ -128,8 +123,17 @@ typedef	enum
 	int nextOffset;
 }
 /**
+ * Adds a new class to the global symbol table.  Allows classes to be
+ * referenced before they have been compiled. 
+ */
+- (void) registerNewClass:(NSString*)aClass;
+/**
  * Initialise for the specified class.  All instance variables in the specified
  * class will be imported.
  */
 - (SymbolTable*) initForClass:(Class)aClass;
+/**
+ * Returns the symbol table for a newly-created class.
+ */
++ (SymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass;
 @end
