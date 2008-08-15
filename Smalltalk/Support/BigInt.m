@@ -1,6 +1,12 @@
 #include "BigInt.h"
 
+static mpz_t ZERO;
+
 @implementation BigInt
++ (void) initialize
+{
+	mpz_init_set_si(ZERO, 0);
+}
 + (BigInt*) bigIntWithLongLong:(long long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
@@ -79,6 +85,35 @@ op2(div, tdiv_q)
 	}
 	return NO;
 }
+- (id) ifTrue:(id)t
+{
+	if (mpz_cmp(v, ZERO) != 0)
+	{
+		return [t value];
+	}
+	return nil;
+}
+- (id) ifFalse:(id)f
+{
+	if (mpz_cmp(v, ZERO) == 0)
+	{
+		return [f value];
+	}
+	return nil;
+}
+- (id) ifTrue:(id)t ifFalse:(id)f
+{
+	if (mpz_cmp(v, ZERO) == 0)
+	{
+		return [f value];
+	}
+	else
+	{
+		return [t value];
+	}
+	return nil;
+}
+
 - (NSString*) description
 {
 	char * cstr = mpz_get_str(NULL, 10, v);

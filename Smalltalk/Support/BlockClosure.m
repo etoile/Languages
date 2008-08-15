@@ -41,6 +41,19 @@
 	}
 	return function(self, _cmd, a1, a2, a3, a4);
 }
+- (id) whileTrue:(id)anotherBlock
+{
+	if (args > 0)
+	{
+		[NSException raise:@"InvalidBlockValueCall" format:@"Block expects %d arguments", args];
+	}
+	id last = nil;
+	while(nil != function(self, _cmd))
+	{
+		last = [anotherBlock value];
+	}
+	return last;
+}
 @end
 
 typedef struct 
