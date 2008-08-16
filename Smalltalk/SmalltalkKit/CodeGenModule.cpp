@@ -247,12 +247,8 @@ void CodeGenModule::UnboxArgs(IRBuilder<> *B, Function *F,  Value ** argv, Value
 
 Value *CodeGenModule::MessageSendSuper(IRBuilder<> *B, Function *F, const char
         *selName, const char *selTypes, Value **argv, unsigned argc) {
-  Value *SelfPtr = B->CreateLoad(Self);
-  Value *Sender = 0;
-  // FIXME: Sender in blocks should probably be sender in the enclosing scope.
-  if (BlockStack.empty()) {
-    SelfPtr = SelfPtr;
-  } 
+  Value *Sender = LoadSelf();
+  Value *SelfPtr = Sender;
 
   Value *args[argc];
   UnboxArgs(B, F, argv, args, argc, selTypes);
@@ -267,8 +263,8 @@ Value *CodeGenModule::MessageSendSuper(IRBuilder<> *B, Function *F, const char
 // SmallInt.
 Value *CodeGenModule::MessageSendId(IRBuilder<> *B, Value *receiver, const char
     *selName, const char *selTypes, Value **argv, unsigned argc) {
-  Value *SelfPtr = 0; 
-  SelfPtr = B->CreateLoad(Self);
+	//FIXME: Find out why this crashes.
+  Value *SelfPtr = NULL;//LoadSelf();
 
   FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
   llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
@@ -435,6 +431,8 @@ void CodeGenModule::BeginMethod(const char *MethodName, const char
   Locals.clear();
   InitialiseFunction(Builder, CurrentMethod, Self, Args, Locals, locals,
       RetVal, CleanupBB, MethodTypes);
+  MethodBuilder = Builder;
+  CurrentFunction = CurrentMethod;
   //StructType *sty = StructType::get(IntTy, IntTy, NULL);
 }
 
@@ -447,43 +445,22 @@ Value *CodeGenModule::LoadArgumentAtIndex(unsigned index) {
 
 Value *CodeGenModule::MessageSendId(Value *receiver, const char *selName, const
     char *selTypes, Value **argv, unsigned argc) {
-  IRBuilder<> *B = Builder;
-  Function *F = CurrentMethod;
-  if (!BlockStack.empty()) {
-    CodeGenBlock *b = BlockStack.back();
-    B = b->Builder;
-    F = b->BlockFn;
-  }
   Value *args[argc];
-  UnboxArgs(B, F, argv, args, argc, selTypes);
-  return BoxValue(B, MessageSendId(B, receiver, selName, selTypes, args,
-        argc), selTypes);
+  UnboxArgs(Builder, CurrentFunction, argv, args, argc, selTypes);
+  return BoxValue(Builder, MessageSendId(Builder, receiver, selName, selTypes,
+			  args, argc), selTypes);
 }
 
 Value *CodeGenModule::MessageSendSuper(const char *selName, const char
         *selTypes, Value **argv, unsigned argc) {
-  IRBuilder<> *B = Builder;
-  Function *F = CurrentMethod;
-  if (!BlockStack.empty()) {
-    CodeGenBlock *b = BlockStack.back();
-    B = b->Builder;
-    F = b->BlockFn;
-  }
-  return BoxValue(B, MessageSendSuper(B, F, selName, selTypes, argv, argc),
-          selTypes);
+  return BoxValue(Builder, MessageSendSuper(Builder, CurrentFunction, selName,
+			  selTypes, argv, argc), selTypes);
 }
 Value *CodeGenModule::MessageSend(Value *receiver, const char *selName, const char
     *selTypes, Value **argv, unsigned argc) {
-  IRBuilder<> *B = Builder;
-  Function *F = CurrentMethod;
-  if (!BlockStack.empty()) {
-    CodeGenBlock *b = BlockStack.back();
-    B = b->Builder;
-    F = b->BlockFn;
-  }
   LOG("Generating %s (%s)\n", selName, selTypes);
-  return BoxValue(B, MessageSend(B, F, receiver, selName, selTypes, argv, argv,
-        argc), selTypes);
+  return BoxValue(Builder, MessageSend(Builder, CurrentFunction, receiver,
+			  selName, selTypes, argv, argv, argc), selTypes);
 }
 
 void CodeGenModule::SetReturn(Value * Ret) {
@@ -506,11 +483,21 @@ Value *CodeGenModule::LoadSelf(void) {
   if (!BlockStack.empty()) {
     return BlockStack.back()->LoadBlockVar(0, 0);
   }
-  return Builder->CreateLoad(Self);
+  return MethodBuilder->CreateLoad(Self);
 }
 
 Value *CodeGenModule::LoadLocalAtIndex(unsigned index) {
   return Builder->CreateLoad(Locals[index]);
+}
+Value *CodeGenModule::LoadPointerToArgumentAtIndex(unsigned index) {
+  if (!BlockStack.empty()) {
+	LOG("Returning arg from block");
+	BlockStack.back()->Args[index]->dump();
+    return BlockStack.back()->Args[index];
+  }
+	LOG("Returning arg from method");
+Args[index]->dump();
+  return Args[index];
 }
 Value *CodeGenModule::LoadPointerToLocalAtIndex(unsigned index) {
   return Locals[index];
@@ -524,11 +511,7 @@ void CodeGenModule::StoreValueInLocalAtIndex(Value * value, unsigned index) {
 }
 
 Value *CodeGenModule::LoadClass(const char *classname) {
-  IRBuilder<> *B = Builder;
-  if (!BlockStack.empty()) {
-    B = BlockStack.back()->Builder;
-  }
-  return Runtime->LookupClass(*B, MakeConstantString(classname));
+  return Runtime->LookupClass(*Builder, MakeConstantString(classname));
 }
 
 Value *CodeGenModule::LoadValueOfTypeAtOffsetFromObject( const char* type, unsigned offset,
@@ -545,33 +528,28 @@ Value *CodeGenModule::LoadValueOfTypeAtOffsetFromObject( const char* type, unsig
 
 void CodeGenModule::StoreValueOfTypeAtOffsetFromObject(Value *value,
     const char* type, unsigned offset, Value *object) {
-  IRBuilder<> *B = Builder;
-  Function *F = CurrentMethod;
-  if (!BlockStack.empty()) {
-    CodeGenBlock *b = BlockStack.back();
-    B = b->Builder;
-    F = b->BlockFn;
-  }
   // Turn the value into something valid for storing in this ivar
-  Value *box = Unbox(B, F, value, type);
+  Value *box = Unbox(Builder, CurrentFunction, value, type);
   // Calculate the offset of the ivar
-  Value *addr = B->CreatePtrToInt(object, IntTy);
-  addr = B->CreateAdd(addr, ConstantInt::get(IntTy, offset));
-  addr = B->CreateIntToPtr(addr, PointerType::getUnqual(box->getType()));
+  Value *addr = Builder->CreatePtrToInt(object, IntTy);
+  addr = Builder->CreateAdd(addr, ConstantInt::get(IntTy, offset));
+  addr = Builder->CreateIntToPtr(addr, PointerType::getUnqual(box->getType()));
   // Do the ASSIGN() thing if it's an object.
   if (type[0] == '@') {
-    Runtime->GenerateMessageSend(*B, IdTy, NULL, box,
-          Runtime->GetSelector(*B, "retain", NULL), 0, 0);
-    Value *old = B->CreateLoad(addr);
-    Runtime->GenerateMessageSend(*B, Type::VoidTy, NULL, old,
-          Runtime->GetSelector(*B, "release", NULL), 0, 0);
+    Runtime->GenerateMessageSend(*Builder, IdTy, NULL, box,
+          Runtime->GetSelector(*Builder, "retain", NULL), 0, 0);
+    Value *old = Builder->CreateLoad(addr);
+    Runtime->GenerateMessageSend(*Builder, Type::VoidTy, NULL, old,
+          Runtime->GetSelector(*Builder, "release", NULL), 0, 0);
   }
-  B->CreateStore(box, addr);
+  Builder->CreateStore(box, addr);
 }
 
 void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value **promoted, int count) {
   BlockStack.push_back(new CodeGenBlock(TheModule, args, locals, promoted,
         count, LoadSelf(), Builder, this));
+  Builder = BlockStack.back()->Builder;
+  CurrentFunction = BlockStack.back()->BlockFn;
 }
 Value *CodeGenModule::LoadBlockVar(unsigned index, unsigned offset) {
   return BlockStack.back()->LoadBlockVar(index, offset);
@@ -585,14 +563,22 @@ Value *CodeGenModule::EndBlock(void) {
   CodeGenBlock *block = BlockStack.back();
   BlockStack.pop_back();
   block->EndBlock();
-  // Free this block at the end of the current method.
-  // FIXME: Should free blocks allocated in blocks inside their function.
+  BasicBlock *Cleanup = CleanupBB;
+  if (!BlockStack.empty()) {
+    Builder = BlockStack.back()->Builder;
+    CurrentFunction = BlockStack.back()->BlockFn;
+	Cleanup = BlockStack.back()->CleanupBB;
+  } else {
+    Builder = MethodBuilder;
+	CurrentFunction = CurrentMethod;
+  }
+  // Free this block at the end of the current scope.
   Value *Block = block->Block;
   Value *FreeBlockFn = TheModule->getOrInsertFunction("FreeBlock",
       Type::VoidTy, Block->getType(), (void*)0);
   Value *Args[] = {Block};
   CallInst::Create(FreeBlockFn, &Args[0], &Args[1], "",
-      CleanupBB->getTerminator());
+      Cleanup->getTerminator());
   return block->Block;
 }
 
@@ -674,19 +660,13 @@ void CodeGenModule::InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self
 
 }
 Value *CodeGenModule::SymbolConstant(const char *symbol) {
-  // FIXME: This pattern is used all over the place.  Factor it out somewhere.
-  IRBuilder<> *B = Builder;
-  if (!BlockStack.empty()) {
-    B = BlockStack.back()->Builder;
-  }
-
   // FIXME: Make constant symbols global objects instead of creating them once
   // for every use.
-  Value *SymbolCalss = Runtime->LookupClass(*B,
+  Value *SymbolCalss = Runtime->LookupClass(*Builder,
       MakeConstantString("Symbol"));
   Value *V = MakeConstantString(symbol);
-  return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
-          Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
+  return Runtime->GenerateMessageSend(*Builder, IdTy, NULL, SymbolCalss,
+          Runtime->GetSelector(*Builder, "SymbolForCString:", NULL), &V, 1);
 }
 
 void CodeGenModule::compile(void) {

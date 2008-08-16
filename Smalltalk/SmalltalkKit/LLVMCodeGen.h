@@ -69,6 +69,10 @@ LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index);
  */
 LLVMValue LoadPointerToLocalAtIndex(ModuleBuilder B, unsigned index);
 /**
+ * Loads a pointer to an argument.
+ */
+LLVMValue LoadPointerToArgumentAtIndex(ModuleBuilder B, unsigned index);
+/**
  * Load an instance variable.
  */
 LLVMValue LoadValueOfTypeAtOffsetFromObject(ModuleBuilder B, const char* type,

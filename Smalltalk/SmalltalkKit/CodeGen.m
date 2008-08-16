@@ -158,6 +158,10 @@
 {
 	return LoadPointerToLocalAtIndex(Builder, index);
 }
+- (void*) loadPointerToArgumentAtIndex:(unsigned)index
+{
+	return LoadPointerToArgumentAtIndex(Builder, index);
+}
 
 - (void*) loadLocalAtIndex:(unsigned)index
 {

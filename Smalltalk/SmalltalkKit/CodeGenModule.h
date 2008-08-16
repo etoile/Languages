@@ -31,8 +31,10 @@ private:
   CGObjCRuntime * Runtime;
   const Type *CurrentClassTy;
   Function *CurrentMethod;
+  Function *CurrentFunction;
   Value *Self;
   IRBuilder<> *Builder;
+  IRBuilder<> *MethodBuilder;
   string ClassName;
   string SuperClassName;
   string CategoryName;
@@ -176,7 +178,11 @@ public:
   /**
    * Get a pointer to a local variable in the current context.
    */
-	Value *LoadPointerToLocalAtIndex(unsigned index);
+  Value *LoadPointerToLocalAtIndex(unsigned index);
+  /**
+   * Loads a pointer to an argument in the current context.
+   */
+  Value *LoadPointerToArgumentAtIndex(unsigned index);
 
   /**
    * Store a value in a local.

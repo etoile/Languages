@@ -69,7 +69,10 @@ extern "C" {
     B->StoreValueOfTypeAtOffsetFromObject(value, type, offset, object);
   }
 
-	LLVMValue LoadPointerToLocalAtIndex(ModuleBuilder B, unsigned index) {
+  LLVMValue LoadPointerToArgumentAtIndex(ModuleBuilder B, unsigned index) {
+    return B->LoadPointerToArgumentAtIndex(index);
+  }
+  LLVMValue LoadPointerToLocalAtIndex(ModuleBuilder B, unsigned index) {
     return B->LoadPointerToLocalAtIndex(index);
   }
   LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index) {

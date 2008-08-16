@@ -12,12 +12,12 @@ namespace llvm {
 class CodeGenModule;
 
 class CodeGenBlock {
-  llvm::SmallVector<llvm::Value*, 8> Args;
   llvm::SmallVector<llvm::Value*, 8> Locals;
   const llvm::Type *BlockTy;
   llvm::Module *TheModule;
   llvm::Value *BlockSelf;
 public:
+  llvm::SmallVector<llvm::Value*, 8> Args;
   llvm::Value *Block;
   llvm::Function *BlockFn;
   llvm::IRBuilder<> *Builder;

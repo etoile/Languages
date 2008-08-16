@@ -32,6 +32,7 @@
 			[self resolveScopeOf:aSymbol];
 			return;
 		}
+		case argument:
 		case local:
 		{
 			ClosedDeclRef * ref = [ClosedDeclRef new];
@@ -98,8 +99,13 @@
 			case local:
 				promoted[index++] = 
 					[aGenerator loadPointerToLocalAtIndex:
-								   [symbols->enclosingScope offsetOfLocal:symbol]];
+						[symbols->enclosingScope offsetOfLocal:symbol]];
 				break;
+			case argument:
+				promoted[index++] = 
+					[aGenerator loadPointerToArgumentAtIndex:
+						[symbols->enclosingScope indexOfArgument:symbol]];
+
 			case object:
 				// Instance variables are accessed relative to the self pointer.
 				break;

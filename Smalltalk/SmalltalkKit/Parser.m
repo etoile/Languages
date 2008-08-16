@@ -77,10 +77,13 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	/* Set up the parser */
 	void * parser = ParseAlloc( malloc );
 
-	int line = 1;
-	unsigned int j;
+	// Volatile to ensure that they are preserved over longjmp calls.  This is
+	// going to make things a bit slower, so a better solution might be to move
+	// them into ivars.
+	volatile int line = 1;
+	volatile unsigned int j;
+	volatile unsigned int i;
 	int lineStart = 0;
-	unsigned int i;
 	NS_DURING
 	for(i=0 ; i<[s length] ; i++)
 	{

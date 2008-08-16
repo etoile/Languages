@@ -120,6 +120,10 @@
  */
 - (void*) loadPointerToLocalAtIndex:(unsigned)index;
 /**
+ * Loads a pointer to an argument.  Used when binding variables into blocks.
+ */
+- (void*) loadPointerToArgumentAtIndex:(unsigned)index;
+/**
  * Load the value of the specified local variable.
  */
 - (void*) loadLocalAtIndex:(unsigned)index;

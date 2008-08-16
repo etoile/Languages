@@ -31,20 +31,16 @@ int main(int argc, char **argv)
 		}
 	}
 
+	// Debug mode.
+	if ([[opts objectForKey:@"d"] boolValue])
+	{
+		[SmalltalkCompiler setDebugMode:YES];
+	}
 	NSString *ProgramFile = [opts objectForKey:@"f"];
 	if (nil == ProgramFile)
 	{
-		// Debug mode.
-		if ([[opts objectForKey:@"d"] boolValue])
-		{
-			ProgramFile = @"test.st";
-			[SmalltalkCompiler setDebugMode:YES];
-		}
-		else
-		{
-			fprintf(stderr, "Usage: %s -f {smalltalk file}\n", argv[0]);
-			return 1;
-		}
+		fprintf(stderr, "Usage: %s -f {smalltalk file}\n", argv[0]);
+		return 1;
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
 	clock_t c1 = clock();
