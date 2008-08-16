@@ -31,6 +31,22 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	[NewClasses setObject:self forKey:aClass];
 }
+- (ObjectSymbolTable*) initWithMap:(NSMapTable*)map 
+							  next:(int) next 
+							inZone:(NSZone*)aZone
+{
+	SELFINIT;
+	instanceVariables = NSCopyMapTableWithZone(map, aZone);
+	nextOffset = next;
+	return self;
+}
+- (id) copyWithZone:(NSZone*)aZone
+{
+	return [[ObjectSymbolTable allocWithZone:aZone] 
+		initWithMap:instanceVariables
+			   next:nextOffset
+			 inZone:aZone];
+}
 - (SymbolTable*) initForClass:(Class)aClass 
 {
 	SELFINIT;

@@ -13,16 +13,28 @@
 - (void) check
 {
 	Class SuperClass = NSClassFromString(superclass);
+	//Construct symbol table.
 	if (Nil == SuperClass)
 	{
-		NSLog(@"Attempting to subclass nonexistant class %@", superclass);
+		symbols = [[ObjectSymbolTable symbolTableForNewClassNamed:superclass]
+		   	copy];
+		if (symbols == nil)
+		{
+			[NSException raise:@"SemanticError"
+						format:@"Unable to find superclass %@ for %@", 
+				superclass, classname];
+		}
+	}
+	else
+	{
+		symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
 	}
 	if (Nil != NSClassFromString(classname))
 	{
-		NSLog(@"Can not create new class %@ - a class of this name already exists.", classname);
+		[NSException raise:@"SemanticError"
+					format:@"Can not create new class %@ - a class of this name already exists.", classname];
 	}
 	//Construct symbol table.
-	symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
 	FOREACH(ivars, ivar, NSString*)
 	{
 		[symbols addSymbol:ivar];
