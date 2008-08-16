@@ -1,4 +1,5 @@
 #import "LLVMCodeGen.h"
+#import "SymbolTable.h"
 #include <objc/objc-api.h>
 
 @implementation LLVMCodeGen 
@@ -42,6 +43,15 @@
 	if (Nil != sup)
 	{
 		supersize = sup->instance_size;
+	}
+	else
+	{
+		ObjectSymbolTable * symbols = (ObjectSymbolTable*)
+			[ObjectSymbolTable symbolTableForNewClassNamed:aSuperclass];
+		if (nil != symbols)
+		{
+			supersize = [symbols instanceSize];
+		}
 	}
 	BeginClass(Builder, [aClass UTF8String], [aSuperclass UTF8String],
 			iVarNames, iVarTypes, offsets, supersize);

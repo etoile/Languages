@@ -27,6 +27,10 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	return [NewClasses objectForKey:aClass];
 }
+- (int) instanceSize
+{
+	return nextOffset;
+}
 - (void) registerNewClass:(NSString*)aClass
 {
 	[NewClasses setObject:self forKey:aClass];

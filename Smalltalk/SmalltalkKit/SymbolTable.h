@@ -123,6 +123,10 @@ typedef	enum
 	int nextOffset;
 }
 /**
+ * Returns the size of instances of this class.
+ */
+- (int) instanceSize;
+/**
  * Adds a new class to the global symbol table.  Allows classes to be
  * referenced before they have been compiled. 
  */

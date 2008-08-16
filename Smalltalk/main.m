@@ -8,7 +8,7 @@
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
-	NSDictionary *opts = ETGetOptionsDictionary("tf:b:c:l:L:", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:c:l:L:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	NSCAssert(nil == bundle, @"Smalltalk bundles are not yet supported.  Sorry.");
 	// Load specified framework
@@ -34,20 +34,34 @@ int main(int argc, char **argv)
 	NSString *ProgramFile = [opts objectForKey:@"f"];
 	if (nil == ProgramFile)
 	{
-#ifdef DEBUG
-		ProgramFile = @"test.st";
-		[SmalltalkCompiler setDebugMode:YES];
-#else
-		fprintf(stderr, "Usage: %s -f {smalltalk file}\n", argv[0]);
-		return 1;
-#endif
+		// Debug mode.
+		if ([[opts objectForKey:@"d"] boolValue])
+		{
+			ProgramFile = @"test.st";
+			[SmalltalkCompiler setDebugMode:YES];
+		}
+		else
+		{
+			fprintf(stderr, "Usage: %s -f {smalltalk file}\n", argv[0]);
+			return 1;
+		}
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
+	clock_t c1 = clock();
 	if (![SmalltalkCompiler compileString:Program])
 	{
 		NSLog(@"Failed to compile input.");
 		return 2;
 	}
+	if ([[opts objectForKey:@"t"] boolValue])
+	{
+		clock_t c2 = clock();
+		struct rusage r;
+		getrusage(RUSAGE_SELF, &r);
+		NSLog(@"Smalltalk compilation took %f seconds.  Peak used %dKB.",
+			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
+	}
+
 	NSString * className = [opts objectForKey:@"c"];
 	if (nil == className)
 	{
@@ -60,7 +74,7 @@ int main(int argc, char **argv)
 				[className UTF8String]);
 		return 3;
 	}
-	clock_t c1;
+
 	c1 = clock();
 	[[tool new] run];
 	if ([[opts objectForKey:@"t"] boolValue])
