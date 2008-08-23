@@ -14,4 +14,10 @@
  * Load a framework with the specified name.
  */
 + (BOOL) loadFramework:(NSString*)framework;
+/**
+ * Compile and load a .st file from the application bundle.
+ * Omit the .st extension in the name paramater.
+ */
++ (BOOL) loadApplicationScriptNamed:(NSString*)name;
+
 @end
