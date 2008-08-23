@@ -127,4 +127,24 @@ op2(div, tdiv_q)
 	[super dealloc];
 }
 
+#define CASTMETHOD(returnType, name, gmpFunction)\
+- (returnType) name {\
+	return (returnType) gmpFunction(v);\
+}
+
+CASTMETHOD(char, charValue, mpz_get_si)
+CASTMETHOD(unsigned char, unsignedCharValue, mpz_get_ui)
+CASTMETHOD(short int, shortValue, mpz_get_si)
+CASTMETHOD(unsigned short int, unsignedShortValue, mpz_get_ui)
+CASTMETHOD(int, intValue, mpz_get_si)
+CASTMETHOD(unsigned int, unsignedIntValue, mpz_get_ui)
+CASTMETHOD(long int, longValue, mpz_get_si)
+CASTMETHOD(unsigned long int, unsignedLongValue, mpz_get_ui)
+//FIXME: GMP doesn't have a function to get a long long int, so these methods aren't too useful.
+CASTMETHOD(long long int, longLongValue, mpz_get_si)
+CASTMETHOD(unsigned long long int, unsignedLongLongValue, mpz_get_ui)
+CASTMETHOD(float, floatValue, mpz_get_d)
+CASTMETHOD(double, doubleValue, mpz_get_d)
+CASTMETHOD(BOOL, boolValue, mpz_get_ui)
+
 @end
