@@ -23,7 +23,6 @@
 // C++ Implementation
 using namespace llvm;
 using std::string;
-using namespace clang::CodeGen;
 extern "C" {
   int DEBUG_DUMP_MODULES = 0;
 }
