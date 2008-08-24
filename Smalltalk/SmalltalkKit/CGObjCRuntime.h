@@ -27,10 +27,6 @@ namespace llvm {
   class Function;
 }
 
-namespace clang {
-  
-namespace CodeGen {
-
 //FIXME Several methods should be pure virtual but aren't to avoid the
 //partially-implemented subclass breaking.
 
@@ -128,6 +124,4 @@ CGObjCRuntime *CreateObjCRuntime(
     llvm::Module &M,
     const llvm::Type *LLVMIntType,
     const llvm::Type *LLVMLongType);
-}
-}
 #endif

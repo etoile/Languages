@@ -29,7 +29,7 @@ static const int RuntimeVersion = 8;
 static const int ProtocolVersion = 2;
 
 namespace {
-class CGObjCGNU : public clang::CodeGen::CGObjCRuntime {
+class CGObjCGNU : public CGObjCRuntime {
 private:
   llvm::Module &TheModule;
   const llvm::StructType *SelStructTy;
@@ -901,7 +901,7 @@ llvm::Function *CGObjCGNU::MethodPreamble(
   return Method;
 }
 
-clang::CodeGen::CGObjCRuntime *clang::CodeGen::CreateObjCRuntime(
+CGObjCRuntime *CreateObjCRuntime(
     llvm::Module &M,
     const llvm::Type *LLVMIntType,
     const llvm::Type *LLVMLongType) {

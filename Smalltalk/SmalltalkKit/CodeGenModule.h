@@ -7,7 +7,6 @@ namespace llvm {
   class PointerType;
   class FunctionType;
 }
-using clang::CodeGen::CGObjCRuntime;
 class CodeGenBlock;
 using std::string;
 using namespace::llvm;

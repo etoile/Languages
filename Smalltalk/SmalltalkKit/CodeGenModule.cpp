@@ -353,7 +353,7 @@ Value *CodeGenModule::MessageSend(IRBuilder<> *B, Function *F, Value *receiver,
 CodeGenModule::CodeGenModule(const char *ModuleName) {
   TheModule = ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
   Builder = new IRBuilder<>();
-  Runtime = clang::CodeGen::CreateObjCRuntime(*TheModule, IntTy,
+  Runtime = CreateObjCRuntime(*TheModule, IntTy,
      IntegerType::get(sizeof(long) * 8));
 }
 
@@ -491,12 +491,8 @@ Value *CodeGenModule::LoadLocalAtIndex(unsigned index) {
 }
 Value *CodeGenModule::LoadPointerToArgumentAtIndex(unsigned index) {
   if (!BlockStack.empty()) {
-	LOG("Returning arg from block");
-	BlockStack.back()->Args[index]->dump();
     return BlockStack.back()->Args[index];
   }
-	LOG("Returning arg from method");
-Args[index]->dump();
   return Args[index];
 }
 Value *CodeGenModule::LoadPointerToLocalAtIndex(unsigned index) {
