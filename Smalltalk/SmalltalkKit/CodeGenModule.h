@@ -7,7 +7,7 @@ namespace llvm {
   class PointerType;
   class FunctionType;
 }
-class CodeGenBlock;
+class CodeGenLexicalScope;
 using std::string;
 using namespace::llvm;
 
@@ -18,6 +18,7 @@ extern const Type *SelTy;
 extern const PointerType *IMPTy;
 extern const char *MsgSendSmallIntFilename;
 extern Constant *Zeros[2];
+
 /**
  * This class implements a streaming code generation interface designed to be
  * called directly from an AST.  
@@ -25,24 +26,17 @@ extern Constant *Zeros[2];
 class CodeGenModule {
 private:
   friend class CodeGenBlock;
+  friend class CodeGenLexicalScope;
 
   Module *TheModule;
   CGObjCRuntime * Runtime;
   const Type *CurrentClassTy;
-  Function *CurrentMethod;
-  Function *CurrentFunction;
-  Value *Self;
-  IRBuilder<> *Builder;
   IRBuilder<> *MethodBuilder;
   string ClassName;
   string SuperClassName;
   string CategoryName;
   int InstanceSize;
-  SmallVector<Value*, 8> Locals;
-  SmallVector<Value*, 8> Args;
-  Value * RetVal;
-  BasicBlock * CleanupBB;
-  SmallVector<CodeGenBlock*, 8> BlockStack;
+  SmallVector<CodeGenLexicalScope*, 8> ScopeStack;
   llvm::SmallVector<string, 8> IvarNames;
   // All will be "@" for now.
   llvm::SmallVector<string, 8> IvarTypes;
@@ -59,47 +53,19 @@ private:
   Constant *MakeConstantString(const std::string &Str, const
           std::string &Name="", unsigned GEPs=2);
 
-  /**
-   * Maps a selector to a SmallInt function name.
-   */
-  string FunctionNameFromSelector(const char *sel);
-
-  /**
-   * Constructs a Smalltalk object from the specified Objective-C type.
-   */
-  Value *BoxValue(IRBuilder<> *B, Value *V, const char *typestr);
-
-  /**
-   * Constructs a C primitive from a Smalltalk object.
-   */
-  Value *Unbox(IRBuilder<> *B, Function *F, Value *val, const char *Type);
-
-  /**
-   * Construct C primitives from Smalltalk objects in an argument list.
-   */
-  void UnboxArgs(IRBuilder<> *B, Function *F,  Value ** argv, Value **args,
-      unsigned argc, const char *selTypes);
-
-  /**
-   * Send a message to the superclass.
-   */
-  Value *MessageSendSuper(IRBuilder<> *B, Function *F, const char
-		*selName, const char *selTypes, Value **argv, unsigned argc);
-  /**
-   * Preform a real message send.  Reveicer must be a real object, not a
-   * SmallInt.
-   */
-  Value *MessageSendId(IRBuilder<> *B, Value *receiver, const char *selName,
-      const char *selTypes, Value **argv, unsigned argc);
-  /**
-   * Send a message to something that may be a SmallInt or an Objective-C
-   * object.
-   */
-  Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
-      *selName, const char *selTypes, Value **argv=0, Value **boxedArgs=0,
-      unsigned argc=0);
 
 public:
+  const Type *getCurrentClassTy() { return CurrentClassTy; }
+  const string& getClassName() { return ClassName; }
+  const string& getSuperClassName() { return SuperClassName; }
+  Module *getModule() { return TheModule; }
+  CGObjCRuntime *getRuntime() { return Runtime; }
+  string getCategoryName() { return CategoryName; }
+
+  /**
+   * Returns the code generator for the current scope
+   */
+  CodeGenLexicalScope *getCurrentScope() { return ScopeStack.back(); }
   /**
    * Initialise for the specified module.
    */
@@ -132,84 +98,20 @@ public:
   void BeginMethod(const char *MethodName, const char *MethodTypes, int locals);
 
   /**
-   * Load an argument at the specified index.
-   */
-  Value *LoadArgumentAtIndex(unsigned index);
-
-  /**
-   * Send a message to the superclass.
-   */
-  Value *MessageSendSuper(const char *selName, const char *selTypes, Value
-		  **argv, unsigned argc);
-
-  /**
-   * Send a message to an Objective-C object.
-   */
-  Value *MessageSendId(Value *receiver, const char *selName, const char
-      *selTypes, Value **argv, unsigned argc);
-
-  /**
-   * Send a message to a Smalltalk object.
-   */
-  Value *MessageSend(Value *receiver, const char *selName, const char
-      *selTypes, Value **argv, unsigned argc);
-
-  /**
-   * Set the return value for this method / block.
-   */
-  void SetReturn(Value * Ret = 0);
-
-  /**
    * End the current method.
    */
   void EndMethod();
-
-  /**
-   * Load the value of self in the current context.
-   */
-  Value *LoadSelf(void);
-  
-  /**
-   * Load a local in the current contest.
-   */
-  Value *LoadLocalAtIndex(unsigned index);
-
-  /**
-   * Get a pointer to a local variable in the current context.
-   */
-  Value *LoadPointerToLocalAtIndex(unsigned index);
-  /**
-   * Loads a pointer to an argument in the current context.
-   */
-  Value *LoadPointerToArgumentAtIndex(unsigned index);
-
-  /**
-   * Store a value in a local.
-   */
-  void StoreValueInLocalAtIndex(Value * value, unsigned index);
-
-  /**
-   * Get a pointer to the class object for a specified name.
-   */
-  Value *LoadClass(const char *classname);
-
-  /**
-   * Load an instance variable.
-   */
-  Value *LoadValueOfTypeAtOffsetFromObject( const char* type, unsigned offset,
-      Value *object);
-
-  /**
-   * Store an instance value.
-   */
-  void StoreValueOfTypeAtOffsetFromObject(Value *value,
-      const char* type, unsigned offset, Value *object);
 
   /**
    * Begin a BlockClosure.
    */
   void BeginBlock(unsigned args, unsigned locals, Value **promoted, int count);
   
+  /**
+   * End the current block.  Returns a pointer to the block object.
+   */
+  Value *EndBlock(void);
+
   /**
    * Load a bound variable from a block.
    */
@@ -219,12 +121,6 @@ public:
    * Set the (local) return value for a block.
    */
   void SetBlockReturn(Value *value);
-
-  /**
-   * End the current block.  Returns a pointer to the block object.
-   */
-  Value *EndBlock(void);
-
   /**
    * Create an integer constant.  Either a SmallInt or a BigInt, depending on
    * the size.
@@ -234,21 +130,6 @@ public:
    * Create a string (object) constant.
    */
   Value *StringConstant(const char *value);
-  /**
-   * Create a symbol object.
-   */
-  Value *SymbolConstant(const char *symbol);
-  /**
-   * Compare two pointers for equality.
-   */
-	Value *ComparePointers(Value *lhs, Value *rhs);
-  /**
-   * Intialises a Function object to be used as a Smalltalk method or block
-   * function.
-   */
-  void InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self,
-      SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
-      locals, Value *&RetVal, BasicBlock *&CleanupBB, const char *RetTy="@");
 
   /**
    * Compile and load this module.
@@ -256,6 +137,9 @@ public:
   void compile(void);
 };
 // Debugging macros:
+extern "C" {
+  extern int DEBUG_DUMP_MODULES;
+}
 #define DUMP(x) do { if (DEBUG_DUMP_MODULES) x->dump(); } while(0)
 #define DUMPT(x) DUMP((x->getType()))
 #define LOG(x,...) do { if (DEBUG_DUMP_MODULES) fprintf(stderr, x,##__VA_ARGS__); } while(0)

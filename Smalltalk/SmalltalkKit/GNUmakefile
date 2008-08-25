@@ -14,6 +14,7 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 	CGObjCGNU.cpp\
 	CodeGenBlock.cpp\
 	CodeGenModule.cpp\
+	CodeGenLexicalScope.cpp\
 	LLVMCodeGen.cpp\
 	LLVMCodeGenCAPI.cpp
 

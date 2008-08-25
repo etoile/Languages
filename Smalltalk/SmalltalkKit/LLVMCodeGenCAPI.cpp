@@ -1,4 +1,5 @@
 #include "CodeGenModule.h"
+#include "CodeGenLexicalScope.h"
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
 // C interface:
@@ -38,15 +39,15 @@ extern "C" {
 
   LLVMValue MessageSend(ModuleBuilder B, LLVMValue receiver, const char *selname,
       const char *seltype, LLVMValue *argv, unsigned argc) {
-    return B->MessageSend(receiver, selname, seltype, argv, argc);
+    return B->getCurrentScope()->MessageSend(receiver, selname, seltype, argv, argc);
   }
   LLVMValue MessageSendId(ModuleBuilder B, LLVMValue receiver, const char *selname,
       const char *seltype, LLVMValue *argv, unsigned argc) {
-    return B->MessageSendId(receiver, selname, seltype, argv, argc);
+    return B->getCurrentScope()->MessageSendId(receiver, selname, seltype, argv, argc);
   }
 
   void SetReturn(ModuleBuilder B, LLVMValue retval) {
-    B->SetReturn(retval);
+    B->getCurrentScope()->SetReturn(retval);
   }
 
   void BeginMethod(ModuleBuilder B, const char *methodname, const char
@@ -58,34 +59,34 @@ extern "C" {
     B->EndMethod();
   }
   LLVMValue LoadSelf(ModuleBuilder B) {
-    return B->LoadSelf();
+    return B->getCurrentScope()->LoadSelf();
   }
   void StoreValueInLocalAtIndex(ModuleBuilder B, LLVMValue value, unsigned
       index) {
-    B->StoreValueInLocalAtIndex(value, index);
+    B->getCurrentScope()->StoreValueInLocalAtIndex(value, index);
   }
   void StoreValueOfTypeAtOffsetFromObject(ModuleBuilder B, LLVMValue value,
       const char* type, unsigned offset, LLVMValue object) {
-    B->StoreValueOfTypeAtOffsetFromObject(value, type, offset, object);
+    B->getCurrentScope()->StoreValueOfTypeAtOffsetFromObject(value, type, offset, object);
   }
 
   LLVMValue LoadPointerToArgumentAtIndex(ModuleBuilder B, unsigned index) {
-    return B->LoadPointerToArgumentAtIndex(index);
+    return B->getCurrentScope()->LoadPointerToArgumentAtIndex(index);
   }
   LLVMValue LoadPointerToLocalAtIndex(ModuleBuilder B, unsigned index) {
-    return B->LoadPointerToLocalAtIndex(index);
+    return B->getCurrentScope()->LoadPointerToLocalAtIndex(index);
   }
   LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index) {
-    return B->LoadLocalAtIndex(index);
+    return B->getCurrentScope()->LoadLocalAtIndex(index);
   }
 
   LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index) {
-    return B->LoadArgumentAtIndex(index);
+    return B->getCurrentScope()->LoadArgumentAtIndex(index);
   }
 
   Value *LoadValueOfTypeAtOffsetFromObject(ModuleBuilder B, const char* type,
       unsigned offset, Value *object) {
-    return B->LoadValueOfTypeAtOffsetFromObject(type, offset, object);
+    return B->getCurrentScope()->LoadValueOfTypeAtOffsetFromObject(type, offset, object);
   }
 
   void EndClass(ModuleBuilder B) {
@@ -100,7 +101,7 @@ extern "C" {
   }
 
   LLVMValue LoadClass(ModuleBuilder B, const char *classname) {
-    return B->LoadClass(classname);
+    return B->getCurrentScope()->LoadClass(classname);
   }
   void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals, LLVMValue
       *promoted, int count) {
@@ -124,18 +125,18 @@ extern "C" {
     return ConstantPointerNull::get(IdTy);
   }
 	LLVMValue ComparePointers(ModuleBuilder B, LLVMValue lhs, LLVMValue rhs) {
-    return B->ComparePointers(rhs, lhs);
+    return B->getCurrentScope()->ComparePointers(rhs, lhs);
   }
   
   LLVMValue MessageSendSuper(ModuleBuilder B, const char *selName, const char
 		  *selTypes, LLVMValue *argv, unsigned argc) {
-	  return B->MessageSendSuper(selName, selTypes, argv, argc);
+	  return B->getCurrentScope()->MessageSendSuper(selName, selTypes, argv, argc);
   }
   void SetBlockReturn(ModuleBuilder B, LLVMValue value) {
     B->SetBlockReturn(value);
   }
 
   LLVMValue SymbolConstant(ModuleBuilder B, const char *symbol) {
-	  return B->SymbolConstant(symbol);
+	  return B->getCurrentScope()->SymbolConstant(symbol);
   }
 }

@@ -6,9 +6,11 @@
 
 using namespace llvm;
 
-CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted,
-    int count, Value *Self, IRBuilder<> *MethodBuilder, CodeGenModule *CGM) {
-  TheModule = M;
+
+CodeGenBlock::CodeGenBlock(int args, int locals, llvm::Value **promoted, int
+		count, CodeGenLexicalScope *enclosingScope, CodeGenModule *Mod) :
+	CodeGenLexicalScope(Mod), parentScope(enclosingScope) {
+
   const Type *IdPtrTy = PointerType::getUnqual(IdTy);
   BlockTy = StructType::get(
       IdTy,                          // 0 - isa.
@@ -22,6 +24,7 @@ CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted,
   BlockTy = PointerType::getUnqual(BlockTy);
   std::vector<const Type*> argTy;
   argTy.push_back(BlockTy);
+
   // FIXME: Broken on Etoile runtime.
   argTy.push_back(SelTy);
   for (int i=0 ; i<args ; ++i) {
@@ -29,28 +32,26 @@ CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted,
   }
   FunctionType *BlockFunctionTy = FunctionType::get(IdTy, argTy, false);
 
+  IRBuilder<> *MethodBuilder = enclosingScope->getBuilder();
   // Create the block object
   Function *BlockCreate =
-    cast<Function>(TheModule->getOrInsertFunction("NewBlock", IdTy,
+    cast<Function>(CGM->getModule()->getOrInsertFunction("NewBlock", IdTy,
           (void*)0));
   Block = MethodBuilder->CreateCall(BlockCreate);
   Block = MethodBuilder->CreateBitCast(Block, BlockTy);
   // Create the block function
-  BlockFn = Function::Create(BlockFunctionTy, GlobalValue::InternalLinkage,
-      "BlockFunction", TheModule);
-  BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", BlockFn);
-  Builder = new IRBuilder<>(EntryBB);
+  CurrentFunction = Function::Create(BlockFunctionTy,
+		  GlobalValue::InternalLinkage, "BlockFunction", CGM->getModule());
 
   // Set up the arguments
-  CGM->InitialiseFunction(Builder, BlockFn, BlockSelf, Args, Locals, locals,
-      RetVal, CleanupBB);
+  InitialiseFunction(Args, Locals, locals);
   MethodBuilder->CreateStore(ConstantInt::get(Type::Int32Ty, args),
       MethodBuilder->CreateStructGEP(Block, 4));
 
   // Store the block function in the object
   Value *FunctionPtr = MethodBuilder->CreateStructGEP(Block, 1);
-  MethodBuilder->CreateStore(MethodBuilder->CreateBitCast(BlockFn, IMPTy),
-      FunctionPtr);
+  MethodBuilder->CreateStore(MethodBuilder->CreateBitCast(CurrentFunction,
+			  IMPTy), FunctionPtr);
   
   //FIXME: I keep calling these promoted when I mean bound.  Change all of
   //the variable / method names to reflect this.
@@ -64,46 +65,49 @@ CodeGenBlock::CodeGenBlock(Module *M, int args, int locals, Value **promoted,
         MethodBuilder->CreateStructGEP(boundArray, i));
   }
   //Reference self, promote self
-  MethodBuilder->CreateStore(Self,
+  MethodBuilder->CreateStore(enclosingScope->LoadSelf(),
       MethodBuilder->CreateStructGEP(promotedArray, 0));
   MethodBuilder->CreateStore(MethodBuilder->CreateStructGEP(promotedArray, 0),
       MethodBuilder->CreateStructGEP(boundArray, 0));
 }
 
 Value *CodeGenBlock::LoadArgumentAtIndex(unsigned index) {
-  return Builder->CreateLoad(Args[index]);
+  return Builder.CreateLoad(Args[index]);
 }
 
 void CodeGenBlock::SetReturn(Value* RetVal) {
-  const Type *RetTy = BlockFn->getReturnType();
+  const Type *RetTy = CurrentFunction->getReturnType();
   if (RetVal == 0) {
-      Builder->CreateRet(UndefValue::get(BlockFn->getReturnType()));
+      Builder.CreateRet(UndefValue::get(CurrentFunction->getReturnType()));
   } else {
     if (RetVal->getType() != RetTy) {
-      RetVal = Builder->CreateBitCast(RetVal, RetTy);
+      RetVal = Builder.CreateBitCast(RetVal, RetTy);
     }
-    Builder->CreateRet(RetVal);
+    Builder.CreateRet(RetVal);
   }
 }
 
+Value *CodeGenBlock::LoadSelf() {
+	return LoadBlockVar(0, 0);
+}
 Value *CodeGenBlock::LoadBlockVar(unsigned index, unsigned offset) {
-  Value *block = Builder->CreateLoad(BlockSelf);
+  Value *block = Builder.CreateLoad(Self);
   // Object array
-  Value *object = Builder->CreateStructGEP(block, 2);
-  object = Builder->CreateStructGEP(object, index);
-  object = Builder->CreateLoad(object);
+  Value *object = Builder.CreateStructGEP(block, 2);
+  object = Builder.CreateStructGEP(object, index);
+  object = Builder.CreateLoad(object);
   if (offset > 0)
   {
-    Value *addr = Builder->CreatePtrToInt(object, IntTy);
-    addr = Builder->CreateAdd(addr, ConstantInt::get(IntTy, offset));
-    addr = Builder->CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
-    return Builder->CreateLoad(addr);
+    Value *addr = Builder.CreatePtrToInt(object, IntTy);
+    addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
+    addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
+    return Builder.CreateLoad(addr);
   }
-  object = Builder->CreateLoad(object);
+  object = Builder.CreateLoad(object);
   return object;
 }
 
 Value *CodeGenBlock::EndBlock(void) {
+  parentScope->EndChildBlock(this);
   return Block;
 }
-
