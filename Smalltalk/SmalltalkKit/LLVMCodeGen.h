@@ -137,6 +137,10 @@ LLVMValue ComparePointers(ModuleBuilder B, LLVMValue lhs, LLVMValue rhs);
  */
 void Compile(ModuleBuilder B);
 /**
+ * Emit the file as LLVM bitcode.
+ */
+void EmitBitcode(ModuleBuilder B, char *filename, bool isAsm);
+/**
  * Initialise the code generator.  Should be called before any other LLVM
  * calls.  Takes the name of the skeleton module file as an argument.
  */
@@ -159,5 +163,6 @@ extern int DEBUG_DUMP_MODULES;
 @interface LLVMCodeGen : NSObject <CodeGenerator> {
 	ModuleBuilder Builder;
 }
+- (void) writeBitCodeToFile:(NSString*)aFile;
 @end
 #endif

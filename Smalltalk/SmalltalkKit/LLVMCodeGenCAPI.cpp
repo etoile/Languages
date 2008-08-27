@@ -28,6 +28,10 @@ extern "C" {
     delete aModule;
   }
 
+  void EmitBitcode(ModuleBuilder B, char *filename, bool isAsm)
+  {
+	  B->writeBitcodeToFile(filename, isAsm);
+  }
   void Compile(ModuleBuilder B) {
     //B->optimise();
     B->compile();

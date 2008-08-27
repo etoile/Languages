@@ -20,8 +20,8 @@
 #include <string>
 #include <algorithm>
 #include <errno.h>
-
-
+#include <iostream>
+#include <fstream>
 
 Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
         std::string &Name, unsigned GEPs) {
@@ -154,6 +154,15 @@ Value *CodeGenModule::IntConstant(const char *value) {
   Val = ConstantExpr::getIntToPtr(Val, IdTy);
   Val->setName("SmallIntConstant");
   return Val;
+}
+
+void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
+{
+	std::filebuf fb;
+	fb.open (filename, std::ios::out);
+	std::ostream os(&fb);
+	WriteBitcodeToFile(TheModule, os);
+	fb.close();
 }
 
 void CodeGenModule::compile(void) {

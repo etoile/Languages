@@ -1,3 +1,4 @@
+typedef int bool;
 #import "LLVMCodeGen.h"
 #import "SymbolTable.h"
 #include <objc/objc-api.h>
@@ -199,6 +200,10 @@
 - (void*) generateConstantSymbol:(NSString*)aSymbol
 {
 	return SymbolConstant(Builder, [aSymbol UTF8String]);
+}
+- (void) writeBitCodeToFile:(NSString*)aFile
+{
+	EmitBitcode(Builder, (char*)[aFile UTF8String], NO);
 }
 @end
 id <CodeGenerator> defaultCodeGenerator(void)

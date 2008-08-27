@@ -135,6 +135,11 @@ public:
    * Compile and load this module.
    */
   void compile(void);
+  /**
+   * Write the module as a bitcode file.  If isAsm is true then this writes
+   * LLVM 'assembly language' instead of bitcode.
+   */
+	void writeBitcodeToFile(char* filename, bool isAsm=false);
 };
 // Debugging macros:
 extern "C" {

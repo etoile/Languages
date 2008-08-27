@@ -66,9 +66,12 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 			for (int i = 0 ; i < ivarlist->ivar_count ; i++)
 			{
 				int offset = ivarlist->ivar_list[i].ivar_offset;
-				NSString * name = [NSString stringWithUTF8String:(char*)ivarlist->ivar_list[i].ivar_name];
-				NSMapInsert(instanceVariables, (void*)name, (void*)offset);
-				NSString * type = [NSString stringWithUTF8String:(char*)ivarlist->ivar_list[i].ivar_type];
+				NSString * name = [NSString stringWithUTF8String:
+					(char*)ivarlist->ivar_list[i].ivar_name];
+				NSMapInsert(instanceVariables, (void*)name,
+					   	(void*)(uintptr_t)offset);
+				NSString * type = [NSString stringWithUTF8String:
+					(char*)ivarlist->ivar_list[i].ivar_type];
 				[ivarTypes setObject:type forKey:name];
 			}
 		}
@@ -81,12 +84,12 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 
 - (int) offsetOfIVar:(NSString*)aName
 {
-	return (int)NSMapGet(instanceVariables, aName);
+	return (int)(intptr_t)NSMapGet(instanceVariables, aName);
 }
 
 - (void) addSymbol:(NSString*)aSymbol
 {
-	NSMapInsert(instanceVariables, (void*)aSymbol, (void*)nextOffset);
+	NSMapInsert(instanceVariables, (void*)aSymbol, (void*)(intptr_t)nextOffset);
 	nextOffset += sizeof(id);
 }
 
