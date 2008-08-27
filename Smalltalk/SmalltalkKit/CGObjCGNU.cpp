@@ -710,12 +710,12 @@ void CGObjCGNU::GenerateClass(
       IvarOffsets);
   //Generate metaclass for class methods
   llvm::Constant *MetaClassStruct = GenerateClassStructure(NULLPtr,
-      NULLPtr, 0x2L, /*name*/0, 0, Zeros[0], GenerateIvarList(
-        empty, empty, empty2), ClassMethodList, NULLPtr);
+	  NULLPtr, 0x2L, /*name*/0, 0, llvm::ConstantInt::get(LongTy, 0),
+	  GenerateIvarList(empty, empty, empty2), ClassMethodList, NULLPtr);
   // Generate the class structure
   llvm::Constant *ClassStruct = GenerateClassStructure(MetaClassStruct,
       SuperClass, 0x1L, ClassName, 0,
-      llvm::ConstantInt::get(llvm::Type::Int32Ty, instanceSize), IvarList,
+      llvm::ConstantInt::get(LongTy, instanceSize), IvarList,
       MethodList, GenerateProtocolList(Protocols));
   // Add class structure to list to be added to the symtab later
   ClassStruct = llvm::ConstantExpr::getBitCast(ClassStruct, PtrToInt8Ty);
