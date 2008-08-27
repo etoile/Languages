@@ -11,7 +11,7 @@ export etoile-extensions ?= yes
 
 ifeq ($(etoile-extensions), yes)
 
-    export io ?= yes
+    #export io ?= yes
     export smalltalk ?= yes
 
 endif
