@@ -19,5 +19,13 @@
  * Omit the .st extension in the name paramater.
  */
 + (BOOL) loadApplicationScriptNamed:(NSString*)name;
+/**
+ * Load all of the Smalltalk scripts in the specified bundle.
+ */
++ (BOOL) loadScriptsInBundle:(NSBundle*) aBundle;
+/**
+ * Load all of the Smalltalk scripts in the application bundle.
+ */
++ (BOOL) loadAllScriptsForApplication;
 
 @end

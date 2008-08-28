@@ -74,5 +74,24 @@ extern int DEBUG_DUMP_MODULES;
         }
         return [SmalltalkCompiler compileString: [NSString stringWithContentsOfFile: path]];
 }
-
++ (BOOL) loadScriptsInBundle:(NSBundle*) aBundle
+{
+	NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	NSArray *scripts = [aBundle pathsForResourcesOfType:@"st" inDirectory:nil];
+	BOOL success = YES;
+	FOREACH(scripts, scriptFile, NSString*)
+	{
+		NSString *script = [NSString stringWithContentsOfFile: scriptFile];
+		success &= [SmalltalkCompiler compileString:script];
+	}
+	[pool release];
+	return success;
+}
++ (BOOL) loadAllScriptsForApplication
+{
+	NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	BOOL result = [SmalltalkCompiler loadScriptsInBundle:[NSBundle mainBundle]];
+	[pool release];
+	return result;
+}
 @end
