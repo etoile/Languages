@@ -101,7 +101,14 @@
  * beginBlockWithArgs:locals:boundVars:count:.
  */
 - (void*) loadBlockVarAtIndex:(unsigned)index
-					   offset:(unsigned)osffset;
+					   offset:(unsigned)offset;
+/**
+ * Store a bound variable in a block that was passed in as a pointer to
+ * beginBlockWithArgs:locals:boundVars:count:.
+ */
+- (void) storeValue:(void*) value
+  inBlockVarAtIndex:(unsigned)index
+             offset:(unsigned)offset;
 /**
  * Returns 'self' in the current method.
  */

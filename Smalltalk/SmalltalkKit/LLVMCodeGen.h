@@ -104,6 +104,11 @@ void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals, LLVMValue
  */
 LLVMValue LoadBlockVar(ModuleBuilder B, unsigned index, unsigned offset);
 /**
+ * Store a value in the location pointed to by a block variable.
+ */
+void StoreBlockVar(ModuleBuilder B, LLVMValue value, unsigned index,
+		unsigned offset);
+/**
  * End the current block.
  */
 LLVMValue EndBlock(ModuleBuilder B);

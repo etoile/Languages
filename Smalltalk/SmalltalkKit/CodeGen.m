@@ -151,6 +151,12 @@ typedef int bool;
 {
 	return LoadBlockVar(Builder, index, offset);
 }
+- (void) storeValue:(void*) value
+  inBlockVarAtIndex:(unsigned)index
+             offset:(unsigned)offset
+{
+	StoreBlockVar(Builder, value, index, offset);
+}
 - (void*) loadSelf
 {
 	return LoadSelf(Builder);

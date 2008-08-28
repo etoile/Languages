@@ -104,7 +104,7 @@ public:
   /**
    * Load the value of self in the current context.
    */
-  Value *LoadSelf(void);
+  virtual Value *LoadSelf(void);
   
   /**
    * Load a local in the current contest.

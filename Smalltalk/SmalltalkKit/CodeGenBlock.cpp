@@ -90,6 +90,27 @@ void CodeGenBlock::SetReturn(Value* RetVal) {
 Value *CodeGenBlock::LoadSelf() {
 	return LoadBlockVar(0, 0);
 }
+void CodeGenBlock::StoreBlockVar(Value *val, unsigned index, unsigned offset) {
+// FIXME: This does no type checking and is very fragile.
+  if (val->getType() != IdTy)
+  {
+	  val = Builder.CreateBitCast(val, IdTy);
+  }
+  Value *block = Builder.CreateLoad(Self);
+  Value *object = Builder.CreateStructGEP(block, 2);
+  object = Builder.CreateStructGEP(object, index);
+  object = Builder.CreateLoad(object);
+  if (offset > 0)
+  {
+    Value *object = Builder.CreatePtrToInt(object, IntTy);
+    object = Builder.CreateAdd(object, ConstantInt::get(IntTy, offset));
+    object = Builder.CreateIntToPtr(object, PointerType::getUnqual(IdTy));
+  }
+  DUMP(val);
+  DUMP(object);
+  Builder.CreateStore(val, object);
+}
+
 Value *CodeGenBlock::LoadBlockVar(unsigned index, unsigned offset) {
   Value *block = Builder.CreateLoad(Self);
   // Object array
@@ -98,13 +119,11 @@ Value *CodeGenBlock::LoadBlockVar(unsigned index, unsigned offset) {
   object = Builder.CreateLoad(object);
   if (offset > 0)
   {
-    Value *addr = Builder.CreatePtrToInt(object, IntTy);
-    addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
-    addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
-    return Builder.CreateLoad(addr);
+    object = Builder.CreatePtrToInt(object, IntTy);
+    object = Builder.CreateAdd(object, ConstantInt::get(IntTy, offset));
+    object = Builder.CreateIntToPtr(object, PointerType::getUnqual(IdTy));
   }
-  object = Builder.CreateLoad(object);
-  return object;
+  return Builder.CreateLoad(object);
 }
 
 Value *CodeGenBlock::EndBlock(void) {

@@ -28,6 +28,7 @@ public:
   virtual Value *LoadSelf(); 
 
   llvm::Value *LoadBlockVar(unsigned index, unsigned offset) ;
+  void StoreBlockVar(Value *val, unsigned index, unsigned offset);
 
   llvm::Value *EndBlock(void); 
 };

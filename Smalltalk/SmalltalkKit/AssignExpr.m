@@ -59,6 +59,12 @@ static char *ReleaseTypes;
 		}
 		case promoted:
 		{
+			ClosedDeclRef *decl = [(BlockSymbolTable*)symbols
+				promotedLocationOfSymbol:target->symbol];
+			[aGenerator storeValue: rval 
+			     inBlockVarAtIndex:decl->index
+			                offset:decl->offset];
+			break;
 		}
 		default:
 			NSLog(@"Scope of %@ is %d.", target->symbol, [symbols scopeOfSymbol:target->symbol]);

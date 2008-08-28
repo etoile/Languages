@@ -119,7 +119,8 @@ void CodeGenModule::EndMethod() {
   ScopeStack.pop_back();
 }
 
-void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value **promoted, int count) {
+void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value
+		**promoted, int count) {
   ScopeStack.push_back(new CodeGenBlock(args, locals, promoted,
         count, ScopeStack.back(), this));
 }
@@ -127,6 +128,10 @@ Value *CodeGenModule::LoadBlockVar(unsigned index, unsigned offset) {
   return ((CodeGenBlock*)(ScopeStack.back()))->LoadBlockVar(index, offset);
 }
 
+void CodeGenModule::StoreBlockVar(Value *val, unsigned index, unsigned offset)
+{
+  ((CodeGenBlock*)(ScopeStack.back()))->StoreBlockVar(val, index, offset);
+}
 void CodeGenModule::SetBlockReturn(Value *value) {
   ScopeStack.back()->SetReturn(value);
 }
