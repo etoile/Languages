@@ -90,6 +90,31 @@
 	{
 		[method compileWith:aGenerator];
 	}
+	// Create dealloc method
+	if ([ivars count] > 0)
+	{
+		const char* deallocty = sel_get_type(sel_get_any_typed_uid("dealloc"));
+
+		[aGenerator beginMethod:"dealloc" withTypes:deallocty locals:0];
+		void *selfptr = [aGenerator loadSelf];
+		const char* releasety = sel_get_type(sel_get_any_typed_uid("release"));
+		for (unsigned i=0 ; i<[ivars count] ; i++)
+		{
+			void *ivar = [aGenerator loadValueOfType:@"@"
+			                                atOffset:ivarOffsets[i]
+			                              fromObject:selfptr];
+			[aGenerator sendMessage:"release"
+			                  types:releasety
+			               toObject:ivar
+						   withArgs:NULL
+							  count:0];
+		}
+		[aGenerator sendSuperMessage:"dealloc"
+							   types:deallocty
+							withArgs:NULL
+							   count:0];
+		[aGenerator endMethod];
+	}
 	[aGenerator endClass];
 	if ([[AST code] objectForKey: classname] == nil)
 	{
