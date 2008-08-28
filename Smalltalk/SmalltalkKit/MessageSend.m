@@ -171,6 +171,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		seltypes = "I8@0:4";
 	}
+	void *result = NULL;
 	// If the receiver is a global symbol, it is guaranteed to be an object.
 	// TODO: The same is arguments if their type is @
 	if ([target isKindOfClass:[DeclRef class]])
@@ -180,35 +181,54 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		SymbolScope scope = [symbols scopeOfSymbol:symbol];
 		if (scope == global)
 		{
-			return [aGenerator sendMessage:sel
-			                         types:seltypes
-			                       toObject:receiver
-			                      withArgs:argv
-			                         count:argc];
+			result = [aGenerator sendMessage:sel
+			                           types:seltypes
+			                        toObject:receiver
+			                        withArgs:argv
+			                           count:argc];
 		}
-		if (scope == builtin)
+		else if (scope == builtin)
 		{
 			if ([symbol isEqualToString:@"self"])
 			{
-				return [aGenerator sendMessage:sel
-										 types:seltypes
-									   toObject:receiver
-									  withArgs:argv
-										 count:argc];
+				result = [aGenerator sendMessage:sel
+				                           types:seltypes
+				                        toObject:receiver
+				                        withArgs:argv
+				                           count:argc];
 			}
-			if ([symbol isEqualToString:@"super"])
+			else if ([symbol isEqualToString:@"super"])
 			{
-				return [aGenerator sendSuperMessage:sel
-										      types:seltypes
-									       withArgs:argv
-										      count:argc];
+				result = [aGenerator sendSuperMessage:sel
+				                                types:seltypes
+				                             withArgs:argv
+				                                count:argc];
 			}
 		}
 	}
-	return [aGenerator sendMessage:sel
-	                         types:seltypes
-	                            to:receiver
-	                      withArgs:argv
-	                         count:argc];
+	if (NULL == result)
+	{
+		result = [aGenerator sendMessage:sel
+	                               types:seltypes
+	                                  to:receiver
+	                            withArgs:argv
+	                               count:argc];
+	}
+	// If an object is created with new then send it an autorelease message
+	// immediately after construction.  This ensures that any new object always
+	// has a retain count of 1 and an autorelease count of 1 unless explicitly
+	// created using alloc init to bypass this.
+	if ([selector isEqualToString:@"new"])
+	{
+		sel = "autorelease";
+		seltypes = sel_get_type(sel_get_any_typed_uid(sel));
+		NSLog(@"Sending %s with types %s", sel, seltypes);
+		result = [aGenerator sendMessage:sel
+		                           types:seltypes
+		                        toObject:result
+		                        withArgs:NULL
+		                           count:0];
+	}
+	return result;
 }
 @end
