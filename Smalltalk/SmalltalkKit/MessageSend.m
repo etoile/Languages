@@ -222,12 +222,11 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		sel = "autorelease";
 		seltypes = sel_get_type(sel_get_any_typed_uid(sel));
-		NSLog(@"Sending %s with types %s", sel, seltypes);
-		result = [aGenerator sendMessage:sel
-		                           types:seltypes
-		                        toObject:result
-		                        withArgs:NULL
-		                           count:0];
+		[aGenerator sendMessage:sel
+		                  types:seltypes
+		               toObject:result
+		               withArgs:NULL
+		                  count:0];
 	}
 	return result;
 }
