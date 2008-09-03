@@ -79,8 +79,8 @@ LD = g++
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc\
 	ObjCConstants.plist
 
--include ../../../etoile.make
 include $(GNUSTEP_MAKEFILES)/framework.make
+-include ../../../etoile.make
 
 smalltalk.m: smalltalk.y
 	@echo Generating parser...
