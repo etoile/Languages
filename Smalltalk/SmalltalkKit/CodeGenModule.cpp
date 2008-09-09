@@ -170,6 +170,8 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	fb.close();
 }
 
+static ExecutionEngine *EE = NULL;
+
 void CodeGenModule::compile(void) {
   llvm::Function *init = Runtime->ModuleInitFunction();
   // Make the init function external so the optimisations won't remove it.
@@ -192,8 +194,17 @@ void CodeGenModule::compile(void) {
   pm.add(createStripDeadPrototypesPass());
   pm.run(*TheModule);
   DUMP(TheModule);
-  ExecutionEngine *EE = ExecutionEngine::create(TheModule);
+  if (NULL == EE)
+  {
+    EE = ExecutionEngine::create(TheModule);
+  }
+  else
+  {
+	TheModule->dump();
+    EE->addModuleProvider(new ExistingModuleProvider(TheModule));
+  }
   LOG("Compiling...\n");
+  init->dump();
   EE->runStaticConstructorsDestructors(false);
   void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
   LOG("Loading %x...\n", (unsigned)(unsigned long)f);

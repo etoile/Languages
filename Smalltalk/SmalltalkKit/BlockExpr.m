@@ -35,6 +35,7 @@
 		case argument:
 		case local:
 		{
+			NSLog(@"Promoting symbol %@ to offset %d", aSymbol, nextClosed);
 			ClosedDeclRef * ref = [ClosedDeclRef new];
 			ref->symbol = aSymbol;
 			ref->index = nextClosed++;

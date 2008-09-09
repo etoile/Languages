@@ -7,7 +7,7 @@ string CodeGenLexicalScope::FunctionNameFromSelector(const char *sel) {
   // Special cases
   switch (*sel) {
     case '+':
-      return "SmallIntMsgadd_";
+      return "SmallIntMsgplus_";
     case '-':
       return "SmallIntMsgsub_";
     case '/':
@@ -204,11 +204,11 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B, Function *F, Value
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
   SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes) {
+	ReturnType = MethodTypes;
 	// Create the skeleton
     BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentFunction);
     Builder.SetInsertPoint(EntryBB);
 
-    const char *RetType = MethodTypes;
     // Set up the arguments
     llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();
     Self = Builder.CreateAlloca(AI->getType(), 0, "self.addr");
@@ -236,15 +236,18 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
     }
 
     // Create a basic block for returns, reached only from the cleanup block
-    RetVal = Builder.CreateAlloca(IdTy, 0, "return_value");
-    Builder.CreateStore(ConstantPointerNull::get(IdTy),
-        RetVal);
+	const Type *RetTy = LLVMTypeFromString(ReturnType);
+	RetVal = 0;
+	if (RetTy != Type::VoidTy)
+	{
+    	RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
+		Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
+	}
     BasicBlock * RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
     IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
 	if (CurrentFunction->getFunctionType()->getReturnType() !=
 			llvm::Type::VoidTy) {
       Value * R = ReturnBuilder.CreateLoad(RetVal);
-      R = Unbox(&ReturnBuilder, CurrentFunction, R, RetType);
       ReturnBuilder.CreateRet(R);
     } else {
       ReturnBuilder.CreateRetVoid();
@@ -484,6 +487,7 @@ Value *CodeGenLexicalScope::MessageSendId(Value *receiver, const char *selName,
     const char *selTypes, Value **argv, unsigned argc) {
   Value *args[argc];
   UnboxArgs(&Builder, CurrentFunction, argv, args, argc, selTypes);
+  LOG("Generating object message send %s\n", selName);
   return BoxValue(&Builder, MessageSendId(&Builder, receiver, selName,
         selTypes, args, argc), selTypes);
 }
@@ -500,12 +504,16 @@ Value *CodeGenLexicalScope::MessageSend(Value *receiver, const char *selName,
 			  selName, selTypes, argv, argv, argc), selTypes);
 }
 
-void CodeGenLexicalScope::SetReturn(Value * Ret) {
-  if (Ret != 0) {
-  if (Ret->getType() != IdTy) {
-      Ret = Builder.CreateBitCast(Ret, IdTy);
-    }
-    Builder.CreateStore(Ret, RetVal);
-  }
-  Builder.CreateBr(CleanupBB);
+void CodeGenLexicalScope::SetReturn(Value * Ret) 
+{
+	if (Ret != 0)
+	{
+		if (Ret->getType() != IdTy) 
+		{
+			Ret = Builder.CreateBitCast(Ret, IdTy);
+		}
+		Ret = Unbox(&Builder, CurrentFunction, Ret, ReturnType);
+		Builder.CreateStore(Ret, RetVal);
+	}
+	Builder.CreateBr(CleanupBB);
 }

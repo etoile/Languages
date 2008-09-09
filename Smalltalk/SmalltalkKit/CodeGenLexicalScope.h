@@ -25,6 +25,7 @@ protected:
   Function *CurrentFunction;
   IRBuilder<> Builder;
   Value *Self;
+  const char *ReturnType;
   /**
    * Intialises a Function object to be used as a Smalltalk method or block
    * function.

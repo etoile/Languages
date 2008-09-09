@@ -5,7 +5,7 @@
 // Dummy interfaces to make warnings go away
 @interface BigInt {}
 + (id) bigIntWithLongLong:(long long)a;
-- (id) add:(id)a;
+- (id) plus:(id)a;
 - (id) sub:(id)a;
 - (id) div:(id)a;
 - (id) mul:(id)a;
@@ -94,13 +94,13 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 	return (void*)((x << 1) | 1);
 				
 // FIXME: These only work currently on SmallInt args
-MSG1(add_)
+MSG1(plus_)
 	intptr_t res = val + otherval;
 	//fprintf(stderr, "Adding %d to %d\n", (int)val, (int)otherval);
 	if((val<=res)==((((uintptr_t)otherval)>>((sizeof(uintptr_t)*8) - 1))))
 	{
 		//fprintf(stderr, "Add overflowed - promoting.\n");
-		BOX_AND_RETRY(add);
+		BOX_AND_RETRY(plus);
 	}
 	RETURN_INT(res);
 }
@@ -124,10 +124,10 @@ MSG1(mul_)
 	RETURN_INT(val);
 }
 MSG1(div_)
-	return ((val / otherval) << 1) | 1;
+	RETURN_INT((val / otherval));
 }
 MSG1(mod_)
-	return ((val % otherval) << 1) | 1;
+	RETURN_INT((val % otherval));
 }
 
 BOOL SmallIntMsgisLessThan_(void *obj, void *other)
