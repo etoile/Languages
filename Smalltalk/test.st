@@ -10,6 +10,9 @@ NSObject subclass: SmalltalkTool
 [
 	run [
 	| task |
+		(TestBlock new) log.
+		(NSObject new) log.
+		(NSString new) log.
 		"Test that messages with two arguments are parsed correctly"
 		self log:'a' and:'b'.
 		nil data.

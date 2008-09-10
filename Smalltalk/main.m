@@ -4,6 +4,19 @@
 #include <sys/resource.h>
 #import <SmalltalkKit/SmalltalkKit.h>
 
+@interface Test : NSObject {}
+- (int) fibonacci:(int) n;
+@end
+@implementation Test
+- (int) fibonacci:(int) n
+{
+	if (n < 2)
+	{
+		return 1;
+	}
+	return [self fibonacci:n - 1] + [self fibonacci:n - 2];
+}
+@end
 
 int main(int argc, char **argv)
 {
@@ -73,12 +86,34 @@ int main(int argc, char **argv)
 
 	c1 = clock();
 	[[tool new] run];
+	id b = [tool new];
+	id c = [Test new];
+	c1 = clock();
+//	for (int i = 0 ; i< 1000 ; i++)
+	{
+		for (int j = 2 ; j< 31 ; j++)
+			NSLog(@"Fib of %d is: %d", j, [b fibonacci:j]);
+	}
 	if ([[opts objectForKey:@"t"] boolValue])
 	{
 		clock_t c2 = clock();
 		struct rusage r;
 		getrusage(RUSAGE_SELF, &r);
 		NSLog(@"Smalltalk execution took %f seconds.  Peak used %dKB.",
+			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
+	}
+	c1 = clock();
+//	for (int i = 0 ; i< 1000 ; i++)
+	{
+		for (int j = 2 ; j< 31 ; j++)
+			NSLog(@"Fib of %d is: %d", j, [c fibonacci:j]);
+	}
+	if ([[opts objectForKey:@"t"] boolValue])
+	{
+		clock_t c2 = clock();
+		struct rusage r;
+		getrusage(RUSAGE_SELF, &r);
+		NSLog(@"Objective-C execution took %f seconds.  Peak used %dKB.",
 			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
 	}
 	return 0;

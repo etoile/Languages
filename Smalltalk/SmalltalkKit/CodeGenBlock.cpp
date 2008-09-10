@@ -115,15 +115,22 @@ Value *CodeGenBlock::LoadBlockVar(unsigned index, unsigned offset) {
   Value *block = Builder.CreateLoad(Self);
   // Object array
   Value *object = Builder.CreateStructGEP(block, 2);
+  // Pointer to value address
   object = Builder.CreateStructGEP(object, index);
+  // Pointer to value
+  object = Builder.CreateLoad(object);
+  // Value
   object = Builder.CreateLoad(object);
   if (offset > 0)
   {
+	// Offset from pointed value
     object = Builder.CreatePtrToInt(object, IntTy);
     object = Builder.CreateAdd(object, ConstantInt::get(IntTy, offset));
     object = Builder.CreateIntToPtr(object, PointerType::getUnqual(IdTy));
+	// Pointed value
+    object = Builder.CreateLoad(object);
   }
-  return Builder.CreateLoad(object);
+  return object;
 }
 
 Value *CodeGenBlock::EndBlock(void) {

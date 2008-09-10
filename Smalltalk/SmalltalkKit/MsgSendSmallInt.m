@@ -67,6 +67,21 @@ MSG1(ifFalse_)
 		return block->value(other, @selector(value));
 	}
 }
+id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f)
+{
+	uintptr_t val = (uintptr_t)obj;
+	val >>= 1;
+	if (val != 0)
+	{
+		Block *block = t;
+		return block->value(t, @selector(value));
+	}
+	else
+	{
+		Block *block = f;
+		return block->value(f, @selector(value));
+	}
+}
 MSG1(timesRepeat_)
 	Block *block = other;
 	for (intptr_t i=0 ; i<val ; i++)

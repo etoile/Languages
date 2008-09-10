@@ -90,7 +90,8 @@
 {
 	// FIXME: self pointer should always be promoted.
 	void *promoted[5];
-	NSArray *promotedSymbols = [(BlockSymbolTable*)symbols promotedVars];
+	BlockSymbolTable *st = (BlockSymbolTable*)symbols;
+	NSArray *promotedSymbols = [st promotedVars];
 	promoted[0] = [aGenerator loadSelf];
 	int index = 1;
 	FOREACH(promotedSymbols, symbol, NSString*)
@@ -98,15 +99,25 @@
 		switch ([(BlockSymbolTable*)symbols scopeOfExternal:symbol])
 		{
 			case local:
-				promoted[index++] = 
+			{
+				index++;
+				int location = ((ClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
+				NSLog(@"Storing symbol %@ to offset %d", symbol, location);
+				promoted[location] = 
 					[aGenerator loadPointerToLocalAtIndex:
 						[symbols->enclosingScope offsetOfLocal:symbol]];
 				break;
+			}
 			case argument:
-				promoted[index++] = 
+			{
+				index++;
+				int location = ((ClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
+				NSLog(@"Storing symbol %@ to offset %d", symbol, location);
+				promoted[location] = 
 					[aGenerator loadPointerToArgumentAtIndex:
 						[symbols->enclosingScope indexOfArgument:symbol]];
-
+				break;
+			}
 			case object:
 				// Instance variables are accessed relative to the self pointer.
 				break;

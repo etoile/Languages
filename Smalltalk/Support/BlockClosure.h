@@ -1,6 +1,12 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #include <setjmp.h>
 
+@interface BlockContext : NSObject {
+	int count;
+	id objects[0];
+}
+@end
+
 @interface BlockClosure : NSObject {
 @public
   IMP function;
