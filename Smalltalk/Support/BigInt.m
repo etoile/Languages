@@ -10,6 +10,7 @@ static mpz_t ZERO;
 + (BigInt*) bigIntWithLongLong:(long long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
+	//NSLog(@"Big int created for %lld", aVal);
 	if (aVal < LONG_MAX && aVal > -LONG_MAX)
 	{
 		mpz_init_set_si(b->v, (long) aVal);
@@ -37,7 +38,7 @@ static mpz_t ZERO;
 
 #define op(name) op2(name, name)
 
-op(add)
+op2(plus, add)
 op(sub)
 op(mul)
 op(mod)
