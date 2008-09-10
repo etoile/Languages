@@ -204,7 +204,6 @@ void CodeGenModule::compile(void) {
     EE->addModuleProvider(new ExistingModuleProvider(TheModule));
   }
   LOG("Compiling...\n");
-  init->dump();
   EE->runStaticConstructorsDestructors(false);
   void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
   LOG("Loading %x...\n", (unsigned)(unsigned long)f);

@@ -53,7 +53,6 @@
 		case promoted:
 		{
 			ClosedDeclRef *decl = [(BlockSymbolTable*)symbols promotedLocationOfSymbol:symbol];
-			NSLog(@"Loading block var %@ from %d + %d", symbol, decl->index, decl->offset);
 			return [aGenerator loadBlockVarAtIndex:decl->index offset:decl->offset];
 		}
 		case object:

@@ -35,7 +35,6 @@
 		case argument:
 		case local:
 		{
-			NSLog(@"Promoting symbol %@ to offset %d", aSymbol, nextClosed);
 			ClosedDeclRef * ref = [ClosedDeclRef new];
 			ref->symbol = aSymbol;
 			ref->index = nextClosed++;
@@ -102,7 +101,6 @@
 			{
 				index++;
 				int location = ((ClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
-				NSLog(@"Storing symbol %@ to offset %d", symbol, location);
 				promoted[location] = 
 					[aGenerator loadPointerToLocalAtIndex:
 						[symbols->enclosingScope offsetOfLocal:symbol]];
@@ -112,7 +110,6 @@
 			{
 				index++;
 				int location = ((ClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
-				NSLog(@"Storing symbol %@ to offset %d", symbol, location);
 				promoted[location] = 
 					[aGenerator loadPointerToArgumentAtIndex:
 						[symbols->enclosingScope indexOfArgument:symbol]];

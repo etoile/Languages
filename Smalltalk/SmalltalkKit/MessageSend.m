@@ -171,7 +171,6 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		seltypes = "I8@0:4";
 	}
-	NSLog(@"Message %s has type %s", sel, seltypes);
 	void *result = NULL;
 	// If the receiver is a global symbol, it is guaranteed to be an object.
 	// TODO: The same is arguments if their type is @
