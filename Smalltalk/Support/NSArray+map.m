@@ -20,6 +20,13 @@
 		[aClosure value:obj];
 	}
 }
+- (void) do:(id)aClosure
+{
+	FOREACHI(self, obj)
+	{
+		[aClosure value:obj];
+	}
+}
 - (NSArray*) select:(id)aClosure
 {
 	id new[[self count]];
@@ -33,13 +40,17 @@
 	}
 	return [NSArray arrayWithObjects:new count:i];
 }
-- (id) fold:(id)aClosure
+- (id) inject:(id)aValue into:aClosure
 {
-	id collect = nil;
+	id collect = aValue;
 	FOREACHI(self, obj)
 	{
 		collect = [aClosure value:obj value:collect];
 	}
 	return collect;
+}
+- (id) fold:(id)aClosure
+{
+	return [self inject:nil into:aClosure];
 }
 @end
