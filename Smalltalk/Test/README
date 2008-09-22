@@ -1,0 +1,4 @@
+Run the tests with 'ukrun SmalltalkTest.bundle'
+
+Requires the gnustep patch attached here:
+https://savannah.gnu.org/bugs/?24320

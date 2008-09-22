@@ -2,6 +2,10 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 SUBPROJECTS += SmalltalkKit Support
 
+ifeq ($(test), yes)
+SUBPROJECTS += Test
+endif
+
 #
 # Application
 #

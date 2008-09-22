@@ -63,16 +63,19 @@ extern int DEBUG_DUMP_MODULES;
 	return NO;
 }
 
-+ (BOOL) loadApplicationScriptNamed:(NSString*)name
++ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name
 {
-	NSString *path = [[NSBundle mainBundle] pathForResource:name
-                                                         ofType:@"st"];
+	NSString *path = [bundle pathForResource:name ofType:@"st"];
         if (nil == path)
         {
-                NSLog(@"Unable to find %@.st in the application bundle.", name);
+                NSLog(@"Unable to find %@.st in bundle %@.", name, bundle);
                 return NO;
         }
         return [SmalltalkCompiler compileString: [NSString stringWithContentsOfFile: path]];
+}
++ (BOOL) loadApplicationScriptNamed:(NSString*)name
+{
+        return [SmalltalkCompiler loadScriptInBundle: [NSBundle mainBundle] named: name];
 }
 + (BOOL) loadScriptsInBundle:(NSBundle*) aBundle
 {

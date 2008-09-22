@@ -15,6 +15,11 @@
  */
 + (BOOL) loadFramework:(NSString*)framework;
 /**
+ * Compile and load a .st file from the specified bundle.
+ * Omit the .st extension in the name paramater.
+ */
++ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name;
+/**
  * Compile and load a .st file from the application bundle.
  * Omit the .st extension in the name paramater.
  */
