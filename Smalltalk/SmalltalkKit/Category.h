@@ -10,6 +10,11 @@
   NSMutableArray * methods;
 }
 /**
+ * Return a new Category with the specified name, class and list of
+ * methods.
+ */
++ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList;
+/**
  * Initialise a new Category with the specified name, class and list of
  * methods.
  */

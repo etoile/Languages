@@ -12,7 +12,15 @@
   NSMutableArray * statements;
 }
 /**
+ * Return a new Method with the specified signature, locals and statements.
+ */
++ (id) methodWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
+/**
+ * Initialise a new Method with the specified signature, locals and statements.
+ */
+- (id) initWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
+/**
  * Set the method signature for this method.
  */
-- (void) setSignature:(NSString*)aSignature;
+- (void) setSignature:(MessageSend*)aSignature;
 @end

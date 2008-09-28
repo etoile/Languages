@@ -1,6 +1,13 @@
 #import "Subclass.h"
 
 @implementation Subclass
++ (id) subclassWithName:(NSString*)aName superclass:(NSString*)aClass ivars:(NSArray*)anIvarList methods:(NSArray*)aMethodList
+{
+	return [[[self alloc] initWithName: aName
+	                        superclass: aClass
+	                             ivars: anIvarList
+	                           methods: aMethodList] autorelease];
+}
 - (id) initWithName:(NSString*)aName superclass:(NSString*)aClass ivars:(NSArray*)anIvarList methods:(NSArray*)aMethodList
 {
 	SELFINIT;

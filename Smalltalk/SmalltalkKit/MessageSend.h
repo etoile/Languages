@@ -12,7 +12,7 @@
 	NSMutableArray * arguments;
 }
 /**
- * Set the receiver of the expression.
+ * Set the receiver of the message.
  */
 - (void) setTarget:(id)anObject;
 /**

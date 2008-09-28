@@ -15,7 +15,7 @@ extern int DEBUG_DUMP_MODULES;
 }
 + (BOOL) compileString:(NSString*)s
 {
-	Parser * p = [[Parser alloc] init];
+	SmalltalkParser *p = [[[SmalltalkParser alloc] init] autorelease];
 	AST *ast;
 	NS_DURING
 		ast = [p parseString: s];

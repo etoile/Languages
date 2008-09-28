@@ -1,15 +1,15 @@
 #import "ArrayExpr.h"
 
 @implementation ArrayExpr
++ (id) arrayWithElements:(NSArray*)anArray
+{
+	return [[[self alloc] initWithElements: anArray] autorelease];
+}
 - (id) initWithElements:(NSArray*)anArray
 {
 	SELFINIT;
 	ASSIGN(elements, anArray);
 	return self;
-}
-+ (id) arrayWithElements:(NSArray*)anArray
-{
-	return [[[self alloc] initWithElements:anArray] autorelease];
 }
 - (void) check
 {
@@ -22,24 +22,20 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString stringWithString:@"#("];
-	NSEnumerator *e = [elements reverseObjectEnumerator];
-	id obj;
-	while (nil != (obj = [e nextObject]))
+	FOREACH(elements, element, AST*)
 	{
-		[str appendFormat:@"%@, ", [obj description]];
+		[str appendFormat:@"%@, ", [element description]];
 	}
 	[str replaceCharactersInRange:NSMakeRange([str length] - 2, 2) withString:@")"];
 	return str;
 }
 - (void*) compileWith:(id<CodeGenerator>)aGenerator
 {
-	NSEnumerator *e = [elements reverseObjectEnumerator];
-	id obj;
 	void *values[[elements count] + 1];
 	int i = 0;
-	while (nil != (obj = [e nextObject]))
+	FOREACH(elements, element, AST*)
 	{
-		values[i++] = [obj compileWith:aGenerator];
+		values[i++] = [element compileWith:aGenerator];
 	}
 	values[i++] = [aGenerator nilConstant];
 	void *arrayClass = [aGenerator loadClass:@"NSMutableArray"];

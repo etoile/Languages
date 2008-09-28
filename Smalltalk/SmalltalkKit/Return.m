@@ -1,6 +1,10 @@
 #import "Return.h"
 
 @implementation Return
++ (id) returnWithExpr:(AST*)anExpression
+{
+	return [[[self alloc] initWithExpr: anExpression] autorelease];
+}
 - (id) initWithExpr:(AST*)anExpression
 {
 	SELFINIT;

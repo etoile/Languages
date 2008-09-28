@@ -1,6 +1,11 @@
 #import "Category.h"
 
 @implementation CategoryDef
++ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList
+{
+	return [[[self alloc] initWithClass: aName
+	                            methods: aMethodList] autorelease];
+}
 - (id) initWithClass:(NSString*)aName methods:(NSArray*)aMethodList
 {
 	SELFINIT;

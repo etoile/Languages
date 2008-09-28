@@ -1,7 +1,22 @@
 #import "Method.h"
 
 @implementation SmalltalkMethod
-- (void) setSignature:(NSString*)aSignature
++ (id) methodWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+{
+	return [[[self alloc] initWithSignature: aSignature
+	                                 locals: locals
+	                             statements: statementList] autorelease];
+}
+- (id) initWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+{
+	MethodSymbolTable *st = [[MethodSymbolTable alloc] initWithLocals:locals args:[aSignature arguments]];
+	[self initWithSymbolTable: st];
+	RELEASE(st);
+	ASSIGN(signature, aSignature);
+	ASSIGN(statements, statementList);
+	return self;
+}
+- (void) setSignature:(MessageSend*)aSignature
 {
 	ASSIGN(signature, aSignature);
 }

@@ -14,6 +14,11 @@
   NSArray * ivars;
 }
 /**
+ * Return a new Subclass with the specified name, superclass and list of
+ * instance variables and methods.
+ */
++ (id) subclassWithName:(NSString*)aName superclass:(NSString*)aClass ivars:(NSArray*)anIvarList methods:(NSArray*)aMethodList;
+/**
  * Initialise a new Subclass with the specified name, superclass and list of
  * instance variables and methods.
  */

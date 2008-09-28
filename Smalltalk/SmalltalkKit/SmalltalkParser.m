@@ -1,5 +1,5 @@
 #import <EtoileFoundation/EtoileFoundation.h>
-#import "Parser.h"
+#import "SmalltalkParser.h"
 #include <ctype.h>
 #include "smalltalk.h"
 
@@ -44,10 +44,10 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 
 
 
-@implementation Parser (Tokenizer)
+@implementation SmalltalkParser
 /* From Lemon: */
 void *ParseAlloc(void *(*mallocProc)(size_t));
-void Parse(void *yyp, int yymajor, id yyminor ,Parser* p);
+void Parse(void *yyp, int yymajor, id yyminor, SmalltalkParser* p);
 void ParseFree(void *p, void (*freeProc)(void*));
 
 
@@ -63,7 +63,8 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		i = MAX(i,j-1);\
 	}
 //#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
-#define CHARCASE(letter, symbol) case letter: CALL_PARSER(symbol, @"char"); break;
+#define CHARCASE(letter, token) case letter: CALL_PARSER(token, @"char"); break;
+#define BINARYCASE(letter, msg) case letter: CALL_PARSER(BINARY, msg); break;
 
 - (AST*) parseString:(NSString*)s
 {
@@ -99,9 +100,15 @@ void ParseFree(void *p, void (*freeProc)(void*));
 			{
 				CALL_PARSER(EXTEND, word);
 			}
+			else if(':' == c)
+			{
+				j++;
+				word = WORD_TOKEN;
+				CALL_PARSER(KEYWORD, word);
+			}
 			else
 			{
-			CALL_PARSER(WORD, word);
+				CALL_PARSER(WORD, word);
 			}
 		})
 		else if (isspace(c))
@@ -118,15 +125,17 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		}
 		else if ('"' == c && i<[s length] - 2)
 		{
-			j = i + 1;
-			do
+			c=CHAR(++i);
+			for(j=i ; j<[s length]-1 && '"' != c ; c=CHAR(++j))
 			{
-				c=CHAR(++j);
-			} while (j<[s length]-1 && '"' != c);
-			i++;
+				if (c == '\n')
+				{
+					line++;
+					lineStart = j;
+				}
+			}
 			CALL_PARSER(COMMENT, WORD_TOKEN);
-			j++;
-			i = MAX(i,j-1);
+			i = j;
 		}
 		else if ('\'' == c && i<[s length] - 2)
 		{
@@ -152,23 +161,19 @@ void ParseFree(void *p, void (*freeProc)(void*));
 				CHARCASE(':', COLON)
 				CHARCASE('.', STOP)
 				CHARCASE('=', EQ)
-				CHARCASE('(', LBRACK)
-				CHARCASE(')', RBRACK)
+				CHARCASE('(', LPAREN)
+				CHARCASE(')', RPAREN)
 				CHARCASE('[', LSQBRACK)
 				CHARCASE(']', RSQBRACK)
 				CHARCASE('{', LBRACE)
 				CHARCASE('}', RBRACE)
 				CHARCASE('^', RETURN)
-				case '+':
-				case '-':
-				case '/':
-				case '*':
-				case '<':
-				case '>':
-					j = i+1;
-					CALL_PARSER(WORD, WORD_TOKEN);
-					CALL_PARSER(COLON, @":");
-					break;
+				BINARYCASE('+', @"plus:")
+				BINARYCASE('-', @"sub:")
+				BINARYCASE('/', @"div:")
+				BINARYCASE('*', @"mul:")
+				BINARYCASE('<', @"isLessThan:")
+				BINARYCASE('>', @"isGreaterThan:")
 				case '#':
 					j = i++;
 					do
@@ -180,7 +185,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 					i = j;
 					break;
 				default:
-					NSLog(@"Weird character '%c' found on line %d", c,line);
+					NSLog(@"Weird character '%c' found on line %d", c, line);
 			}
 		}
 	}
@@ -204,10 +209,9 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	ParseFree(parser, free);
 	return delegate;
 }
-@end
 
-@implementation Parser
-//Method replaced by category
-//FIXME: Move the declaration of this into a category interface
-- (AST*) parseString:(NSString*)s { return nil; }
+- (void) setDelegate:(AST*)ast
+{
+	ASSIGN(delegate, ast);
+}
 @end

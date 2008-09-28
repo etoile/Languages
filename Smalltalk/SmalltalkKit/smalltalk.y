@@ -3,8 +3,6 @@ Parser definition file.  This uses LEMON (from the SQLite project), a public
 domain parser generator, to produce an Objective-C parser.
 */
 %include {
-#include <stdlib.h>
-#include <string.h>
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "AST.h"
 #import "ArrayExpr.h"
@@ -18,21 +16,21 @@ domain parser generator, to produce an Objective-C parser.
 #import "MessageSend.h"
 #import "Method.h"
 #import "Module.h"
-#import "Parser.h"
 #import "Return.h"
+#import "SmalltalkParser.h"
 #import "Subclass.h"
 #import "SymbolRef.h"
 }
 %token_prefix TOKEN_
 %token_type {id}
+%extra_argument {SmalltalkParser *p}
+%left BINARY EQ.
 %left WORD.
-%left EQ.
-%extra_argument {Parser* p}
 
 file ::= module(M).
 {
 	[M check];
-	p->delegate = M;
+	[p setDelegate:M];
 }
 
 module(M) ::= module(O) subclass(S).
@@ -45,80 +43,117 @@ module(M) ::= module(O) category(C).
 	[O addCategory:C];
 	M = O;
 }
+module(M) ::= module(O) comment.
+{
+	M = O;
+}
 module(M) ::= .
 {
-	M = [CompilationUnit new];
+	M = [[[CompilationUnit alloc] init] autorelease];
 }
 
 subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK local_list(L) method_list(M) RSQBRACK.
 {
-	S = [[Subclass alloc] initWithName:N superclass:C ivars:L methods:M];
+	S = [Subclass subclassWithName:N superclass:C ivars:L methods:M];
 }
 
-method_list(L) ::= method_list(A) method(M).
+category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
 {
-	if (L == nil)
-	[A addObject:M];
-	L = A;
+	D = [CategoryDef categoryWithClass:C methods:M];
+}
+
+local_list(L) ::= BAR locals(T) BAR. 
+{
+	L = T;
+}
+local_list ::= .
+
+locals(L) ::= locals(T) WORD(W).
+{
+	[T addObject:W];
+	L = T;
+}
+locals(L) ::= .
+{
+	L = [NSMutableArray array];
+}
+
+method_list(L) ::= method_list(T) method(M).
+{
+	[T addObject:M];
+	L = T;
+}
+method_list(L) ::= method_list(T) comment.
+{
+	L = T;
 }
 method_list(L) ::= .
 {
 	L = [NSMutableArray array];
 }
 
-category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
+method(M) ::= signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
 {
-	D = [[[CategoryDef alloc] initWithClass:C methods:M] autorelease];
+	M = [SmalltalkMethod methodWithSignature:S locals:L statements:E];
 }
 
-method(M) ::= messageSignature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
+signature(S) ::= WORD(M).
 {
-	MethodSymbolTable *ST = [[MethodSymbolTable alloc] initWithLocals:L args:[(MessageSend*)S arguments]];
-	SmalltalkMethod *Meth = [[[SmalltalkMethod alloc] initWithSymbolTable:ST] autorelease];
-	[ST release];
-	[Meth setSignature:S];
-	Meth->statements = E;
-	M = Meth;
-}
-
-messageSignature(S) ::= WORD(M).
-{
-	S = [[MessageSend alloc] init];
+	S = [[[MessageSend alloc] init] autorelease];
 	[S addSelectorComponent:M];
 }
-messageSignature(M) ::= method_signature_with_arguments(A).
+signature(S) ::= keyword_signature(M).
 {
-	M = A;
+	S = M;
 }
-method_signature_with_arguments(M) ::= method_signature_with_arguments(N) WORD(S) COLON WORD(E).
+keyword_signature(S) ::= keyword_signature(M) KEYWORD(K) WORD(E).
 {
-	[N addArgument:E];
-	[N addSelectorComponent:S];
-	[N addSelectorComponent:@":"];
-	M = N;
+	S = M;
+	[S addSelectorComponent:K];
+	[S addArgument:E];
 }
-method_signature_with_arguments(M) ::= WORD(S) COLON WORD(E).
+keyword_signature(S) ::= KEYWORD(K) WORD(E).
 { 
-	M = [[MessageSend alloc] init];
-	[M addArgument:E];
-	[M addSelectorComponent:S];
-	[M addSelectorComponent:@":"];
+	S = [[[MessageSend alloc] init] autorelease];
+	[S addSelectorComponent:K];
+	[S addArgument:E];
 }
 
-local_list(LL) ::= BAR locals(L) BAR. 
+statement_list(L) ::= statement(S) STOP statement_list(T).
 {
-	LL = L;
+	[T insertObject:S atIndex:0];
+	L = T;
 }
-local_list ::= .
+statement_list(L) ::= comment(C) statement_list(T).
+{
+	[T insertObject:C atIndex:0];
+	L = T;
+}
+statement_list(L) ::= statement(S).
+{
+	L = [NSMutableArray arrayWithObject:S];
+}
+statement_list(L) ::= .
+{
+	L = [NSMutableArray array];
+}
 
-locals(L) ::= locals(LL) WORD(W).
+comment(S) ::= COMMENT(C).
 {
-  [LL addObject:W];
-  L = LL;
+	S = [Comment commentForString:C];
 }
-locals(L) ::= .
+
+statement(S) ::= expression(E).
 {
-  L = [NSMutableArray array];
+	S = E;
+}
+statement(S) ::= RETURN expression(E).
+{
+	S = [Return returnWithExpr:E];
+}
+statement(S) ::= WORD(T) COLON EQ expression(E).
+{
+	S = [AssignExpr assignWithTarget:[DeclRef reference:T] expr:E];
 }
 
 %syntax_error 
@@ -126,172 +161,109 @@ locals(L) ::= .
 	[NSException raise:@"ParserError" format:@"Parsing failed"];
 }
 
-%type statement {AST*}
-statement_list(LL) ::= statement_list(L) statement(S).
+expression(E) ::= keyword_expression(K).
 {
-  [L addObject:S];
-  LL = L;
+	E = K;
 }
-statement_list(L) ::= .
+expression(E) ::= simple_expression(S).
 {
-  L = [NSMutableArray array];
+	E = S;
 }
 
-statement(S) ::= assignment(A) STOP.
+keyword_expression(E) ::= keyword_expression(M) KEYWORD(K) simple_expression(A).
 {
-	S = A;
+	[M addSelectorComponent:K];
+	[M addArgument:A];
+	E = M;
 }
-statement(S) ::= expression(E) STOP.
+keyword_expression(M) ::= simple_expression(T) KEYWORD(K) simple_expression(A).
 {
-	S = E;
-}
-statement(S) ::= return(R) STOP.
-{
-	S = R;
-}
-statement(S) ::= COMMENT(C).
-{
-	S = [Comment commentForString:C];
-}
-statement ::= STOP.
-
-return(R) ::= RETURN expression(E).
-{
-	R = [[Return alloc] initWithExpr:E];
-}
-
-message_send(S) ::= expression(T) message(M).
-{
+	M = [[[MessageSend alloc] init] autorelease];
 	[M setTarget:T];
-	S = M;
+	[M addSelectorComponent:K];
+	[M addArgument:A];
 }
 
-message(M) ::= message_with_arguments(A).
+simple_expression(E) ::= WORD(V).
 {
-	M = A;
+	E = [DeclRef reference:V];
 }
-message(M) ::= WORD(S).
+simple_expression(E) ::= SYMBOL(S).
 {
-	M = [[[MessageSend alloc] init] autorelease];
-	[M addSelectorComponent:S];
+	E = [SymbolRef reference:S];
 }
-
-
-//message_with_arguments(M) ::= WORD(S) COLON expression(E) message_with_arguments(N).
-message_with_arguments(M) ::= message_with_arguments(N) WORD(S) COLON expression(E).
+simple_expression(E) ::= STRING(S).
 {
-	[N addArgument:E];
-	[N addSelectorComponent:S];
-	[N addSelectorComponent:@":"];
-	M = N;
+	E = [StringLiteral literalFromString:S];
 }
-message_with_arguments(M) ::= WORD(S) COLON expression(E).
-{ 
-	M = [[[MessageSend alloc] init] autorelease];
-	[M addArgument:E];
-	[M addSelectorComponent:S];
-	[M addSelectorComponent:@":"];
+simple_expression(E) ::= NUMBER(N).
+{
+	E = [NumberLiteral literalFromString:N];
 }
-// Comparison
-message_with_arguments(E) ::= EQ EQ expression(R).
+simple_expression(E) ::= AT WORD(S).
+{
+	E = [NumberLiteral literalFromSymbol:S];
+}
+simple_expression(E) ::= simple_expression(L) WORD(S).
 {
 	E = [[[MessageSend alloc] init] autorelease];
+	[E setTarget:L];
+	[E addSelectorComponent:S];
+}
+simple_expression(E) ::= simple_expression(L) BINARY(S) simple_expression(R).
+{
+	E = [[[MessageSend alloc] init] autorelease];
+	[E setTarget:L];
+	[E addSelectorComponent:S];
+	[E addArgument:R];
+}
+simple_expression(E) ::= simple_expression(L) EQ simple_expression(R).
+{
+	E = [[[MessageSend alloc] init] autorelease];
+	[E setTarget:L];
 	[E addSelectorComponent:@"isEqual:"];
 	[E addArgument:R];
 }
-assignment(A) ::= WORD(T) COLON EQ expression(E).
+simple_expression(E) ::= simple_expression(L) EQ EQ simple_expression(R).
 {
-	DeclRef * declref = [[DeclRef alloc] init];
-	declref->symbol = T;
-	AssignExpr *AE = [AssignExpr new];
-	AE->target = declref;
-	AE->expr = E;
-	A = AE;
+	E = [Compare compare:L to:R];
 }
-
-expression(E) ::= LBRACK expression(X) RBRACK.
+simple_expression(E) ::= LPAREN expression(X) RPAREN.
 {
 	[X setBracketed:YES];
 	E = X;
 }
-
-expression(E) ::= WORD(V).
-{
-	DeclRef * declref = [[[DeclRef alloc] init] autorelease];
-	declref->symbol = V;
-	E = declref;
-}
-
-expression(E) ::= SYMBOL(S).
-{
-	SymbolRef *symbolRef = [[[SymbolRef alloc] init] autorelease];
-	symbolRef->symbol = S;
-	E = symbolRef;
-}
-
-expression(E) ::= block(B).
-{
-	E = B;
-}
-expression(E) ::= message_send(M).
-{
-	E = M;
-}
-expression(E) ::= STRING(N).
-{
-	E = [StringLiteral literalFromString:N];
-}
-expression(E) ::= NUMBER(N).
-{
-	E = [NumberLiteral literalFromString:N];
-}
-expression(E) ::= AT WORD(W).
-{
-	E = [NumberLiteral literalFromSymbol:W];
-}
-expression(E) ::= LBRACE expression_list(L).
+simple_expression(E) ::= LBRACE expression_list(L) RBRACE.
 {
 	E = [ArrayExpr arrayWithElements:L];
 }
-expression_list(L) ::= expression(E) STOP expression_list(T).
+simple_expression(E) ::= LSQBRACK argument_list(A) statement_list(S) RSQBRACK.
 {
-	[T addObject:E];
+	//FIXME: block locals
+	E = [BlockExpr blockWithArguments:A locals:nil statements:S];
+}
+
+argument_list(L) ::= COLON WORD(A) argument_list(T).
+{
+	[T insertObject:A atIndex:0];
 	L = T;
 }
-expression_list(L) ::= expression(E) STOP RBRACE.
+argument_list(L) ::= BAR.
+{
+	L = [NSMutableArray array];
+}
+argument_list ::= .
+
+expression_list(L) ::= expression(E) STOP expression_list(T).
+{
+	[T insertObject:E atIndex:0];
+	L = T;
+}
+expression_list(L) ::= expression(E).
 {
 	L = [NSMutableArray arrayWithObject:E];
 }
-expression_list(L) ::= expression(E) RBRACE.
+expression_list(L) ::= .
 {
-	L = [NSMutableArray arrayWithObject:E];
-}
-expression(E) ::= expression(L) EQ expression(R).
-{
-  E = [Compare compare:L to:R];
-}
-
-block(B) ::= LSQBRACK argument_list(A)  statement_list(S) RSQBRACK.
-{
-//FIXME: block locals
-	BlockSymbolTable *ST = [[BlockSymbolTable alloc] initWithLocals:nil args:A];
-	B = [[[BlockExpr alloc] initWithSymbolTable:ST] autorelease];
-	[ST release];
-	[B setStatements:S];
-}
-block(B) ::= LSQBRACK statement_list(S) RSQBRACK.
-{
-	BlockSymbolTable *ST = [[BlockSymbolTable alloc] init];
-	B = [[[BlockExpr alloc] initWithSymbolTable:ST] autorelease];
-	[B setStatements:S];
-}
-
-argument_list(A) ::= COLON WORD(H) argument_list(T).
-{
-	[T addObject:H];
-	A = T;
-}
-argument_list(A) ::= BAR.
-{
-	A = [NSMutableArray array];
+	L = [NSMutableArray array];
 }

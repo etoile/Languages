@@ -22,6 +22,17 @@ static char *ReleaseTypes;
 		strdup([[NSObject instanceMethodSignatureForSelector:@selector(release)]
 		        _methodTypes]);
 }
++ (id) assignWithTarget:(DeclRef*)aTarget expr:(AST*)expression
+{
+	return [[[self alloc] initWithTarget:aTarget expr:expression] autorelease];
+}
+- (id) initWithTarget:(DeclRef*)aTarget expr:(AST*)expression
+{
+	SELFINIT;
+	ASSIGN(target, aTarget);
+	ASSIGN(expr, expression);
+	return self;
+}
 - (void) check
 {
 	[expr setParent:self];

@@ -33,9 +33,9 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	MessageSend.m\
 	Method.m\
 	Module.m\
-	Parser.m\
 	Return.m\
 	SmalltalkCompiler.m\
+	SmalltalkParser.m\
 	Subclass.m\
 	SymbolRef.m\
 	SymbolTable.m
@@ -56,10 +56,10 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	MessageSend.h\
 	Method.h\
 	Module.h\
-	Parser.h\
 	Return.h\
 	SmalltalkCompiler.h\
 	SmalltalkKit.h\
+	SmalltalkParser.h\
 	Subclass.h\
 	SymbolRef.h\
 	SymbolTable.h

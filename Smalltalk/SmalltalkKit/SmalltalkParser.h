@@ -1,13 +1,11 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "AST.h"
-#import "SymbolTable.h"
 
 /**
  * Smalltalk parser class.  This class implements a tokeniser and calls a
  * parser created using the Lemon parser generator.
  */
-@interface Parser : NSObject {
-@public
+@interface SmalltalkParser : NSObject {
   AST *delegate;
 }
 /**
@@ -15,4 +13,9 @@
  * the program.
  */
 - (AST*) parseString:(NSString*)s;
+/**
+ * Used by the Lemon implementation to feed the generated AST back so the
+ * Parser can return it.
+ */
+- (void) setDelegate:(AST*)ast;
 @end

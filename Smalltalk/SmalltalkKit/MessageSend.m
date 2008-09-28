@@ -2,7 +2,6 @@
 #import "DeclRef.h"
 
 static Class NSStringClass = Nil;
-static NSDictionary *MangledSelectors = nil;
 static NSMutableDictionary *SelectorConflicts = nil;
 
 
@@ -20,13 +19,6 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		return;
 	}
 	NSStringClass = [NSString class];
-	MangledSelectors = [D(
-			@"plus:", @"+:",
-			@"isLessThan:", @"<:",
-			@"isGreaterThan:", @">:",
-			@"sub:", @"-:",
-			@"div:", @"/:",
-			@"mul:", @"*:") retain];
 	// Look up potential selector conflicts.
 	void *state = NULL;
 	Class nextClass;
@@ -137,8 +129,8 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		if (i<[sel count])
 		{
+			[str appendString:@" "];
 			[str appendString:[sel objectAtIndex:i]];
-			printf(" %s", [[sel objectAtIndex:i] UTF8String]);
 		}
 		[str appendFormat:@": %@", [arguments objectAtIndex:i]];
 	}
@@ -154,16 +146,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	void * receiver;
 	receiver = [target compileWith:aGenerator];
-	NSString * mangledSelector = [MangledSelectors objectForKey:selector];
-	const char *sel;
-	if (nil == mangledSelector)
-	{
-		sel = [selector UTF8String];
-	}
-	else
-	{
-		sel = [mangledSelector UTF8String];
-	}
+	const char *sel = [selector UTF8String];
 	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
 	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
 	// FIXME: This is a really ugly hack.

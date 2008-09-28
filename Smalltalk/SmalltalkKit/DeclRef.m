@@ -4,11 +4,15 @@
 @end
 
 @implementation DeclRef
-+ (DeclRef*) refForDecl:(NSString*)sym
++ (id) reference:(NSString*)sym
 {
-	DeclRef *ref = [[[DeclRef alloc] init] autorelease];
-	ref->symbol = sym;
-	return ref;
+	return [[[self alloc] initWithSymbol: sym] autorelease];
+}
+- (id) initWithSymbol:(NSString*)sym
+{
+	SELFINIT;
+	ASSIGN(symbol, sym);
+	return self;
 }
 - (void) check
 {

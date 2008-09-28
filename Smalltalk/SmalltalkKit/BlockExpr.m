@@ -3,6 +3,21 @@
 
 // FIXME: This currently uses locals for arguments, which is completely wrong.
 @implementation BlockExpr 
++ (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+{
+	return [[[self alloc] initWithArguments: arguments
+	                                 locals: locals
+	                             statements: statementList] autorelease];
+}
+- (id) initWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+{
+	SELFINIT;
+	BlockSymbolTable *st = [[BlockSymbolTable alloc] initWithLocals:locals args:arguments];
+	[self initWithSymbolTable: st];
+	RELEASE(st);
+	ASSIGN(statements, statementList);
+	return self;
+}
 - (id) init
 {
 	SUPERINIT;
@@ -81,6 +96,7 @@
 	FOREACH(statements, statement, AST*)
 	{
 		[str appendString:[statement description]];
+		[str appendString:@".\n"];
 	}
 	[str appendString:@"]"];
 	return str;

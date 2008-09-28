@@ -8,8 +8,10 @@
   /** The name of the variable being referenced. */
 	NSString *symbol;
 }
-/** Construct a DeclRef for the specified symbol. */
-+ (DeclRef*) refForDecl:(NSString*)sym;
+/** Construct a reference for the specified symbol. */
++ (id) reference:(NSString*)sym;
+/** Initialise a reference for the specified symbol. */
+- (id) initWithSymbol:(NSString*)sym;
 @end
 
 /**
