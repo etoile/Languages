@@ -85,9 +85,9 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	volatile int line = 1;
 	volatile unsigned int j;
 	volatile unsigned int i;
-	int lineStart = 0;
+	unsigned lineStart = 0;
 	NS_DURING
-	for(i=0 ; i<sLength]; i++)
+	for(i=0 ; i<sLength; i++)
 	{
 		unichar c = [s characterAtIndex:i];
 		CASE(isalpha, isalnum, 
