@@ -53,7 +53,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 
 #define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
-#define WHILE(is) for(j=i ; j<[s length]-1 && is(c) ; c=CHAR(++j)) {}
+#define WHILE(is) for(j=i ; j<sLength-1 && is(c) ; c=CHAR(++j)) {}
 #define WORD_TOKEN substr(TokenClass, substrSel, NSMakeRange(i, j-i), s)
 #define CASE(start, end, function)\
 	if(start(c))\
@@ -68,6 +68,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 
 - (AST*) parseString:(NSString*)s
 {
+	unsigned sLength = [s length];
 	/* Cache some IMPs of methods we call a lot */
 	SEL charSel = @selector(characterAtIndex:);
 	SEL substrSel = @selector(tokenWithRange:inSource:);
@@ -86,7 +87,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	volatile unsigned int i;
 	int lineStart = 0;
 	NS_DURING
-	for(i=0 ; i<[s length] ; i++)
+	for(i=0 ; i<sLength]; i++)
 	{
 		unichar c = [s characterAtIndex:i];
 		CASE(isalpha, isalnum, 
@@ -113,7 +114,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		})
 		else if (isspace(c))
 		{
-			for(j=i ; j<[s length]-1 && isspace(c) ; c=CHAR(++j))
+			for(j=i ; j<sLength-1 && isspace(c) ; c=CHAR(++j))
 		   	{
 				if (c == '\n')
 				{
@@ -123,10 +124,10 @@ void ParseFree(void *p, void (*freeProc)(void*));
 			}
 			i = MAX(i,j-1);
 		}
-		else if ('"' == c && i<[s length] - 2)
+		else if ('"' == c && i<sLength - 2)
 		{
 			c=CHAR(++i);
-			for(j=i ; j<[s length]-1 && '"' != c ; c=CHAR(++j))
+			for(j=i ; j<sLength-1 && '"' != c ; c=CHAR(++j))
 			{
 				if (c == '\n')
 				{
@@ -137,13 +138,13 @@ void ParseFree(void *p, void (*freeProc)(void*));
 			CALL_PARSER(COMMENT, WORD_TOKEN);
 			i = j;
 		}
-		else if ('\'' == c && i<[s length] - 2)
+		else if ('\'' == c && i<sLength - 2)
 		{
 			j = i + 1;
 			do
 			{
 				c=CHAR(++j);
-			} while (j<[s length]-1 && '\'' != c);
+			} while (j<sLength-1 && '\'' != c);
 			i++;
 			CALL_PARSER(STRING, WORD_TOKEN);
 			j++;
@@ -179,7 +180,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 					do
 					{
 						c=CHAR(++j);
-					} while (j<[s length]-1 && !isspace(c));
+					} while (j<sLength-1 && !isspace(c));
 					CALL_PARSER(SYMBOL, WORD_TOKEN);
 					NSLog(@"Symbol: %@", WORD_TOKEN);
 					i = j;
