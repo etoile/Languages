@@ -89,7 +89,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	NS_DURING
 	for(i=0 ; i<sLength; i++)
 	{
-		unichar c = [s characterAtIndex:i];
+		unichar c = CHAR(i);
 		CASE(isalpha, isalnum, 
 		{
 			NSString * word = WORD_TOKEN;
@@ -104,8 +104,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 			else if(':' == c)
 			{
 				j++;
-				word = WORD_TOKEN;
-				CALL_PARSER(KEYWORD, word);
+				CALL_PARSER(KEYWORD, WORD_TOKEN);
 			}
 			else
 			{
