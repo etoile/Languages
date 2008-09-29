@@ -30,6 +30,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	Comment.m\
 	DeclRef.m\
 	Literal.m\
+	LKCompiler.m\
 	MessageSend.m\
 	Method.m\
 	Module.m\
@@ -53,6 +54,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	Comparison.h\
 	DeclRef.h\
 	Literal.h\
+	LKCompiler.h\
 	MessageSend.h\
 	Method.h\
 	Module.h\
