@@ -102,7 +102,7 @@ void CodeGenBlock::StoreBlockVar(Value *val, unsigned index, unsigned offset) {
   object = Builder.CreateLoad(object);
   if (offset > 0)
   {
-    Value *object = Builder.CreatePtrToInt(object, IntTy);
+    object = Builder.CreatePtrToInt(object, IntTy);
     object = Builder.CreateAdd(object, ConstantInt::get(IntTy, offset));
     object = Builder.CreateIntToPtr(object, PointerType::getUnqual(IdTy));
   }
