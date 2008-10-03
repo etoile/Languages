@@ -4,6 +4,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # etoile.make doesn't detect and handle such embedded project
 PROJECT_DIR = $(CURDIR)
 
+SUBPROJECTS = Support
 #
 # Library
 #
@@ -22,7 +23,8 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 
 
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++
+${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit \
+	-lSmalltalkSupport
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM flags
@@ -34,8 +36,9 @@ LD = g++
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc\
 	ObjCConstants.plist
 
+include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/framework.make
--include ../../../etoile.make
+-include ../../etoile.make
 
 smalltalk.m: smalltalk.y
 	@echo Generating parser...
