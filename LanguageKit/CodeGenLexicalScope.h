@@ -155,7 +155,7 @@ public:
    * Compare two pointers for equality.
    */
   Value *ComparePointers(Value *lhs, Value *rhs);
-  ~CodeGenLexicalScope() {
+  virtual ~CodeGenLexicalScope() {
     if (0 == Builder.GetInsertBlock()->getTerminator()) {
       SetReturn();
     }

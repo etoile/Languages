@@ -1,5 +1,11 @@
-#import "SmalltalkKit.h"
 #import <Foundation/Foundation.h>
+#import "LKCompiler.h"
+#import "AST.h"
+
+// Semi-formal protocol for parsers.
+@protocol LKParser
+- (AST*) parseString:(NSString*)aProgram;
+@end
 
 extern int DEBUG_DUMP_MODULES;
 @implementation LKCompiler

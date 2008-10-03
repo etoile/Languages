@@ -1,6 +1,6 @@
 #import <EtoileFoundation/EtoileFoundation.h>
-#import "AST.h"
 
+@class AST;
 /**
  * Smalltalk parser class.  This class implements a tokeniser and calls a
  * parser created using the Lemon parser generator.

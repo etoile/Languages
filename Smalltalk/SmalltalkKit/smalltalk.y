@@ -4,22 +4,8 @@ domain parser generator, to produce an Objective-C parser.
 */
 %include {
 #import <EtoileFoundation/EtoileFoundation.h>
-#import "AST.h"
-#import "ArrayExpr.h"
-#import "AssignExpr.h"
-#import "BlockExpr.h"
-#import "Category.h"
-#import "Comment.h"
-#import "Comparison.h"
-#import "DeclRef.h"
-#import "Literal.h"
-#import "MessageSend.h"
-#import "Method.h"
-#import "Module.h"
-#import "Return.h"
+#import <LanguageKit/LanguageKit.h>
 #import "SmalltalkParser.h"
-#import "Subclass.h"
-#import "SymbolRef.h"
 }
 %token_prefix TOKEN_
 %token_type {id}
