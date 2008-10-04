@@ -1,4 +1,6 @@
 #import <Foundation/NSObject.h>
+@class NSBundle;
+@class NSString;
 
 /**
  * Abstract class implementing a dynamic language compiler.  Concrete

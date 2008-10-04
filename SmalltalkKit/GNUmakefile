@@ -33,9 +33,6 @@ ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
 LD = g++
 
-${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc\
-	ObjCConstants.plist
-
 include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../etoile.make

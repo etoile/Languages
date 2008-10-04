@@ -1,4 +1,4 @@
-#import <SmalltalkKit/LKCompiler.h>
+#import <LanguageKit/LKCompiler.h>
 
 @interface SmalltalkCompiler : LKCompiler {}
 @end
