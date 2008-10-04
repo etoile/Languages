@@ -44,7 +44,6 @@ int main(int argc, char **argv)
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
 	clock_t c1 = clock();
-	[SmalltalkCompiler compileString:[NSString stringWithContentsOfFile:@"t1.st"]];
 	if (![SmalltalkCompiler compileString:Program])
 	{
 		NSLog(@"Failed to compile input.");
