@@ -43,3 +43,6 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 smalltalk.m: smalltalk.y
 	@echo Generating parser...
 	@lemon smalltalk.y ; mv smalltalk.c smalltalk.m
+
+clean::
+	@rm -f smalltalk.h smalltalk.m smalltalk.out
