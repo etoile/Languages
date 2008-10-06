@@ -32,7 +32,9 @@ ifeq ($(io), yes)
 endif
 
 ifeq ($(smalltalk), yes)
-	SUBPROJECTS += Smalltalk
+	SUBPROJECTS += LanguageKit 
+	SUBPROJECTS += SmalltalkKit
+	SUBPROJECTS += Compiler
 endif
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
