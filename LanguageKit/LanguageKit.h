@@ -7,7 +7,6 @@
 #import <LanguageKit/Comment.h>
 #import <LanguageKit/Comparison.h>
 #import <LanguageKit/DeclRef.h>
-#import <LanguageKit/LKAST.h>
 #import <LanguageKit/LKCompiler.h>
 #import <LanguageKit/Literal.h>
 #import <LanguageKit/MessageSend.h>
