@@ -68,7 +68,8 @@ ${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM flags
-LLVM_LIBS=all
+LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core debugger engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
+
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
 LD = g++

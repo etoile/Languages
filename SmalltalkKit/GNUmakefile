@@ -27,12 +27,6 @@ ${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit \
 	-lSmalltalkSupport
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
-# LLVM flags
-LLVM_LIBS=all
-${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
-LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
-LD = g++
-
 include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../etoile.make
