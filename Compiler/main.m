@@ -4,6 +4,24 @@
 #include <sys/resource.h>
 #import <SmalltalkKit/SmalltalkKit.h>
 
+static BOOL compileScript(NSString *script)
+{
+	if ([script length] > 2
+		&&
+		[[script substringToIndex:2] isEqualToString:@"#!"])
+	{
+		NSRange r = [script rangeOfString:@"\n"];
+		if (r.location == NSNotFound)
+		{
+			return NO;
+		}
+		else
+		{
+			script = [script substringFromIndex:r.location];
+		}
+	}
+	return [SmalltalkCompiler compileString:script];
+}
 
 int main(int argc, char **argv)
 {
@@ -44,7 +62,7 @@ int main(int argc, char **argv)
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
 	clock_t c1 = clock();
-	if (![SmalltalkCompiler compileString:Program])
+	if (!compileScript(Program))
 	{
 		NSLog(@"Failed to compile input.");
 		return 2;
@@ -70,7 +88,6 @@ int main(int argc, char **argv)
 				[className UTF8String]);
 		return 3;
 	}
-
 	c1 = clock();
 	[[tool new] run];
 	if ([[opts objectForKey:@"t"] boolValue])
