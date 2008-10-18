@@ -55,11 +55,6 @@
  */
 - (void) resolveScopeOf:(NSString*)aSymbol;
 /**
- * Checks whether a node is a valid RValue (i.e. something that can be turned
- * into a value).
- */
-- (void) checkRValue:(id) aChild;
-/**
  * Checks whether the specified node is a valid LValue (i.e. something that can
  * be assigned to).
  */

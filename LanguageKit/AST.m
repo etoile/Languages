@@ -96,12 +96,6 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 					format:@"Result of an expression (%@) may not be used as an l-value", aChild];
 	}
 }
-- (void) checkRValue:(id) aChild
-{
-	//FIXME: This does not need to be called always here.
-	[aChild setParent:self];
-	[aChild check];
-}
 - (void*) compileWith:(id<CodeGenerator>)aGenerator
 {
 	NSLog(@"Compiling...");
