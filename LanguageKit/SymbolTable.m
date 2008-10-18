@@ -102,7 +102,6 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	return invalid;
 }
 
-//FIXME: dealloc leaks.
 @end
 @implementation MethodSymbolTable
 - (id) initWithLocals:(NSMutableArray*)locals
@@ -146,6 +145,12 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 		return argument;
 	}
 	return invalid;
+}
+- (void) dealloc
+{
+	[localVariables release];
+	[arguments release];
+	[super dealloc];
 }
 @end
 @implementation BlockSymbolTable
@@ -206,6 +211,11 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	}
 	return external;
 }
+- (void) dealloc
+{
+	[promotedVars release];
+	[super dealloc];
+}
 @end
 @implementation SymbolTable
 // You can't insert global symbols in Smalltalk.  
@@ -258,5 +268,10 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 - (int) offsetOfIVar:(NSString*)aName
 {
 	return [enclosingScope offsetOfIVar:aName];
+}
+- (void) dealloc
+{
+	[enclosingScope release];
+	[super dealloc];
 }
 @end
