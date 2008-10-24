@@ -3,7 +3,7 @@
 /**
  * AST node representing a message send operation.
  */
-@interface MessageSend : AST {
+@interface LKMessageSend : LKAST {
   /** Receiver of the message. */
 	id target;
   /** The message selector. */

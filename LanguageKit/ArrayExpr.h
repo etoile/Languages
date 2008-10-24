@@ -1,6 +1,6 @@
 #import "AST.h"
 
-@interface ArrayExpr : AST {
+@interface LKArrayExpr : LKAST {
   NSArray *elements;
 }
 + (id) arrayWithElements:(NSArray*)anArray;

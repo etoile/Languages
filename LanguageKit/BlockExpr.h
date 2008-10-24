@@ -3,7 +3,7 @@
 /**
  * AST node representing a block closure expression.
  */
-@interface BlockExpr : AST {
+@interface LKBlockExpr : LKAST {
 /** Counter used when binding variables. */
   int nextClosed;
 /** Lost of statements in this node. */

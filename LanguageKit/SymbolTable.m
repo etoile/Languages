@@ -2,7 +2,7 @@
 
 static NSMutableDictionary *NewClasses;
 
-static SymbolScope lookupUnscopedSymbol(NSString *aName)
+static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	if ([aName isEqualToString:@"nil"]
 	   || [aName isEqualToString:@"Nil"]
@@ -18,12 +18,12 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	return invalid;
 }
 
-@implementation ObjectSymbolTable
+@implementation LKObjectSymbolTable
 + (void) initialize
 {
 	NewClasses = [[NSMutableDictionary alloc] init];
 }
-+ (SymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass
++ (LKSymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass
 {
 	return [NewClasses objectForKey:aClass];
 }
@@ -35,9 +35,9 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	[NewClasses setObject:self forKey:aClass];
 }
-- (ObjectSymbolTable*) initWithMap:(NSMapTable*)map 
-							  next:(int) next 
-							inZone:(NSZone*)aZone
+- (LKObjectSymbolTable*) initWithMap:(NSMapTable*)map 
+                                next:(int) next 
+                              inZone:(NSZone*)aZone
 {
 	SELFINIT;
 	instanceVariables = NSCopyMapTableWithZone(map, aZone);
@@ -46,12 +46,12 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 - (id) copyWithZone:(NSZone*)aZone
 {
-	return [[ObjectSymbolTable allocWithZone:aZone] 
-		initWithMap:instanceVariables
-			   next:nextOffset
-			 inZone:aZone];
+	return [[LKObjectSymbolTable allocWithZone:aZone] 
+	                               initWithMap:instanceVariables
+	                                      next:nextOffset
+	                                    inZone:aZone];
 }
-- (SymbolTable*) initForClass:(Class)aClass 
+- (LKSymbolTable*) initForClass:(Class)aClass 
 {
 	SELFINIT;
 	instanceVariables = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 10);
@@ -93,7 +93,7 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	nextOffset += sizeof(id);
 }
 
-- (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
+- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
 	if(NSMapMember(instanceVariables, aName, 0, 0))
 	{
@@ -103,7 +103,7 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 
 @end
-@implementation MethodSymbolTable
+@implementation LKMethodSymbolTable
 - (id) initWithLocals:(NSMutableArray*)locals
                  args:(NSMutableArray*)args
 {
@@ -134,7 +134,7 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	return arguments;
 }
-- (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
+- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
 	if ([localVariables containsObject:aName])
 	{
@@ -153,7 +153,7 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	[super dealloc];
 }
 @end
-@implementation BlockSymbolTable
+@implementation LKBlockSymbolTable
 - (id) init
 {
 	SUPERINIT;
@@ -173,12 +173,12 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	[promotedVars setObject:aLocation forKey:aName];
 }
-- (SymbolScope) scopeOfExternal:(NSString*)aSymbol
+- (LKSymbolScope) scopeOfExternal:(NSString*)aSymbol
 {
-	SymbolTable *nextscope = enclosingScope;
+	LKSymbolTable *nextscope = enclosingScope;
 	while (nextscope) 
 	{
-		SymbolScope result = [nextscope scopeOfSymbol:aSymbol];
+		LKSymbolScope result = [nextscope scopeOfSymbol:aSymbol];
 		if (result != invalid)
 		{
 			return result;
@@ -187,7 +187,7 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	}
 	return invalid;
 }
-- (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
+- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
 	switch (lookupUnscopedSymbol(aName))
 	{
@@ -217,10 +217,10 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 	[super dealloc];
 }
 @end
-@implementation SymbolTable
+@implementation LKSymbolTable
 // You can't insert global symbols in Smalltalk.  
 - (void) addSymbol:(NSString*)aSymbol {}
-- (void) setScope:(SymbolTable*)scope
+- (void) setScope:(LKSymbolTable*)scope
 {
 	ASSIGN(enclosingScope, scope);
 }
@@ -228,17 +228,17 @@ static SymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	return [enclosingScope indexOfArgument:aName];
 }
-- (SymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
+- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
 	return lookupUnscopedSymbol(aName);
 }
 
-- (SymbolScope) scopeOfSymbol:(NSString*)aName
+- (LKSymbolScope) scopeOfSymbol:(NSString*)aName
 {
-	SymbolTable *scope = self;
+	LKSymbolTable *scope = self;
 	while (scope) 
 	{
-		SymbolScope result = [scope scopeOfSymbolNonrecursive:aName];
+		LKSymbolScope result = [scope scopeOfSymbolNonrecursive:aName];
 		if (result != invalid)
 		{
 			return result;

@@ -1,14 +1,20 @@
 #import "Subclass.h"
 
-@implementation Subclass
-+ (id) subclassWithName:(NSString*)aName superclass:(NSString*)aClass ivars:(NSArray*)anIvarList methods:(NSArray*)aMethodList
+@implementation LKSubclass
++ (id) subclassWithName:(NSString*)aName
+             superclass:(NSString*)aClass
+                  ivars:(NSArray*)anIvarList
+                methods:(NSArray*)aMethodList
 {
 	return [[[self alloc] initWithName: aName
 	                        superclass: aClass
 	                             ivars: anIvarList
 	                           methods: aMethodList] autorelease];
 }
-- (id) initWithName:(NSString*)aName superclass:(NSString*)aClass ivars:(NSArray*)anIvarList methods:(NSArray*)aMethodList
+- (id) initWithName:(NSString*)aName
+         superclass:(NSString*)aClass
+              ivars:(NSArray*)anIvarList
+            methods:(NSArray*)aMethodList
 {
 	SELFINIT;
 	ASSIGN(classname, aName);
@@ -23,8 +29,8 @@
 	//Construct symbol table.
 	if (Nil == SuperClass)
 	{
-		symbols = [[ObjectSymbolTable symbolTableForNewClassNamed:superclass]
-		   	copy];
+		symbols = 
+			[[LKObjectSymbolTable symbolTableForNewClassNamed:superclass] copy];
 		if (symbols == nil)
 		{
 			[NSException raise:@"SemanticError"
@@ -34,7 +40,7 @@
 	}
 	else
 	{
-		symbols = [[ObjectSymbolTable alloc] initForClass:SuperClass];
+		symbols = [[LKObjectSymbolTable alloc] initForClass:SuperClass];
 	}
 	if (Nil != NSClassFromString(classname))
 	{
@@ -46,8 +52,8 @@
 	{
 		[symbols addSymbol:ivar];
 	}
-    [(ObjectSymbolTable*)symbols registerNewClass:classname];
-	FOREACH(methods, method, AST*)
+    [(LKObjectSymbolTable*)symbols registerNewClass:classname];
+	FOREACH(methods, method, LKAST*)
 	{
 		[method setParent:self];
 		[method check];
@@ -66,14 +72,14 @@
 		}
 		[str appendString:@"|\n"];
 	}
-	FOREACH(methods, method, AST*)
+	FOREACH(methods, method, LKAST*)
 	{
 		[str appendString:[method description]];
 	}
 	[str appendString:@"\n]"];
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	const char *ivarNames[[ivars count] + 1];
 	const char *ivarTypes[[ivars count] + 1];
@@ -93,7 +99,7 @@
                  withIvarNames:ivarNames
                          types:ivarTypes
                        offsets:ivarOffsets];
-	FOREACH(methods, method, AST*)
+	FOREACH(methods, method, LKAST*)
 	{
 		[method compileWith:aGenerator];
 	}
@@ -123,11 +129,11 @@
 		[aGenerator endMethod];
 	}
 	[aGenerator endClass];
-	if ([[AST code] objectForKey: classname] == nil)
+	if ([[LKAST code] objectForKey: classname] == nil)
 	{
-		[[AST code] setObject: [NSMutableArray array] forKey: classname];
+		[[LKAST code] setObject: [NSMutableArray array] forKey: classname];
 	}
-	[[[AST code] objectForKey: classname] addObject: self];
+	[[[LKAST code] objectForKey: classname] addObject: self];
 	return NULL;
 }
 @end

@@ -35,17 +35,17 @@ module(M) ::= module(O) comment.
 }
 module(M) ::= .
 {
-	M = [[[CompilationUnit alloc] init] autorelease];
+	M = [[[LKCompilationUnit alloc] init] autorelease];
 }
 
 subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK local_list(L) method_list(M) RSQBRACK.
 {
-	S = [Subclass subclassWithName:N superclass:C ivars:L methods:M];
+	S = [LKSubclass subclassWithName:N superclass:C ivars:L methods:M];
 }
 
 category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
 {
-	D = [CategoryDef categoryWithClass:C methods:M];
+	D = [LKCategoryDef categoryWithClass:C methods:M];
 }
 
 local_list(L) ::= BAR locals(T) BAR. 
@@ -80,12 +80,12 @@ method_list(L) ::= .
 
 method(M) ::= signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
 {
-	M = [SmalltalkMethod methodWithSignature:S locals:L statements:E];
+	M = [LKMethod methodWithSignature:S locals:L statements:E];
 }
 
 signature(S) ::= WORD(M).
 {
-	S = [[[MessageSend alloc] init] autorelease];
+	S = [[[LKMessageSend alloc] init] autorelease];
 	[S addSelectorComponent:M];
 }
 signature(S) ::= keyword_signature(M).
@@ -100,7 +100,7 @@ keyword_signature(S) ::= keyword_signature(M) KEYWORD(K) WORD(E).
 }
 keyword_signature(S) ::= KEYWORD(K) WORD(E).
 { 
-	S = [[[MessageSend alloc] init] autorelease];
+	S = [[[LKMessageSend alloc] init] autorelease];
 	[S addSelectorComponent:K];
 	[S addArgument:E];
 }
@@ -126,7 +126,7 @@ statement_list(L) ::= .
 
 comment(S) ::= COMMENT(C).
 {
-	S = [Comment commentForString:C];
+	S = [LKComment commentForString:C];
 }
 
 statement(S) ::= expression(E).
@@ -135,11 +135,11 @@ statement(S) ::= expression(E).
 }
 statement(S) ::= RETURN expression(E).
 {
-	S = [Return returnWithExpr:E];
+	S = [LKReturn returnWithExpr:E];
 }
 statement(S) ::= WORD(T) COLON EQ expression(E).
 {
-	S = [AssignExpr assignWithTarget:[DeclRef reference:T] expr:E];
+	S = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:E];
 }
 
 %syntax_error 
@@ -164,7 +164,7 @@ keyword_expression(E) ::= keyword_expression(M) KEYWORD(K) simple_expression(A).
 }
 keyword_expression(M) ::= simple_expression(T) KEYWORD(K) simple_expression(A).
 {
-	M = [[[MessageSend alloc] init] autorelease];
+	M = [[[LKMessageSend alloc] init] autorelease];
 	[M setTarget:T];
 	[M addSelectorComponent:K];
 	[M addArgument:A];
@@ -172,47 +172,47 @@ keyword_expression(M) ::= simple_expression(T) KEYWORD(K) simple_expression(A).
 
 simple_expression(E) ::= WORD(V).
 {
-	E = [DeclRef reference:V];
+	E = [LKDeclRef reference:V];
 }
 simple_expression(E) ::= SYMBOL(S).
 {
-	E = [SymbolRef reference:S];
+	E = [LKSymbolRef reference:S];
 }
 simple_expression(E) ::= STRING(S).
 {
-	E = [StringLiteral literalFromString:S];
+	E = [LKStringLiteral literalFromString:S];
 }
 simple_expression(E) ::= NUMBER(N).
 {
-	E = [NumberLiteral literalFromString:N];
+	E = [LKNumberLiteral literalFromString:N];
 }
 simple_expression(E) ::= AT WORD(S).
 {
-	E = [NumberLiteral literalFromSymbol:S];
+	E = [LKNumberLiteral literalFromSymbol:S];
 }
 simple_expression(E) ::= simple_expression(L) WORD(S).
 {
-	E = [[[MessageSend alloc] init] autorelease];
+	E = [[[LKMessageSend alloc] init] autorelease];
 	[E setTarget:L];
 	[E addSelectorComponent:S];
 }
 simple_expression(E) ::= simple_expression(L) BINARY(S) simple_expression(R).
 {
-	E = [[[MessageSend alloc] init] autorelease];
+	E = [[[LKMessageSend alloc] init] autorelease];
 	[E setTarget:L];
 	[E addSelectorComponent:S];
 	[E addArgument:R];
 }
 simple_expression(E) ::= simple_expression(L) EQ simple_expression(R).
 {
-	E = [[[MessageSend alloc] init] autorelease];
+	E = [[[LKMessageSend alloc] init] autorelease];
 	[E setTarget:L];
 	[E addSelectorComponent:@"isEqual:"];
 	[E addArgument:R];
 }
 simple_expression(E) ::= simple_expression(L) EQ EQ simple_expression(R).
 {
-	E = [Compare compare:L to:R];
+	E = [LKCompare compare:L to:R];
 }
 simple_expression(E) ::= LPAREN expression(X) RPAREN.
 {
@@ -221,12 +221,12 @@ simple_expression(E) ::= LPAREN expression(X) RPAREN.
 }
 simple_expression(E) ::= LBRACE expression_list(L) RBRACE.
 {
-	E = [ArrayExpr arrayWithElements:L];
+	E = [LKArrayExpr arrayWithElements:L];
 }
 simple_expression(E) ::= LSQBRACK argument_list(A) statement_list(S) RSQBRACK.
 {
 	//FIXME: block locals
-	E = [BlockExpr blockWithArguments:A locals:nil statements:S];
+	E = [LKBlockExpr blockWithArguments:A locals:nil statements:S];
 }
 
 argument_list(L) ::= COLON WORD(A) argument_list(T).

@@ -1,6 +1,6 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 
-@class AST;
+@class LKAST;
 
 /** 
  * Enumerated type representing the scope of a variable.
@@ -15,17 +15,17 @@ typedef	enum
 	object,   // Instance variable
 	global,   // Global (only clas names)
   builtin   // Variable with special semantics (e.g. self / super)
-} SymbolScope;
+} LKSymbolScope;
 
 /**
  * Symbol table.  Base class, with subclasses for each scope.
  */
-@interface SymbolTable : NSObject {
+@interface LKSymbolTable : NSObject {
   /** Name to type string mappings. */
 	NSDictionary *types;
 @public
   /** The parent scope for this symbol table. */
-	SymbolTable *enclosingScope;
+	LKSymbolTable *enclosingScope;
 }
 /**
  * Add a symbol to this table.
@@ -35,7 +35,7 @@ typedef	enum
  * Returns the scope of a specified symbol.  Calls the non-recursive variant in
  * each of the parent scopes until it reaches the top of the AST.
  */
-- (SymbolScope) scopeOfSymbol:(NSString*)aName;
+- (LKSymbolScope) scopeOfSymbol:(NSString*)aName;
 /**
  * Returns the type encoding for a specified symbol.
  */
@@ -43,7 +43,7 @@ typedef	enum
 /**
  * Sets the parent for this symbol table.
  */
-- (void) setScope:(SymbolTable*)enclosingScope;
+- (void) setScope:(LKSymbolTable*)enclosingScope;
 /**
  * Returns the index of a local variable, recursively navigating up the tree
  * until it encounters the definition.
@@ -64,7 +64,7 @@ typedef	enum
 /**
  * Symbol table for a method.
  */
-@interface MethodSymbolTable : SymbolTable {
+@interface LKMethodSymbolTable : LKSymbolTable {
   /** Local variables declared in the current scope. */
 	NSMutableArray * localVariables;
   /** Arguments in the current scope. */
@@ -88,7 +88,7 @@ typedef	enum
 /**
  * Symbol table for a block.
  */
-@interface BlockSymbolTable : MethodSymbolTable {
+@interface LKBlockSymbolTable : LKMethodSymbolTable {
   /** Bound variables in this block.  References to these are promoted to
    * indirect references via the block object. */
   NSMutableDictionary *promotedVars;
@@ -100,7 +100,7 @@ typedef	enum
 /**
  * The scope of an externally-referenced variable.
  */
-- (SymbolScope) scopeOfExternal:(NSString*)aSymbol;
+- (LKSymbolScope) scopeOfExternal:(NSString*)aSymbol;
 /**
  * The location inside the block object for indirect access to promoted
  * variables.
@@ -116,7 +116,7 @@ typedef	enum
 /**
  * Symbol table for an object.  Contains instance variables.
  */
-@interface ObjectSymbolTable : SymbolTable {
+@interface LKObjectSymbolTable : LKSymbolTable {
   /** Instance variables for this object. */
 	NSMapTable * instanceVariables;
   /** Next offset at which an ivar can be added. */
@@ -135,9 +135,9 @@ typedef	enum
  * Initialise for the specified class.  All instance variables in the specified
  * class will be imported.
  */
-- (SymbolTable*) initForClass:(Class)aClass;
+- (LKSymbolTable*) initForClass:(Class)aClass;
 /**
  * Returns the symbol table for a newly-created class.
  */
-+ (SymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass;
++ (LKSymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass;
 @end

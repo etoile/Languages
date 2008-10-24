@@ -1,11 +1,11 @@
 #import "Comparison.h"
 
-@implementation Compare
-+ (Compare*) compare:(AST*)expr1 to:(AST*)expr2
+@implementation LKCompare
++ (LKCompare*) compare:(LKAST*)expr1 to:(LKAST*)expr2
 {
-	return [[[Compare alloc] initComparing:expr1 to:expr2] autorelease];
+	return [[[LKCompare alloc] initComparing:expr1 to:expr2] autorelease];
 }
-- (id) initComparing:(AST*)expr1 to:(AST*)expr2
+- (id) initComparing:(LKAST*)expr1 to:(LKAST*)expr2
 {
 	SELFINIT;
 	ASSIGN(lhs, expr1);
@@ -23,7 +23,7 @@
 	[lhs check];
 	[rhs check];
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	void * l = [lhs compileWith:aGenerator];
 	void * r = [rhs compileWith:aGenerator];

@@ -3,7 +3,7 @@
 /**
  * AST node representing a new category definition.
  */
-@interface CategoryDef : AST {
+@interface LKCategoryDef : LKAST {
   /** Name of this class. */
   NSString * classname;
   /** Array of methods defined in this category. */

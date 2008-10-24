@@ -4,9 +4,9 @@
 /**
  * AST node representing a method.
  */
-@interface SmalltalkMethod : AST {
+@interface LKMethod : LKAST {
   /** Method signature - selector and names of arguments. */
-  MessageSend *signature;
+  LKMessageSend *signature;
 @public
   /** List of statements in this method. */
   NSMutableArray * statements;
@@ -14,13 +14,13 @@
 /**
  * Return a new Method with the specified signature, locals and statements.
  */
-+ (id) methodWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
++ (id) methodWithSignature:(LKMessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
 /**
  * Initialise a new Method with the specified signature, locals and statements.
  */
-- (id) initWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
+- (id) initWithSignature:(LKMessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
 /**
  * Set the method signature for this method.
  */
-- (void) setSignature:(MessageSend*)aSignature;
+- (void) setSignature:(LKMessageSend*)aSignature;
 @end

@@ -5,7 +5,7 @@ Class DeclRefClass;
 
 static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 
-@implementation AST
+@implementation LKAST
 
 + (NSMutableDictionary *) code
 {
@@ -18,9 +18,9 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 
 + (void) initialize
 {
-	DeclRefClass = [DeclRef class];
+	DeclRefClass = [LKDeclRef class];
 }
-- (id) initWithSymbolTable:(SymbolTable*)aSymbolTable
+- (id) initWithSymbolTable:(LKSymbolTable*)aSymbolTable
 {
 	if(nil == (self = [self init]))
 	{
@@ -33,7 +33,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 {
 	printf("%s", [[self description] UTF8String]);
 }
-- (void) setParent:(AST*)aNode
+- (void) setParent:(LKAST*)aNode
 {
 	if (nil == symbols)
 	{
@@ -71,7 +71,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 	}
 	if ([aChild isKindOfClass:DeclRefClass])
 	{
-		DeclRef *child = aChild;
+		LKDeclRef *child = aChild;
 		switch ([symbols scopeOfSymbol:child->symbol])
 		{
 			case 0:
@@ -96,7 +96,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 					format:@"Result of an expression (%@) may not be used as an l-value", aChild];
 	}
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	NSLog(@"Compiling...");
 	[NSException raise:@"NotImplementedException"
@@ -104,7 +104,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 		[self class]];
 	return NULL;
 }
-- (SymbolTable*) symbols
+- (LKSymbolTable*) symbols
 {
 	return symbols;
 }

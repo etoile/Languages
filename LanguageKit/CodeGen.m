@@ -47,8 +47,8 @@ typedef int bool;
 	}
 	else
 	{
-		ObjectSymbolTable * symbols = (ObjectSymbolTable*)
-			[ObjectSymbolTable symbolTableForNewClassNamed:aSuperclass];
+		LKObjectSymbolTable * symbols = (LKObjectSymbolTable*)
+			[LKObjectSymbolTable symbolTableForNewClassNamed:aSuperclass];
 		if (nil != symbols)
 		{
 			supersize = [symbols instanceSize];
@@ -212,7 +212,7 @@ typedef int bool;
 	EmitBitcode(Builder, (char*)[aFile UTF8String], NO);
 }
 @end
-id <CodeGenerator> defaultCodeGenerator(void)
+id <LKCodeGenerator> defaultCodeGenerator(void)
 {
 	return [LLVMCodeGen new];
 }

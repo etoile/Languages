@@ -1,22 +1,28 @@
 #import "Method.h"
 
-@implementation SmalltalkMethod
-+ (id) methodWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+@implementation LKMethod
++ (id) methodWithSignature:(LKMessageSend*)aSignature
+                    locals:(NSMutableArray*)locals
+                statements:(NSMutableArray*)statementList
 {
 	return [[[self alloc] initWithSignature: aSignature
 	                                 locals: locals
 	                             statements: statementList] autorelease];
 }
-- (id) initWithSignature:(MessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+- (id) initWithSignature:(LKMessageSend*)aSignature
+                  locals:(NSMutableArray*)locals
+              statements:(NSMutableArray*)statementList
 {
-	MethodSymbolTable *st = [[MethodSymbolTable alloc] initWithLocals:locals args:[aSignature arguments]];
+	LKMethodSymbolTable *st = 
+		[[LKMethodSymbolTable alloc] initWithLocals:locals
+		                                       args:[aSignature arguments]];
 	[self initWithSymbolTable: st];
 	RELEASE(st);
 	ASSIGN(signature, aSignature);
 	ASSIGN(statements, statementList);
 	return self;
 }
-- (void) setSignature:(MessageSend*)aSignature
+- (void) setSignature:(LKMessageSend*)aSignature
 {
 	ASSIGN(signature, aSignature);
 }
@@ -24,7 +30,7 @@
 {
 	//TODO: See if this is replacing a superclass method.	If so, infer
 	//argument types, otherwise assume ids.
-	FOREACH(statements, statement, AST*)
+	FOREACH(statements, statement, LKAST*)
 	{
 		[statement setParent:self];
 		[statement check];
@@ -33,7 +39,7 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	MethodSymbolTable *st = (MethodSymbolTable*)symbols;
+	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	[str appendString:[signature description]];
 	[str appendString:@"[ "];
 	if ([[st locals] count])
@@ -46,21 +52,21 @@
 		[str appendString:@"|"];
 	}
 	[str appendString:@"\n"];
-	FOREACH(statements, statement, AST*)
+	FOREACH(statements, statement, LKAST*)
 	{
 		[str appendFormat:@"%@.\n", statement];
 	}
 	[str appendString:@"]"];
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	const char *sel = [[signature selector] UTF8String];
 	// FIXME: Should get method signature from superclass
 	const char *types = sel_get_type(sel_get_any_typed_uid(sel));
-	if (NULL == types) {
+	if (NULL == types) 
+	{
 		int args = [[signature arguments] count];
-		// FIXME: Make this @
 		int offset = sizeof(id) + sizeof(SEL);
 		NSMutableString *ty = [NSMutableString stringWithFormat:@"@%d@0:%d",
 			sizeof(SEL) + sizeof(id) * (args + 2), offset];
@@ -73,8 +79,8 @@
 	}
 	[aGenerator beginMethod:sel
 				  withTypes:types
-					 locals:[[(MethodSymbolTable*)symbols locals] count]];
-	FOREACH(statements, statement, AST*)
+					 locals:[[(LKMethodSymbolTable*)symbols locals] count]];
+	FOREACH(statements, statement, LKAST*)
 	{
 		[statement compileWith:aGenerator];
 	}

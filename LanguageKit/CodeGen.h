@@ -6,7 +6,7 @@
  * generator-specific type, which can then be passed in to the generator later
  * when it expects a value.
  */
-@protocol CodeGenerator
+@protocol LKCodeGenerator
 /**
  * Begin generating a module.  A module is a set of classes and categories
  * which are compiled and optimised at once.
@@ -178,4 +178,4 @@
  */
 - (void*) generateConstantSymbol:(NSString*)aSymbol;
 @end
-id <CodeGenerator> defaultCodeGenerator(void);
+id <LKCodeGenerator> defaultCodeGenerator(void);

@@ -3,7 +3,7 @@
 /**
  * AST node representing a reference to a symbol.
  */
-@interface SymbolRef : DeclRef
+@interface LKSymbolRef : LKDeclRef
 {
 }
 @end

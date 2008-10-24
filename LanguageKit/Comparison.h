@@ -1,9 +1,9 @@
 #import "AST.h"
 
-@interface Compare : AST {
-	AST *lhs;
-	AST *rhs;
+@interface LKCompare : LKAST {
+	LKAST *lhs;
+	LKAST *rhs;
 }
-+ (Compare*) compare:(AST*)expr1 to:(AST*)expr2;
-- (id) initComparing:(AST*)expr1 to:(AST*)expr2;
++ (LKCompare*) compare:(LKAST*)expr1 to:(LKAST*)expr2;
+- (id) initComparing:(LKAST*)expr1 to:(LKAST*)expr2;
 @end

@@ -1,22 +1,22 @@
 #import "AST.h"
 
-@class DeclRef;
+@class LKDeclRef;
 
 /**
  * AST node representing an assignment.
  */
-@interface AssignExpr :AST {
+@interface LKAssignExpr :LKAST {
 /** The target of the assignment. */
-  DeclRef *target;
+  LKDeclRef *target;
 /** The expression representing the assigned value. */
-  AST *expr;
+  LKAST *expr;
 }
 /**
  * Return new assignment with target and expression.
  */
-+ (id) assignWithTarget:(DeclRef*)aTarget expr:(AST*)expression;
++ (id) assignWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression;
 /**
  * Initialise new assignment with target and expression.
  */
-- (id) initWithTarget:(DeclRef*)aTarget expr:(AST*)expression;
+- (id) initWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression;
 @end

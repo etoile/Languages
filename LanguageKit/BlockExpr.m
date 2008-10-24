@@ -2,7 +2,7 @@
 #import "DeclRef.h"
 
 // FIXME: This currently uses locals for arguments, which is completely wrong.
-@implementation BlockExpr 
+@implementation LKBlockExpr 
 + (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
 {
 	return [[[self alloc] initWithArguments: arguments
@@ -12,7 +12,7 @@
 - (id) initWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
 {
 	SELFINIT;
-	BlockSymbolTable *st = [[BlockSymbolTable alloc] initWithLocals:locals args:arguments];
+	LKBlockSymbolTable *st = [[LKBlockSymbolTable alloc] initWithLocals:locals args:arguments];
 	[self initWithSymbolTable: st];
 	RELEASE(st);
 	ASSIGN(statements, statementList);
@@ -30,7 +30,7 @@
 }
 - (void) check
 {
-	FOREACH(statements, s, AST*)
+	FOREACH(statements, s, LKAST*)
 	{
 		[s setParent:self];
 		[s check];
@@ -50,20 +50,20 @@
 		case argument:
 		case local:
 		{
-			ClosedDeclRef * ref = [ClosedDeclRef new];
+			LKClosedDeclRef * ref = [LKClosedDeclRef new];
 			ref->symbol = aSymbol;
 			ref->index = nextClosed++;
 			ref->offset = 0;
-			[SAFECAST(BlockSymbolTable, symbols) promoteSymbol:aSymbol toLocation:ref];
+			[SAFECAST(LKBlockSymbolTable, symbols) promoteSymbol:aSymbol toLocation:ref];
 			break;
 		}
 		case object:
 		{
-			ClosedDeclRef * ref = [ClosedDeclRef new];
+			LKClosedDeclRef * ref = [LKClosedDeclRef new];
 			ref->symbol = aSymbol;
 			ref->index = 0;
 			ref->offset = [symbols->enclosingScope offsetOfIVar:aSymbol];
-			[SAFECAST(BlockSymbolTable, symbols) promoteSymbol:aSymbol toLocation:ref];
+			[SAFECAST(LKBlockSymbolTable, symbols) promoteSymbol:aSymbol toLocation:ref];
 			break;
 		}
 		case builtin:
@@ -82,7 +82,7 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	MethodSymbolTable *st = (MethodSymbolTable*)symbols;
+	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	[str appendString:@"[ "];
 	if ([[st args] count])
 	{
@@ -93,7 +93,7 @@
 		[str appendString:@"| "];
 	}
 	[str appendString:@"\n"];
-	FOREACH(statements, statement, AST*)
+	FOREACH(statements, statement, LKAST*)
 	{
 		[str appendString:[statement description]];
 		[str appendString:@".\n"];
@@ -101,22 +101,22 @@
 	[str appendString:@"]"];
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	// FIXME: self pointer should always be promoted.
 	void *promoted[5];
-	BlockSymbolTable *st = (BlockSymbolTable*)symbols;
+	LKBlockSymbolTable *st = (LKBlockSymbolTable*)symbols;
 	NSArray *promotedSymbols = [st promotedVars];
 	promoted[0] = [aGenerator loadSelf];
 	int index = 1;
 	FOREACH(promotedSymbols, symbol, NSString*)
 	{
-		switch ([(BlockSymbolTable*)symbols scopeOfExternal:symbol])
+		switch ([(LKBlockSymbolTable*)symbols scopeOfExternal:symbol])
 		{
 			case local:
 			{
 				index++;
-				int location = ((ClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
+				int location = ((LKClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
 				promoted[location] = 
 					[aGenerator loadPointerToLocalAtIndex:
 						[symbols->enclosingScope offsetOfLocal:symbol]];
@@ -125,7 +125,7 @@
 			case argument:
 			{
 				index++;
-				int location = ((ClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
+				int location = ((LKClosedDeclRef*)[st promotedLocationOfSymbol:symbol])->index;
 				promoted[location] = 
 					[aGenerator loadPointerToArgumentAtIndex:
 						[symbols->enclosingScope indexOfArgument:symbol]];
@@ -141,12 +141,12 @@
 				@"Too many promoted variables to fit in block object");
 	}
 	// FIXME: Locals
-	[aGenerator beginBlockWithArgs:[[(MethodSymbolTable*)symbols args] count]
+	[aGenerator beginBlockWithArgs:[[(LKMethodSymbolTable*)symbols args] count]
 	                        locals:0
 						 boundVars:promoted
 							 count:index];
 	void * lastValue = NULL;
-	FOREACH(statements, statement, AST*)
+	FOREACH(statements, statement, LKAST*)
 	{
 		lastValue = [statement compileWith:aGenerator];
 	}

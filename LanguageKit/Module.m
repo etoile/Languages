@@ -1,6 +1,6 @@
 #import "Module.h"
 
-@implementation CompilationUnit 
+@implementation LKCompilationUnit 
 - (id) init
 {
 	SUPERINIT;
@@ -8,21 +8,21 @@
 	categories = [[NSMutableArray alloc] init];
 	return self;
 }
-- (void) addClass:(AST*)aClass
+- (void) addClass:(LKAST*)aClass
 {
 	[classes addObject:aClass];
 }
-- (void) addCategory:(AST*)aCategory
+- (void) addCategory:(LKAST*)aCategory
 {
 	[categories addObject:aCategory];
 }
 - (void) check
 {
-	FOREACH(classes, class, AST*)
+	FOREACH(classes, class, LKAST*)
 	{
 		[class check];
 	}
-	FOREACH(categories, category, AST*)
+	FOREACH(categories, category, LKAST*)
 	{
 		[category check];
 	}
@@ -30,24 +30,24 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	FOREACH(classes, class, AST*)
+	FOREACH(classes, class, LKAST*)
 	{
 		[str appendString:[class description]];
 	}
-	FOREACH(categories, category, AST*)
+	FOREACH(categories, category, LKAST*)
 	{
 		[str appendString:[category description]];
 	}
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator startModule];
-	FOREACH(classes, class, AST*)
+	FOREACH(classes, class, LKAST*)
 	{
 		[class compileWith:aGenerator];
 	}
-	FOREACH(categories, category, AST*)
+	FOREACH(categories, category, LKAST*)
 	{
 		[category compileWith:aGenerator];
 	}

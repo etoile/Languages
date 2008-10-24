@@ -1,11 +1,11 @@
 #import "Return.h"
 
-@implementation Return
-+ (id) returnWithExpr:(AST*)anExpression
+@implementation LKReturn
++ (id) returnWithExpr:(LKAST*)anExpression
 {
 	return [[[self alloc] initWithExpr: anExpression] autorelease];
 }
-- (id) initWithExpr:(AST*)anExpression
+- (id) initWithExpr:(LKAST*)anExpression
 {
 	SELFINIT;
 	ASSIGN(ret, anExpression);
@@ -20,7 +20,7 @@
 {
 	return [NSString stringWithFormat:@"^%@.", ret];
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	void *retVal = [ret compileWith:aGenerator];
 	[aGenerator setReturn:retVal];

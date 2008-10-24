@@ -1,7 +1,7 @@
 #import "AST.h"
 
-@interface Comment : AST {
+@interface LKComment : LKAST {
 	NSString *comment;
 }
-+ (Comment*) commentForString:(NSString*)aString;
++ (LKComment*) commentForString:(NSString*)aString;
 @end

@@ -12,7 +12,7 @@ static char *ReleaseTypes;
 	return _methodTypes;
 }
 @end
-@implementation AssignExpr
+@implementation LKAssignExpr
 + (void) initialize
 {
 	RetainTypes = 
@@ -22,11 +22,11 @@ static char *ReleaseTypes;
 		strdup([[NSObject instanceMethodSignatureForSelector:@selector(release)]
 		        _methodTypes]);
 }
-+ (id) assignWithTarget:(DeclRef*)aTarget expr:(AST*)expression
++ (id) assignWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression
 {
 	return [[[self alloc] initWithTarget:aTarget expr:expression] autorelease];
 }
-- (id) initWithTarget:(DeclRef*)aTarget expr:(AST*)expression
+- (id) initWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression
 {
 	SELFINIT;
 	ASSIGN(target, aTarget);
@@ -44,7 +44,7 @@ static char *ReleaseTypes;
 {
 	return [NSString stringWithFormat:@"%@ := %@", target->symbol, expr];
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	void * rval = [expr compileWith:aGenerator];
 	switch([symbols scopeOfSymbol:target->symbol])
@@ -70,7 +70,7 @@ static char *ReleaseTypes;
 		}
 		case promoted:
 		{
-			ClosedDeclRef *decl = [(BlockSymbolTable*)symbols
+			LKClosedDeclRef *decl = [(LKBlockSymbolTable*)symbols
 				promotedLocationOfSymbol:target->symbol];
 			[aGenerator storeValue: rval 
 			     inBlockVarAtIndex:decl->index

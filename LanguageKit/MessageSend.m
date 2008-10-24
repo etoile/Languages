@@ -11,10 +11,10 @@ static NSMutableDictionary *SelectorConflicts = nil;
   printf("%s", [self UTF8String]);
 }
 @end
-@implementation MessageSend 
+@implementation LKMessageSend 
 + (void) initialize
 {
-	if (self != [MessageSend class])
+	if (self != [LKMessageSend class])
 	{
 		return;
 	}
@@ -99,7 +99,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	//SEL sel = sel_get_any_typed_uid([selector UTF8String]);
 	//NSLog(@"Selector %s types: %s", sel_get_name(sel), sel_get_type(sel));
-	FOREACH(arguments, arg, AST*)
+	FOREACH(arguments, arg, LKAST*)
 	{
 		[arg setParent:self];
 		[arg check];
@@ -136,7 +136,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	unsigned argc = [arguments count];
 	void *argv[argc];
@@ -157,11 +157,11 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	void *result = NULL;
 	// If the receiver is a global symbol, it is guaranteed to be an object.
 	// TODO: The same is arguments if their type is @
-	if ([target isKindOfClass:[DeclRef class]])
+	if ([target isKindOfClass:[LKDeclRef class]])
 	{
-		DeclRef *ref = SAFECAST(DeclRef, target);
+		LKDeclRef *ref = SAFECAST(LKDeclRef, target);
 		NSString *symbol = ref->symbol;
-		SymbolScope scope = [symbols scopeOfSymbol:symbol];
+		LKSymbolScope scope = [symbols scopeOfSymbol:symbol];
 		if (scope == global)
 		{
 			result = [aGenerator sendMessage:sel

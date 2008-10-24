@@ -1,6 +1,6 @@
 #import "Literal.h"
 
-@implementation Literal
+@implementation LKLiteral
 - (id) initWithString:(NSString*)aString
 {
 	SELFINIT;
@@ -20,7 +20,7 @@
 @end
 
 static NSDictionary *ObjCConstants;
-@implementation NumberLiteral
+@implementation LKNumberLiteral
 + (void) initialize
 {
 	NSString *plist = [[NSBundle bundleForClass:self]
@@ -39,18 +39,18 @@ static NSDictionary *ObjCConstants;
 	// Not reached:
 	return nil;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	return [aGenerator intConstant:value];
 }
 @end
 
-@implementation StringLiteral
+@implementation LKStringLiteral
 - (NSString*) description
 {
 	return [NSString stringWithFormat:@"'%@'", value];
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	NSMutableString *escaped = [value mutableCopy];
 	[escaped replaceOccurrencesOfString:@"\\n"

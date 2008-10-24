@@ -1,6 +1,6 @@
 #import "Category.h"
 
-@implementation CategoryDef
+@implementation LKCategoryDef
 + (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList
 {
 	return [[[self alloc] initWithClass: aName
@@ -19,14 +19,14 @@
 	//Construct symbol table.
 	if (Nil != class)
 	{
-		symbols = [[ObjectSymbolTable alloc] initForClass:class];
+		symbols = [[LKObjectSymbolTable alloc] initForClass:class];
 	}
 	else
 	{
 		ASSIGN(symbols,
-			   	[ObjectSymbolTable symbolTableForNewClassNamed:classname]);
+			   	[LKObjectSymbolTable symbolTableForNewClassNamed:classname]);
 	}
-	FOREACH(methods, method, AST*)
+	FOREACH(methods, method, LKAST*)
 	{
 		[method setParent:self];
 		[method check];
@@ -36,27 +36,27 @@
 {
 	NSMutableString *str = [NSMutableString stringWithFormat:@"%@ extend [ \n",
    		classname];
-	FOREACH(methods, method, AST*)
+	FOREACH(methods, method, LKAST*)
 	{
 		[str appendString:[method description]];
 	}
 	[str appendString:@"\n]"];
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator createCategoryOn:classname
                          named:@"SmalltalkCategory"];
-	FOREACH(methods, method, AST*)
+	FOREACH(methods, method, LKAST*)
 	{
 		[method compileWith:aGenerator];
 	}
 	[aGenerator endCategory];
-	if ([[AST code] objectForKey: classname] == nil)
+	if ([[LKAST code] objectForKey: classname] == nil)
 	{
-		[[AST code] setObject: [NSMutableArray array] forKey: classname];
+		[[LKAST code] setObject: [NSMutableArray array] forKey: classname];
 	}
-	[[[AST code] objectForKey: classname] addObject: self];
+	[[[LKAST code] objectForKey: classname] addObject: self];
 	return NULL;
 }
 @end

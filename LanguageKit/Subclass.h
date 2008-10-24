@@ -3,7 +3,7 @@
 /**
  * AST node representing a new class definition.
  */
-@interface Subclass : AST {
+@interface LKSubclass : LKAST {
   /** Name of this class. */
   NSString * classname;
   /** Name of the superclass. */

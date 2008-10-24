@@ -1,12 +1,12 @@
 #import "SymbolRef.h"
 
-@implementation SymbolRef 
+@implementation LKSymbolRef 
 - (void) check {}
 - (NSString*) description
 {
 	return [NSString stringWithFormat:@"#%@", symbol];
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	return [aGenerator generateConstantSymbol:symbol];
 }

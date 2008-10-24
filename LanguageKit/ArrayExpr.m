@@ -1,6 +1,6 @@
 #import "ArrayExpr.h"
 
-@implementation ArrayExpr
+@implementation LKArrayExpr
 + (id) arrayWithElements:(NSArray*)anArray
 {
 	return [[[self alloc] initWithElements: anArray] autorelease];
@@ -13,7 +13,7 @@
 }
 - (void) check
 {
-	FOREACH(elements, element, AST*)
+	FOREACH(elements, element, LKAST*)
 	{
 		[element setParent:self];
 		[element check];
@@ -22,18 +22,18 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString stringWithString:@"#("];
-	FOREACH(elements, element, AST*)
+	FOREACH(elements, element, LKAST*)
 	{
 		[str appendFormat:@"%@, ", [element description]];
 	}
 	[str replaceCharactersInRange:NSMakeRange([str length] - 2, 2) withString:@")"];
 	return str;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	void *values[[elements count] + 1];
 	int i = 0;
-	FOREACH(elements, element, AST*)
+	FOREACH(elements, element, LKAST*)
 	{
 		values[i++] = [element compileWith:aGenerator];
 	}

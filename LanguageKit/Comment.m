@@ -1,21 +1,21 @@
 #import "Comment.h"
 
-@implementation Comment
-- (Comment*) initWithString:(NSString*)aString
+@implementation LKComment
+- (LKComment*) initWithString:(NSString*)aString
 {
 	SELFINIT;
 	ASSIGN(comment, aString);
 	return self;
 }
-+ (Comment*) commentForString:(NSString*)aString
++ (LKComment*) commentForString:(NSString*)aString
 {
-	return [[[Comment alloc] initWithString:aString] autorelease];
+	return [[[LKComment alloc] initWithString:aString] autorelease];
 }
 - (NSString*) description
 {
 	return [NSString stringWithFormat:@"\"%@\"", comment];
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	// Comments do not turn into code.
 	return NULL;

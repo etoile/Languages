@@ -165,7 +165,7 @@ extern int DEBUG_DUMP_MODULES;
 /**
  * Concrete implementation of the CodeGenerator protocol using LLVM.
  */
-@interface LLVMCodeGen : NSObject <CodeGenerator> {
+@interface LLVMCodeGen : NSObject <LKCodeGenerator> {
 	ModuleBuilder Builder;
 }
 - (void) writeBitCodeToFile:(NSString*)aFile;

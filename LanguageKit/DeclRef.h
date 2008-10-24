@@ -3,7 +3,7 @@
 /**
  * AST node representing a reference to a variable.
  */
-@interface DeclRef : AST {
+@interface LKDeclRef : LKAST {
 @public
   /** The name of the variable being referenced. */
 	NSString *symbol;
@@ -17,7 +17,7 @@
 /**
  * Class used to store the location of a bound variable in a block expression.
  */
-@interface ClosedDeclRef : NSObject {
+@interface LKClosedDeclRef : NSObject {
 @public
   /** The variable name */
 	NSString * symbol;

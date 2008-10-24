@@ -1,9 +1,9 @@
 #import "DeclRef.h"
 
-@implementation ClosedDeclRef
+@implementation LKClosedDeclRef
 @end
 
-@implementation DeclRef
+@implementation LKDeclRef
 + (id) reference:(NSString*)sym
 {
 	return [[[self alloc] initWithSymbol: sym] autorelease];
@@ -35,7 +35,7 @@
 {
 	return symbol;
 }
-- (void*) compileWith:(id<CodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	switch([symbols scopeOfSymbol:symbol])
 	{
@@ -53,11 +53,14 @@
 		case global:
 			return [aGenerator loadClass:symbol];
 		case argument:
-			return [aGenerator loadArgumentAtIndex:[symbols indexOfArgument:symbol]];
+	   		return [aGenerator loadArgumentAtIndex:
+						  [symbols indexOfArgument:symbol]];
 		case promoted:
 		{
-			ClosedDeclRef *decl = [(BlockSymbolTable*)symbols promotedLocationOfSymbol:symbol];
-			return [aGenerator loadBlockVarAtIndex:decl->index offset:decl->offset];
+			LKClosedDeclRef *decl = 
+				[(LKBlockSymbolTable*)symbols promotedLocationOfSymbol:symbol];
+			return [aGenerator loadBlockVarAtIndex:decl->index 
+			                                offset:decl->offset];
 		}
 		case object:
 		{

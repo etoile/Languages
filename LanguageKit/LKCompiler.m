@@ -4,7 +4,7 @@
 
 // Semi-formal protocol for parsers.
 @protocol LKParser
-- (AST*) parseString:(NSString*)aProgram;
+- (LKAST*) parseString:(NSString*)aProgram;
 @end
 
 extern int DEBUG_DUMP_MODULES;
@@ -22,7 +22,7 @@ extern int DEBUG_DUMP_MODULES;
 + (BOOL) compileString:(NSString*)s
 {
 	id p = [[[[self parser] alloc] init] autorelease];
-	AST *ast;
+	LKAST *ast;
 	NS_DURING
 		ast = [p parseString: s];
 	NS_HANDLER
