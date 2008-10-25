@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import <EtoileFoundation/EtoileFoundation.h>
 #import "LKCompiler.h"
 #import "AST.h"
 
@@ -7,8 +7,28 @@
 - (LKAST*) parseString:(NSString*)aProgram;
 @end
 
+static NSMutableDictionary *compilersByExtension;
+static NSMutableDictionary *compilersByLanguage;
+
 extern int DEBUG_DUMP_MODULES;
 @implementation LKCompiler
++ (void) initialize 
+{
+	if (self != [LKCompiler class])
+	{
+		return;
+	}
+	compilersByExtension = [NSMutableDictionary new];
+	compilersByLanguage = [NSMutableDictionary new];
+	NSArray *classes = [self directSubclasses];
+	FOREACH(classes, nextClass, Class)
+	{
+		[compilersByLanguage setObject:nextClass
+		                        forKey:[nextClass languageName]];
+		[compilersByExtension setObject:nextClass
+		                         forKey:[nextClass fileExtension]];
+	}
+}
 + (id) alloc
 {
 	[NSException raise:@"InstantiationError"
@@ -109,6 +129,23 @@ extern int DEBUG_DUMP_MODULES;
 {
 	[self subclassResponsibility:_cmd];
 	return nil;
+}
++ (NSString*) languageName
+{
+	[self subclassResponsibility:_cmd];
+	return nil;
+}
++ (NSArray*) supportedLanguages
+{
+	return [compilersByLanguage allKeys];
+}
++ (Class) compilerForLanguage:(NSString*) aLanguage
+{
+	return [compilersByLanguage objectForKey:aLanguage];
+}
++ (Class) compilerForExtension:(NSString*) anExtension
+{
+	return [compilersByExtension objectForKey:anExtension];
 }
 + (Class) parser
 {

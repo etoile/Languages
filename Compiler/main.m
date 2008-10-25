@@ -2,9 +2,9 @@
 #import <AppKit/AppKit.h>
 #include <time.h>
 #include <sys/resource.h>
-#import <SmalltalkKit/SmalltalkKit.h>
+#import <LanguageKit/LKCompiler.h>
 
-static BOOL compileScript(NSString *script)
+static BOOL compileScript(NSString *script, NSString *extension)
 {
 	if ([script length] > 2
 		&&
@@ -20,7 +20,7 @@ static BOOL compileScript(NSString *script)
 			script = [script substringFromIndex:r.location];
 		}
 	}
-	return [SmalltalkCompiler compileString:script];
+	return [[LKCompiler compilerForExtension:extension] compileString:script];
 }
 
 int main(int argc, char **argv)
@@ -28,12 +28,13 @@ int main(int argc, char **argv)
 	[NSAutoreleasePool new];
 	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:c:l:L:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
-	NSCAssert(nil == bundle, @"Smalltalk bundles are not yet supported.  Sorry.");
+	NSCAssert(nil == bundle, 
+			@"Smalltalk bundles are not yet supported.  Sorry.");
 	// Load specified framework
 	NSString *framework = [opts objectForKey:@"l"];
 	if (nil != framework)
 	{
-		[SmalltalkCompiler loadFramework:framework];
+		[LKCompiler loadFramework:framework];
 	}
 	// Load frameworks specified in plist.
 	NSString *frameworks = [opts objectForKey:@"L"];
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
 		{
 			FOREACH(frameworkarray, f, NSString*)
 			{
-				[SmalltalkCompiler loadFramework:f];
+				[LKCompiler loadFramework:f];
 			}
 		}
 	}
@@ -52,7 +53,7 @@ int main(int argc, char **argv)
 	// Debug mode.
 	if ([[opts objectForKey:@"d"] boolValue])
 	{
-		[SmalltalkCompiler setDebugMode:YES];
+		[LKCompiler setDebugMode:YES];
 	}
 	NSString *ProgramFile = [opts objectForKey:@"f"];
 	if (nil == ProgramFile)
@@ -61,8 +62,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
+	NSString *extension = [ProgramFile pathExtension];
 	clock_t c1 = clock();
-	if (!compileScript(Program))
+	if (!compileScript(Program, extension))
 	{
 		NSLog(@"Failed to compile input.");
 		return 2;

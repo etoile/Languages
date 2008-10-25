@@ -48,6 +48,24 @@
  */
 + (NSString*) fileExtension;
 /**
+ * Returns the name of the language supported by this compiler.
+ *
+ * Implemented by subclasses.
+ */
++ (NSString*) languageName;
+/**
+ * Returns the languages for which compilers are currently supported.
+ */
++ (NSArray*) supportedLanguages;
+/**
+ *	Returns the compiler for a named language. 
+ */
++ (Class) compilerForLanguage:(NSString*) aLanguage;
+/**
+ * Returns the compiler for files with a given extension.
+ */
++ (Class) compilerForExtension:(NSString*) anExtension;
+/**
  * Returns the parser used by this language.
  */
 + (Class) parser;

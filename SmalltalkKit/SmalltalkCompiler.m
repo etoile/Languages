@@ -3,6 +3,10 @@
 
 extern int DEBUG_DUMP_MODULES;
 @implementation SmalltalkCompiler
++ (NSString*) languageName
+{
+	return @"Smalltalk";
+}
 + (NSString*) fileExtension
 {
 	return @"st";
