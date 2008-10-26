@@ -33,7 +33,7 @@
 	int i = 0;
 	FOREACHI(self, obj)
 	{
-		if ([aClosure value:obj])
+		if ([[aClosure value:obj] boolValue])
 		{
 			new[i++] = obj;
 		}
