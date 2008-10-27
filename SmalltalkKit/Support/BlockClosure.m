@@ -1,3 +1,4 @@
+#import <Foundation/Foundation.h>
 #import "BlockClosure.h"
 
 @implementation BlockClosure
@@ -54,6 +55,24 @@
 	}
 	return last;
 }
+
+- (id) on: (NSString*) exceptionName do: (BlockClosure*) handler
+{
+  NS_DURING
+    NS_VALUERETURN([self value], id);
+  NS_HANDLER
+    if ([[localException name] isEqualToString: exceptionName])
+      {
+	return [handler value: localException];
+      }
+    else
+      {
+	[localException raise];
+	return nil; // won't happen.
+      }
+  NS_ENDHANDLER
+}
+
 @end
 
 typedef struct 
