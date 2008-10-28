@@ -23,9 +23,6 @@
 #include <iostream>
 #include <fstream>
 
-// Create a pass for removing over-aggressive boxing.
-FunctionPass *createUnboxPass(void);
-
 Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
         std::string &Name, unsigned GEPs) {
   Constant * ConstStr = ConstantArray::get(Str);
@@ -194,7 +191,6 @@ void CodeGenModule::compile(void) {
   pm.add(createInstructionCombiningPass());
   pm.add(createTailDuplicationPass());
   pm.add(createCFGSimplificationPass());
-  pm.add(createUnboxPass());
   pm.add(createStripDeadPrototypesPass());
   pm.run(*TheModule);
   DUMP(TheModule);
