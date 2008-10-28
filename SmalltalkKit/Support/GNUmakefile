@@ -23,6 +23,7 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	BlockClosure.m\
 	NSArray+map.m\
 	NSObject+log.m\
+	NSObject+introspection.m\
 	NSString+casting.m\
 	NSValue+structs.m\
 	Symbol.m
