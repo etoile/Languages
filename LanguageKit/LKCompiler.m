@@ -1,6 +1,6 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LKCompiler.h"
-#import "AST.h"
+#import "LKAST.h"
 
 // Semi-formal protocol for parsers.
 @protocol LKParser

@@ -161,7 +161,7 @@ LLVMValue SymbolConstant(ModuleBuilder B, const char *symbol);
 extern int DEBUG_DUMP_MODULES;
 #ifdef __OBJC__
 #import <Foundation/NSObject.h>
-#import <CodeGen.h>
+#import <LKCodeGen.h>
 /**
  * Concrete implementation of the CodeGenerator protocol using LLVM.
  */

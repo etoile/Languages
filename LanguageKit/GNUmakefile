@@ -16,50 +16,51 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 	CodeGenModule.cpp\
 	CodeGenLexicalScope.cpp\
 	LLVMCodeGen.cpp\
-	LLVMCodeGenCAPI.cpp
+	LLVMCodeGenCAPI.cpp\
+	UnboxPass.cpp
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
-	AST.m\
-	ArrayExpr.m\
-	AssignExpr.m\
-	BlockExpr.m\
-	Category.m\
-	CodeGen.m\
-	Comparison.m\
-	Comment.m\
-	DeclRef.m\
-	Literal.m\
+	LKAST.m\
+	LKArrayExpr.m\
+	LKAssignExpr.m\
+	LKBlockExpr.m\
+	LKCategory.m\
+	LKCodeGen.m\
+	LKComparison.m\
+	LKComment.m\
+	LKDeclRef.m\
+	LKLiteral.m\
 	LKCompiler.m\
-	MessageSend.m\
-	Method.m\
-	Module.m\
-	Return.m\
-	Subclass.m\
-	SymbolRef.m\
-	SymbolTable.m
+	LKMessageSend.m\
+	LKMethod.m\
+	LKModule.m\
+	LKReturn.m\
+	LKSubclass.m\
+	LKSymbolRef.m\
+	LKSymbolTable.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
-	AST.h\
-	ArrayExpr.h\
-	AssignExpr.h\
-	BlockExpr.h\
-	Category.h\
-	CodeGen.h\
+	LKAST.h\
+	LKArrayExpr.h\
+	LKAssignExpr.h\
+	LKBlockExpr.h\
+	LKCategory.h\
+	LKCodeGen.h\
 	CodeGenBlock.h\
 	CodeGenModule.h\
-	Comment.h\
-	Comparison.h\
-	DeclRef.h\
-	Literal.h\
+	LKComment.h\
+	LKComparison.h\
+	LKDeclRef.h\
+	LKLiteral.h\
 	LKCompiler.h\
-	MessageSend.h\
-	Method.h\
-	Module.h\
-	Return.h\
+	LKMessageSend.h\
+	LKMethod.h\
+	LKModule.h\
+	LKReturn.h\
 	LanguageKit.h\
-	Subclass.h\
-	SymbolRef.h\
-	SymbolTable.h
+	LKSubclass.h\
+	LKSymbolRef.h\
+	LKSymbolTable.h
 
 
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE
