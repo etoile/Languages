@@ -3,29 +3,18 @@ PACKAGE_NAME = Languages
 include $(GNUSTEP_MAKEFILES)/common.make
 
 #
-# Variables check
+# Variables to turn projects on and off in the build process
+# (listed by alphabetical order)
 #
 
-export etoile ?= yes
-export etoile-extensions ?= yes
+-include ../modules.make
 
-ifeq ($(etoile-extensions), yes)
-
-    #export io ?= yes
-    export smalltalk ?= yes
-
-endif
-
-ifeq ($(etoile-extensions), no)
-
-    export io ?= no
-    export smalltalk ?= no
-
-endif
+export io ?= no
+export smalltalk ?= yes
 
 #
-# Subprojects choice
-# 
+# Projects (listed by dependency order, then alphabetical order)
+#
 
 ifeq ($(io), yes)
 	SUBPROJECTS += Io
