@@ -163,7 +163,7 @@ BOOL SmallIntMsgisGreaterThan_(void *obj, void *other)
 }	
 
 void *MakeSmallInt(long long val) {
-	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
+	fprintf(stderr, "Trying to make %lld into a small int\n", val);
 	intptr_t ptr = val << 1;
 	//fprintf(stderr, "Failing if it is not %lld \n", (long long)(ptr >> 1));
 	if (((ptr >> 1)) != val) {
