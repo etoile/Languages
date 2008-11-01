@@ -159,7 +159,7 @@ BOOL SmallIntMsgisGreaterThan_(void *obj, void *other)
 	val >>= 1;
 	intptr_t otherval = (intptr_t)other;\
 	otherval >>= 1;
-	return val < otherval;
+	return val > otherval;
 }	
 
 void *MakeSmallInt(long long val) {
