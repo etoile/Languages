@@ -139,7 +139,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		}
 		else if ('\'' == c && i<sLength - 2)
 		{
-			j = i + 1;
+			j = i;
 			do
 			{
 				c=CHAR(++j);
