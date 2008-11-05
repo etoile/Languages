@@ -6,4 +6,6 @@
    NSViewMinYMargin     = 8;
    NSViewHeightSizable  = 16;
    NSViewMaxYMargin     = 32;
+
+   NSUTF8StringEncoding = 4;
 }
