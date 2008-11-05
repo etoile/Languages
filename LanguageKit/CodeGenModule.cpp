@@ -148,6 +148,7 @@ Value *CodeGenModule::StringConstant(const char *value) {
 }
 
 Value *CodeGenModule::IntConstant(const char *value) {
+  errno = 0;
   long long val = strtoll(value, NULL, 10);
   intptr_t ptrVal = (val << 1);
   if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val)) {
