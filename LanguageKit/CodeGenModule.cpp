@@ -201,7 +201,6 @@ void CodeGenModule::compile(void) {
   }
   else
   {
-	TheModule->dump();
     EE->addModuleProvider(new ExistingModuleProvider(TheModule));
   }
   LOG("Compiling...\n");
