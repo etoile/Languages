@@ -20,6 +20,11 @@ extern "C" {
     IMPTy = PointerType::getUnqual(FunctionType::get(IdTy, IMPArgs, true));
   }
 
+	ModuleBuilder newStaticModuleBuilder(const char *ModuleName) 
+	{
+		if (NULL == ModuleName) { ModuleName = "Anonymous"; }
+		return new CodeGenModule(ModuleName, false);
+	}
   ModuleBuilder newModuleBuilder(const char *ModuleName) {
     if (NULL == ModuleName) ModuleName = "Anonymous";
     return new CodeGenModule(ModuleName);

@@ -13,10 +13,14 @@ typedef struct CodeGenModule* ModuleBuilder;
  */
 typedef struct Value* LLVMValue;
 
-/***
+/**
  * Create a new LLVM module builder.
  */
 ModuleBuilder newModuleBuilder(const char *ModuleName);
+/**
+ * Creates a new module builder for static compilation.
+ */
+ModuleBuilder newStaticModuleBuilder(const char *ModuleBuilder);
 /**
  * Destroy the module builder.
  */
@@ -168,6 +172,5 @@ extern int DEBUG_DUMP_MODULES;
 @interface LLVMCodeGen : NSObject <LKCodeGenerator> {
 	ModuleBuilder Builder;
 }
-- (void) writeBitCodeToFile:(NSString*)aFile;
 @end
 #endif

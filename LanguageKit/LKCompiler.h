@@ -20,6 +20,11 @@
  */
 + (BOOL) compileString:(NSString*)s;
 /**
+ * Compiles the specified source code to LLVM bitcode.  This can then be
+ * optimised with the LLVM opt utility and converted to object code with llc.
+ */
++ (BOOL) compileString:(NSString*) source output:(NSString*)bitcode;
+/**
  * Load a framework with the specified name.
  */
 + (BOOL) loadFramework:(NSString*)framework;

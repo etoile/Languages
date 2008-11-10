@@ -207,12 +207,33 @@ typedef int bool;
 {
 	return SymbolConstant(Builder, [aSymbol UTF8String]);
 }
-- (void) writeBitCodeToFile:(NSString*)aFile
+@end
+@interface LLVMStaticCodeGen : LLVMCodeGen {
+	NSString *outFile;
+}
+- (id) initWithFile:(NSString*)file;
+@end
+@implementation LLVMStaticCodeGen
+- (id) initWithFile:(NSString*)file
 {
-	EmitBitcode(Builder, (char*)[aFile UTF8String], NO);
+	SELFINIT;
+	ASSIGN(outFile, file);
+	return self;
+}
+- (void) endModule
+{
+	EmitBitcode(Builder, (char*)[outFile UTF8String], NO);
+}
+- (void) startModule
+{
+	Builder = newStaticModuleBuilder(NULL);
 }
 @end
-id <LKCodeGenerator> defaultCodeGenerator(void)
+id <LKCodeGenerator> defaultJIT(void)
 {
 	return [LLVMCodeGen new];
+}
+id <LKCodeGenerator> defaultStaticCompilterWithFile(NSString* outFile)
+{
+	return [[LLVMStaticCodeGen alloc] initWithFile:outFile];
 }

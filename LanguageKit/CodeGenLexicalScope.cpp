@@ -3,6 +3,24 @@
 #include "CodeGenModule.h"
 #include <llvm/Module.h>
 
+static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
+{
+	// If the function already exists, return it
+	Function *fn = CGM->getModule()->getFunction(name);
+	if (NULL != fn)
+	{
+		return fn;
+	}
+	Function *smallIntFn = CGM->getSmallIntModule()->getFunction(name);
+	if (NULL == smallIntFn)
+	{
+		return NULL;
+	}
+	// Create an extern reference to the function in the Small Int module
+	return Function::Create(smallIntFn->getFunctionType(),
+			GlobalVariable::ExternalLinkage, name, CGM->getModule());
+}
+
 string CodeGenLexicalScope::FunctionNameFromSelector(const char *sel) {
   // Special cases
   switch (*sel) {
@@ -24,7 +42,6 @@ string CodeGenLexicalScope::FunctionNameFromSelector(const char *sel) {
 
 Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *typestr) {
   CGObjCRuntime *Runtime = CGM->getRuntime();
-  Module *TheModule = CGM->getModule();
   // Untyped selectors return id
   if (NULL == typestr || '\0' == *typestr) return V;
   // FIXME: Other function type qualifiers
@@ -42,8 +59,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
     case 'q': case 'Q':
     {
       // This will return a SmallInt or a promoted integer.
-      Constant *BoxFunction = TheModule->getOrInsertFunction("MakeSmallInt",
-          IdTy, Type::Int64Ty, (void*)0);
+	  Constant *BoxFunction = getSmallIntModuleFunction(CGM, "MakeSmallInt");
       CallInst *boxed = B->CreateCall(BoxFunction, V);
       boxed->setOnlyReadsMemory();
       return boxed;
@@ -164,7 +180,7 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B, Function *F, Value
       break;
     case '#':
     case '@': {
-      Value *BoxFunction = CGM->getModule()->getFunction("BoxObject");
+      Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxObject");
       val = B->CreateBitCast(val, IdTy);
       return B->CreateCall(BoxFunction, val, "boxed_small_int");
     }
@@ -197,7 +213,8 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B, Function *F, Value
       castSelName = "";
       assert(false && "Unable to transmogriy object to compound type");
   }
-  //TODO: We don't actually use the size numbers for anything, but someone else does, so make these sensible:
+  //TODO: We don't actually use the size numbers for anything, but someone else
+  //does, so make these sensible:
   returnTypeString += "12@0:4";
   return MessageSend(B, F, val, castSelName, returnTypeString.c_str());
 }
@@ -314,7 +331,6 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B, Value *receiver,
 Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B, Function *F, Value *receiver,
     const char *selName, const char *selTypes, Value **argv, Value **boxedArgs,
     unsigned argc) {
-  Module *TheModule = CGM->getModule();
   //LOG("Sending message to %s", selName);
   //LOG(" (%s)\n", selTypes);
   Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
@@ -335,7 +351,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B, Function *F, Value *rece
 
   // See if there is a function defined to implement this message
   Value *SmallIntFunction =
-    TheModule->getFunction(FunctionNameFromSelector(selName));
+    getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
 
   // Send a message to a small int, using a static function or by promoting to
   // a big int.
@@ -354,7 +370,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B, Function *F, Value *rece
         Args.end(), "small_int_message_result");
   } else {
     //Promote to big int and send a real message.
-    Value *BoxFunction = TheModule->getFunction("BoxSmallInt");
+    Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxSmallInt");
     Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
     Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
         "boxed_small_int");
@@ -455,8 +471,9 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
 
 void CodeGenLexicalScope::EndChildBlock(CodeGenBlock *block) {
   Value *Block = block->Block;
-  Value *FreeBlockFn = CGM->getModule()->getOrInsertFunction("FreeBlock",
-      Type::VoidTy, Block->getType(), (void*)0);
+  Value *FreeBlockFn =
+	  CGM->getModule()->getOrInsertFunction("FreeBlock", Type::VoidTy,
+			  Block->getType(), (void*)0);
   Value *Args[] = {Block};
   CallInst::Create(FreeBlockFn, &Args[0], &Args[1], "",
       CleanupBB->getTerminator());

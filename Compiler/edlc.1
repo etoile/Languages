@@ -7,7 +7,8 @@
 .Sh SYNOPSIS
 .Nm du
 .Op Fl t
-.Op Fl c Ar class
+.Op Fl c 
+.Op Fl C Ar class
 .Op Fl l Ar framework
 .Op Fl L Ar plist
 {
@@ -32,7 +33,9 @@ Options are as follows:
 .Bl -tag -width Ds
 .It Fl b Ar bundle
 Specify the Smalltalk bundle to load.
-.It Fl c Ar class
+.It Fl c
+Statically compile (to LLVM bitcode) and exit.  Do not run the program.
+.It Fl C Ar class
 Specify the class to instantiate.  Instances of this class must respond to the
 run message.
 .It Fl f Ar file

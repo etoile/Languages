@@ -23,6 +23,9 @@
 #include <iostream>
 #include <fstream>
 
+// A copy of the Small Int message module, used when static compiling.
+static Module *SmallIntMessages = NULL;
+
 Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
         std::string &Name, unsigned GEPs) {
   Constant * ConstStr = ConstantArray::get(Str);
@@ -32,10 +35,30 @@ Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
 }
 
 
-CodeGenModule::CodeGenModule(const char *ModuleName) {
-  TheModule = ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
-  Runtime = CreateObjCRuntime(*TheModule, IntTy,
-     IntegerType::get(sizeof(long) * 8));
+CodeGenModule::CodeGenModule(const char *ModuleName, bool jit) 
+{
+	// When we JIT code, we put the Small Int message functions inside the
+	// module, to allow them to be inlined by module passes.  When static
+	// compiling, we reference them externally and let the link-time optimiser
+	// inline them.
+	if (jit)
+	{
+		TheModule = 
+			ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
+		SmallIntModule = TheModule;
+	}
+	else
+	{
+		if (NULL == SmallIntMessages)
+		{
+			SmallIntMessages = ParseBitcodeFile(
+					MemoryBuffer::getFile(MsgSendSmallIntFilename));
+		}
+		TheModule = new Module(ModuleName);
+		SmallIntModule = SmallIntMessages;
+	}
+	Runtime = CreateObjCRuntime(*TheModule, IntTy,
+	IntegerType::get(sizeof(long) * 8));
 }
 
 void CodeGenModule::BeginClass(const char *Class, const char *Super, const
@@ -164,6 +187,27 @@ Value *CodeGenModule::IntConstant(const char *value) {
 
 void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 {
+	// Set the module init function to be a global ctor
+	llvm::Function *init = Runtime->ModuleInitFunction();
+	llvm::StructType* CtorStructTy = llvm::StructType::get(llvm::Type::Int32Ty,
+			init->getType(), NULL);
+
+	std::vector<llvm::Constant*> Ctors;
+
+	std::vector<llvm::Constant*> S;
+	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(init);
+	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
+
+	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
+	new llvm::GlobalVariable(AT, false, llvm::GlobalValue::AppendingLinkage,
+			llvm::ConstantArray::get(AT, Ctors), "llvm.global_ctors", TheModule);
+
+	PassManager pm;
+	pm.add(createVerifierPass());
+	pm.add(new TargetData(TheModule));
+	pm.run(*TheModule);
+	DUMP(TheModule);
 	std::filebuf fb;
 	fb.open (filename, std::ios::out);
 	std::ostream os(&fb);

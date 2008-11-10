@@ -39,7 +39,7 @@ extern int DEBUG_DUMP_MODULES;
 {
 	DEBUG_DUMP_MODULES = (int) aFlag;
 }
-+ (BOOL) compileString:(NSString*)s
++ (BOOL) compileString:(NSString*)s withGenerator:(id<LKCodeGenerator>)cg
 {
 	id p = [[[[self parser] alloc] init] autorelease];
 	LKAST *ast;
@@ -60,9 +60,17 @@ extern int DEBUG_DUMP_MODULES;
 		}
 		NS_VALUERETURN(NO, BOOL);
 	NS_ENDHANDLER	
-	id cg = defaultCodeGenerator();
 	[ast compileWith:cg];
 	return YES;
+}
++ (BOOL) compileString:(NSString*) source output:(NSString*)bitcode;
+{
+	id<LKCodeGenerator> cg = defaultStaticCompilterWithFile(bitcode);
+	return [self compileString:source withGenerator:cg];
+}
++ (BOOL) compileString:(NSString*)s
+{
+	return [self compileString:s withGenerator:defaultJIT()];
 }
 
 + (BOOL) loadFramework:(NSString*)framework

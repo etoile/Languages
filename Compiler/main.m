@@ -4,7 +4,7 @@
 #include <sys/resource.h>
 #import <LanguageKit/LKCompiler.h>
 
-static BOOL compileScript(NSString *script, NSString *extension)
+static NSString* stripScriptPreamble(NSString *script)
 {
 	if ([script length] > 2
 		&&
@@ -13,20 +13,34 @@ static BOOL compileScript(NSString *script, NSString *extension)
 		NSRange r = [script rangeOfString:@"\n"];
 		if (r.location == NSNotFound)
 		{
-			return NO;
+			script = nil;
 		}
 		else
 		{
 			script = [script substringFromIndex:r.location];
 		}
 	}
+	return script;
+}
+
+static BOOL jitScript(NSString *script, NSString *extension)
+{
+	script = stripScriptPreamble(script);
 	return [[LKCompiler compilerForExtension:extension] compileString:script];
+}
+
+static BOOL staticCompileScript(NSString *script, NSString *outFile, 
+		NSString *extension)
+{
+	script = stripScriptPreamble(script);
+	return [[LKCompiler compilerForExtension:extension] compileString:script
+	                                                           output:outFile];
 }
 
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
-	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:c:l:L:", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	NSCAssert(nil == bundle, 
 			@"Smalltalk bundles are not yet supported.  Sorry.");
@@ -63,8 +77,17 @@ int main(int argc, char **argv)
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
 	NSString *extension = [ProgramFile pathExtension];
+	// Static compile
+	if ([[opts objectForKey:@"c"] boolValue])
+	{
+		NSString *bcFile = [[ProgramFile stringByDeletingPathExtension]
+			stringByAppendingPathExtension:@"bc"];
+		staticCompileScript(Program, bcFile, extension);
+		return 0;
+	}
+	// JIT compile and run
 	clock_t c1 = clock();
-	if (!compileScript(Program, extension))
+	if (!jitScript(Program, extension))
 	{
 		NSLog(@"Failed to compile input.");
 		return 2;
@@ -78,7 +101,7 @@ int main(int argc, char **argv)
 			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
 	}
 
-	NSString * className = [opts objectForKey:@"c"];
+	NSString * className = [opts objectForKey:@"C"];
 	if (nil == className)
 	{
 		className = @"SmalltalkTool";

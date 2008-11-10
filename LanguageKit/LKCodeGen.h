@@ -178,4 +178,12 @@
  */
 - (void*) generateConstantSymbol:(NSString*)aSymbol;
 @end
-id <LKCodeGenerator> defaultCodeGenerator(void);
+/**
+ * Returns the default code generator for JIT compilation.
+ */
+id <LKCodeGenerator> defaultJIT(void);
+/**
+ * Returns the default code generator for static compilation, outputting to the
+ * file specified in the argument.
+ */
+id <LKCodeGenerator> defaultStaticCompilterWithFile(NSString*);

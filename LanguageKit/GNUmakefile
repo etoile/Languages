@@ -16,7 +16,8 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 	CodeGenModule.cpp\
 	CodeGenLexicalScope.cpp\
 	LLVMCodeGen.cpp\
-	LLVMCodeGenCAPI.cpp
+	LLVMCodeGenCAPI.cpp\
+	#UnboxPass.cpp
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKAST.m\

@@ -29,6 +29,7 @@ private:
   friend class CodeGenLexicalScope;
 
   Module *TheModule;
+  Module *SmallIntModule;
   CGObjCRuntime * Runtime;
   const Type *CurrentClassTy;
   IRBuilder<> *MethodBuilder;
@@ -67,9 +68,10 @@ public:
    */
   CodeGenLexicalScope *getCurrentScope() { return ScopeStack.back(); }
   /**
-   * Initialise for the specified module.
+   * Initialise for the specified module.  The second argument specifies
+   * whether the module should be used for static or JIT compilation.
    */
-  CodeGenModule(const char *ModuleName);
+	CodeGenModule(const char *ModuleName, bool jit=true);
 
   /**
    * Start generating code for a class.
@@ -134,6 +136,11 @@ public:
    * Create a string (object) constant.
    */
   Value *StringConstant(const char *value);
+
+  /**
+   * Get the module which provides static definitions of small int messages.
+   */
+  Module *getSmallIntModule() { return SmallIntModule; };
 
   /**
    * Compile and load this module.
