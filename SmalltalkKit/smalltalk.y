@@ -10,7 +10,7 @@ domain parser generator, to produce an Objective-C parser.
 %token_prefix TOKEN_
 %token_type {id}
 %extra_argument {SmalltalkParser *p}
-%left BINARY EQ.
+%left BINARY EQ PLUS.
 %left WORD.
 
 file ::= module(M).
@@ -81,6 +81,10 @@ method_list(L) ::= .
 method(M) ::= signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
 {
 	M = [LKInstanceMethod methodWithSignature:S locals:L statements:E];
+}
+method(M) ::= PLUS signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
+{
+	M = [LKClassMethod methodWithSignature:S locals:L statements:E];
 }
 
 signature(S) ::= WORD(M).
@@ -201,6 +205,13 @@ simple_expression(E) ::= simple_expression(L) BINARY(S) simple_expression(R).
 	E = [[[LKMessageSend alloc] init] autorelease];
 	[E setTarget:L];
 	[E addSelectorComponent:S];
+	[E addArgument:R];
+}
+simple_expression(E) ::= simple_expression(L) PLUS simple_expression(R).
+{
+	E = [[[LKMessageSend alloc] init] autorelease];
+	[E setTarget:L];
+	[E addSelectorComponent:@"plus:"];
 	[E addArgument:R];
 }
 simple_expression(E) ::= simple_expression(L) EQ simple_expression(R).
