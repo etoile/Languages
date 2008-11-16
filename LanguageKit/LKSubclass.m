@@ -108,7 +108,7 @@
 	{
 		const char* deallocty = sel_get_type(sel_get_any_typed_uid("dealloc"));
 
-		[aGenerator beginMethod:"dealloc" withTypes:deallocty locals:0];
+		[aGenerator beginInstanceMethod:"dealloc" withTypes:deallocty locals:0];
 		void *selfptr = [aGenerator loadSelf];
 		const char* releasety = sel_get_type(sel_get_any_typed_uid("release"));
 		for (unsigned i=0 ; i<[ivars count] ; i++)
