@@ -59,9 +59,13 @@ extern "C" {
     B->getCurrentScope()->SetReturn(retval);
   }
 
-  void BeginMethod(ModuleBuilder B, const char *methodname, const char
+  void BeginClassMethod(ModuleBuilder B, const char *methodname, const char
       *methodTypes, unsigned locals) {
-    B->BeginMethod(methodname, methodTypes, locals);
+    B->BeginClassMethod(methodname, methodTypes, locals);
+  }
+  void BeginInstanceMethod(ModuleBuilder B, const char *methodname, const char
+      *methodTypes, unsigned locals) {
+    B->BeginInstanceMethod(methodname, methodTypes, locals);
   }
 
   void EndMethod(ModuleBuilder B) {

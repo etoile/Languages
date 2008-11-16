@@ -39,13 +39,21 @@
  */
 - (void) endCategory;
 /**
- * Begin a method with the specified type encoding and number of local
+ * Begin a class method with the specified type encoding and number of local
  * variables.  Local variables and arguments are indexed by number, the code
  * generator is not aware of any symbol table information.
  */
-- (void) beginMethod:(const char*) aName
-           withTypes:(const char*)types
-              locals:(unsigned)locals;
+- (void) beginClassMethod:(const char*) aName
+                withTypes:(const char*)types
+                   locals:(unsigned)locals;
+/**
+ * Begin an instance method with the specified type encoding and number of local
+ * variables.  Local variables and arguments are indexed by number, the code
+ * generator is not aware of any symbol table information.
+ */
+- (void) beginInstanceMethod:(const char*) aName
+                   withTypes:(const char*)types
+                      locals:(unsigned)locals;
 /**
  * Sends a message to a receiver which may be a SmallInt (a boxed Smalltalk
  * integer contained within an object pointer).

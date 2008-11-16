@@ -165,7 +165,7 @@ public:
 class CodeGenMethod : public CodeGenLexicalScope {
 public:
   CodeGenMethod(CodeGenModule *Mod, const char *MethodName, const char
-      *MethodTypes, int locals);
+      *MethodTypes, int locals, bool isClass=false);
 };
 
 #endif 

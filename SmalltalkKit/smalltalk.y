@@ -80,7 +80,7 @@ method_list(L) ::= .
 
 method(M) ::= signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
 {
-	M = [LKMethod methodWithSignature:S locals:L statements:E];
+	M = [LKInstanceMethod methodWithSignature:S locals:L statements:E];
 }
 
 signature(S) ::= WORD(M).

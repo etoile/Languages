@@ -90,10 +90,15 @@ LLVMValue LoadClass(ModuleBuilder B, const char *classname);
  */
 void SetReturn(ModuleBuilder B, LLVMValue retval);
 /**
- * Begin a method.
+ * Begin a class method.
  */
-void BeginMethod(ModuleBuilder B, const char *methodname, const char
-    *methodTypes, unsigned args);
+void BeginClassMethod(ModuleBuilder B, const char *methodname, const char
+		*methodTypes, unsigned args);
+/**
+ * Begin an instance method.
+ */
+void BeginInstanceMethod(ModuleBuilder B, const char *methodname, const char
+		*methodTypes, unsigned args);
 /**
  * End the current method.
  */

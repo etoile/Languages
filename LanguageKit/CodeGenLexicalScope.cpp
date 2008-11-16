@@ -490,14 +490,19 @@ Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs) {
 }
 
 Value *CodeGenLexicalScope::SymbolConstant(const char *symbol) {
-  // FIXME: Make constant symbols global objects instead of creating them once
-  // for every use.
-  CGObjCRuntime *Runtime = CGM->getRuntime();
-  Value *SymbolCalss = Runtime->LookupClass(Builder,
-      CGM->MakeConstantString("Symbol"));
-  Value *V = CGM->MakeConstantString(symbol);
-  return Runtime->GenerateMessageSend(Builder, IdTy, NULL, SymbolCalss,
-          Runtime->GetSelector(Builder, "SymbolForCString:", NULL), &V, 1);
+	// TODO: Duplicate elimination
+	CGObjCRuntime *Runtime = CGM->getRuntime();
+	IRBuilder<> * initBuilder = CGM->getInitBuilder();
+	Value *SymbolClass = Runtime->LookupClass(*initBuilder,
+		CGM->MakeConstantString("Symbol"));
+	Value *V = CGM->MakeConstantString(symbol);
+	Value *S = Runtime->GenerateMessageSend(*initBuilder, IdTy, NULL,
+			SymbolClass, Runtime->GetSelector(*initBuilder, 
+				"SymbolForCString:", NULL), &V, 1);
+	GlobalVariable *GS = new GlobalVariable(IdTy, false,
+			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
+			symbol, CGM->getModule()); initBuilder->CreateStore(S, GS);
+	return Builder.CreateLoad(GS);
 }
 
 Value *CodeGenLexicalScope::MessageSendId(Value *receiver, const char *selName,

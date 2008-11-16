@@ -71,11 +71,18 @@ typedef int bool;
 	EndCategory(Builder);
 }
 
-- (void) beginMethod:(const char*) aName
-           withTypes:(const char*)types
-              locals:(unsigned)locals
+- (void) beginClassMethod:(const char*) aName
+                withTypes:(const char*)types
+                   locals:(unsigned)locals
 {
-	BeginMethod(Builder, aName, types, locals);
+	BeginClassMethod(Builder, aName, types, locals);
+}
+
+- (void) beginInstanceMethod:(const char*) aName
+                   withTypes:(const char*)types
+                      locals:(unsigned)locals
+{
+	BeginInstanceMethod(Builder, aName, types, locals);
 }
 
 - (void*) sendMessage:(const char*)aMessage

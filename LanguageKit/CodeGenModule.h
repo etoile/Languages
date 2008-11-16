@@ -30,6 +30,8 @@ private:
 
   Module *TheModule;
   Module *SmallIntModule;
+  Function *LiteralInitFunction;
+  IRBuilder<>InitialiseBuilder;
   CGObjCRuntime * Runtime;
   const Type *CurrentClassTy;
   IRBuilder<> *MethodBuilder;
@@ -57,6 +59,7 @@ private:
 
 public:
   const Type *getCurrentClassTy() { return CurrentClassTy; }
+  IRBuilder<> *getInitBuilder() { return &InitialiseBuilder; }
   const string& getClassName() { return ClassName; }
   const string& getSuperClassName() { return SuperClassName; }
   Module *getModule() { return TheModule; }
@@ -95,9 +98,16 @@ public:
   void EndCategory(void);
 
   /**
+   * Start a class method.
+   */
+  void BeginClassMethod(const char *MethodName, const char *MethodTypes, int
+		  locals);
+
+  /**
    * Start a method.
    */
-  void BeginMethod(const char *MethodName, const char *MethodTypes, int locals);
+  void BeginInstanceMethod(const char *MethodName, const char *MethodTypes, int
+		  locals);
 
   /**
    * End the current method.
@@ -162,9 +172,5 @@ extern "C" {
 void SkipTypeQualifiers(const char **typestr);
 const Type *LLVMTypeFromString(const char * typestr);
 llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr);
-void InitialiseFunction(IRBuilder<> *B, Function *F, Value *&Self,
-    SmallVectorImpl<Value*> &Args, SmallVectorImpl<Value*> &Locals, unsigned
-    locals, Value *&RetVal, BasicBlock *&CleanupBB);
-
     // Set up the arguments
 #endif // __CODE_GEN_MODULE__INCLUDED__

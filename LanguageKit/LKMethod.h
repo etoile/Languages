@@ -24,3 +24,7 @@
  */
 - (void) setSignature:(LKMessageSend*)aSignature;
 @end
+@interface LKInstanceMethod : LKMethod {}
+@end
+@interface LKClassMethod : LKMethod {}
+@end

@@ -59,6 +59,10 @@
 	[str appendString:@"]"];
 	return str;
 }
+- (void) beginMethodWith:(id)aGenerator
+        forSelectorNamed:(const char*)sel
+			   withTypes:(const char*)types
+{}
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	const char *sel = [[signature selector] UTF8String];
@@ -77,14 +81,34 @@
 		}
 		types = [ty UTF8String];
 	}
-	[aGenerator beginMethod:sel
-				  withTypes:types
-					 locals:[[(LKMethodSymbolTable*)symbols locals] count]];
+	[self beginMethodWith:aGenerator forSelectorNamed:sel withTypes:types];
 	FOREACH(statements, statement, LKAST*)
 	{
 		[statement compileWith:aGenerator];
 	}
 	[aGenerator endMethod];
 	return NULL;
+}
+@end
+@implementation LKInstanceMethod
+- (void) beginMethodWith:(id)aGenerator
+        forSelectorNamed:(const char*)sel
+			   withTypes:(const char*)types
+{
+	[aGenerator beginInstanceMethod:sel
+				          withTypes:types
+					         locals:
+							 [[(LKMethodSymbolTable*)symbols locals] count]];
+}
+@end
+@implementation LKClassMethod
+- (void) beginMethodWith:(id)aGenerator
+        forSelectorNamed:(const char*)sel
+			   withTypes:(const char*)types
+{
+	[aGenerator beginClassMethod:sel
+				       withTypes:types
+					      locals:
+							 [[(LKMethodSymbolTable*)symbols locals] count]];
 }
 @end

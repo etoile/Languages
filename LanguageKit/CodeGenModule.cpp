@@ -57,8 +57,17 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 		TheModule = new Module(ModuleName);
 		SmallIntModule = SmallIntMessages;
 	}
+	std::vector<const llvm::Type*> VoidArgs;
+	LiteralInitFunction = llvm::Function::Create(
+				  llvm::FunctionType::get(llvm::Type::VoidTy, VoidArgs, false),
+				  llvm::GlobalValue::ExternalLinkage, ".languagekit_constants",
+				  TheModule);
+	BasicBlock *EntryBB = 
+		llvm::BasicBlock::Create("entry", LiteralInitFunction);
+	InitialiseBuilder.SetInsertPoint(EntryBB);
+
 	Runtime = CreateObjCRuntime(*TheModule, IntTy,
-	IntegerType::get(sizeof(long) * 8));
+			IntegerType::get(sizeof(long) * 8));
 }
 
 void CodeGenModule::BeginClass(const char *Class, const char *Super, const
@@ -108,7 +117,7 @@ void CodeGenModule::EndCategory(void) {
 }
 
 CodeGenMethod::CodeGenMethod(CodeGenModule *Mod, const char *MethodName, const
-    char *MethodTypes, int locals) : CodeGenLexicalScope(Mod) {
+    char *MethodTypes, int locals, bool isClass) : CodeGenLexicalScope(Mod) {
   // Generate the method function
   FunctionType *MethodTy = LLVMFunctionTypeFromString(MethodTypes);
   unsigned argc = MethodTy->getNumParams() - 2;
@@ -122,18 +131,33 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod, const char *MethodName, const
 
   CurrentFunction = CGM->getRuntime()->MethodPreamble(CGM->getClassName(),
       CGM->getCategoryName(), MethodName, MethodTy->getReturnType(),
-      CGM->getCurrentClassTy(), argTypes, argc, false, false);
+      CGM->getCurrentClassTy(), argTypes, argc, isClass, false);
 
   InitialiseFunction(Args, Locals, locals, MethodTypes);
 }
-void CodeGenModule::BeginMethod(const char *MethodName, const char
+
+void CodeGenModule::BeginInstanceMethod(const char *MethodName, const char
     *MethodTypes, int locals) {
   // Log the method name and types so that we can use it to set up the class
   // structure.
   InstanceMethodNames.push_back(MethodName);
   InstanceMethodTypes.push_back(MethodTypes);
-  assert(ScopeStack.empty() && "Creating a method inside something is not sensible");
-  ScopeStack.push_back(new CodeGenMethod(this, MethodName, MethodTypes, locals));
+  assert(ScopeStack.empty()
+		  && "Creating a method inside something is not sensible");
+  ScopeStack.push_back(
+		  new CodeGenMethod(this, MethodName, MethodTypes, locals));
+}
+
+void CodeGenModule::BeginClassMethod(const char *MethodName, const char
+    *MethodTypes, int locals) {
+  // Log the method name and types so that we can use it to set up the class
+  // structure.
+  ClassMethodNames.push_back(MethodName);
+  ClassMethodTypes.push_back(MethodTypes);
+  assert(ScopeStack.empty() 
+		  && "Creating a method inside something is not sensible");
+  ScopeStack.push_back(
+		  new CodeGenMethod(this, MethodName, MethodTypes, locals, true));
 }
 
 void CodeGenModule::EndMethod() {
@@ -187,6 +211,7 @@ Value *CodeGenModule::IntConstant(const char *value) {
 
 void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 {
+	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
 	llvm::StructType* CtorStructTy = llvm::StructType::get(llvm::Type::Int32Ty,
@@ -197,6 +222,11 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	std::vector<llvm::Constant*> S;
 	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
 	S.push_back(init);
+	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
+	// Add the constant initialisation function
+	S.clear();
+	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0x1ffff, false));
+	S.push_back(LiteralInitFunction);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 
 	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
@@ -218,39 +248,42 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 static ExecutionEngine *EE = NULL;
 
 void CodeGenModule::compile(void) {
-  llvm::Function *init = Runtime->ModuleInitFunction();
-  // Make the init function external so the optimisations won't remove it.
-  init->setLinkage(GlobalValue::ExternalLinkage);
-  DUMP(TheModule);
-  LOG("\n\n\n Optimises to:\n\n\n");
-  PassManager pm;
-  pm.add(createVerifierPass());
-  pm.add(new TargetData(TheModule));
-  pm.add(createAggressiveDCEPass());
-  pm.add(createPromoteMemoryToRegisterPass());
-  pm.add(createFunctionInliningPass());
-  pm.add(createIPConstantPropagationPass());
-  pm.add(createSimplifyLibCallsPass());
-  pm.add(createPredicateSimplifierPass());
-  pm.add(createCondPropagationPass());
-  pm.add(createInstructionCombiningPass());
-  pm.add(createTailDuplicationPass());
-  pm.add(createCFGSimplificationPass());
-  pm.add(createStripDeadPrototypesPass());
-  pm.run(*TheModule);
-  DUMP(TheModule);
-  if (NULL == EE)
-  {
-    EE = ExecutionEngine::create(TheModule);
-  }
-  else
-  {
-    EE->addModuleProvider(new ExistingModuleProvider(TheModule));
-  }
-  LOG("Compiling...\n");
-  EE->runStaticConstructorsDestructors(TheModule, false);
-  void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
-  LOG("Loading %x...\n", (unsigned)(unsigned long)f);
-  f();
-  LOG("Loaded.\n");
+	InitialiseBuilder.CreateRetVoid();
+	llvm::Function *init = Runtime->ModuleInitFunction();
+	// Make the init function external so the optimisations won't remove it.
+	init->setLinkage(GlobalValue::ExternalLinkage);
+	DUMP(TheModule);
+	LOG("\n\n\n Optimises to:\n\n\n");
+	PassManager pm;
+	pm.add(createVerifierPass());
+	pm.add(new TargetData(TheModule));
+	pm.add(createAggressiveDCEPass());
+	pm.add(createPromoteMemoryToRegisterPass());
+	pm.add(createFunctionInliningPass());
+	pm.add(createIPConstantPropagationPass());
+	pm.add(createSimplifyLibCallsPass());
+	pm.add(createPredicateSimplifierPass());
+	pm.add(createCondPropagationPass());
+	pm.add(createInstructionCombiningPass());
+	pm.add(createTailDuplicationPass());
+	pm.add(createCFGSimplificationPass());
+	pm.add(createStripDeadPrototypesPass());
+	pm.run(*TheModule);
+	DUMP(TheModule);
+	if (NULL == EE)
+	{
+		EE = ExecutionEngine::create(TheModule);
+	}
+	else
+	{
+		EE->addModuleProvider(new ExistingModuleProvider(TheModule));
+	}
+	LOG("Compiling...\n");
+	EE->runStaticConstructorsDestructors(TheModule, false);
+	void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
+	LOG("Loading %x...\n", (unsigned)(unsigned long)f);
+	f();
+	LiteralInitFunction->dump();
+	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
+	LOG("Loaded.\n");
 }
