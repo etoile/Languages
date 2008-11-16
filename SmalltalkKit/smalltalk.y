@@ -151,6 +151,56 @@ statement(S) ::= WORD(T) COLON EQ expression(E).
 	[NSException raise:@"ParserError" format:@"Parsing failed"];
 }
 
+message(M) ::= keyword_message(K).
+{
+	M = K;
+}
+message(M) ::= simple_message(S).
+{
+	M = S;
+}
+
+keyword_message(M) ::= keyword_message(G) KEYWORD(K) simple_expression(A).
+{
+	M = G;
+	[M addSelectorComponent:K];
+	[M addArgument:A];
+}
+keyword_message(M) ::= KEYWORD(K) simple_expression(A).
+{
+	M = [[[LKMessageSend alloc] init] autorelease];
+	[M addSelectorComponent:K];
+	[M addArgument:A];
+}
+
+simple_message(M) ::= WORD(S).
+{
+	M = [[[LKMessageSend alloc] init] autorelease];
+	[M addSelectorComponent:S];
+}
+simple_message(M) ::= BINARY(S) simple_expression(R).
+{
+	M = [[[LKMessageSend alloc] init] autorelease];
+	[M addSelectorComponent:S];
+	[M addArgument:R];
+}
+simple_message(M) ::= PLUS simple_expression(R).
+{
+	M = [[[LKMessageSend alloc] init] autorelease];
+	[M addSelectorComponent:@"plus:"];
+	[M addArgument:R];
+}
+simple_message(M) ::= EQ simple_expression(R).
+{
+	M = [[[LKMessageSend alloc] init] autorelease];
+	[M addSelectorComponent:@"isEqual:"];
+	[M addArgument:R];
+}
+
+expression(E) ::= cascade_expression(C).
+{
+	E = C;
+}
 expression(E) ::= keyword_expression(K).
 {
 	E = K;
@@ -160,18 +210,27 @@ expression(E) ::= simple_expression(S).
 	E = S;
 }
 
-keyword_expression(E) ::= keyword_expression(M) KEYWORD(K) simple_expression(A).
+cascade_expression(E) ::= cascade_expression(C) SEMICOLON message(M).
 {
-	[M addSelectorComponent:K];
-	[M addArgument:A];
+	//[C addMessage:M];
+	NSLog(@"Ignoring cascade message %@", M);
+	E = C;
+}
+cascade_expression(E) ::= simple_expression(T) message(M) SEMICOLON message(G).
+{
+	//E = [[[LKCascadeMessageSend alloc] init] autorelease];
+	//[E setTarget:T];
+	//[E addMessage:M];
+	//[E addMessage:G];
+	NSLog(@"Ignoring cascade message %@", G);
+	[M setTarget:T];
 	E = M;
 }
-keyword_expression(M) ::= simple_expression(T) KEYWORD(K) simple_expression(A).
+
+keyword_expression(E) ::= simple_expression(T) keyword_message(M).
 {
-	M = [[[LKMessageSend alloc] init] autorelease];
 	[M setTarget:T];
-	[M addSelectorComponent:K];
-	[M addArgument:A];
+	E = M;
 }
 
 simple_expression(E) ::= WORD(V).
@@ -194,32 +253,10 @@ simple_expression(E) ::= AT WORD(S).
 {
 	E = [LKNumberLiteral literalFromSymbol:S];
 }
-simple_expression(E) ::= simple_expression(L) WORD(S).
+simple_expression(E) ::= simple_expression(T) simple_message(M).
 {
-	E = [[[LKMessageSend alloc] init] autorelease];
-	[E setTarget:L];
-	[E addSelectorComponent:S];
-}
-simple_expression(E) ::= simple_expression(L) BINARY(S) simple_expression(R).
-{
-	E = [[[LKMessageSend alloc] init] autorelease];
-	[E setTarget:L];
-	[E addSelectorComponent:S];
-	[E addArgument:R];
-}
-simple_expression(E) ::= simple_expression(L) PLUS simple_expression(R).
-{
-	E = [[[LKMessageSend alloc] init] autorelease];
-	[E setTarget:L];
-	[E addSelectorComponent:@"plus:"];
-	[E addArgument:R];
-}
-simple_expression(E) ::= simple_expression(L) EQ simple_expression(R).
-{
-	E = [[[LKMessageSend alloc] init] autorelease];
-	[E setTarget:L];
-	[E addSelectorComponent:@"isEqual:"];
-	[E addArgument:R];
+	[M setTarget:T];
+	E = M;
 }
 simple_expression(E) ::= simple_expression(L) EQ EQ simple_expression(R).
 {
