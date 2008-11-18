@@ -8,13 +8,20 @@ NSObject subclass: TestBlock
 ]
 NSObject subclass: SmalltalkTool
 [
-	| +classvar |
 	+alloc [
 		'Class method alloc called' log.
 		^super alloc.
 	]
+	cascade1 [
+		'First cascade message sent' log.
+	]
+	cascade2 [
+		'Second cascade message sent' log.
+	]
 	run [
 	| task |
+		"Test cascade messages:"
+		self cascade1; cascade2 ; cascade1; cascade2.
 		(TestBlock new) log.
 		(NSObject new) log.
 		(NSString new) log.

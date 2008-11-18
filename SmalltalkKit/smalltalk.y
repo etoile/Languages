@@ -212,19 +212,13 @@ expression(E) ::= simple_expression(S).
 
 cascade_expression(E) ::= cascade_expression(C) SEMICOLON message(M).
 {
-	//[C addMessage:M];
-	NSLog(@"Ignoring cascade message %@", M);
+	[C addMessage:M];
 	E = C;
 }
 cascade_expression(E) ::= simple_expression(T) message(M) SEMICOLON message(G).
 {
-	//E = [[[LKCascadeMessageSend alloc] init] autorelease];
-	//[E setTarget:T];
-	//[E addMessage:M];
-	//[E addMessage:G];
-	NSLog(@"Ignoring cascade message %@", G);
-	[M setTarget:T];
-	E = M;
+	E = [LKMessageCascade messageCascadeWithTarget:T messages:
+		[NSMutableArray arrayWithObjects:M, G, nil]];
 }
 
 keyword_expression(E) ::= simple_expression(T) keyword_message(M).

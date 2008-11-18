@@ -10,6 +10,7 @@ NSObject subclass: SmalltalkTool
 [
 	run [
 	| task |
+		#aSymbol log.
 		(TestBlock new) log.
 		(NSObject new) log.
 		(NSString new) log.

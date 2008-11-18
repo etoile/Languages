@@ -136,7 +136,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	return str;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator forTarget:(void*)receiver
 {
 	unsigned argc = [arguments count];
 	void *argv[argc];
@@ -144,8 +144,6 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		argv[i] = [[arguments objectAtIndex:i] compileWith:aGenerator];
 	}
-	void * receiver;
-	receiver = [target compileWith:aGenerator];
 	const char *sel = [selector UTF8String];
 	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
 	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
@@ -212,5 +210,58 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		                  count:0];
 	}
 	return result;
+}
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+{
+	return [self compileWith:aGenerator
+	               forTarget:[target compileWith:aGenerator]];
+}
+@end
+@implementation LKMessageCascade 
+- (LKMessageCascade*) initWithTarget:(LKAST*) aTarget
+                            messages:(NSMutableArray*) messageArray
+{
+	SELFINIT;
+	ASSIGN(receiver, aTarget);
+	ASSIGN(messages, messageArray);
+	return self;
+}
++ (LKMessageCascade*) messageCascadeWithTarget:(LKAST*) aTarget
+                                      messages:(NSMutableArray*) messageArray
+{
+	LKMessageCascade *obj = [[self alloc] initWithTarget:aTarget
+	                                            messages:messageArray];
+	[obj autorelease];
+	return obj;
+}
+- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+{
+	id target = [receiver compileWith:aGenerator];
+	id result;
+	FOREACH(messages, message, LKMessageSend*)
+	{
+		result = [message compileWith:aGenerator forTarget:target];
+	}
+	return result;
+}
+- (void) addMessage:(LKMessageSend*)aMessage
+{
+	[messages addObject:aMessage];
+}
+- (void) check
+{
+	[receiver setParent:self];
+	[receiver check];
+	FOREACH(messages, message, LKMessageSend*)
+	{
+		[message setParent:self];
+		[message check];
+	}
+}
+- (void) dealloc
+{
+	[receiver release];
+	[messages release];
+	[super dealloc];
 }
 @end

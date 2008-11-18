@@ -32,3 +32,15 @@
  */
 - (NSString*) selector;
 @end
+/**
+ * Send an array of messages to the same receiver.  The receiver expression
+ * will be evaluated once and each message will be sent to this receiver.
+ */
+@interface LKMessageCascade : LKAST {
+	LKAST *receiver;
+	NSMutableArray *messages;
+}
++ (LKMessageCascade*) messageCascadeWithTarget:(LKAST*) aTarget
+                                      messages:(NSMutableArray*) messageArray;
+- (void) addMessage:(LKMessageSend*)aMessage;
+@end
