@@ -8,6 +8,11 @@ NSObject subclass: TestBlock
 ]
 NSObject subclass: SmalltalkTool
 [
+	| +classvar |
+	+alloc [
+		'Class method alloc called' log.
+		^super alloc.
+	]
 	run [
 	| task |
 		(TestBlock new) log.
