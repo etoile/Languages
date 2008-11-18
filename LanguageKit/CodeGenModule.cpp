@@ -142,6 +142,7 @@ void CodeGenModule::BeginInstanceMethod(const char *MethodName, const char
   // structure.
   InstanceMethodNames.push_back(MethodName);
   InstanceMethodTypes.push_back(MethodTypes);
+  inClassMethod = false;
   assert(ScopeStack.empty()
 		  && "Creating a method inside something is not sensible");
   ScopeStack.push_back(
@@ -158,6 +159,7 @@ void CodeGenModule::BeginClassMethod(const char *MethodName, const char
 		  && "Creating a method inside something is not sensible");
   ScopeStack.push_back(
 		  new CodeGenMethod(this, MethodName, MethodTypes, locals, true));
+  inClassMethod = true;
 }
 
 void CodeGenModule::EndMethod() {
@@ -283,7 +285,6 @@ void CodeGenModule::compile(void) {
 	void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
 	LOG("Loading %x...\n", (unsigned)(unsigned long)f);
 	f();
-	LiteralInitFunction->dump();
 	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
 	LOG("Loaded.\n");
 }

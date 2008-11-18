@@ -88,7 +88,8 @@ public:
                                                 llvm::Value *Receiver,
                                                 llvm::Value *Sel,
                                                 llvm::Value** ArgV,
-                                                unsigned ArgC) = 0;
+                                                unsigned ArgC,
+												bool isClassMessage) = 0;
   /// Generate the named protocol.  Protocols contain method metadata but no 
   /// implementations. 
   virtual void GenerateProtocol(const char *ProtocolName,

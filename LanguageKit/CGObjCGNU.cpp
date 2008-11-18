@@ -20,8 +20,10 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include <map>
+#include <string>
 
-using llvm::dyn_cast;
+using namespace llvm;
+using namespace std;
 
 // The version of the runtime that this class targets.  Must match the version
 // in the runtime.
@@ -103,7 +105,8 @@ public:
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
                                             llvm::Value** ArgV,
-                                            unsigned ArgC);
+                                            unsigned ArgC,
+											bool isClassMessage);
   virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder, llvm::Value
       *ClassName);
   virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
@@ -327,10 +330,19 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
                                             llvm::Value** ArgV,
-                                            unsigned ArgC) {
-  // TODO: This should be cached, not looked up every time.
-  llvm::Value *ReceiverClass = LookupClass(Builder,
-      MakeConstantString(SuperClassName));
+                                            unsigned ArgC,
+											bool isClassMessage) 
+{
+	// FIXME: Posing will break this.
+	llvm::Value *ReceiverClass = LookupClass(Builder,
+			MakeConstantString(SuperClassName));
+	// If it's a class message, get the metaclass
+	if (isClassMessage)
+	{
+		ReceiverClass = Builder.CreateBitCast(ReceiverClass,
+				PointerType::getUnqual(IdTy));
+		ReceiverClass = Builder.CreateLoad(ReceiverClass);
+	}
   std::vector<const llvm::Type*> impArgTypes;
   impArgTypes.push_back(Receiver->getType());
   impArgTypes.push_back(SelectorTy);
@@ -343,7 +355,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
   llvm::StructType *ObjCSuperTy = llvm::StructType::get(Receiver->getType(),
       IdTy, (void*)0);
   llvm::Value *ObjCSuper = Builder.CreateAlloca(ObjCSuperTy);
-  // FIXME: volatility
   Builder.CreateStore(Receiver, Builder.CreateStructGEP(ObjCSuper, 0));
   Builder.CreateStore(ReceiverClass, Builder.CreateStructGEP(ObjCSuper, 1));
 
@@ -710,7 +721,7 @@ void CGObjCGNU::GenerateClass(
       IvarOffsets);
   //Generate metaclass for class methods
   llvm::Constant *MetaClassStruct = GenerateClassStructure(NULLPtr,
-	  NULLPtr, 0x2L, /*name*/0, 0, llvm::ConstantInt::get(LongTy, 0),
+	  SuperClass, 0x2L, ClassName, 0, llvm::ConstantInt::get(LongTy, 0),
 	  GenerateIvarList(empty, empty, empty2), ClassMethodList, NULLPtr);
   // Generate the class structure
   llvm::Constant *ClassStruct = GenerateClassStructure(MetaClassStruct,

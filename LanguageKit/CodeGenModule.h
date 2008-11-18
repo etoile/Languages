@@ -33,6 +33,7 @@ private:
   Function *LiteralInitFunction;
   IRBuilder<>InitialiseBuilder;
   CGObjCRuntime * Runtime;
+  bool inClassMethod;
   const Type *CurrentClassTy;
   IRBuilder<> *MethodBuilder;
   string ClassName;
