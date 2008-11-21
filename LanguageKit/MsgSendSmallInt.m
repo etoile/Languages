@@ -9,6 +9,7 @@
 - (id) sub:(id)a;
 - (id) div:(id)a;
 - (id) mul:(id)a;
+- (id) mod:(id)a;
 @end
 @interface NSString {}
 + (id) stringWithFormat:(NSString*)a, ...;
@@ -102,6 +103,11 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 #define BOX_AND_RETRY(op) [[BigInt bigIntWithLongLong:(long long)val] \
                     op:[BigInt bigIntWithLongLong:(long long)otherval]]
 
+#define OTHER_OBJECT(op) \
+	if ((((intptr_t)other) & 1) == 0)\
+	{\
+		return [[BigInt bigIntWithLongLong:(long long)val] op:other];\
+	}
 #define RETURN_INT(x)     if((x << 1 >> 1) != x)\
     {\
 		return [BigInt bigIntWithLongLong:(long long)x];\
@@ -110,6 +116,7 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 				
 // FIXME: These only work currently on SmallInt args
 MSG1(plus_)
+	OTHER_OBJECT(plus)
 	intptr_t res = val + otherval;
 	//fprintf(stderr, "Adding %d to %d\n", (int)val, (int)otherval);
 	if((val<=res)==((((uintptr_t)otherval)>>((sizeof(uintptr_t)*8) - 1))))
@@ -121,6 +128,7 @@ MSG1(plus_)
 }
 
 MSG1(sub_)
+	OTHER_OBJECT(sub)
 	intptr_t res = val - otherval;
 	// Check for overflow
 	if ((val & ~otherval & ~res) | (~val & otherval & res) < 0)
@@ -130,6 +138,7 @@ MSG1(sub_)
 	RETURN_INT(res);
 }
 MSG1(mul_)
+	OTHER_OBJECT(mul)
 	// FIXME: Far too conservative - replace with something more efficient.
 	if (val != (short)val || otherval != (short) otherval)
 	{
@@ -139,9 +148,11 @@ MSG1(mul_)
 	RETURN_INT(val);
 }
 MSG1(div_)
+	OTHER_OBJECT(div)
 	RETURN_INT((val / otherval));
 }
 MSG1(mod_)
+	OTHER_OBJECT(mod)
 	RETURN_INT((val % otherval));
 }
 
