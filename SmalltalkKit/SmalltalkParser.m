@@ -64,7 +64,6 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	}
 //#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
 #define CHARCASE(letter, token) case letter: CALL_PARSER(token, @"char"); break;
-#define BINARYCASE(letter, msg) case letter: CALL_PARSER(BINARY, msg); break;
 
 - (AST*) parseString:(NSString*)s
 {
@@ -157,12 +156,17 @@ void ParseFree(void *p, void (*freeProc)(void*));
 				CHARCASE('|', BAR)
 				CHARCASE('@', AT)
 				//CHARCASE('#', HASH)
-				//CHARCASE(',', COMMA)
+				CHARCASE(',', COMMA)
 				CHARCASE(':', COLON)
 				CHARCASE(';', SEMICOLON)
 				CHARCASE('.', STOP)
 				CHARCASE('+', PLUS)
+				CHARCASE('-', MINUS)
+				CHARCASE('*', STAR)
+				CHARCASE('/', SLASH)
 				CHARCASE('=', EQ)
+				CHARCASE('<', LT)
+				CHARCASE('>', GT)
 				CHARCASE('(', LPAREN)
 				CHARCASE(')', RPAREN)
 				CHARCASE('[', LSQBRACK)
@@ -170,11 +174,6 @@ void ParseFree(void *p, void (*freeProc)(void*));
 				CHARCASE('{', LBRACE)
 				CHARCASE('}', RBRACE)
 				CHARCASE('^', RETURN)
-				BINARYCASE('-', @"sub:")
-				BINARYCASE('/', @"div:")
-				BINARYCASE('*', @"mul:")
-				BINARYCASE('<', @"isLessThan:")
-				BINARYCASE('>', @"isGreaterThan:")
 				case '#':
 					j = i++;
 					do

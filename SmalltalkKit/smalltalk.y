@@ -10,7 +10,7 @@ domain parser generator, to produce an Objective-C parser.
 %token_prefix TOKEN_
 %token_type {id}
 %extra_argument {SmalltalkParser *p}
-%left BINARY EQ PLUS.
+%left PLUS MINUS STAR SLASH EQ LT GT.
 %left WORD.
 
 file ::= module(M).
@@ -19,6 +19,12 @@ file ::= module(M).
 	[p setDelegate:M];
 }
 
+module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
+{
+	//[O addPragmas: P];
+	NSLog(@"Pragma: %@", P);
+	M = O;
+}
 module(M) ::= module(O) subclass(S).
 {
 	[O addClass:S];
@@ -36,6 +42,29 @@ module(M) ::= module(O) comment.
 module(M) ::= .
 {
 	M = [[[LKCompilationUnit alloc] init] autorelease];
+}
+
+pragma_dict(P) ::= pragma_dict(D) COMMA WORD(K) EQ pragma_value(V).
+{
+	[D setObject:V forKey:K];
+	P = D;
+}
+pragma_dict(P) ::= WORD(K) EQ pragma_value(V).
+{
+	P = [NSMutableDictionary dictionaryWithObject:V forKey:K];
+}
+
+pragma_value(V) ::= WORD(W).
+{
+	V = W;
+}
+pragma_value(V) ::= STRING(S).
+{
+	V = S;
+}
+pragma_value(V) ::= NUMBER(N).
+{
+	V = N;
 }
 
 subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list(M) RSQBRACK.
@@ -212,23 +241,48 @@ simple_message(M) ::= WORD(S).
 	M = [[[LKMessageSend alloc] init] autorelease];
 	[M addSelectorComponent:S];
 }
-simple_message(M) ::= BINARY(S) simple_expression(R).
+simple_message(M) ::= binary_selector(S) simple_expression(R). [PLUS]
 {
 	M = [[[LKMessageSend alloc] init] autorelease];
 	[M addSelectorComponent:S];
 	[M addArgument:R];
 }
-simple_message(M) ::= PLUS simple_expression(R).
+
+binary_selector(S) ::= PLUS.
 {
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:@"plus:"];
-	[M addArgument:R];
+	S = @"plus:";
 }
-simple_message(M) ::= EQ simple_expression(R).
+binary_selector(S) ::= MINUS.
 {
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:@"isEqual:"];
-	[M addArgument:R];
+	S = @"sub:";
+}
+binary_selector(S) ::= STAR.
+{
+	S = @"mul:";
+}
+binary_selector(S) ::= SLASH.
+{
+	S = @"div:";
+}
+binary_selector(S) ::= EQ.
+{
+	S = @"isEqual:";
+}
+binary_selector(S) ::= LT.
+{
+	S = @"isLessThan:";
+}
+binary_selector(S) ::= GT.
+{
+	S = @"isGreaterThan:";
+}
+binary_selector(S) ::= LT EQ.
+{
+	S = @"isLessThanOrEqualTo:";
+}
+binary_selector(S) ::= GT EQ.
+{
+	S = @"isGreaterThanOrEqualTo:";
 }
 
 expression(E) ::= cascade_expression(C).
