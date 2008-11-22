@@ -38,9 +38,14 @@ module(M) ::= .
 	M = [[[LKCompilationUnit alloc] init] autorelease];
 }
 
-subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK local_list(L) method_list(M) RSQBRACK.
+subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list(M) RSQBRACK.
 {
-	S = [LKSubclass subclassWithName:N superclass:C ivars:L methods:M];
+	NSLog(@"%@ class variables: %@", N, [L objectAtIndex:1]);
+	S = [LKSubclass subclassWithName:N
+	                      superclass:C
+	                           ivars:[L objectAtIndex:0]
+	                         //cvars:[L objectAtIndex:1]
+	                         methods:M];
 }
 
 category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
@@ -48,20 +53,33 @@ category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
 	D = [LKCategoryDef categoryWithClass:C methods:M];
 }
 
-local_list(L) ::= BAR locals(T) BAR. 
+ivar_list(L) ::= BAR ivars(T) BAR.
 {
 	L = T;
 }
-local_list ::= .
+ivar_list ::= .
 
-locals(L) ::= locals(T) WORD(W).
+ivars(L) ::= ivars(T) WORD(W).
 {
-	[T addObject:W];
+	/* First element is the list of instance variables. */
+	[[T objectAtIndex:0] addObject:W];
 	L = T;
 }
-locals(L) ::= .
+ivars(L) ::= ivars(T) PLUS WORD(W).
 {
-	L = [NSMutableArray array];
+	/* Second element is the list of class variables. */
+	[[T objectAtIndex:1] addObject:W];
+	L = T;
+}
+ivars(L) ::= .
+{
+	/*
+	Separate lists need to be built for instance and class variables.
+	Put them in a fixed size array since we can only pass one value.
+	*/
+	L = [NSArray arrayWithObjects: [NSMutableArray array],
+	                               [NSMutableArray array],
+	                               nil];
 }
 
 method_list(L) ::= method_list(T) method(M).
@@ -107,6 +125,22 @@ keyword_signature(S) ::= KEYWORD(K) WORD(E).
 	S = [[[LKMessageSend alloc] init] autorelease];
 	[S addSelectorComponent:K];
 	[S addArgument:E];
+}
+
+local_list(L) ::= BAR locals(T) BAR.
+{
+	L = T;
+}
+local_list ::= .
+
+locals(L) ::= locals(T) WORD(W).
+{
+	[T addObject:W];
+	L = T;
+}
+locals(L) ::= .
+{
+	L = [NSMutableArray array];
 }
 
 statement_list(L) ::= statement(S) STOP statement_list(T).
