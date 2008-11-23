@@ -82,6 +82,8 @@ void CodeGenModule::BeginClass(const char *Class, const char *Super, const
   CategoryName = "";
   InstanceMethodNames.clear();
   InstanceMethodTypes.clear();
+  ClassMethodNames.clear();
+  ClassMethodTypes.clear();
   IvarNames.clear();
   while (*iVarNames) {
     IvarNames.push_back(*iVarNames);
