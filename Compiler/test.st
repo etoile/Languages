@@ -8,11 +8,14 @@ NSObject subclass: TestBlock
 ]
 NSObject subclass: SmalltalkTool
 [
+	| +foo |
 	+alloc [
+		foo := 'Class variable value set in class method'.
 		'Class method alloc called' log.
 		^super alloc.
 	]
 	cascade1 [
+		foo log.
 		'First cascade message sent' log.
 	]
 	cascade2 [

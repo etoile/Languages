@@ -132,6 +132,16 @@ public:
   Value *LoadClass(const char *classname);
 
   /**
+   * Load a class variable.
+   */
+  Value *LoadClassVariable(string className, string cVarName);
+  /**
+   * Store a value in a class variable.
+   */
+  void StoreValueInClassVariable(string className, string cVarName, Value
+		  *object);
+
+  /**
    * Load an instance variable.
    */
   Value *LoadValueOfTypeAtOffsetFromObject( const char* type, unsigned offset,

@@ -28,8 +28,9 @@ void freeModuleBuilder(ModuleBuilder aModule);
 /**
  * Begin a class, subclassing Super.  
  */
-void BeginClass(ModuleBuilder B, const char *Class, const char *Super, 
-    const char ** Names, const char ** Types, int *Offsets, int SuperclassSize);
+void BeginClass(ModuleBuilder B, const char *Class, const char *Super, const
+		char ** cVarNames, const char ** cVarTypes, const char ** iVarNames,
+		const char ** iVarTypes, int *iVarOffsets, int SuperclassSize);
 /**
  * End the current class.
  */
@@ -64,6 +65,14 @@ void StoreValueInLocalAtIndex(ModuleBuilder B, LLVMValue value, unsigned index);
  */
 void StoreValueOfTypeAtOffsetFromObject(ModuleBuilder B, LLVMValue value,
     const char* type, unsigned offset, LLVMValue object);
+/**
+ * Load a class variable.
+ */
+LLVMValue LoadClassVar(ModuleBuilder B, const char *cVarName);
+/**
+ * Store a value in a class variable.
+ */
+void StoreClassVar(ModuleBuilder B, const char *cVarName, LLVMValue value);
 /**
  * Load a local variable.
  */

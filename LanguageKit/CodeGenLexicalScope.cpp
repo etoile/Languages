@@ -526,6 +526,16 @@ Value *CodeGenLexicalScope::MessageSend(Value *receiver, const char *selName,
   return BoxValue(&Builder, MessageSend(&Builder, CurrentFunction, receiver,
 			  selName, selTypes, argv, argv, argc), selTypes);
 }
+Value *CodeGenLexicalScope::LoadClassVariable(string className, string
+		cVarName)
+{
+	return CGM->getRuntime()->LoadClassVariable(Builder, className, cVarName);
+}
+void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
+		cVarName, Value *object)
+{
+	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
+}
 
 void CodeGenLexicalScope::SetReturn(Value * Ret) 
 {

@@ -42,8 +42,10 @@ private:
   int InstanceSize;
   SmallVector<CodeGenLexicalScope*, 8> ScopeStack;
   llvm::SmallVector<string, 8> IvarNames;
+  llvm::SmallVector<string, 8> CvarNames;
   // All will be "@" for now.
   llvm::SmallVector<string, 8> IvarTypes;
+  llvm::SmallVector<string, 8> CvarTypes;
   llvm::SmallVector<int, 8> IvarOffsets;
   llvm::SmallVector<string, 8> InstanceMethodNames;
   llvm::SmallVector<string, 8> InstanceMethodTypes;
@@ -80,8 +82,9 @@ public:
   /**
    * Start generating code for a class.
    */
-  void BeginClass(const char *Class, const char *Super, const char ** Names,
-      const char ** Types, int *Offsets, int SuperclassSize);
+	void BeginClass(const char *Class, const char *Super, const
+		char ** cVarNames, const char ** cVarTypes, const char ** iVarNames,
+		const char ** iVarTypes, int *iVarOffsets, int SuperclassSize);
 
   /**
    * End a class.
@@ -124,6 +127,14 @@ public:
    * End the current block.  Returns a pointer to the block object.
    */
   Value *EndBlock(void);
+	/**
+	 * Store the class variable for the current class.
+	 */
+	void StoreClassVar(const char *cVarName, Value *value);
+	/**
+	 * Load the class variable for the current class.
+	 */
+	Value *LoadClassVar(const char *cVarName);
 
   /**
    * Load a bound variable from a block.

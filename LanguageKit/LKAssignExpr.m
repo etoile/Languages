@@ -55,7 +55,7 @@ static char *ReleaseTypes;
 			break;
 		case object:
 		{
-			// Move this to -check
+			// TODO: Move this to -check
 			if ([[symbols typeOfSymbol:target->symbol] characterAtIndex:0] != '@')
 			{
 				[NSException raise:@"InvalidAssignmentException"
@@ -66,6 +66,11 @@ static char *ReleaseTypes;
 			                ofType:@"@"
 			              atOffset:[symbols offsetOfIVar:target->symbol]
 			            fromObject:[aGenerator loadSelf]];
+			break;
+		}
+		case class:
+		{
+			[aGenerator storeValue:rval inClassVariable:target->symbol];
 			break;
 		}
 		case promoted:

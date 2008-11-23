@@ -41,10 +41,24 @@ extern "C" {
     //B->optimise();
     B->compile();
   }
-  void BeginClass(ModuleBuilder B, const char *Class, const char *Super, const
-      char ** Names, const char ** Types, int *Offsets, int SuperclassSize) {
-    B->BeginClass(Class, Super, Names, Types, Offsets, SuperclassSize);
-  }
+  
+	void BeginClass(ModuleBuilder B, const char *Class, const char *Super,
+			const char ** cVarNames, const char ** cVarTypes, const char **
+			iVarNames, const char ** iVarTypes, int *iVarOffsets, int
+			SuperclassSize) 
+	{
+		B->BeginClass(Class, Super, cVarNames, cVarTypes, iVarNames, iVarTypes,
+				iVarOffsets, SuperclassSize);
+	}
+
+	void StoreClassVar(ModuleBuilder B, const char *cVarName, LLVMValue value)
+	{
+		B->StoreClassVar(cVarName, value);
+	}
+	LLVMValue LoadClassVar(ModuleBuilder B, const char *cVarName)
+	{
+		return B->LoadClassVar(cVarName);
+	}
 
   LLVMValue MessageSend(ModuleBuilder B, LLVMValue receiver, const char *selname,
       const char *seltype, LLVMValue *argv, unsigned argc) {

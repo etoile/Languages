@@ -132,6 +132,10 @@ public:
            const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
            const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
            const llvm::SmallVectorImpl<std::string> &Protocols);
+	virtual void DefineClassVariables(
+			   const string &ClassName,
+			   const llvm::SmallVectorImpl<std::string>  &CvarNames,
+			   const llvm::SmallVectorImpl<std::string>  &CvarTypes);
   virtual void GenerateClass(
            const char *ClassName,
            const char *SuperClassName,
@@ -153,6 +157,10 @@ public:
       const llvm::SmallVectorImpl<llvm::Constant *>  &ClassMethodNames,
       const llvm::SmallVectorImpl<llvm::Constant *>  &ClassMethodTypes);
   virtual llvm::Function *ModuleInitFunction();
+	virtual llvm::Value *LoadClassVariable(llvm::IRBuilder<> &Builder, string
+			&ClassName, string &CvarName);
+	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, string
+			&ClassName, string &CvarName, llvm::Value* aValue);
 };
 } // end anonymous namespace
 
@@ -696,7 +704,8 @@ void CGObjCGNU::GenerateClass(
            const llvm::SmallVectorImpl<std::string>  &InstanceMethodTypes,
            const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
            const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
-           const llvm::SmallVectorImpl<std::string> &Protocols) {
+           const llvm::SmallVectorImpl<std::string> &Protocols) 
+{
   // Get the superclass pointer.
   llvm::Constant *SuperClass;
   if (SuperClassName) {
@@ -910,6 +919,43 @@ llvm::Function *CGObjCGNU::MethodPreamble(
   ++AI;
   AI->setName("_cmd");
   return Method;
+}
+static string ClassVariableName(const string &ClassName, const string
+		&CvarName)
+{
+	return string(".class_variable_") + ClassName + "_" + CvarName;
+}
+void CGObjCGNU::DefineClassVariables(
+		   const string &ClassName,
+           const llvm::SmallVectorImpl<std::string>  &CvarNames,
+           const llvm::SmallVectorImpl<std::string>  &CvarTypes)
+{
+	// TODO: Store class variable metadata somewhere.
+	// FIXME: Support non-object cvars
+	for (unsigned int i = 0, e = CvarNames.size() ; i < e ; i++) 
+	{
+		string cvarname = ClassVariableName(ClassName, CvarNames[i]);
+
+		new llvm::GlobalVariable(IdTy, false,
+				llvm::GlobalValue::InternalLinkage,
+				ConstantPointerNull::get(cast<PointerType>(IdTy)), cvarname,
+				&TheModule);
+	}
+}
+llvm::Value *CGObjCGNU::LoadClassVariable(llvm::IRBuilder<> &Builder, string
+	&ClassName, string &CvarName)
+{
+	string cvarname = ClassVariableName(ClassName, CvarName);
+	GlobalVariable *var = TheModule.getNamedGlobal(cvarname);
+	return Builder.CreateLoad(var);
+}
+void CGObjCGNU::StoreClassVariable(llvm::IRBuilder<> &Builder, string
+	&ClassName, string &CvarName, llvm::Value* aValue)
+{
+	string cvarname = ClassVariableName(ClassName, CvarName);
+	GlobalVariable *var = TheModule.getNamedGlobal(cvarname);
+	aValue = Builder.CreateBitCast(aValue, IdTy);
+	Builder.CreateStore(aValue, var);
 }
 
 CGObjCRuntime *CreateObjCRuntime(

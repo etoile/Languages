@@ -51,9 +51,14 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	                                      next:nextOffset
 	                                    inZone:aZone];
 }
+- (void) addClassVariable: (NSString*) aClassVar
+{
+	[classVariables addObject:aClassVar];
+}
 - (LKSymbolTable*) initForClass:(Class)aClass 
 {
 	SELFINIT;
+	classVariables = [[NSMutableArray alloc] init];
 	instanceVariables = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 10);
 	nextOffset = aClass->instance_size;
 	NSMutableDictionary *ivarTypes = [NSMutableDictionary new];
@@ -95,9 +100,13 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 
 - (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
-	if(NSMapMember(instanceVariables, aName, 0, 0))
+	if (NSMapMember(instanceVariables, aName, 0, 0))
 	{
 		return object;
+	}
+	if ([classVariables containsObject:aName])
+	{
+		return class;
 	}
 	return invalid;
 }

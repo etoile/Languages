@@ -1,18 +1,9 @@
 #import "LKSubclass.h"
 
 @implementation LKSubclass
-+ (id) subclassWithName:(NSString*)aName
-             superclass:(NSString*)aClass
-                  ivars:(NSArray*)anIvarList
-                methods:(NSArray*)aMethodList
-{
-	return [[[self alloc] initWithName: aName
-	                        superclass: aClass
-	                             ivars: anIvarList
-	                           methods: aMethodList] autorelease];
-}
 - (id) initWithName:(NSString*)aName
          superclass:(NSString*)aClass
+              cvars:(NSArray*)aCvarList
               ivars:(NSArray*)anIvarList
             methods:(NSArray*)aMethodList
 {
@@ -20,8 +11,21 @@
 	ASSIGN(classname, aName);
 	ASSIGN(superclass, aClass);
 	ASSIGN(ivars, anIvarList);
+	ASSIGN(cvars, aCvarList);
 	ASSIGN(methods, aMethodList);
 	return self;
+}
++ (id) subclassWithName:(NSString*)aName
+             superclass:(NSString*)aClass
+                  cvars:(NSArray*)aCvarList
+                  ivars:(NSArray*)anIvarList
+                methods:(NSArray*)aMethodList
+{
+	return [[[self alloc] initWithName: aName
+	                        superclass: aClass
+	                             cvars: aCvarList
+	                             ivars: anIvarList
+	                           methods: aMethodList] autorelease];
 }
 - (void) check
 {
@@ -51,6 +55,10 @@
 	FOREACH(ivars, ivar, NSString*)
 	{
 		[symbols addSymbol:ivar];
+	}
+	FOREACH(cvars, cvar, NSString*)
+	{
+		[(LKObjectSymbolTable*)symbols addClassVariable:cvar];
 	}
     [(LKObjectSymbolTable*)symbols registerNewClass:classname];
 	FOREACH(methods, method, LKAST*)
@@ -94,8 +102,21 @@
 	ivarTypes[[ivars count]] = NULL;
 	ivarOffsets[[ivars count]] = 0;
 
+	const char *cvarNames[[cvars count] + 1];
+	const char *cvarTypes[[cvars count] + 1];
+	int cvarOffsets[[cvars count] + 1];
+	for (int i=0; i<[cvars count]; i++)
+	{
+		cvarNames[i] = [[cvars objectAtIndex: i] UTF8String];
+		cvarTypes[i] = "@";
+	}
+	cvarNames[[cvars count]] = NULL;
+	cvarTypes[[cvars count]] = NULL;
+
 	[aGenerator createSubclass:classname
                    subclassing:superclass
+                 withCvarNames:cvarNames
+                         types:cvarTypes
                  withIvarNames:ivarNames
                          types:ivarTypes
                        offsets:ivarOffsets];

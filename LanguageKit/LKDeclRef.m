@@ -68,6 +68,10 @@
 			                           atOffset:[symbols offsetOfIVar:symbol]
 			                         fromObject:[aGenerator loadSelf]];
 		}
+		case class:
+		{
+			return [aGenerator loadClassVariable: symbol];
+		}
 		default:
 			NSLog(@"Compiling declref to symbol %@ of type %d",
 					symbol, [symbols scopeOfSymbol:symbol]);

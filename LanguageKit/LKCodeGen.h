@@ -22,6 +22,8 @@
  */
 - (void) createSubclass:(NSString*)aClass
             subclassing:(NSString*)aSuperclass
+          withCvarNames:(const char**)cVarNames 
+                  types:(const char**)cVarTypes
           withIvarNames:(const char**)iVarNames 
                   types:(const char**)iVarTypes
                 offsets:(int*)offsets;
@@ -80,6 +82,12 @@
              toObject:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned)argc;
+/**
+ * Store the specified value in the named class variable.
+ */
+- (void) storeValue:(void*)rval 
+    inClassVariable:(NSString*) aClassVar;
+- (void*) loadClassVariable:(NSString*) aSymbol;
 /**
  * Stores a value at a specific offset from an object.  Used for instance
  * variables.

@@ -35,6 +35,8 @@ typedef int bool;
 
 - (void) createSubclass:(NSString*)aClass
             subclassing:(NSString*)aSuperclass
+          withCvarNames:(const char**)cVarNames 
+                  types:(const char**)cVarTypes
           withIvarNames:(const char**)iVarNames 
                   types:(const char**)iVarTypes
                 offsets:(int*)offsets
@@ -54,8 +56,8 @@ typedef int bool;
 			supersize = [symbols instanceSize];
 		}
 	}
-	BeginClass(Builder, [aClass UTF8String], [aSuperclass UTF8String],
-			iVarNames, iVarTypes, offsets, supersize);
+	BeginClass(Builder, [aClass UTF8String], [aSuperclass UTF8String], 
+			cVarNames, cVarTypes, iVarNames, iVarTypes, offsets, supersize);
 }
 - (void) endClass
 {
@@ -109,6 +111,15 @@ typedef int bool;
 {
   return MessageSend(Builder, receiver, aMessage, types, (LLVMValue*)argv,
       argc);
+}
+- (void) storeValue:(void*)rval 
+    inClassVariable:(NSString*) aClassVar
+{
+	StoreClassVar(Builder, [aClassVar UTF8String], rval);
+}
+- (void*) loadClassVariable:(NSString*) aSymbol
+{
+	return LoadClassVar(Builder, [aSymbol UTF8String]);
 }
 - (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned)index
 {

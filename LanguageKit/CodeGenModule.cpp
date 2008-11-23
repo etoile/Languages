@@ -26,6 +26,9 @@
 // A copy of the Small Int message module, used when static compiling.
 static Module *SmallIntMessages = NULL;
 
+// Remove unrequired box-then-unbox pass.
+FunctionPass *createUnboxPass(void);
+
 Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
         std::string &Name, unsigned GEPs) {
   Constant * ConstStr = ConstantArray::get(Str);
@@ -71,44 +74,59 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 }
 
 void CodeGenModule::BeginClass(const char *Class, const char *Super, const
-  char ** Names, const char ** Types, int *Offsets, int SuperclassSize) {
+		char ** cVarNames, const char ** cVarTypes, const char ** iVarNames,
+		const char ** iVarTypes, int *iVarOffsets, int SuperclassSize) 
+{
   ClassName = string(Class);
   SuperClassName = string(Super);
   CategoryName = "";
   InstanceMethodNames.clear();
   InstanceMethodTypes.clear();
   IvarNames.clear();
-  while (*Names) {
-    IvarNames.push_back(*Names);
-    Names++;
+  while (*iVarNames) {
+    IvarNames.push_back(*iVarNames);
+    iVarNames++;
   }
   IvarTypes.clear();
-  while (*Types) {
-    IvarTypes.push_back(*Types);
-    Types++;
+  while (*iVarTypes) {
+    IvarTypes.push_back(*iVarTypes);
+    iVarTypes++;
   }
   IvarOffsets.clear();
-  while (*Offsets) {
-    IvarOffsets.push_back(*Offsets);
-    Offsets++;
+  while (*iVarOffsets) {
+    IvarOffsets.push_back(*iVarOffsets);
+    iVarOffsets++;
   }
+  SmallVector<string, 8> cvarnames, cvartypes;
+  while(*cVarNames)
+  {
+	  cvarnames.push_back(*cVarNames);
+	  cvartypes.push_back(*cVarTypes);
+	  cVarTypes++;
+	  cVarNames++;
+  }
+  Runtime->DefineClassVariables(ClassName, cvarnames, cvartypes);
+  
   InstanceSize = SuperclassSize + sizeof(void*) * IvarNames.size();
   CurrentClassTy = IdTy;
 }
 
-void CodeGenModule::EndClass(void) {
-  Runtime->GenerateClass(ClassName.c_str(), SuperClassName.c_str(),
-    InstanceSize, IvarNames, IvarTypes, IvarOffsets, InstanceMethodNames,
-    InstanceMethodTypes, ClassMethodNames, ClassMethodTypes, Protocols);
+void CodeGenModule::EndClass(void)
+{
+	Runtime->GenerateClass(ClassName.c_str(), SuperClassName.c_str(),
+		  InstanceSize, IvarNames, IvarTypes, IvarOffsets, InstanceMethodNames,
+		  InstanceMethodTypes, ClassMethodNames, ClassMethodTypes, Protocols);
 }
-void CodeGenModule::BeginCategory(const char *Class, const char *Category) {
-  ClassName = string(Class);
-  SuperClassName = "";
-  CategoryName = string(CategoryName); 
-  InstanceMethodNames.clear();
-  InstanceMethodTypes.clear();
-  IvarNames.clear();
-  CurrentClassTy = IdTy;
+
+void CodeGenModule::BeginCategory(const char *Class, const char *Category)
+{
+	ClassName = string(Class);
+	SuperClassName = "";
+	CategoryName = string(CategoryName); 
+	InstanceMethodNames.clear();
+	InstanceMethodTypes.clear();
+	IvarNames.clear();
+	CurrentClassTy = IdTy;
 }
 void CodeGenModule::EndCategory(void) {
   Runtime->GenerateCategory(ClassName.c_str(), CategoryName.c_str(),
@@ -223,12 +241,12 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 
 	std::vector<llvm::Constant*> S;
 	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
-	S.push_back(init);
+	S.push_back(LiteralInitFunction);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 	// Add the constant initialisation function
 	S.clear();
-	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0x1ffff, false));
-	S.push_back(LiteralInitFunction);
+	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(init);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 
 	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
@@ -247,6 +265,15 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	fb.close();
 }
 
+void CodeGenModule::StoreClassVar(const char *cVarName, Value *value)
+{
+	getCurrentScope()->StoreValueInClassVariable(ClassName, cVarName, value);
+}
+Value *CodeGenModule::LoadClassVar(const char *cVarName)
+{
+	return getCurrentScope()->LoadClassVariable(ClassName, cVarName);
+}
+
 static ExecutionEngine *EE = NULL;
 
 void CodeGenModule::compile(void) {
@@ -259,8 +286,8 @@ void CodeGenModule::compile(void) {
 	PassManager pm;
 	pm.add(createVerifierPass());
 	pm.add(new TargetData(TheModule));
-	pm.add(createAggressiveDCEPass());
 	pm.add(createPromoteMemoryToRegisterPass());
+	pm.add(createAggressiveDCEPass());
 	pm.add(createFunctionInliningPass());
 	pm.add(createIPConstantPropagationPass());
 	pm.add(createSimplifyLibCallsPass());
@@ -270,6 +297,8 @@ void CodeGenModule::compile(void) {
 	pm.add(createTailDuplicationPass());
 	pm.add(createCFGSimplificationPass());
 	pm.add(createStripDeadPrototypesPass());
+//	pm.add(createUnboxPass());
+	pm.add(createAggressiveDCEPass());
 	pm.run(*TheModule);
 	DUMP(TheModule);
 	if (NULL == EE)

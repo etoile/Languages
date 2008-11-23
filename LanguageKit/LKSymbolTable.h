@@ -7,21 +7,22 @@
  */
 typedef	enum 
 {
-  invalid = 0,
-  external, // Bound variable referenced in a block
-  promoted, // Bound variable promoted into a block
+	invalid = 0,
+	external, // Bound variable referenced in a block
+	promoted, // Bound variable promoted into a block
 	argument, // Variable passed in to method / block
 	local,    // Variable declared in this lexical scope
 	object,   // Instance variable
+	class,    // Class variable
 	global,   // Global (only clas names)
-  builtin   // Variable with special semantics (e.g. self / super)
+	builtin   // Variable with special semantics (e.g. self / super)
 } LKSymbolScope;
 
 /**
  * Symbol table.  Base class, with subclasses for each scope.
  */
 @interface LKSymbolTable : NSObject {
-  /** Name to type string mappings. */
+	/** Name to type string mappings. */
 	NSDictionary *types;
 @public
   /** The parent scope for this symbol table. */
@@ -117,11 +118,17 @@ typedef	enum
  * Symbol table for an object.  Contains instance variables.
  */
 @interface LKObjectSymbolTable : LKSymbolTable {
-  /** Instance variables for this object. */
+	/** Instance variables for this object. */
 	NSMapTable * instanceVariables;
-  /** Next offset at which an ivar can be added. */
+	/** Class variables for this object. */
+	NSMutableArray * classVariables;
+	/** Next offset at which an ivar can be added. */
 	int nextOffset;
 }
+/**
+ * Add a class variable to this symbol table. 
+ */
+- (void) addClassVariable: (NSString*) aClassVar;
 /**
  * Returns the size of instances of this class.
  */

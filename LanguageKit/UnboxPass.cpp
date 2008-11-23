@@ -22,21 +22,17 @@ namespace
 		{
 			if (CallInst *v = dyn_cast<CallInst>(b))
 			{
-				llvm::cerr << "Found call\n";
-				Value *calledValue = v->getCalledFunction();
-				calledValue->dump();
+				Value *calledValue = v->getCalledValue();
 				while (BitCastInst *val = dyn_cast<BitCastInst>(calledValue))
 				{
 					calledValue = val->getOperand(0);
-					calledValue->dump();
 				}
 				if (CallInst *callee = 
-						dyn_cast<CallInst>(v->getCalledValue()))
+						dyn_cast<CallInst>(calledValue))
 				{
 					if (callee->getCalledFunction()->getName() 
 							== "objc_msg_lookup")
 					{
-						llvm::cerr << "Found callInst\n";
 						Constant *sel = (Constant*)((LoadInst*)callee->getOperand(2))->getOperand(0);
 						if (GlobalAlias *a = dyn_cast<GlobalAlias>(sel))
 						{
@@ -45,12 +41,11 @@ namespace
 						ConstantArray *sels = (ConstantArray*)((GlobalVariable*)sel->getOperand(0)->getOperand(0))->getInitializer();
 						ConstantInt *idx = (ConstantInt*)sel->getOperand(0)->getOperand(2);
 						//sels->getOperand(idx->getLimitedValue())->getOperand(0)->getOperand(0)->dump();
-						*object = v->getOperand(0);
+						*object = v->getOperand(1);
 						selector = ((ConstantArray*)((GlobalVariable*)sels->getOperand(idx->getLimitedValue())->getOperand(0)->getOperand(0))->getInitializer())->getAsString();
 						return true;
 					}
 				}
-				//v->getCalledValue()->dump();
 			}
 			return false;
 		}
@@ -68,8 +63,14 @@ namespace
 					Value *obj;
 					if (getSelectorForValue(b, &obj, selector))
 					{
-						//obj->dump();
 						llvm::cerr << selector << "\n";
+						Value *original;
+						string construtor;
+						if (getSelectorForValue(obj, &original, construtor))
+						{
+							llvm::cerr << "created with: " <<construtor << "\n";
+						}
+						obj->dump();
 					}
 				}
 			}

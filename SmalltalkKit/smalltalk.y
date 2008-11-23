@@ -69,11 +69,10 @@ pragma_value(V) ::= NUMBER(N).
 
 subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list(M) RSQBRACK.
 {
-	NSLog(@"%@ class variables: %@", N, [L objectAtIndex:1]);
 	S = [LKSubclass subclassWithName:N
 	                      superclass:C
+	                           cvars:[L objectAtIndex:1]
 	                           ivars:[L objectAtIndex:0]
-	                         //cvars:[L objectAtIndex:1]
 	                         methods:M];
 }
 

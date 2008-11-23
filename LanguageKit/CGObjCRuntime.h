@@ -112,6 +112,17 @@ public:
   /// Look up the class for the specified name
   virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder, llvm::Value
       *ClassName) =0;
+	// Define class variables for a specific class
+	virtual void DefineClassVariables(
+			const std::string &ClassName,
+			const llvm::SmallVectorImpl<std::string>  &CvarNames,
+			const llvm::SmallVectorImpl<std::string>  &CvarTypes) = 0;
+	/// Load a value from a class variable
+	virtual llvm::Value *LoadClassVariable(llvm::IRBuilder<> &Builder,
+			 std::string &ClassName, std::string &CvarName) = 0;
+	/// Store a value to a class variable
+	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, std::string
+		&ClassName, std::string &CvarName, llvm::Value* aValue) = 0;
   /// If instance variable addresses are determined at runtime then this should
   /// return true, otherwise instance variables will be accessed directly from
   /// the structure.  If this returns true then @defs is invalid for this
