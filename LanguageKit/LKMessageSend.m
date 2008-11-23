@@ -151,6 +151,11 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
 	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
 	// FIXME: This is a really ugly hack.
+	NSString *conflictedTypes = [SelectorConflicts objectForKey:selector];
+	if (nil != conflictedTypes)
+	{
+		seltypes = [conflictedTypes UTF8String];
+	}
 	if ([selector isEqualToString:@"count"])
 	{
 		seltypes = "I8@0:4";
