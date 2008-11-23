@@ -534,6 +534,12 @@ Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 		cVarName, Value *object)
 {
+    CGObjCRuntime *Runtime = CGM->getRuntime();
+    object = Runtime->GenerateMessageSend(Builder, IdTy, NULL, object,
+          Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
+    Value *old = LoadClassVariable(className, cVarName);
+    Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
+          Runtime->GetSelector(Builder, "release", NULL), 0, 0);
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
 
