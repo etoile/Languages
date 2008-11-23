@@ -21,14 +21,13 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	NSStringClass = [NSString class];
 	// Look up potential selector conflicts.
 	void *state = NULL;
-	Class nextClass;
+	Class class;
 	NSMutableDictionary *types = [NSMutableDictionary new];
 	SelectorConflicts = [NSMutableDictionary new];
-	while(Nil != (nextClass = objc_next_class(&state)))
+	while (Nil != (class = objc_next_class(&state)))
 	{
-		Class class = nextClass;
 		struct objc_method_list *methods = class->methods;
-		if (methods != NULL)
+		while (methods != NULL)
 		{
 			for (unsigned i=0 ; i<methods->method_count ; i++)
 			{
@@ -38,15 +37,19 @@ static NSMutableDictionary *SelectorConflicts = nil;
 				   	[NSString stringWithCString:sel_get_name(m->method_name)];
 				NSString *type = [NSString stringWithCString:m->method_types];
 				NSString *oldType = [types objectForKey:name];
-				if (oldType && ![type isEqualToString:oldType])
-				{
-					[SelectorConflicts setObject:oldType forKey:name];
-				}
-				else
+				if (oldType == nil)
 				{
 					[types setObject:type forKey:name];
 				}
+				else
+				{
+					if (![type isEqualToString:oldType])
+					{
+						[SelectorConflicts setObject:oldType forKey:name];
+					}
+				}
 			}
+			methods = methods->method_next;
 		}
 	}
 	[types release];
