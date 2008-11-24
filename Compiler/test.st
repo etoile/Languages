@@ -1,3 +1,4 @@
+<< types = '{"data" = "@8@0:4"}'>>
 NSObject subclass: TestBlock
 [
 	run: aBlock [

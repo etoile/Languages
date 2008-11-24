@@ -21,8 +21,7 @@ file ::= module(M).
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
 {
-	//[O addPragmas: P];
-	NSLog(@"Pragma: %@", P);
+	[O addPragmas: P];
 	M = O;
 }
 module(M) ::= module(O) subclass(S).

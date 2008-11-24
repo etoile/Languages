@@ -6,7 +6,31 @@
 	SUPERINIT;
 	classes = [[NSMutableArray alloc] init];
 	categories = [[NSMutableArray alloc] init];
+	pragmas = [[NSMutableDictionary alloc] init];
 	return self;
+}
+- (void) addPragmas: (NSDictionary*)aDict
+{
+	NSEnumerator *e = [aDict keyEnumerator];
+	for (id key = [e nextObject] ; nil != key ; key = [e nextObject])
+	{
+		id value = [NSPropertyListSerialization propertyListFromData:
+			[[aDict objectForKey:key] dataUsingEncoding:NSUTF8StringEncoding]
+		                                            mutabilityOption:
+			NSPropertyListMutableContainersAndLeaves	
+		                                                      format: NULL
+		                                            errorDescription: NULL];
+		id oldValue = [pragmas objectForKey: key];
+		if (nil == oldValue)
+		{
+			[pragmas setObject: value forKey: key];
+		}
+		else
+		{
+			NSAssert(NO, @"Code for merging pragmas not yet implemented");
+		}
+	}
+	NSLog(@"Pragmas: %@", pragmas);
 }
 - (void) addClass:(LKAST*)aClass
 {

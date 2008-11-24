@@ -9,7 +9,13 @@
   NSMutableArray * classes;
   /** Categories defined in this module. */
   NSMutableArray * categories;
+  /** Current pragmas */
+  NSMutableDictionary * pragmas;
 }
+/**
+ * Add compile-time pragmas.
+ */
+- (void) addPragmas: (NSDictionary*)aDict;
 /**
  * Add a new class to this module.
  */
