@@ -1,7 +1,7 @@
 #import "LKMessageSend.h"
 #import "LKDeclRef.h"
+#import "LKModule.h"
 
-static Class NSStringClass = Nil;
 static NSMutableDictionary *SelectorConflicts = nil;
 
 
@@ -12,49 +12,6 @@ static NSMutableDictionary *SelectorConflicts = nil;
 }
 @end
 @implementation LKMessageSend 
-+ (void) initialize
-{
-	if (self != [LKMessageSend class])
-	{
-		return;
-	}
-	NSStringClass = [NSString class];
-	// Look up potential selector conflicts.
-	void *state = NULL;
-	Class class;
-	NSMutableDictionary *types = [NSMutableDictionary new];
-	SelectorConflicts = [NSMutableDictionary new];
-	while (Nil != (class = objc_next_class(&state)))
-	{
-		struct objc_method_list *methods = class->methods;
-		while (methods != NULL)
-		{
-			for (unsigned i=0 ; i<methods->method_count ; i++)
-			{
-				Method *m = &methods->method_list[i];
-
-				NSString *name =
-				   	[NSString stringWithCString:sel_get_name(m->method_name)];
-				NSString *type = [NSString stringWithCString:m->method_types];
-				NSString *oldType = [types objectForKey:name];
-				if (oldType == nil)
-				{
-					[types setObject:type forKey:name];
-				}
-				else
-				{
-					if (![type isEqualToString:oldType])
-					{
-						[SelectorConflicts setObject:oldType forKey:name];
-					}
-				}
-			}
-			methods = methods->method_next;
-		}
-	}
-	[types release];
-}
-
 - (void) setTarget:(id)anObject
 {
 	ASSIGN(target, anObject);
@@ -94,14 +51,8 @@ static NSMutableDictionary *SelectorConflicts = nil;
 {
 	[target setParent:self];
 	[target check];
-	NSString *types = [SelectorConflicts objectForKey:selector];
-	if (nil != types)
-	{
-		NSLog(@"Warning: Selector '%@' is polymorphic.  Assuming %@", selector,
-				types);
-	}
-	//SEL sel = sel_get_any_typed_uid([selector UTF8String]);
-	//NSLog(@"Selector %s types: %s", sel_get_name(sel), sel_get_type(sel));
+	// This will generate a warning on polymorphic selectors.
+	type = [[self module] typeForMethod:selector];
 	FOREACH(arguments, arg, LKAST*)
 	{
 		[arg setParent:self];
@@ -148,18 +99,6 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		argv[i] = [[arguments objectAtIndex:i] compileWith:aGenerator];
 	}
 	const char *sel = [selector UTF8String];
-	// FIXME: Use methodSignatureForSelector in inferred target type if possible.
-	const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
-	// FIXME: This is a really ugly hack.
-	NSString *conflictedTypes = [SelectorConflicts objectForKey:selector];
-	if (nil != conflictedTypes)
-	{
-		seltypes = [conflictedTypes UTF8String];
-	}
-	if ([selector isEqualToString:@"count"])
-	{
-		seltypes = "I8@0:4";
-	}
 	void *result = NULL;
 	// If the receiver is a global symbol, it is guaranteed to be an object.
 	// TODO: The same is arguments if their type is @
@@ -171,7 +110,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		if (scope == global)
 		{
 			result = [aGenerator sendMessage:sel
-			                           types:seltypes
+			                           types:type
 			                        toObject:receiver
 			                        withArgs:argv
 			                           count:argc];
@@ -181,7 +120,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 			if ([symbol isEqualToString:@"self"])
 			{
 				result = [aGenerator sendMessage:sel
-				                           types:seltypes
+				                           types:type
 				                        toObject:receiver
 				                        withArgs:argv
 				                           count:argc];
@@ -189,7 +128,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 			else if ([symbol isEqualToString:@"super"])
 			{
 				result = [aGenerator sendSuperMessage:sel
-				                                types:seltypes
+				                                types:type
 				                             withArgs:argv
 				                                count:argc];
 			}
@@ -198,7 +137,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	if (NULL == result)
 	{
 		result = [aGenerator sendMessage:sel
-	                               types:seltypes
+	                               types:type
 	                                  to:receiver
 	                            withArgs:argv
 	                               count:argc];
@@ -210,7 +149,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	if ([selector isEqualToString:@"new"])
 	{
 		sel = "autorelease";
-		seltypes = sel_get_type(sel_get_any_typed_uid(sel));
+		const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
 		[aGenerator sendMessage:sel
 		                  types:seltypes
 		               toObject:result

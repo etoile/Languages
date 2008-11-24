@@ -4,12 +4,14 @@
  * AST node representing a message send operation.
  */
 @interface LKMessageSend : LKAST {
-  /** Receiver of the message. */
+	/** Receiver of the message. */
 	id target;
-  /** The message selector. */
+	/** The message selector. */
 	NSString * selector;
-  /** Array of AST nodes which evaluate to the message arguments. */
+	/** Array of AST nodes which evaluate to the message arguments. */
 	NSMutableArray * arguments;
+	/** Types for the method */
+	const char *type;
 }
 /**
  * Set the receiver of the message.

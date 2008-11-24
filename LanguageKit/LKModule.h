@@ -11,6 +11,8 @@
   NSMutableArray * categories;
   /** Current pragmas */
   NSMutableDictionary * pragmas;
+  /** Manually-specified method types. */
+  NSMutableDictionary *typeOverrides;
 }
 /**
  * Add compile-time pragmas.
@@ -24,4 +26,8 @@
  * Add a new category to this module.
  */
 - (void) addCategory:(LKAST*)aCategory;
+/**
+ * Returns the type that should be used for a given selector.
+ */
+- (const char*) typeForMethod:(NSString*)methodName;
 @end

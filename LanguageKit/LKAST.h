@@ -1,6 +1,7 @@
 #import "LKSymbolTable.h"
 #import "LKCodeGen.h"
 
+@class LKCompilationUnit;
 /**
  * Root class for AST nodes.  Every node in the Smalltalk abstract syntax tree
  * inherits from this.  It stores the parent, allowing navigation up the tree,
@@ -20,6 +21,10 @@
  * Returns the AST nodes available at runtime for subclasses and categories.
  */
 + (NSMutableDictionary *) code;
+/**
+ * Returns the module containing the current AST.
+ */
+- (LKCompilationUnit*) module;
 /**
  * Initialise a new AST node with the specified symbol table.
  */

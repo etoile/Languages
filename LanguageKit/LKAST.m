@@ -2,6 +2,7 @@
 #import "LKDeclRef.h"
 
 Class DeclRefClass;
+Class ModuleClass;
 
 static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 
@@ -19,7 +20,19 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 + (void) initialize
 {
 	DeclRefClass = [LKDeclRef class];
+	ModuleClass = [LKCompilationUnit class];
 }
+
+- (LKCompilationUnit*) module
+{
+	while (nil != self && ModuleClass != isa)
+	{
+		self = parent;
+	}
+	return (LKCompilationUnit*)self;
+}
+
+
 - (id) initWithSymbolTable:(LKSymbolTable*)aSymbolTable
 {
 	if(nil == (self = [self init]))
