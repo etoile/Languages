@@ -1,4 +1,4 @@
-AST extend 
+LKAST extend 
 [
 	properties
 	[
@@ -43,7 +43,7 @@ AST extend
 	]
 ]
 
-Subclass extend
+LKSubclass extend
 [
 	displayName [	^ classname. ]
 
@@ -55,7 +55,7 @@ Subclass extend
 	]
 ]
 
-CategoryDef extend
+LKCategoryDef extend
 [
 	displayName [	^ classname. ]
 
@@ -68,7 +68,7 @@ CategoryDef extend
 
 ]
 
-SmalltalkMethod extend
+LKMethod extend
 [
 	displayName [ ^ self methodName. ]
 
@@ -95,7 +95,7 @@ NSObject subclass: SmalltalkTool
 		browserItem := ETContainer alloc init layoutItem.
 		browserItem container setDelegate: self.
 		browserItem container setSource: browserItem.
-		browserItem setRepresentedObject: (AST code).
+		browserItem setRepresentedObject: (LKAST code).
 		browserItem setLayout: (ETOutlineLayout layout).
 		browserItem layout setDisplayedProperties: (self displayedPropertiesInBrowser).
 		browserItem layout setDisplayName: 'Type' forProperty: 'ASTType'.
