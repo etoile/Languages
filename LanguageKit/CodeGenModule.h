@@ -121,7 +121,7 @@ public:
   /**
    * Begin a BlockClosure.
    */
-  void BeginBlock(unsigned args, unsigned locals, Value **promoted, int count);
+  void BeginBlock(unsigned args, unsigned locals);
   
   /**
    * End the current block.  Returns a pointer to the block object.

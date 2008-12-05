@@ -6,90 +6,89 @@
 
 using namespace llvm;
 
-
-CodeGenBlock::CodeGenBlock(int args, int locals, llvm::Value **promoted, int
-		count, CodeGenLexicalScope *enclosingScope, CodeGenModule *Mod) :
-	CodeGenLexicalScope(Mod), parentScope(enclosingScope) {
-
-  const Type *IdPtrTy = PointerType::getUnqual(IdTy);
-  BlockTy = StructType::get(
-      IdTy,                          // 0 - isa.
-      IMPTy,                         // 1 - Function pointer.
-      ArrayType::get(IdPtrTy, 5),    // 2 - Bound variables.
-      ArrayType::get(IdTy, 5),       // 3 - Promoted variables.
-      Type::Int32Ty,                 // 4 - Number of args.
-      IdTy,                          // 5 - Return value.
-      Type::Int8Ty,                  // 6 - Start of jump buffer.
-      (void*)0);
-  BlockTy = PointerType::getUnqual(BlockTy);
-  std::vector<const Type*> argTy;
-  argTy.push_back(BlockTy);
-
-  // FIXME: Broken on Etoile runtime.
-  argTy.push_back(SelTy);
-  for (int i=0 ; i<args ; ++i) {
-    argTy.push_back(IdTy);
-  }
-  FunctionType *BlockFunctionTy = FunctionType::get(IdTy, argTy, false);
-
-  IRBuilder<> *MethodBuilder = enclosingScope->getBuilder();
-  // Create the block object
-  Function *BlockCreate =
-    cast<Function>(CGM->getModule()->getOrInsertFunction("NewBlock", IdTy,
-          (void*)0));
-  Block = MethodBuilder->CreateCall(BlockCreate);
-  Block = MethodBuilder->CreateBitCast(Block, BlockTy);
-  // Create the block function
-  CurrentFunction = Function::Create(BlockFunctionTy,
-		  GlobalValue::InternalLinkage, "BlockFunction", CGM->getModule());
-
-  // Set up the arguments
-  InitialiseFunction(Args, Locals, locals);
-  MethodBuilder->CreateStore(ConstantInt::get(Type::Int32Ty, args),
-      MethodBuilder->CreateStructGEP(Block, 4));
-
-  // Store the block function in the object
-  Value *FunctionPtr = MethodBuilder->CreateStructGEP(Block, 1);
-  MethodBuilder->CreateStore(MethodBuilder->CreateBitCast(CurrentFunction,
-			  IMPTy), FunctionPtr);
-  
-  //FIXME: I keep calling these promoted when I mean bound.  Change all of
-  //the variable / method names to reflect this.
-
-  //Store pointers to the bound vars in the block
-  Value *boundArray = MethodBuilder->CreateStructGEP(Block, 2);
-  Value *promotedArray = MethodBuilder->CreateStructGEP(Block, 3);
-
-  for (int i=1 ; i<count ; i++) {
-    MethodBuilder->CreateStore(promoted[i], 
-        MethodBuilder->CreateStructGEP(boundArray, i));
-  }
-  //Reference self, promote self
-  MethodBuilder->CreateStore(enclosingScope->LoadSelf(),
-      MethodBuilder->CreateStructGEP(promotedArray, 0));
-  MethodBuilder->CreateStore(MethodBuilder->CreateStructGEP(promotedArray, 0),
-      MethodBuilder->CreateStructGEP(boundArray, 0));
+// Store V in structure S element index
+static inline Value *storeInStruct(
+		IRBuilder<> *B, Value *S, Value *V, unsigned index)
+{
+	return B->CreateStore(V, B->CreateStructGEP(S, index));
 }
 
-Value *CodeGenBlock::LoadArgumentAtIndex(unsigned index) {
-  return Builder.CreateLoad(Args[index]);
+CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
+		*enclosingScope, CodeGenModule *Mod) 
+	: CodeGenLexicalScope(Mod), parentScope(enclosingScope) 
+{
+	Value *enclosingContext = enclosingScope->getContext();
+	// Define the layout of a block
+	BlockTy = StructType::get(
+		IdTy,                          // 0 - isa.
+		IMPTy,                         // 1 - Function pointer.
+		Type::Int32Ty,                 // 2 - Number of args.
+		enclosingContext->getType(),   // 3 - Context.
+		(void*)0);
+	BlockTy = PointerType::getUnqual(BlockTy);
+	std::vector<const Type*> argTy;
+	argTy.push_back(BlockTy);
+
+	// FIXME: Broken on Etoile runtime - _cmd needs to be a GEP on _call
+	argTy.push_back(SelTy);
+	for (int i=0 ; i<args ; ++i) 
+	{
+		argTy.push_back(IdTy);
+	}
+	FunctionType *BlockFunctionTy = FunctionType::get(IdTy, argTy, false);
+
+	IRBuilder<> *MethodBuilder = enclosingScope->getBuilder();
+
+	// Create the block object
+	
+	// The NewBlock function gets a block from a pool.  It should really be
+	// inlined.
+	Function *BlockCreate = cast<Function>(
+		CGM->getModule()->getOrInsertFunction("NewBlock", IdTy, (void*)0));
+	Block = MethodBuilder->CreateCall(BlockCreate);
+	Block = MethodBuilder->CreateBitCast(Block, BlockTy);
+
+	// Create the block function
+	CurrentFunction = Function::Create(BlockFunctionTy,
+		GlobalValue::InternalLinkage, "BlockFunction", CGM->getModule());
+	InitialiseFunction(Args, Locals, locals);
+
+	// isa pointer is set by BlockFunction
+	// Store the block function in the object
+	storeInStruct(MethodBuilder, Block,
+		MethodBuilder->CreateBitCast(CurrentFunction, IMPTy), 1);
+	// Store the number of arguments
+	storeInStruct(MethodBuilder, Block, ConstantInt::get(Type::Int32Ty, args), 2);
+	// Set the context
+	storeInStruct(MethodBuilder, Block, enclosingScope->getContext(), 3);
+
+	// Link the context to its parent
+	Value *parentContext = Builder.CreateLoad(Builder.CreateStructGEP(Self, 3));
+	Builder.CreateStore(parentContext, Builder.CreateStructGEP(Context, 1));
 }
 
-void CodeGenBlock::SetReturn(Value* RetVal) {
-  const Type *RetTy = CurrentFunction->getReturnType();
-  if (RetVal == 0) {
-      Builder.CreateRet(UndefValue::get(CurrentFunction->getReturnType()));
-  } else {
-    if (RetVal->getType() != RetTy) {
-      RetVal = Builder.CreateBitCast(RetVal, RetTy);
-    }
-    Builder.CreateRet(RetVal);
-  }
+Value *CodeGenBlock::LoadArgumentAtIndex(unsigned index) 
+{
+	return Builder.CreateLoad(Args[index]);
 }
 
-Value *CodeGenBlock::LoadSelf() {
-	return LoadBlockVar(0, 0);
+void CodeGenBlock::SetReturn(Value* RetVal) 
+{
+	const Type *RetTy = CurrentFunction->getReturnType();
+	if (RetVal == 0) 
+	{
+			Builder.CreateRet(UndefValue::get(CurrentFunction->getReturnType()));
+	} 
+	else 
+	{
+		if (RetVal->getType() != RetTy) 
+		{
+			RetVal = Builder.CreateBitCast(RetVal, RetTy);
+		}
+		Builder.CreateRet(RetVal);
+	}
 }
+
 void CodeGenBlock::StoreBlockVar(Value *val, unsigned index, unsigned offset) {
 // FIXME: This does no type checking and is very fragile.
   if (val->getType() != IdTy)

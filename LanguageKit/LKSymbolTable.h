@@ -87,32 +87,26 @@ typedef	enum
 @end
 
 /**
+ * External symbols are those that reside in a lexical scope outside of the
+ * current one.  This structure stores the symbol table and the depth of
+ * nesting away.  
+ */
+typedef struct
+{
+	int depth;
+	LKSymbolTable *scope;
+} LKExternalSymbolScope;
+/**
  * Symbol table for a block.
  */
 @interface LKBlockSymbolTable : LKMethodSymbolTable {
-  /** Bound variables in this block.  References to these are promoted to
-   * indirect references via the block object. */
-  NSMutableDictionary *promotedVars;
 }
-/**
- * The names of all of the external variables referenced in this scope.
- */
-- (NSArray*) promotedVars;
 /**
  * The scope of an externally-referenced variable.
  */
-- (LKSymbolScope) scopeOfExternal:(NSString*)aSymbol;
-/**
- * The location inside the block object for indirect access to promoted
- * variables.
- */
-- (id) promotedLocationOfSymbol:(NSString*)aName;
-/**
- * Specify the location inside the block object for indirect access to promoted
- * variables.
- */
-- (void) promoteSymbol:(NSString*)aName toLocation:(id)aLocation;
+- (LKExternalSymbolScope) scopeOfExternal:(NSString*)aSymbol;
 @end
+
 
 /**
  * Symbol table for an object.  Contains instance variables.

@@ -87,6 +87,22 @@
  */
 - (void) storeValue:(void*)rval 
     inClassVariable:(NSString*) aClassVar;
+/**
+ * Stores a value in a local variable somewhere up the stack.
+ */
+- (void) storeValue:(void*)aVal 
+     inLocalAtIndex:(unsigned)index
+lexicalScopeAtDepth:(unsigned) scope;
+/**
+ * Load a local value from up the stack.
+ */
+- (void*) loadLocalAtIndex:(unsigned)index
+	   lexicalScopeAtDepth:(unsigned) scope;
+/**
+ * Load an argument from up the stack.
+ */
+- (void*) loadArgumentAtIndex:(unsigned) index
+		  lexicalScopeAtDepth:(unsigned) scope;
 - (void*) loadClassVariable:(NSString*) aSymbol;
 /**
  * Stores a value at a specific offset from an object.  Used for instance
@@ -109,22 +125,7 @@
  * the block's scope.
  */
 - (void) beginBlockWithArgs:(unsigned)args
-					 locals:(unsigned)locals
- 			  boundVars:(void**)promoted
-					  count:(int)index;
-/**
- * Load a bound variable in a block that was passed in as a pointer to
- * beginBlockWithArgs:locals:boundVars:count:.
- */
-- (void*) loadBlockVarAtIndex:(unsigned)index
-					   offset:(unsigned)offset;
-/**
- * Store a bound variable in a block that was passed in as a pointer to
- * beginBlockWithArgs:locals:boundVars:count:.
- */
-- (void) storeValue:(void*) value
-  inBlockVarAtIndex:(unsigned)index
-             offset:(unsigned)offset;
+					 locals:(unsigned)locals;
 /**
  * Returns 'self' in the current method.
  */
@@ -137,15 +138,6 @@
  * Stores a value in the specified local.
  */
 - (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned)index;
-/**
- * Loads a pointer to a local variable.  Used when binding variables into
- * blocks.
- */
-- (void*) loadPointerToLocalAtIndex:(unsigned)index;
-/**
- * Loads a pointer to an argument.  Used when binding variables into blocks.
- */
-- (void*) loadPointerToArgumentAtIndex:(unsigned)index;
 /**
  * Load the value of the specified local variable.
  */

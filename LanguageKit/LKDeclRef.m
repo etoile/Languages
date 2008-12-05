@@ -1,4 +1,5 @@
 #import "LKDeclRef.h"
+#import "LKSymbolTable.h"
 
 @implementation LKClosedDeclRef
 @end
@@ -24,8 +25,15 @@
 				[NSException raise:@"InvalidSymbol"
 							format:@"Unrecognised symbol %@", symbol];
 			case external:
-				[parent resolveScopeOf:symbol];
-				[self check];
+			{
+				LKExternalSymbolScope s = 
+					[(LKBlockSymbolTable*)symbols scopeOfExternal:symbol];
+				if (nil == s.scope)
+				{
+					[NSException raise:@"InvalidSymbol"
+								format:@"Unrecognised symbol %@", symbol];
+				}
+			}
 			default:
 				break;
 		}
@@ -55,18 +63,36 @@
 		case argument:
 	   		return [aGenerator loadArgumentAtIndex:
 						  [symbols indexOfArgument:symbol]];
-		case promoted:
+		case external:
 		{
-			LKClosedDeclRef *decl = 
-				[(LKBlockSymbolTable*)symbols promotedLocationOfSymbol:symbol];
-			return [aGenerator loadBlockVarAtIndex:decl->index 
-			                                offset:decl->offset];
+			LKExternalSymbolScope s = [(LKBlockSymbolTable*)symbols scopeOfExternal: symbol];
+			switch([s.scope scopeOfSymbol: symbol])
+			{
+				case local:
+					return [aGenerator loadLocalAtIndex: [symbols offsetOfLocal:symbol]
+					                lexicalScopeAtDepth: s.depth];
+				case argument:
+					return [aGenerator loadArgumentAtIndex: [symbols indexOfArgument:symbol]
+					                   lexicalScopeAtDepth: s.depth];
+				case object:
+				{
+					return [aGenerator loadValueOfType: [symbols typeOfSymbol:symbol]
+											  atOffset: [symbols offsetOfIVar:symbol]
+											fromObject: [aGenerator loadSelf]];
+				}
+				case class:
+				{
+					return [aGenerator loadClassVariable: symbol];
+				}
+				default:
+					NSAssert(NO, @"Invalid scope for external");
+			}
 		}
 		case object:
 		{
-			return [aGenerator loadValueOfType:[symbols typeOfSymbol:symbol]
-			                           atOffset:[symbols offsetOfIVar:symbol]
-			                         fromObject:[aGenerator loadSelf]];
+			return [aGenerator loadValueOfType: [symbols typeOfSymbol:symbol]
+			                          atOffset: [symbols offsetOfIVar:symbol]
+			                        fromObject: [aGenerator loadSelf]];
 		}
 		case class:
 		{

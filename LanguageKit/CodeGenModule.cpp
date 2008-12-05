@@ -182,16 +182,27 @@ void CodeGenModule::BeginClassMethod(const char *MethodName, const char
   inClassMethod = true;
 }
 
+/*
+void CodeGenModule::BeginFreestandingMethod(const char *MethodName, const char *MethodTypes, int locals)
+{
+  assert(ScopeStack.empty() 
+		  && "Creating a method inside something is not sensible");
+  inClassMethod = false;
+  string name = string("Freestanding_Method") + MethodName;
+  ScopeStack.push_back(
+		  new CodeGenMethod(this, name, MethodTypes, locals, true));
+}
+*/
 void CodeGenModule::EndMethod() {
   //assert(isa<CodeGenMethod>(ScopeStack.back()));
   delete ScopeStack.back();
   ScopeStack.pop_back();
 }
 
-void CodeGenModule::BeginBlock(unsigned args, unsigned locals, Value
-		**promoted, int count) {
-  ScopeStack.push_back(new CodeGenBlock(args, locals, promoted,
-        count, ScopeStack.back(), this));
+void CodeGenModule::BeginBlock(unsigned args, unsigned locals)
+{
+	ScopeStack.push_back(new CodeGenBlock(args, locals, ScopeStack.back(),
+			  this));
 }
 Value *CodeGenModule::LoadBlockVar(unsigned index, unsigned offset) {
   return ((CodeGenBlock*)(ScopeStack.back()))->LoadBlockVar(index, offset);

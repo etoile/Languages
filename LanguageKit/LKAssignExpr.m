@@ -73,13 +73,40 @@ static char *ReleaseTypes;
 			[aGenerator storeValue:rval inClassVariable:target->symbol];
 			break;
 		}
-		case promoted:
+		case external:
 		{
-			LKClosedDeclRef *decl = [(LKBlockSymbolTable*)symbols
-				promotedLocationOfSymbol:target->symbol];
-			[aGenerator storeValue: rval 
-			     inBlockVarAtIndex:decl->index
-			                offset:decl->offset];
+			LKExternalSymbolScope scope = [(LKBlockSymbolTable*)symbols
+				scopeOfExternal:target->symbol];
+			switch([scope.scope scopeOfSymbol:target->symbol])
+			{
+				case argument:
+					NSAssert(NO,
+						@"Storing values in arguments is not currently supported");
+				case local:
+					[aGenerator storeValue:rval
+					        inLocalAtIndex:[scope.scope offsetOfLocal:target->symbol]
+			           lexicalScopeAtDepth:scope.depth];
+					break;
+				case object:
+				{
+					// TODO: Move this to -check
+					if ([[scope.scope typeOfSymbol:target->symbol] characterAtIndex:0] != '@')
+					{
+						[NSException raise:@"InvalidAssignmentException"
+									format:@"Can not yet generate code for assignment"];
+					}
+					// Assign
+					[aGenerator storeValue:rval
+									ofType:@"@"
+								  atOffset:[scope.scope offsetOfIVar:target->symbol]
+								fromObject:[aGenerator loadSelf]];
+					break;
+				}
+
+				default:
+					NSAssert(NO, 
+						@"External symbols must be local or arguments.");
+			}	
 			break;
 		}
 		default:

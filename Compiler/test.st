@@ -9,7 +9,7 @@ NSObject subclass: TestBlock
 ]
 NSObject subclass: SmalltalkTool
 [
-	| +foo |
+	| +foo i |
 	+alloc [
 		foo := 'Class variable value set in class method'.
 		'Class method alloc called' log.
@@ -21,6 +21,24 @@ NSObject subclass: SmalltalkTool
 	]
 	cascade2 [
 		'Second cascade message sent' log.
+	]
+	testNestedBlocks[
+	| a |
+		'testing nested blocks' log.
+		i := 'Accessing ivar from nested block'.
+		a := 'Accessing local from nested block'.
+		1 ifTrue:[
+			1 ifTrue:[
+				1 ifTrue:[
+					a log.
+					a := 'Set local in nested block'.
+					i log.
+					i := 'Set ivar in nested block'.
+				]
+			].
+		].
+		i log.
+		a log.
 	]
 	run [
 	| task |
@@ -84,6 +102,7 @@ NSObject subclass: SmalltalkTool
 		"Load an ObjC symbolic constant"
 		@NSViewMaxYMargin log.
 		(1 < 2) ifTrue:[ '1 < 2' log. ].
+		self testNestedBlocks.
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray

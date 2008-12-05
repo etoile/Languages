@@ -163,67 +163,32 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 @end
 @implementation LKBlockSymbolTable
-- (id) init
+- (LKExternalSymbolScope) scopeOfExternal:(NSString*)aSymbol
 {
-	SUPERINIT;
-	promotedVars = [[NSMutableDictionary alloc] init];
-	return self;
-}
-- (NSArray*) promotedVars
-{
-	return [promotedVars allKeys];
-}
-
-- (id) promotedLocationOfSymbol:(NSString*)aName
-{
-	return [promotedVars objectForKey:aName];
-}
-- (void) promoteSymbol:(NSString*)aName toLocation:(id)aLocation
-{
-	[promotedVars setObject:aLocation forKey:aName];
-}
-- (LKSymbolScope) scopeOfExternal:(NSString*)aSymbol
-{
+	LKExternalSymbolScope scope = {0, nil};
 	LKSymbolTable *nextscope = enclosingScope;
 	while (nextscope) 
 	{
+		scope.depth++;
 		LKSymbolScope result = [nextscope scopeOfSymbol:aSymbol];
-		if (result != invalid)
+		if (result != invalid && result != external)
 		{
-			return result;
+			scope.scope = nextscope;
+			break;
 		}
 		nextscope = nextscope->enclosingScope;
 	}
-	return invalid;
+	return scope;
 }
+
 - (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
-	switch (lookupUnscopedSymbol(aName))
+	LKSymbolScope scope = [super scopeOfSymbolNonrecursive:aName];
+	if (scope == invalid)
 	{
-		case builtin:
-			return builtin;
-		case global:
-			return global;
-		default: {}
+		return external;
 	}
-	if ([localVariables containsObject:aName])
-	{
-		return local;
-	}
-	if ([arguments containsObject:aName])
-	{
-		return argument;
-	}
-	if (nil != [promotedVars objectForKey:aName])
-	{
-		return promoted;
-	}
-	return external;
-}
-- (void) dealloc
-{
-	[promotedVars release];
-	[super dealloc];
+	return scope;
 }
 @end
 @implementation LKSymbolTable

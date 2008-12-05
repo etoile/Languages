@@ -28,3 +28,9 @@
 @end
 @interface LKClassMethod : LKMethod {}
 @end
+/**
+ * A freestanding method is a method that is not attached to any class.  It is
+ * used in REPL mode, and might be useful for better support for prototypes.
+ */
+@interface LKFreestandingMethod : LKMethod {}
+@end

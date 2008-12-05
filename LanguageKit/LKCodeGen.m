@@ -121,9 +121,15 @@ typedef int bool;
 {
 	return LoadClassVar(Builder, [aSymbol UTF8String]);
 }
+- (void) storeValue:(void*)aVal 
+     inLocalAtIndex:(unsigned)index
+lexicalScopeAtDepth:(unsigned) scope
+{
+	StoreValueInLocalAtIndex(Builder, aVal, index, scope);
+}
 - (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned)index
 {
-	StoreValueInLocalAtIndex(Builder, aVal, index);
+	StoreValueInLocalAtIndex(Builder, aVal, index, 0);
 }
 - (void) storeValue:(void*)aValue
               ofType:(NSString*)aType
@@ -142,10 +148,8 @@ typedef int bool;
 }
 - (void) beginBlockWithArgs:(unsigned)args
 					 locals:(unsigned)locals
-				  boundVars:(void**)promoted
-					  count:(int)index
 {
-	BeginBlock(Builder, args, locals, (LLVMValue*)promoted, index);
+	BeginBlock(Builder, args, locals);
 }
 - (void*) endBlock
 {
@@ -179,22 +183,24 @@ typedef int bool;
 {
 	return LoadSelf(Builder);
 }
-- (void*) loadPointerToLocalAtIndex:(unsigned)index
-{
-	return LoadPointerToLocalAtIndex(Builder, index);
-}
-- (void*) loadPointerToArgumentAtIndex:(unsigned)index
-{
-	return LoadPointerToArgumentAtIndex(Builder, index);
-}
 
 - (void*) loadLocalAtIndex:(unsigned)index
+	   lexicalScopeAtDepth:(unsigned) scope
 {
-	return LoadLocalAtIndex(Builder, index);
+	return LoadLocalAtIndex(Builder, index, scope);
+}
+- (void*) loadArgumentAtIndex:(unsigned) index
+		  lexicalScopeAtDepth:(unsigned) scope
+{
+	return LoadArgumentAtIndex(Builder, index, scope);
+}
+- (void*) loadLocalAtIndex:(unsigned)index
+{
+	return LoadLocalAtIndex(Builder, index, 0);
 }
 - (void*) loadArgumentAtIndex:(unsigned) index
 {
-	return LoadArgumentAtIndex(Builder, index);
+	return LoadArgumentAtIndex(Builder, index, 0);
 }
 - (void*) loadClass:(NSString*)aClass
 {

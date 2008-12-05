@@ -89,26 +89,20 @@ extern "C" {
     return B->getCurrentScope()->LoadSelf();
   }
   void StoreValueInLocalAtIndex(ModuleBuilder B, LLVMValue value, unsigned
-      index) {
-    B->getCurrentScope()->StoreValueInLocalAtIndex(value, index);
+      index, unsigned depth) {
+    B->getCurrentScope()->StoreValueInLocalAtIndex(value, index, depth);
   }
   void StoreValueOfTypeAtOffsetFromObject(ModuleBuilder B, LLVMValue value,
       const char* type, unsigned offset, LLVMValue object) {
     B->getCurrentScope()->StoreValueOfTypeAtOffsetFromObject(value, type, offset, object);
   }
 
-  LLVMValue LoadPointerToArgumentAtIndex(ModuleBuilder B, unsigned index) {
-    return B->getCurrentScope()->LoadPointerToArgumentAtIndex(index);
-  }
-  LLVMValue LoadPointerToLocalAtIndex(ModuleBuilder B, unsigned index) {
-    return B->getCurrentScope()->LoadPointerToLocalAtIndex(index);
-  }
-  LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index) {
-    return B->getCurrentScope()->LoadLocalAtIndex(index);
+  LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index, unsigned depth) {
+    return B->getCurrentScope()->LoadLocalAtIndex(index, depth);
   }
 
-  LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index) {
-    return B->getCurrentScope()->LoadArgumentAtIndex(index);
+  LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index, unsigned depth) {
+    return B->getCurrentScope()->LoadArgumentAtIndex(index, depth);
   }
 
   Value *LoadValueOfTypeAtOffsetFromObject(ModuleBuilder B, const char* type,
@@ -130,9 +124,9 @@ extern "C" {
   LLVMValue LoadClass(ModuleBuilder B, const char *classname) {
     return B->getCurrentScope()->LoadClass(classname);
   }
-  void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals, LLVMValue
-      *promoted, int count) {
-    B->BeginBlock(args, locals, promoted, count);
+  void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals)
+  {
+    B->BeginBlock(args, locals);
   }
   LLVMValue LoadBlockVar(ModuleBuilder B, unsigned index, unsigned offset) {
     return B->LoadBlockVar(index, offset);

@@ -59,7 +59,8 @@ LLVMValue LoadSelf(ModuleBuilder B);
 /**
  * Store a value in a local variable.
  */
-void StoreValueInLocalAtIndex(ModuleBuilder B, LLVMValue value, unsigned index);
+void StoreValueInLocalAtIndex(ModuleBuilder B, LLVMValue value, unsigned index,
+		unsigned depth);
 /**
  * Store a value in an instance variable.
  */
@@ -76,15 +77,7 @@ void StoreClassVar(ModuleBuilder B, const char *cVarName, LLVMValue value);
 /**
  * Load a local variable.
  */
-LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index);
-/**
- * Load a pointer to a local variable.
- */
-LLVMValue LoadPointerToLocalAtIndex(ModuleBuilder B, unsigned index);
-/**
- * Loads a pointer to an argument.
- */
-LLVMValue LoadPointerToArgumentAtIndex(ModuleBuilder B, unsigned index);
+LLVMValue LoadLocalAtIndex(ModuleBuilder B, unsigned index, unsigned depth);
 /**
  * Load an instance variable.
  */
@@ -115,8 +108,7 @@ void EndMethod(ModuleBuilder B);
 /**
  * Begin a block.
  */
-void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals, LLVMValue
-    *promoted, int count);
+void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals);
 /**
  * Load a bound variable in the current block.
  */
@@ -137,7 +129,7 @@ void SetBlockReturn(ModuleBuilder B, LLVMValue value);
 /**
  * Load an argument to the current block or method context.
  */
-LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index);
+LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index, unsigned depth);
 /**
  * Constructs an LLVM Constant for this integer.
  */

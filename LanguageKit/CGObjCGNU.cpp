@@ -907,14 +907,13 @@ llvm::Function *CGObjCGNU::MethodPreamble(
       isVarArg);
   std::string FunctionName = SymbolNameForMethod(ClassName, CategoryName,
       MethodName, isClassMethod);
+  
 
   llvm::Function *Method = llvm::Function::Create(MethodTy,
       llvm::GlobalValue::InternalLinkage,
       FunctionName,
       &TheModule);
   llvm::Function::arg_iterator AI = Method->arg_begin();
-  // Name the struct return argument.
-  // FIXME: This is probably the wrong test.
   AI->setName("self");
   ++AI;
   AI->setName("_cmd");

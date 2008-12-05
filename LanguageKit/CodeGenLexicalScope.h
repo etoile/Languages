@@ -18,6 +18,7 @@ class CodeGenModule;
 class CodeGenLexicalScope {
 protected:
   CodeGenModule *CGM;
+  Value *Context;
   SmallVector<Value*, 8> Locals;
   SmallVector<Value*, 8> Args;
   Value * RetVal;
@@ -74,10 +75,11 @@ protected:
 public:
   CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod){}
   IRBuilder<> *getBuilder() { return &Builder; }
+  Value *getContext() { return Context; }
   /**
    * Load an argument at the specified index.
    */
-  Value *LoadArgumentAtIndex(unsigned index);
+  Value *LoadArgumentAtIndex(unsigned index, unsigned depth);
 
   /**
    * Send a message to the superclass.
@@ -110,21 +112,12 @@ public:
   /**
    * Load a local in the current contest.
    */
-  Value *LoadLocalAtIndex(unsigned index);
-
-  /**
-   * Get a pointer to a local variable in the current context.
-   */
-  Value *LoadPointerToLocalAtIndex(unsigned index);
-  /**
-   * Loads a pointer to an argument in the current context.
-   */
-  Value *LoadPointerToArgumentAtIndex(unsigned index);
+  Value *LoadLocalAtIndex(unsigned index, unsigned depth);
 
   /**
    * Store a value in a local.
    */
-  void StoreValueInLocalAtIndex(Value * value, unsigned index);
+  void StoreValueInLocalAtIndex(Value * value, unsigned index, unsigned depth);
 
   /**
    * Get a pointer to the class object for a specified name.
@@ -160,6 +153,10 @@ public:
    * Create a symbol object.
    */
   Value *SymbolConstant(const char *symbol);
+  /**
+   * Returns the parent lexical scope.
+   */
+  virtual CodeGenLexicalScope *getParentScope() { return 0; }
 
   /**
    * Compare two pointers for equality.

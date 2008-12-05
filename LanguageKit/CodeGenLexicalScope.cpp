@@ -3,6 +3,10 @@
 #include "CodeGenModule.h"
 #include <llvm/Module.h>
 
+// Offset of the variables in the context from the object start.
+// CHANGE THIS IF YOU MODIFY THE CONTEXT OBJECT!
+static const int CONTEXT_VARIABLE_OFFSET = 4;
+
 static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
 {
 	// If the function already exists, return it
@@ -220,80 +224,129 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B, Function *F, Value
 }
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
-  SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes) {
+	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes) 
+{
 	ReturnType = MethodTypes;
+	llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();
+	Self = AI;
 	// Create the skeleton
-    BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentFunction);
-    Builder.SetInsertPoint(EntryBB);
+	BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentFunction);
+	Builder.SetInsertPoint(EntryBB);
 
-    // Set up the arguments
-    llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();
-    Self = Builder.CreateAlloca(AI->getType(), 0, "self.addr");
-    Builder.CreateStore(AI, Self);
-    ++AI; ++AI;
-    // Skip return value, self, _cmd
-    NEXT(MethodTypes);
-    NEXT(MethodTypes);
-    NEXT(MethodTypes);
-    for(Function::arg_iterator end = CurrentFunction->arg_end() ; AI != end ;
-        ++AI) {
-      Value * arg = Builder.CreateAlloca(IdTy, 0, "arg");
-      Args.push_back(arg);
-      // Initialise the local to nil
-      Builder.CreateStore(BoxValue(&Builder, AI, MethodTypes), arg);
-      NEXT(MethodTypes);
-    }
-    // Create the locals and initialise them to nil
-    for (unsigned i = 0 ; i < locals ; i++) {
-      Value * local = Builder.CreateAlloca(IdTy, 0, "local");
-      Locals.push_back(local);
-      // Initialise the local to nil
-      Builder.CreateStore(ConstantPointerNull::get(IdTy),
-          local);
-    }
+	Type *PtrTy = PointerType::getUnqual(IntegerType::Int8Ty);
+	// Create the context type
+	std::vector<const Type*> contextTypes;
+	contextTypes.push_back(IdTy);  // 0 - isa
+	if (CodeGenLexicalScope *parent = getParentScope())
+	{
+		// Set the parent context type correctly so we can use GEPs later
+		contextTypes.push_back(parent->getContext()->getType());
+	}
+	else
+	{
+		contextTypes.push_back(IdTy);        // 1 - parent
+	}
+	contextTypes.push_back(IntTy);           // 2 - count
+	contextTypes.push_back(PtrTy);           // 3 - Symbol table
+	contextTypes.push_back(Self->getType()); // 4 - Self
+	// What else?	Some kind of 'promote me' flag?  Can I squeeze this in to
+	// some other value?  Maybe use the sign bit on the count?
 
-    // Create a basic block for returns, reached only from the cleanup block
+	// Space for self, the locals, and the args
+	unsigned contextSize = locals +
+		(CurrentFunction->getFunctionType()->getNumParams() - 2);
+	for (unsigned i = 0 ; i < contextSize ; i++) 
+	{
+		contextTypes.push_back(IdTy);
+	}
+	StructType *contextType = StructType::get(contextTypes);
+
+	int contextOffset = CONTEXT_VARIABLE_OFFSET;
+
+	// Create the context
+	Context = Builder.CreateAlloca(contextType, 0, "context");
+
+	// Set up the arguments
+	
+
+	// Store the self pointer in context 0
+	Builder.CreateStore(AI, 
+			Builder.CreateStructGEP(Context, contextOffset++, "self"));
+	++AI; ++AI; // Currently we don't expose _cmd / _call
+
+	// Skip return value, self, _cmd
+	NEXT(MethodTypes);
+	NEXT(MethodTypes);
+	NEXT(MethodTypes);
+
+	for(Function::arg_iterator end = CurrentFunction->arg_end() ; 
+		AI != end ; ++AI) 
+	{
+		Value * arg = Builder.CreateStructGEP(Context, contextOffset++, "arg");
+		Args.push_back(arg);
+		Builder.CreateStore(BoxValue(&Builder, AI, MethodTypes), arg);
+		NEXT(MethodTypes);
+	}
+	// Create the locals and initialise them to nil
+	for (unsigned i = 0 ; i < locals ; i++) 
+	{
+		Value * local = 
+		Builder.CreateStructGEP(Context, contextOffset++, "local");
+		Locals.push_back(local);
+		// Initialise the local to nil
+		Builder.CreateStore(ConstantPointerNull::get(IdTy),
+			local);
+	}
+
+	// Create a basic block for returns, reached only from the cleanup block
 	const Type *RetTy = LLVMTypeFromString(ReturnType);
 	RetVal = 0;
 	if (RetTy != Type::VoidTy)
 	{
-    	RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
+		RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
 		Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
 	}
-    BasicBlock * RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
-    IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
+	BasicBlock * RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
+	IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
 	if (CurrentFunction->getFunctionType()->getReturnType() !=
-			llvm::Type::VoidTy) {
-      Value * R = ReturnBuilder.CreateLoad(RetVal);
-      ReturnBuilder.CreateRet(R);
-    } else {
-      ReturnBuilder.CreateRetVoid();
-    }
+			llvm::Type::VoidTy) 
+	{
+		Value * R = ReturnBuilder.CreateLoad(RetVal);
+		ReturnBuilder.CreateRet(R);
+	}
+	else
+	{
+		ReturnBuilder.CreateRetVoid();
+	}
 
-    // Setup the cleanup block
-    CleanupBB = BasicBlock::Create("cleanup", CurrentFunction);
-    ReturnBuilder = IRBuilder<>(CleanupBB);
-    ReturnBuilder.CreateBr(RetBB);
+	// Setup the cleanup block
+	CleanupBB = BasicBlock::Create("cleanup", CurrentFunction);
+	ReturnBuilder = IRBuilder<>(CleanupBB);
+	ReturnBuilder.CreateBr(RetBB);
 
 }
 
 void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B, Function *F,  Value **
-    argv, Value **args, unsigned argc, const char *selTypes) {
-  // FIXME: For objects, we need to turn SmallInts into ObjC objects
-  if (NULL == selTypes) {
-    // All types are id, so do nothing
-    memcpy(args, argv, sizeof(Value*) * argc);
-  } else {
-    SkipTypeQualifiers(&selTypes);
-    //Skip return, self, cmd
-    NEXT(selTypes);
-    NEXT(selTypes);
-    for (unsigned i=0 ; i<argc ; ++i) {
-      NEXT(selTypes);
-      SkipTypeQualifiers(&selTypes);
-      args[i] = Unbox(B, F, argv[i], selTypes);
-    }
-  }
+    argv, Value **args, unsigned argc, const char *selTypes) 
+{
+	if (NULL == selTypes) 
+	{
+		// All types are id, so do nothing
+		memcpy(args, argv, sizeof(Value*) * argc);
+	} 
+	else 
+	{
+		SkipTypeQualifiers(&selTypes);
+		//Skip return, self, cmd
+		NEXT(selTypes);
+		NEXT(selTypes);
+		for (unsigned i=0 ; i<argc ; ++i) 
+		{
+			NEXT(selTypes);
+			SkipTypeQualifiers(&selTypes);
+			args[i] = Unbox(B, F, argv[i], selTypes);
+		}
+	}
 }
 
 Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
@@ -407,30 +460,90 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B, Function *F, Value *rece
   return ConstantPointerNull::get(IdTy);
 }
 
-Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index) { 
-  return Builder.CreateLoad(Args[index]); 
+Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index, unsigned depth)
+{
+	if (0 == depth)
+	{
+		return Builder.CreateLoad(Args[index]); 
+	}
+	Value *context = Context;
+	for (unsigned i=0 ; i<depth ; ++i)
+	{
+		// Get a pointer to the parent in the contect
+		context = Builder.CreateStructGEP(context, 2);
+		// Load it.
+		context = Builder.CreateLoad(context);
+	}
+	return Builder.CreateLoad(
+		Builder.CreateStructGEP(context, CONTEXT_VARIABLE_OFFSET + 1 + index));
 }
 
-Value *CodeGenLexicalScope::LoadLocalAtIndex(unsigned index) { 
-  return Builder.CreateLoad(Locals[index]); 
+Value *CodeGenLexicalScope::LoadLocalAtIndex(unsigned index, unsigned depth) 
+{ 
+	LOG("Loading local %d, depth %d \n", index, depth);
+	if (0 == depth)
+	{
+		DUMP(Locals[index]);
+		return Builder.CreateLoad(Locals[index]); 
+	}
+	CodeGenLexicalScope *scope = this;
+	Value *context = Context;
+	for (unsigned i=0 ; i<depth ; ++i)
+	{
+		// Get a pointer to the parent in the contect
+		context = Builder.CreateStructGEP(context, 1);
+		// Load it.
+		context = Builder.CreateLoad(context);
+		scope = scope->getParentScope();
+	}
+	return Builder.CreateLoad(Builder.CreateStructGEP(context, 
+				CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size()));
 }
 
-Value *CodeGenLexicalScope::LoadSelf(void) {
-  return Builder.CreateLoad(Self);
+Value *CodeGenLexicalScope::LoadSelf(void) 
+{
+	CodeGenLexicalScope *scope = this;
+	Value *context = Context;
+	while(0 != scope->getParentScope())
+	{
+		// Get a pointer to the parent in the contect
+		context = Builder.CreateStructGEP(context, 1);
+		// Load it.
+		context = Builder.CreateLoad(context);
+		scope = scope->getParentScope();
+	}
+	return Builder.CreateLoad(Builder.CreateStructGEP(context, 
+				CONTEXT_VARIABLE_OFFSET));
 }
 
-Value *CodeGenLexicalScope::LoadPointerToArgumentAtIndex(unsigned index) {
-  return Args[index];
-}
-Value *CodeGenLexicalScope::LoadPointerToLocalAtIndex(unsigned index) {
-  return Locals[index];
-}
-
-void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned index) {
-  if (value->getType() != IdTy) {
-    value = Builder.CreateBitCast(value, IdTy);
-  }
-  Builder.CreateStore(value, Locals[index]);
+void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned
+		index, unsigned depth)
+{
+	if (value->getType() != IdTy) 
+	{
+		value = Builder.CreateBitCast(value, IdTy);
+	}
+	if (0 == depth)
+	{
+		Builder.CreateStore(value, Locals[index]);
+		return;
+	}
+	CodeGenLexicalScope *scope = this;
+	Value *context = Context;
+	for (unsigned i=0 ; i<depth ; ++i)
+	{
+		// Get a pointer to the parent in the contect
+		context = Builder.CreateStructGEP(context, 1);
+		// Load it.
+		context = Builder.CreateLoad(context);
+		scope = scope->getParentScope();
+	}
+	LOG("Storing local at index %d, depth %d.  ", index, depth);
+	LOG("Offset is: %d\n", CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size());
+	DUMP(value);
+	// Locals go after args in the context
+	Builder.CreateStore(value, Builder.CreateStructGEP(context,
+		CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size()));
 }
 
 Value *CodeGenLexicalScope::LoadClass(const char *classname) {
