@@ -39,30 +39,31 @@
 - (void) retainWithPointer:(BlockContext**)pointer
 {
 	isa = [RetainedStackContext class];
-	id **pointers = (id**)self;
+	id ***pointers = (id***)*(char **)self;
 	pointers -= 1;
-	if (NULL == pointers)
+	if (NULL == *pointers)
 	{
-		pointers = calloc(sizeof(id), 8);
-		pointers[7] = (id*)-1;
+		*pointers = calloc(sizeof(id), 8);
+		NSLog(@"Allocated array %x at %x", *pointers, pointers);
+		(*pointers)[7] = (id*)-1;
 	}
 	unsigned i = 0;
-	while (NULL != pointers[i])
+	while (NULL != (*pointers)[i])
 	{
 		// If we come to the end of the array, resize it
-		if (((id*)-1) == pointers[i])
+		if (((id*)-1) == (*pointers)[i])
 		{
-			pointers = realloc(pointers, sizeof(id) * i * 2);
+			*pointers = realloc(*pointers, sizeof(id) * i * 2);
 			for (unsigned j=i ; i<i*2 ; j++)
 			{
-				pointers[j] = NULL;
+				(*pointers)[j] = NULL;
 			}
-			pointers[i*2 - 1] = (id*)-1;
+			(*pointers)[i*2 - 1] = (id*)-1;
 			break;
 		}
 		i++;
 	}
-	pointers[i] = pointer;
+	(*pointers)[i] = pointer;
 }
 @end
 @implementation RetainedStackContext
@@ -81,11 +82,12 @@
 	block->symbolTable = symbolTable;
 	memcpy(block->objects, objects, count * sizeof(id));
 	// Update all of the pointers
-	id **pointers = (id**)self;
+	id ***pointers = (id***)*(char **)self;
 	pointers -= 1;
-	for (unsigned i=0 ; pointers[i] != NULL && pointers[i] != ((id*)-1) ; i++)
+	NSLog(@"Accessing array %x at %x", *pointers, pointers);
+	for (unsigned i=0 ; (*pointers)[i] != NULL && (*pointers)[i] != ((id*)-1) ; i++)
 	{
-		*pointers[i] = block;
+		*(*pointers)[i] = block;
 	}
 	// Retain all of the bound objects in this scope
 	for (unsigned i=0 ; i<count ; i++)
@@ -96,6 +98,10 @@
 			block->objects[i] = [block->objects[i] retain];
 		}
 	}	
+	if (NULL != *pointers)
+	{
+		free(*pointers);
+	}
 }
 @end
 
