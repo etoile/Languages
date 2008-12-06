@@ -44,7 +44,6 @@
 	if (NULL == *pointers)
 	{
 		*pointers = calloc(sizeof(id), 8);
-		NSLog(@"Allocated array %x at %x", *pointers, pointers);
 		(*pointers)[7] = (id*)-1;
 	}
 	unsigned i = 0;
@@ -84,7 +83,6 @@
 	// Update all of the pointers
 	id ***pointers = (id***)*(char **)self;
 	pointers -= 1;
-	NSLog(@"Accessing array %x at %x", *pointers, pointers);
 	for (unsigned i=0 ; (*pointers)[i] != NULL && (*pointers)[i] != ((id*)-1) ; i++)
 	{
 		*(*pointers)[i] = block;
