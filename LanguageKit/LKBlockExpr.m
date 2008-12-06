@@ -1,7 +1,6 @@
 #import "LKBlockExpr.h"
 #import "LKDeclRef.h"
 
-// FIXME: This currently uses locals for arguments, which is completely wrong.
 @implementation LKBlockExpr 
 + (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
 {
@@ -60,9 +59,8 @@
 }
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
-	// FIXME: Locals
 	[aGenerator beginBlockWithArgs:[[(LKMethodSymbolTable*)symbols args] count]
-	                        locals:0];
+	                        locals:[[(LKMethodSymbolTable*)symbols locals] count]];
 	void * lastValue = NULL;
 	FOREACH(statements, statement, LKAST*)
 	{

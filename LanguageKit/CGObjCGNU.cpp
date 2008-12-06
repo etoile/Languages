@@ -234,7 +234,6 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
   if (SelTypes == 0) {
     // If it's already cached, return it.
     if (UntypedSelectors[SelName]) {
-      // FIXME: Volatility
       return Builder.CreateLoad(UntypedSelectors[SelName]);
     }
     // If it isn't, cache it.
@@ -243,7 +242,6 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
         llvm::GlobalValue::InternalLinkage, SelName,//".objc_untyped_selector_alias",
         NULL, &TheModule);
     UntypedSelectors[SelName] = Sel;
-    // FIXME: Volatility
     return Builder.CreateLoad(Sel);
   }
   // Typed selectors
@@ -251,7 +249,6 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
       SelTypes);
   // If it's already cached, return it.
   if (TypedSelectors[Selector]) {
-    // FIXME: Volatility
     return Builder.CreateLoad(TypedSelectors[Selector]);
   }
   // If it isn't, cache it.
@@ -260,7 +257,6 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
       llvm::GlobalValue::InternalLinkage, SelName,//".objc_typed_selector_alias",
       NULL, &TheModule);
   TypedSelectors[Selector] = Sel;
-  // FIXME: Volatility
   return Builder.CreateLoad(Sel);
 }
 /// Dynamically looks up the selector for the specified name / type pair.

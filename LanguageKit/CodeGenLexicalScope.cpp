@@ -69,9 +69,8 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
       return boxed;
     }
     case ':': {
-      // TODO: Store this in a global.
-      Value *SymbolCalss = Runtime->LookupClass(*B,
-          CGM->MakeConstantString("Symbol"));
+	  Value *SymbolCalss =
+		  CGM->getModule()->getGlobalVariable(".smalltalk_symbol_class", true);
       return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
               Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
     }
@@ -106,17 +105,15 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
     // Other types, just wrap them up in an NSValue
     default:
     {
-      // TODO: Store this in a global.
-      Value *NSValueClass = Runtime->LookupClass(*B,
-          CGM->MakeConstantString("NSValue"));
+	  Value *NSValueClass =
+		  CGM->getModule()->getGlobalVariable(".smalltalk_nsvalue_class", true);
       // TODO: We should probably copy this value somewhere, maybe with a
       // custom object instead of NSValue?
-      // TODO: Should set sender to self.
       const char *end = typestr;
       while (!isdigit(*end)) { end++; }
       string typestring = string(typestr, end - typestr);
       Value *args[] = {V, CGM->MakeConstantString(typestring.c_str())};
-      return Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+      return Runtime->GenerateMessageSend(*B, IdTy, LoadSelf(), NSValueClass,
               Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL),
               args, 2);
     }
@@ -138,7 +135,6 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B, Function *F, Value
     *val, const char *Type) {
   string returnTypeString = string(1, *Type);
   const char *castSelName;
-  // TODO: Factor this out into a name-for-type function
   switch(*Type) {
     case 'c':
       castSelName = "charValue";
@@ -644,7 +640,6 @@ Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs) {
 }
 
 Value *CodeGenLexicalScope::SymbolConstant(const char *symbol) {
-	// TODO: Duplicate elimination
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	IRBuilder<> * initBuilder = CGM->getInitBuilder();
 	Value *SymbolClass = Runtime->LookupClass(*initBuilder,

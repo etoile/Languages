@@ -27,9 +27,6 @@ namespace llvm {
   class Function;
 }
 
-//FIXME Several methods should be pure virtual but aren't to avoid the
-//partially-implemented subclass breaking.
-
 /// Implements runtime-specific code generation functions.
 class CGObjCRuntime {
 public:

@@ -87,6 +87,8 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
 	CreateClassPointerGlobal("StackContext", ".smalltalk_context_stack_class");
 	CreateClassPointerGlobal("RetainedStackContext", ".smalltalk_context_retained_class");
+	CreateClassPointerGlobal("Symbol", ".smalltalk_symbol_class");
+	CreateClassPointerGlobal("NSValue", ".smalltalk_nsvalue_class");
 }
 
 void CodeGenModule::BeginClass(const char *Class, const char *Super, const

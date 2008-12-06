@@ -28,8 +28,6 @@
 }
 - (void) check
 {
-	//TODO: See if this is replacing a superclass method.	If so, infer
-	//argument types, otherwise assume ids.
 	FOREACH(statements, statement, LKAST*)
 	{
 		[statement setParent:self];
