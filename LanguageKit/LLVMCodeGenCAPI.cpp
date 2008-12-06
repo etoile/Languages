@@ -128,13 +128,6 @@ extern "C" {
   {
     B->BeginBlock(args, locals);
   }
-  LLVMValue LoadBlockVar(ModuleBuilder B, unsigned index, unsigned offset) {
-    return B->LoadBlockVar(index, offset);
-  }
-  void StoreBlockVar(ModuleBuilder B, LLVMValue val, unsigned index, unsigned
-		  offset) {
-    B->StoreBlockVar(val, index, offset);
-  }
 
   LLVMValue IntConstant(ModuleBuilder B, const char *value) {
     return B->IntConstant(value);

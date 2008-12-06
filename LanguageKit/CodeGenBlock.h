@@ -23,12 +23,7 @@ public:
   CodeGenBlock(int args, int locals, CodeGenLexicalScope *enclosingScope,
 		  CodeGenModule *Mod);
 
-  llvm::Value *LoadArgumentAtIndex(unsigned index);
-
   void SetReturn(llvm::Value* RetVal);
-
-  llvm::Value *LoadBlockVar(unsigned index, unsigned offset) ;
-  void StoreBlockVar(Value *val, unsigned index, unsigned offset);
 
   llvm::Value *EndBlock(void); 
 };

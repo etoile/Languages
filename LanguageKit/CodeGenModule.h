@@ -137,15 +137,6 @@ public:
 	Value *LoadClassVar(const char *cVarName);
 
   /**
-   * Load a bound variable from a block.
-   */
-  Value *LoadBlockVar(unsigned index, unsigned offset);
-  /**
-   * Store a value in a bound variable.
-   */
-  void StoreBlockVar(Value *val, unsigned index, unsigned offset);
-
-  /**
    * Set the (local) return value for a block.
    */
   void SetBlockReturn(Value *value);

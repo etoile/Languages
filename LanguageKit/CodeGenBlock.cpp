@@ -67,11 +67,6 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 	Builder.CreateStore(parentContext, Builder.CreateStructGEP(Context, 1));
 }
 
-Value *CodeGenBlock::LoadArgumentAtIndex(unsigned index) 
-{
-	return Builder.CreateLoad(Args[index]);
-}
-
 void CodeGenBlock::SetReturn(Value* RetVal) 
 {
 	const Type *RetTy = CurrentFunction->getReturnType();
@@ -89,48 +84,6 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 	}
 }
 
-void CodeGenBlock::StoreBlockVar(Value *val, unsigned index, unsigned offset) {
-// FIXME: This does no type checking and is very fragile.
-  if (val->getType() != IdTy)
-  {
-	  val = Builder.CreateBitCast(val, IdTy);
-  }
-  Value *block = Builder.CreateLoad(Self);
-  Value *object = Builder.CreateStructGEP(block, 2);
-  object = Builder.CreateStructGEP(object, index);
-  object = Builder.CreateLoad(object);
-  if (offset > 0)
-  {
-    object = Builder.CreatePtrToInt(object, IntTy);
-    object = Builder.CreateAdd(object, ConstantInt::get(IntTy, offset));
-    object = Builder.CreateIntToPtr(object, PointerType::getUnqual(IdTy));
-  }
-  DUMP(val);
-  DUMP(object);
-  Builder.CreateStore(val, object);
-}
-
-Value *CodeGenBlock::LoadBlockVar(unsigned index, unsigned offset) {
-  Value *block = Builder.CreateLoad(Self);
-  // Object array
-  Value *object = Builder.CreateStructGEP(block, 2);
-  // Pointer to value address
-  object = Builder.CreateStructGEP(object, index);
-  // Pointer to value
-  object = Builder.CreateLoad(object);
-  // Value
-  object = Builder.CreateLoad(object);
-  if (offset > 0)
-  {
-	// Offset from pointed value
-    object = Builder.CreatePtrToInt(object, IntTy);
-    object = Builder.CreateAdd(object, ConstantInt::get(IntTy, offset));
-    object = Builder.CreateIntToPtr(object, PointerType::getUnqual(IdTy));
-	// Pointed value
-    object = Builder.CreateLoad(object);
-  }
-  return object;
-}
 
 Value *CodeGenBlock::EndBlock(void) {
   parentScope->EndChildBlock(this);
