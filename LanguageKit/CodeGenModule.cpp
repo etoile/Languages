@@ -308,6 +308,7 @@ void CodeGenModule::compile(void) {
 	PassManager pm;
 	pm.add(createVerifierPass());
 	pm.add(new TargetData(TheModule));
+	pm.add(createScalarReplAggregatesPass());
 	pm.add(createPromoteMemoryToRegisterPass());
 	pm.add(createAggressiveDCEPass());
 	pm.add(createFunctionInliningPass());
@@ -317,10 +318,10 @@ void CodeGenModule::compile(void) {
 	pm.add(createCondPropagationPass());
 	pm.add(createInstructionCombiningPass());
 	pm.add(createTailDuplicationPass());
-	pm.add(createCFGSimplificationPass());
 	pm.add(createStripDeadPrototypesPass());
 //	pm.add(createUnboxPass());
 	pm.add(createAggressiveDCEPass());
+	//pm.add(createCFGSimplificationPass());
 	pm.run(*TheModule);
 	DUMP(TheModule);
 	if (NULL == EE)
