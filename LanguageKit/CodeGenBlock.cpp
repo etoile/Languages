@@ -25,9 +25,8 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 		Type::Int32Ty,                 // 2 - Number of args.
 		enclosingContext->getType(),   // 3 - Context.
 		(void*)0);
-	BlockTy = PointerType::getUnqual(BlockTy);
 	std::vector<const Type*> argTy;
-	argTy.push_back(BlockTy);
+	argTy.push_back(PointerType::getUnqual(BlockTy));
 
 	// FIXME: Broken on Etoile runtime - _cmd needs to be a GEP on _call
 	argTy.push_back(SelTy);
@@ -43,17 +42,19 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 	
 	// The NewBlock function gets a block from a pool.  It should really be
 	// inlined.
-	Function *BlockCreate = cast<Function>(
-		CGM->getModule()->getOrInsertFunction("NewBlock", IdTy, (void*)0));
-	Block = MethodBuilder->CreateCall(BlockCreate);
-	Block = MethodBuilder->CreateBitCast(Block, BlockTy);
+	Block = MethodBuilder->CreateAlloca(BlockTy);
 
+	Module *TheModule = CGM->getModule();
 	// Create the block function
 	CurrentFunction = Function::Create(BlockFunctionTy,
-		GlobalValue::InternalLinkage, "BlockFunction", CGM->getModule());
+		GlobalValue::InternalLinkage, "BlockFunction", TheModule);
 	InitialiseFunction(Args, Locals, locals);
 
-	// isa pointer is set by BlockFunction
+	// Set the isa pointer
+	Value *isa = MethodBuilder->CreateLoad(
+		TheModule->getGlobalVariable(".smalltalk_block_stack_class", true));
+	storeInStruct(MethodBuilder, Block, isa, 0);
+
 	// Store the block function in the object
 	storeInStruct(MethodBuilder, Block,
 		MethodBuilder->CreateBitCast(CurrentFunction, IMPTy), 1);

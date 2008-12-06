@@ -584,13 +584,6 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
 }
 
 void CodeGenLexicalScope::EndChildBlock(CodeGenBlock *block) {
-  Value *Block = block->Block;
-  Value *FreeBlockFn =
-	  CGM->getModule()->getOrInsertFunction("FreeBlock", Type::VoidTy,
-			  Block->getType(), (void*)0);
-  Value *Args[] = {Block};
-  CallInst::Create(FreeBlockFn, &Args[0], &Args[1], "",
-      CleanupBB->getTerminator());
 }
 
 Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs) {

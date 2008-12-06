@@ -71,6 +71,14 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 
 	Runtime = CreateObjCRuntime(*TheModule, IntTy,
 			IntegerType::get(sizeof(long) * 8));
+	// Store the class to be used for block closures in a global
+	Value *stackBlock = new GlobalVariable(IdTy, false,
+			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
+			".smalltalk_block_stack_class", TheModule);
+
+	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
+				Runtime->LookupClass(InitialiseBuilder,
+					MakeConstantString("BlockClosure")), IdTy), stackBlock);
 }
 
 void CodeGenModule::BeginClass(const char *Class, const char *Super, const
