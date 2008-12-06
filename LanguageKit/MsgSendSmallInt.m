@@ -190,12 +190,14 @@ void *BoxSmallInt(void *obj) {
 	//fprintf(stderr, "Boxing %d\n", (int) val);
 	return [BigInt bigIntWithLongLong:(long long)val];
 }
+static intptr_t foo;
 void *BoxObject(void *obj) {
 	intptr_t val = (intptr_t)obj;
 	if (val == 0 || (val & 1) == 0) {
 		return obj;
 	}
 	val >>= 1;
+	foo = val;
 	return [BigInt bigIntWithLongLong:(long long)val];
 }
 
