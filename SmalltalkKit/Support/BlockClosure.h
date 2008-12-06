@@ -27,10 +27,3 @@
 - (id) value:(id)a1 value:(id)a2 value:(id)a3 value:(id)a4;
 - (id) on:(NSString*)exceptionName do:(BlockClosure*)handler;
 @end
-
-/**
- * Get a block directly, without message passing or allocation overhead.  Uses
- * a per-thread storage pool.
- */
-BlockClosure *NewBlock();
-void FreeBlock(BlockClosure* aBlock);

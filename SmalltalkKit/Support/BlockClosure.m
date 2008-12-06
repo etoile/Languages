@@ -74,27 +74,3 @@
 }
 
 @end
-
-typedef struct 
-{
-	@defs(BlockClosure);
-}
-* BlockClosure_t;
-
-static __thread id pool = nil;
-BlockClosure *NewBlock(void)
-{
-	if (pool == NULL)
-	{
-		return [BlockClosure new];
-	}
-	BlockClosure *next = pool;
-	pool = ((BlockClosure_t)pool)->context;
-	return next;
-}
-void FreeBlock(BlockClosure* aBlock)
-{
-	//TODO: blocks are never freed, and this leeks badly on thread destruction.
-	((BlockClosure_t)aBlock)->context = pool;
-	pool = aBlock;
-}
