@@ -69,15 +69,15 @@
 			switch([s.scope scopeOfSymbol: symbol])
 			{
 				case local:
-					return [aGenerator loadLocalAtIndex: [symbols offsetOfLocal:symbol]
+					return [aGenerator loadLocalAtIndex: [s.scope offsetOfLocal:symbol]
 					                lexicalScopeAtDepth: s.depth];
 				case argument:
-					return [aGenerator loadArgumentAtIndex: [symbols indexOfArgument:symbol]
+					return [aGenerator loadArgumentAtIndex: [s.scope indexOfArgument:symbol]
 					                   lexicalScopeAtDepth: s.depth];
 				case object:
 				{
-					return [aGenerator loadValueOfType: [symbols typeOfSymbol:symbol]
-											  atOffset: [symbols offsetOfIVar:symbol]
+					return [aGenerator loadValueOfType: [s.scope typeOfSymbol:symbol]
+											  atOffset: [s.scope offsetOfIVar:symbol]
 											fromObject: [aGenerator loadSelf]];
 				}
 				case class:

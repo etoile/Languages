@@ -470,7 +470,7 @@ Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index, unsigned depth)
 	for (unsigned i=0 ; i<depth ; ++i)
 	{
 		// Get a pointer to the parent in the contect
-		context = Builder.CreateStructGEP(context, 2);
+		context = Builder.CreateStructGEP(context, 1);
 		// Load it.
 		context = Builder.CreateLoad(context);
 	}

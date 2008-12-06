@@ -186,7 +186,11 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	LKSymbolScope scope = lookupUnscopedSymbol(aName);
 	if (scope == invalid)
 	{
-		return external;
+		scope = [super scopeOfSymbolNonrecursive:aName];
+		if (scope == invalid)
+		{
+			return external;
+		}
 	}
 	return scope;
 }

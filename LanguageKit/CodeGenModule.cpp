@@ -37,7 +37,18 @@ Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
   return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
 }
 
+/*
+CodeGenModule::CreateClassPointerGlobal(string &className, string &globalName)
+{
+	Value *global = new GlobalVariable(IdTy, false,
+			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
+			".smalltalk_block_stack_class", TheModule);
 
+	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
+				Runtime->LookupClass(InitialiseBuilder,
+					MakeConstantString(className)), IdTy), global);
+}
+*/
 CodeGenModule::CodeGenModule(const char *ModuleName, bool jit) 
 {
 	// When we JIT code, we put the Small Int message functions inside the
