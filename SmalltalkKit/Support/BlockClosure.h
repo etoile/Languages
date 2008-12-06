@@ -1,13 +1,7 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #include <setjmp.h>
 
-@interface BlockContext : NSObject {
-	BlockContext *parent;
-	int count;
-	char **symbolTable;
-	id objects[0];
-}
-@end
+@class BlockContext;
 
 @interface BlockClosure : NSObject {
 @public

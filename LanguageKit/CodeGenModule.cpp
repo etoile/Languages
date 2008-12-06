@@ -37,18 +37,19 @@ Constant *CodeGenModule::MakeConstantString(const std::string &Str, const
   return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
 }
 
-/*
-CodeGenModule::CreateClassPointerGlobal(string &className, string &globalName)
+void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *globalName)
 {
+	// Create the global
 	Value *global = new GlobalVariable(IdTy, false,
 			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			".smalltalk_block_stack_class", TheModule);
+			globalName, TheModule);
 
+	// Initialise it in the module load function
 	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
 				Runtime->LookupClass(InitialiseBuilder,
 					MakeConstantString(className)), IdTy), global);
 }
-*/
+
 CodeGenModule::CodeGenModule(const char *ModuleName, bool jit) 
 {
 	// When we JIT code, we put the Small Int message functions inside the
@@ -83,13 +84,9 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	Runtime = CreateObjCRuntime(*TheModule, IntTy,
 			IntegerType::get(sizeof(long) * 8));
 	// Store the class to be used for block closures in a global
-	Value *stackBlock = new GlobalVariable(IdTy, false,
-			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			".smalltalk_block_stack_class", TheModule);
-
-	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
-				Runtime->LookupClass(InitialiseBuilder,
-					MakeConstantString("BlockClosure")), IdTy), stackBlock);
+	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
+	CreateClassPointerGlobal("StackContext", ".smalltalk_context_stack_class");
+	CreateClassPointerGlobal("RetainedStackContext", ".smalltalk_context_retained_class");
 }
 
 void CodeGenModule::BeginClass(const char *Class, const char *Super, const

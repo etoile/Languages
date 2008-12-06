@@ -263,10 +263,33 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	int contextOffset = CONTEXT_VARIABLE_OFFSET;
 
-	// Create the context
-	Context = Builder.CreateAlloca(contextType, 0, "context");
+	// We need a pointer hidden away in front of the context for storing
+	// pointers to pointers to the context.
+	std::vector<const Type*> frameTypes;
+	frameTypes.push_back(PtrTy);
+	frameTypes.push_back(contextType);
+	StructType *frameType = StructType::get(frameTypes);
 
-	// Set up the arguments
+	// Create the frame 
+	Value *frame = Builder.CreateAlloca(frameType, 0, "frame");
+	// Initialise the pointer to NULL
+	Builder.CreateStore(ConstantPointerNull::get(cast<PointerType>(PtrTy)),
+			Builder.CreateStructGEP(frame, 0));
+	// Set the context to be the real context
+	Context = Builder.CreateStructGEP(frame, 1);
+	
+	// Set the isa pointer
+	Builder.CreateStore(
+		Builder.CreateLoad(
+			CGM->getModule()->getGlobalVariable(".smalltalk_context_stack_class", true)),
+		Builder.CreateStructGEP(Context, 0, "self"));
+
+	//// Set up the arguments
+
+	// Set the number of arguments
+	Builder.CreateStore(
+		ConstantInt::get(IntTy, contextSize + 1),
+		Builder.CreateStructGEP(Context, 2, "self"));
 	
 
 	// Store the self pointer in context 0
@@ -319,11 +342,32 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		ReturnBuilder.CreateRetVoid();
 	}
 
-	// Setup the cleanup block
-	CleanupBB = BasicBlock::Create("cleanup", CurrentFunction);
-	ReturnBuilder = IRBuilder<>(CleanupBB);
-	ReturnBuilder.CreateBr(RetBB);
+	//// Setup the cleanup block
 
+	CleanupBB = BasicBlock::Create("cleanup", CurrentFunction);
+	IRBuilder<> CleanupBuilder = IRBuilder<>(CleanupBB);
+
+	// Get the current class of the context and the class of retained contexts
+	// and cast both to integers for comparison.
+	Value *retainedClass = CleanupBuilder.CreateLoad(
+		CGM->getModule()->getGlobalVariable(".smalltalk_context_retained_class", true));
+	retainedClass = CleanupBuilder.CreatePtrToInt(retainedClass, IntPtrTy);
+	Value *contextClass = CleanupBuilder.CreateLoad(
+			CleanupBuilder.CreateStructGEP(Context, 0));
+	contextClass = CleanupBuilder.CreatePtrToInt(contextClass, IntPtrTy);
+
+	// See whether the context has been retained
+	Value *isContextRetained = CleanupBuilder.CreateICmpEQ(contextClass, retainedClass);
+
+	// If so, we need to promote it to the heap, if not then jump to the return block
+	BasicBlock *PromoteBB = BasicBlock::Create("promote_context", CurrentFunction);
+	CleanupBuilder.CreateCondBr(isContextRetained, PromoteBB, RetBB);
+
+	// Promote the context, if required
+	IRBuilder<> PromoteBuilder = IRBuilder<>(PromoteBB);
+	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::VoidTy, Context,
+		Context, CGM->getRuntime()->GetSelector(PromoteBuilder, "promote", NULL), 0, 0);
+	PromoteBuilder.CreateBr(RetBB);
 }
 
 void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B, Function *F,  Value **
@@ -574,7 +618,9 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
   // Do the ASSIGN() thing if it's an object.
   if (type[0] == '@') {
     CGObjCRuntime *Runtime = CGM->getRuntime();
-    Runtime->GenerateMessageSend(Builder, IdTy, NULL, box,
+	// Some objects may return a different object when retained.  Store that
+	// instead.
+    box = Runtime->GenerateMessageSend(Builder, IdTy, NULL, box,
           Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
     Value *old = Builder.CreateLoad(addr);
     Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
@@ -584,6 +630,7 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
 }
 
 void CodeGenLexicalScope::EndChildBlock(CodeGenBlock *block) {
+
 }
 
 Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs) {

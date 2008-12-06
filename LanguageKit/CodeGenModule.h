@@ -59,6 +59,10 @@ private:
   Constant *MakeConstantString(const std::string &Str, const
           std::string &Name="", unsigned GEPs=2);
 
+	/**
+	 * Creates a global value containing a pointer to a class.
+	 */
+	void CreateClassPointerGlobal(const char *className, const char *globalName);
 
 public:
   const Type *getCurrentClassTy() { return CurrentClassTy; }
