@@ -315,7 +315,18 @@ keyword_expression(E) ::= simple_expression(T) keyword_message(M).
 
 simple_expression(E) ::= WORD(V).
 {
-	E = [LKDeclRef reference:V];
+	if ([V isEqualToString:@"true"])
+	{
+		E = [LKNumberLiteral literalFromString:@"1"];
+	}
+	else if ([V isEqualToString:@"false"])
+	{
+		E = [LKNumberLiteral literalFromString:@"0"];
+	}
+	else
+	{
+		E = [LKDeclRef reference:V];
+	}
 }
 simple_expression(E) ::= SYMBOL(S).
 {
