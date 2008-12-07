@@ -114,6 +114,18 @@ op2(div, tdiv_q)
 	}
 	return nil;
 }
+- (id) timesRepeat:(id) aBlock
+{
+	// FIXME: Test if v can be safely cast to an unsigned, and if not do a
+	// slower loop with gmp operations.
+	unsigned  max = mpz_get_ui(v);
+	id result;
+	for (unsigned i=0 ; i<max ; i++)
+	{
+		result = [aBlock value];
+	}
+	return result;
+}
 
 - (NSString*) description
 {
