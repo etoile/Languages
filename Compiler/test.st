@@ -10,6 +10,7 @@ NSObject subclass: TestBlock
 NSObject subclass: SmalltalkTool
 [
 	| +foo i |
+	init []
 	+alloc [
 		foo := 'Class variable value set in class method'.
 		'Class method alloc called' log.
@@ -103,6 +104,9 @@ NSObject subclass: SmalltalkTool
 		@NSViewMaxYMargin log.
 		(1 < 2) ifTrue:[ '1 < 2' log. ].
 		self testNestedBlocks.
+		#symbol log.
+		'Testing if empty methods return self:' log.
+		self init log.
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray

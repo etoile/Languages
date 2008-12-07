@@ -323,7 +323,15 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	if (RetTy != Type::VoidTy)
 	{
 		RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
-		Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
+		// On id returns, default to returning self, otherwise default to 0.
+		if (ReturnType[0] == '@')
+		{
+			Builder.CreateStore(LoadSelf(), RetVal);
+		}
+		else
+		{
+			Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
+		}
 	}
 	BasicBlock * RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
 	IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
