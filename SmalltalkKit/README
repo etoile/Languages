@@ -3,10 +3,26 @@ Differences to traditional Smalltalk environments
 -------------------------------------------------
 
 * The OO environment is different to the traditional ST-80 environment.
+
+  * Smalltalk traditionally has an algebraic type system - objects are algebras
+    defined by an implicit or explicit signature.  C, on the other hand, has a
+	structural type system, where objects are defined by their in-memory
+    layout.  Objective-C incorporates both of these, which has a few issues with
+    Smalltalk.  Some methods will return something that is not an object in the
+    Smalltalk sense of the word.  These will be automatically boxed when calling
+    other methods.  The major issue Smalltalk programmers are likely to 
+	encounter is that implementing methods with the same name as an Objective-C
+    method will result in that method inheriting the Objective-C method's
+    structural type signature.  This means that it will be limited to returning
+    types that can be mapped to the relevant C types and will only accept 
+    arguments that have the correct C type.  For example, the `count` is define
+    by NSArray as returning an int.  If you return an object, it must respond to
+    `intValue` and return a C integer.
     
-  * Sending messages to nil *always* directly returns nil.
-    (XXX: Can it return the 0 integer? How does the automatic type
-    conversion handle this?)
+  * Sending messages to nil *always* directly returns nil.  In the case of 
+    messages which would return something other than an object, this means a
+    block of memory of the correct return size initialised with zeroes, e.g. the
+    integer value 0 or a structure containing 0 for all elements.
     
     Especially the following things do not work:
     * nil == anObject   --> will never work, use anObject == nil instead!
@@ -21,13 +37,24 @@ Differences to traditional Smalltalk environments
     Car>>driveFrom:To:     | -[Car driveFrom:To:]
     Car class>>defaultCar  | +[Car defaultCar]
 
-* The default method return value is nil, not self.
+* The default method return value is self, but only in the case of .
 
 * Basic classes and methods
+
+  * Most of the Smalltalk-80 classes do not exist directly, although they have 
+    analogues in the OpenStep library.  Literals construct the OpenStep versions
+    such as NSString for string literals and NSMutableArray for arrays.
+
+  * Small integers are implemented in C and compiled to LLVM bitcode.  If you 
+    want to add methods to SmallInt you can do so in two ways.  If SmallInt
+    doesn't implement a method, the value will be promoted to a BigInt and the
+    method retried, so categories on BigInt will work (although they will be
+    slow).  Alternatively, you can modify the MsgSendSmallInt.m file, recompile
+    it with clang, and include it with your code.
 
   * There's a Transcript class called ETTranscript, which has the class
     methods show: and cr.
 
   * There are no explicit Boolean classes, ifTrue: and the like can
     be called on integers. An integer is considered true iff it's
-    not zero.
+    not zero.  Other classes may implement ifTrue: and friends as normal.
