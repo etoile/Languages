@@ -25,7 +25,7 @@ Differences to traditional Smalltalk environments
     integer value 0 or a structure containing 0 for all elements.
     
     Especially the following things do not work:
-    * nil == anObject   --> will never work, use anObject == nil instead!
+    * nil = anObject   --> will never work, use anObject == nil instead!
     * nil log.          --> will not log anything. Consider using the
                             ETTranscript instead.
 
