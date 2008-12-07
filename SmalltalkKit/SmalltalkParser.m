@@ -181,7 +181,6 @@ void ParseFree(void *p, void (*freeProc)(void*));
 						c=CHAR(++j);
 					} while (j<sLength-1 && !isspace(c));
 					CALL_PARSER(SYMBOL, WORD_TOKEN);
-					NSLog(@"Symbol: %@", WORD_TOKEN);
 					i = j;
 					break;
 				default:

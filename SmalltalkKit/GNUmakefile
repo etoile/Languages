@@ -8,7 +8,7 @@ SUBPROJECTS = Support
 #
 # Library
 #
-VERSION = 0.6
+VERSION = 0.7
 FRAMEWORK_NAME = SmalltalkKit
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
