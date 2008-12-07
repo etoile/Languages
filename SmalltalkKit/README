@@ -1,0 +1,33 @@
+
+Differences to traditional Smalltalk environments
+-------------------------------------------------
+
+* The OO environment is different to the traditional ST-80 environment.
+    
+  * Sending messages to nil *always* directly returns nil.
+    (XXX: Can it return the 0 integer? How does the automatic type
+    conversion handle this?)
+    
+    Especially the following things do not work:
+    * nil == anObject   --> will never work, use anObject == nil instead!
+    * nil log.          --> will not log anything. Consider using the
+                            ETTranscript instead.
+
+  * In the Objective-C documentation, method names are often written
+    differently to the usual Smalltalk conventions:
+
+    Smalltalk	       	   | Objective-C
+    -----------------------|-----------------------
+    Car>>driveFrom:To:     | -[Car driveFrom:To:]
+    Car class>>defaultCar  | +[Car defaultCar]
+
+* The default method return value is nil, not self.
+
+* Basic classes and methods
+
+  * There's a Transcript class called ETTranscript, which has the class
+    methods show: and cr.
+
+  * There are no explicit Boolean classes, ifTrue: and the like can
+    be called on integers. An integer is considered true iff it's
+    not zero.
