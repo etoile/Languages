@@ -170,21 +170,27 @@ locals(L) ::= .
 	L = [NSMutableArray array];
 }
 
-statement_list(L) ::= statement(S) STOP statement_list(T).
+statement_list(L) ::= statements(T).
 {
-	[T insertObject:S atIndex:0];
 	L = T;
 }
-statement_list(L) ::= comment(C) statement_list(T).
+statement_list(L) ::= statements(T) statement(S).
 {
-	[T insertObject:C atIndex:0];
+	[T addObject:S];
 	L = T;
 }
-statement_list(L) ::= statement(S).
+
+statements(L) ::= statements(T) statement(S) STOP.
 {
-	L = [NSMutableArray arrayWithObject:S];
+	[T addObject:S];
+	L = T;
 }
-statement_list(L) ::= .
+statements(L) ::= statements(T) comment(C).
+{
+	[T addObject:C];
+	L = T;
+}
+statements(L) ::= .
 {
 	L = [NSMutableArray array];
 }
@@ -368,27 +374,38 @@ simple_expression(E) ::= LSQBRACK argument_list(A) statement_list(S) RSQBRACK.
 	E = [LKBlockExpr blockWithArguments:A locals:nil statements:S];
 }
 
-argument_list(L) ::= COLON WORD(A) argument_list(T).
+argument_list(L) ::= arguments(T) BAR.
 {
-	[T insertObject:A atIndex:0];
 	L = T;
-}
-argument_list(L) ::= BAR.
-{
-	L = [NSMutableArray array];
 }
 argument_list ::= .
 
-expression_list(L) ::= expression(E) STOP expression_list(T).
+arguments(L) ::= arguments(T) COLON WORD(A).
 {
-	[T insertObject:E atIndex:0];
+	[T addObject:A];
 	L = T;
 }
-expression_list(L) ::= expression(E).
+arguments(L) ::= .
 {
-	L = [NSMutableArray arrayWithObject:E];
+	L = [NSMutableArray array];
 }
-expression_list(L) ::= .
+
+expression_list(L) ::= expressions(T).
+{
+	L = T;
+}
+expression_list(L) ::= expressions(T) expression(E).
+{
+	[T addObject:E];
+	L = T;
+}
+
+expressions(L) ::= expressions(T) expression(E) STOP.
+{
+	[T addObject:E];
+	L = T;
+}
+expressions(L) ::= .
 {
 	L = [NSMutableArray array];
 }
