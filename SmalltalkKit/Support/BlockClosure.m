@@ -39,7 +39,7 @@
 - (void) retainWithPointer:(BlockContext**)pointer
 {
 	isa = [RetainedStackContext class];
-	id ***pointers = (id***)*(char **)self;
+	id ***pointers = (id***)self;
 	pointers -= 1;
 	if (NULL == *pointers)
 	{
@@ -47,6 +47,7 @@
 		(*pointers)[7] = (id*)-1;
 	}
 	unsigned i = 0;
+
 	while (NULL != (*pointers)[i])
 	{
 		// If we come to the end of the array, resize it
@@ -81,7 +82,7 @@
 	block->symbolTable = symbolTable;
 	memcpy(block->objects, objects, count * sizeof(id));
 	// Update all of the pointers
-	id ***pointers = (id***)*(char **)self;
+	id ***pointers = (id***)self;
 	pointers -= 1;
 	for (unsigned i=0 ; (*pointers)[i] != NULL && (*pointers)[i] != ((id*)-1) ; i++)
 	{

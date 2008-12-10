@@ -378,6 +378,21 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	CleanupBB = BasicBlock::Create("cleanup", CurrentFunction);
 	IRBuilder<> CleanupBuilder = IRBuilder<>(CleanupBB);
 
+	// If we are returning a block that is currently on the stack, we need to
+	// promote it first.  For now, we -retain / -autorelease every object
+	// return.
+	if (RetTy != Type::VoidTy && ReturnType[0] == '@')
+	{
+		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
+		CGObjCRuntime *Runtime = CGM->getRuntime();
+		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL,
+				retObj, Runtime->GetSelector(CleanupBuilder, "retain", NULL),
+				0, 0);
+		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL, retObj,
+				Runtime->GetSelector(CleanupBuilder, "autorelease", NULL), 0, 0);
+		CleanupBuilder.CreateStore(retObj, RetVal);
+	}
+
 	// Get the current class of the context and the class of retained contexts
 	// and cast both to integers for comparison.
 	Value *retainedClass = CleanupBuilder.CreateLoad(
