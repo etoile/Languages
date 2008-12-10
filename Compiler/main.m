@@ -4,6 +4,19 @@
 #include <sys/resource.h>
 #import <LanguageKit/LKCompiler.h>
 
+@implementation NSObject (DumpObject)
+- (void) dumpObject
+{
+	int words = isa->instance_size / sizeof(int);
+	unsigned *word = (unsigned*)self;
+	for (unsigned i = 0 ; i<words ; i++)
+	{
+		printf("%x ", word[i]);
+	}
+	printf("\n");
+}
+@end
+
 static NSString* stripScriptPreamble(NSString *script)
 {
 	if ([script length] > 2
@@ -114,7 +127,14 @@ int main(int argc, char **argv)
 		return 3;
 	}
 	c1 = clock();
-	[[tool new] run];
+	id aTool = [tool new];
+	[aTool run];
+	if ([[opts objectForKey:@"d"] boolValue])
+	{
+		NSLog(@"Object at address %x has data: ", (unsigned)(uintptr_t)aTool);
+		[aTool dumpObject];
+	}
+
 	if ([[opts objectForKey:@"t"] boolValue])
 	{
 		clock_t c2 = clock();
