@@ -1,0 +1,4 @@
+Class initialisation
+Object initialisation (Array 1 ordered objects)
+Object initialisation (Array 2 ordered objects)
+Object initialisation (Array 3 ordered objects)

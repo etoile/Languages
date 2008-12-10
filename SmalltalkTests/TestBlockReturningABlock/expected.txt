@@ -1,0 +1,5 @@
+Outer block called. (1)
+Outer block called. (2)
+Inner block called.
+Inner block called.
+Outer block called. (3)

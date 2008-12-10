@@ -1,0 +1,13 @@
+
+Simple Smalltalk tests.
+
+Every directory starting with "Test" is considered a test. The file
+test.st is run with edlc. A tests succeeds when the output equals the
+contents of expected.txt in that directory.
+
+Run single tests with:
+	sh runtest.sh TestName
+
+Run all tests with:
+	sh runall.sh
+
