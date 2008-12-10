@@ -26,7 +26,9 @@ protected:
   Function *CurrentFunction;
   IRBuilder<> Builder;
   Value *Self;
+  Value *ScopeSelf;
   const char *ReturnType;
+	virtual void SetParentScope(void) {};
   /**
    * Intialises a Function object to be used as a Smalltalk method or block
    * function.
@@ -72,6 +74,11 @@ protected:
   Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
       *selName, const char *selTypes, Value **argv=0, Value **boxedArgs=0,
       unsigned argc=0);
+  /**
+   * Debugging function - emits a printf statement with the string and the
+   * extra argument.
+   */
+	void CreatePrintf(IRBuilder<> &Builder, const char *str, Value *val);
 public:
   CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod){}
   IRBuilder<> *getBuilder() { return &Builder; }
@@ -174,5 +181,10 @@ public:
   CodeGenMethod(CodeGenModule *Mod, const char *MethodName, const char
       *MethodTypes, int locals, bool isClass=false);
 };
+/**
+ * Offset of the variables in the context from the object start.
+ * CHANGE THIS IF YOU MODIFY THE CONTEXT OBJECT!
+ */
+static const int CONTEXT_VARIABLE_OFFSET = 4;
 
 #endif 

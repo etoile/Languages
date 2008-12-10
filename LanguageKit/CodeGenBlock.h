@@ -16,6 +16,7 @@ class CodeGenModule;
 class CodeGenBlock : public CodeGenLexicalScope {
   const llvm::Type *BlockTy;
   CodeGenLexicalScope *parentScope;
+	virtual void SetParentScope(void);
 public:
   virtual CodeGenLexicalScope *getParentScope() { return parentScope; }
   llvm::Value *Block;

@@ -63,8 +63,12 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 	// Set the context
 	storeInStruct(MethodBuilder, Block, enclosingScope->getContext(), 3);
 
+
+}
+void CodeGenBlock::SetParentScope(void)
+{
 	// Link the context to its parent
-	Value *parentContext = Builder.CreateLoad(Builder.CreateStructGEP(Self, 3));
+	Value *parentContext = Builder.CreateLoad(Builder.CreateStructGEP(ScopeSelf, 3));
 	Builder.CreateStore(parentContext, Builder.CreateStructGEP(Context, 1));
 }
 

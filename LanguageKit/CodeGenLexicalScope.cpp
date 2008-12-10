@@ -3,9 +3,6 @@
 #include "CodeGenModule.h"
 #include <llvm/Module.h>
 
-// Offset of the variables in the context from the object start.
-// CHANGE THIS IF YOU MODIFY THE CONTEXT OBJECT!
-static const int CONTEXT_VARIABLE_OFFSET = 4;
 
 static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
 {
@@ -224,7 +221,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 {
 	ReturnType = MethodTypes;
 	llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();
-	Self = AI;
+	ScopeSelf = AI;
 	// Create the skeleton
 	BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentFunction);
 	Builder.SetInsertPoint(EntryBB);
@@ -240,11 +237,11 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	}
 	else
 	{
-		contextTypes.push_back(IdTy);        // 1 - parent
+		contextTypes.push_back(IdTy);             // 1 - parent
 	}
-	contextTypes.push_back(IntTy);           // 2 - count
-	contextTypes.push_back(PtrTy);           // 3 - Symbol table
-	contextTypes.push_back(Self->getType()); // 4 - Self
+	contextTypes.push_back(IntTy);                // 2 - count
+	contextTypes.push_back(PtrTy);                // 3 - Symbol table
+	contextTypes.push_back(ScopeSelf->getType()); // 4 - Self
 	// What else?	Some kind of 'promote me' flag?  Can I squeeze this in to
 	// some other value?  Maybe use the sign bit on the count?
 
@@ -278,19 +275,19 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	Builder.CreateStore(
 		Builder.CreateLoad(
 			CGM->getModule()->getGlobalVariable(".smalltalk_context_stack_class", true)),
-		Builder.CreateStructGEP(Context, 0, "self"));
+		Builder.CreateStructGEP(Context, 0, "context_isa"));
 
 	//// Set up the arguments
 
 	// Set the number of arguments
 	Builder.CreateStore(
 		ConstantInt::get(IntTy, contextSize + 1),
-		Builder.CreateStructGEP(Context, 2, "self"));
+		Builder.CreateStructGEP(Context, 2, "context_argc"));
 	
 
 	// Store the self pointer in context 0
 	Builder.CreateStore(AI, 
-			Builder.CreateStructGEP(Context, contextOffset++, "self"));
+			Builder.CreateStructGEP(Context, contextOffset++, "self_ptr"));
 	++AI; ++AI; // Currently we don't expose _cmd / _call
 
 	// Skip return value, self, _cmd
@@ -315,6 +312,36 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		// Initialise the local to nil
 		Builder.CreateStore(ConstantPointerNull::get(IdTy),
 			local);
+	}
+	
+	/// Put self in a register so we can easily get at it later.
+
+	// If this is the top-level scope then self is argument 0
+	if (0 == getParentScope())
+	{
+		Self = Builder.CreateAlloca(ScopeSelf->getType());
+		Builder.CreateStore(ScopeSelf, Self);
+	}
+	else
+	{
+		// Navigate up to the top scope and look for self.
+		
+		SetParentScope();
+		CodeGenLexicalScope *scope = this;
+		Value *context = Context;
+		while(0 != scope->getParentScope())
+		{
+			// Get a pointer to the parent in the contect
+			context = Builder.CreateStructGEP(context, 1);
+			// Load it.
+			context = Builder.CreateLoad(context);
+			scope = scope->getParentScope();
+		}
+		Value *topScopeSelf =
+			Builder.CreateLoad(Builder.CreateStructGEP(context,
+						CONTEXT_VARIABLE_OFFSET), "selfval");
+		Self = Builder.CreateAlloca(topScopeSelf->getType(), 0, "self");
+		Builder.CreateStore(topScopeSelf, Self, true);
 	}
 
 	// Create a basic block for returns, reached only from the cleanup block
@@ -550,18 +577,7 @@ Value *CodeGenLexicalScope::LoadLocalAtIndex(unsigned index, unsigned depth)
 
 Value *CodeGenLexicalScope::LoadSelf(void) 
 {
-	CodeGenLexicalScope *scope = this;
-	Value *context = Context;
-	while(0 != scope->getParentScope())
-	{
-		// Get a pointer to the parent in the contect
-		context = Builder.CreateStructGEP(context, 1);
-		// Load it.
-		context = Builder.CreateLoad(context);
-		scope = scope->getParentScope();
-	}
-	return Builder.CreateLoad(Builder.CreateStructGEP(context, 
-				CONTEXT_VARIABLE_OFFSET));
+	return Builder.CreateLoad(Self, true);
 }
 
 void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned
@@ -608,7 +624,15 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject( const char*
   Value *addr = Builder.CreatePtrToInt(object, IntTy);
   addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
   addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
-  return Builder.CreateLoad(addr);
+  return Builder.CreateLoad(addr, true, "ivar");
+}
+
+void CodeGenLexicalScope::CreatePrintf(IRBuilder<> &Builder, const char *str, Value *val)
+{
+	std::vector<const Type*> Params;
+	Params.push_back(PointerType::getUnqual(Type::Int8Ty));
+	Value *PrintF = CGM->getModule()->getOrInsertFunction("printf", FunctionType::get(Type::VoidTy, Params, true));
+	Builder.CreateCall2(PrintF, CGM->MakeConstantString(str), val);
 }
 
 void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
@@ -616,9 +640,8 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
   // Turn the value into something valid for storing in this ivar
   Value *box = Unbox(&Builder, CurrentFunction, value, type);
   // Calculate the offset of the ivar
-  Value *addr = Builder.CreatePtrToInt(object, IntTy);
-  addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
-  addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(box->getType()));
+  Value *addr = Builder.CreateGEP(object, ConstantInt::get(IntTy, offset));
+  addr = Builder.CreateBitCast(addr, PointerType::getUnqual(box->getType()), "ivar");
   // Do the ASSIGN() thing if it's an object.
   if (type[0] == '@') {
     CGObjCRuntime *Runtime = CGM->getRuntime();
@@ -630,7 +653,7 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
     Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
           Runtime->GetSelector(Builder, "release", NULL), 0, 0);
   }
-  Builder.CreateStore(box, addr);
+  Builder.CreateStore(box, addr, true);
 }
 
 void CodeGenLexicalScope::EndChildBlock(CodeGenBlock *block) {
@@ -712,3 +735,4 @@ void CodeGenLexicalScope::SetReturn(Value * Ret)
 	}
 	Builder.CreateBr(CleanupBB);
 }
+
