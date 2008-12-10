@@ -1,14 +1,6 @@
 #import <Foundation/Foundation.h>
 
 @implementation NSObject (log)
-+ (Class) autorelease 
-{
-	return self;
-}
-+ (Class) retain
-{
-	return self;
-}
 - (void) log
 {
 	NSLog(@"%@", [self description]);
