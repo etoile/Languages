@@ -173,21 +173,22 @@
 	return last;
 }
 
-- (id) on: (NSString*) exceptionName do: (BlockClosure*) handler
+- (id) onException: (NSString*) exceptionName do: (BlockClosure*) handler
 {
-  NS_DURING
-    NS_VALUERETURN([self value], id);
-  NS_HANDLER
-    if ([[localException name] isEqualToString: exceptionName])
-      {
-	return [handler value: localException];
-      }
-    else
-      {
-	[localException raise];
-	return nil; // won't happen.
-      }
-  NS_ENDHANDLER
+	NS_DURING
+		NS_VALUERETURN([self value], id);
+	NS_HANDLER
+		if ([[localException name] isEqualToString: exceptionName])
+		{
+			NS_VALUERETURN([handler value: localException], id);
+		}
+		else
+		{
+			[localException raise];
+		}
+	NS_ENDHANDLER
+	// Not reached
+	return nil;
 }
 - (void) dealloc
 {
