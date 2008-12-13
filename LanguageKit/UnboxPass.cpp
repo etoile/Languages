@@ -9,6 +9,11 @@
 using namespace llvm;
 using std::string;
 
+///// BIG WARNING:
+///// This is experimental code and not connected to the default build.
+///// If you enable it and it eats your cat, expect no sympathy.
+
+
 namespace 
 {
 	class UnboxPass : public FunctionPass 

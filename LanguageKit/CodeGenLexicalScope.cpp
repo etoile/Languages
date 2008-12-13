@@ -22,198 +22,223 @@ static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
 			GlobalVariable::ExternalLinkage, name, CGM->getModule());
 }
 
-string CodeGenLexicalScope::FunctionNameFromSelector(const char *sel) {
-  // Special cases
-  switch (*sel) {
-    case '+':
-      return "SmallIntMsgplus_";
-    case '-':
-      return "SmallIntMsgsub_";
-    case '/':
-      return "SmallIntMsgdiv_";
-    case '*':
-      return "SmallIntMsgmul_";
-    default: {
-      string str = "SmallIntMsg" + string(sel);
-      replace(str.begin(), str.end(), ':', '_');
-      return str;
-    }
-  }
+string CodeGenLexicalScope::FunctionNameFromSelector(const char *sel)
+{
+	// Special cases
+	switch (*sel) {
+		case '+':
+			return "SmallIntMsgplus_";
+		case '-':
+			return "SmallIntMsgsub_";
+		case '/':
+			return "SmallIntMsgdiv_";
+		case '*':
+			return "SmallIntMsgmul_";
+		default: {
+			string str = "SmallIntMsg" + string(sel);
+			replace(str.begin(), str.end(), ':', '_');
+			return str;
+		}
+	}
 }
 
-Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *typestr) {
-  CGObjCRuntime *Runtime = CGM->getRuntime();
-  // Untyped selectors return id
-  if (NULL == typestr || '\0' == *typestr) return V;
-  // FIXME: Other function type qualifiers
-  while(*typestr == 'V' || *typestr == 'r')
-  {
-    typestr++;
-  }
-  switch(*typestr) {
-    // All integer primitives smaller than a 64-bit value
-    case 'B': case 'c': case 'C': case 's': case 'S': case 'i': case 'I':
-    case 'l': case 'L':
-      LOG("Boxing return value %s\n", typestr);
-      V = B->CreateSExt(V, Type::Int64Ty);
-    // Now V is 64-bits.
-    case 'q': case 'Q':
-    {
-      // This will return a SmallInt or a promoted integer.
-	  Constant *BoxFunction = getSmallIntModuleFunction(CGM, "MakeSmallInt");
-      CallInst *boxed = B->CreateCall(BoxFunction, V);
-      boxed->setOnlyReadsMemory();
-      return boxed;
-    }
-    case ':': {
-	  Value *SymbolCalss =
-		  CGM->getModule()->getGlobalVariable(".smalltalk_symbol_class", true);
-      return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
-              Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
-    }
-    case '{': {
-      Value *NSValueClass = Runtime->LookupClass(*B,
-        CGM->MakeConstantString("NSValue"));
-      const char * castSelName = "valueWithBytes:objCType:";
-      bool passValue = false;
-        if (0 == strncmp(typestr, "{_NSRect", 8)) {
-        castSelName = "valueWithRect:";
-        passValue = true;
-      } else if (0 == strncmp(typestr, "{_NSRange", 9)) {
-        castSelName = "valueWithRange:";
-        passValue = true;
-      } else if (0 == strncmp(typestr, "{_NSPoint", 9)) {
-        castSelName = "valueWithPoint:";
-        passValue = true;
-      } else if (0 == strncmp(typestr, "{_NSSize", 8)) {
-        castSelName = "valueWithSize:";
-        passValue = true;
-      }
-      if (passValue) {
-        Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-          Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
-        if (CallInst *call = dyn_cast<llvm::CallInst>(boxed)) {
-            call->setOnlyReadsMemory();
-        }
-        return boxed;
-      }
-      assert(0 && "Boxing arbitrary structures doesn't work yet");
-    }
-    // Other types, just wrap them up in an NSValue
-    default:
-    {
-	  Value *NSValueClass =
-		  CGM->getModule()->getGlobalVariable(".smalltalk_nsvalue_class", true);
-      // TODO: We should probably copy this value somewhere, maybe with a
-      // custom object instead of NSValue?
-      const char *end = typestr;
-      while (!isdigit(*end)) { end++; }
-      string typestring = string(typestr, end - typestr);
-      Value *args[] = {V, CGM->MakeConstantString(typestring.c_str())};
-      return Runtime->GenerateMessageSend(*B, IdTy, LoadSelf(), NSValueClass,
-              Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL),
-              args, 2);
-    }
-    // Map void returns to nil
-    case 'v':
-    {
-      return ConstantPointerNull::get(IdTy);
-    }
-    // If it's already an object, we don't need to do anything
-    case '@': case '#':
-      return V;
-  }
+Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *typestr)
+{
+	CGObjCRuntime *Runtime = CGM->getRuntime();
+	// Untyped selectors return id
+	if (NULL == typestr || '\0' == *typestr) return V;
+	// FIXME: Other function type qualifiers
+	while(*typestr == 'V' || *typestr == 'r')
+	{
+		typestr++;
+	}
+	switch(*typestr)
+	{
+		// All integer primitives smaller than a 64-bit value
+		case 'B': case 'c': case 'C': case 's': case 'S': case 'i': case 'I':
+		case 'l': case 'L':
+			LOG("Boxing return value %s\n", typestr);
+			V = B->CreateSExt(V, Type::Int64Ty);
+		// Now V is sign-extended to 64-bits.
+		case 'q': case 'Q':
+		{
+			// This will return a SmallInt or a promoted integer.
+			Constant *BoxFunction = getSmallIntModuleFunction(CGM, "MakeSmallInt");
+			CallInst *boxed = B->CreateCall(BoxFunction, V);
+			boxed->setOnlyReadsMemory();
+			return boxed;
+		}
+		case ':': 
+		{
+			Value *SymbolCalss = CGM->getModule()->getGlobalVariable(
+					".smalltalk_symbol_class", true);
+			return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
+				Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
+		}
+		case '{':
+		{
+			Value *NSValueClass = Runtime->LookupClass(*B,
+				CGM->MakeConstantString("NSValue"));
+			const char * castSelName = "valueWithBytes:objCType:";
+			bool passValue = false;
+			if (0 == strncmp(typestr, "{_NSRect", 8))
+			{
+				castSelName = "valueWithRect:";
+				passValue = true;
+			} 
+			else if (0 == strncmp(typestr, "{_NSRange", 9))
+			{
+				castSelName = "valueWithRange:";
+				passValue = true;
+			}
+			else if (0 == strncmp(typestr, "{_NSPoint", 9))
+			{
+				castSelName = "valueWithPoint:";
+				passValue = true;
+			}
+			else if (0 == strncmp(typestr, "{_NSSize", 8))
+			{
+				castSelName = "valueWithSize:";
+				passValue = true;
+			}
+			if (passValue)
+			{
+				Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
+					Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
+				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
+				{
+						call->setOnlyReadsMemory();
+				}
+				return boxed;
+			}
+			assert(0 && "Boxing arbitrary structures doesn't work yet");
+		}
+		// Other types, just wrap them up in an NSValue
+		default:
+		{
+			Value *NSValueClass =
+				CGM->getModule()->getGlobalVariable(".smalltalk_nsvalue_class", true);
+			// TODO: We should probably copy this value somewhere, maybe with a
+			// custom object instead of NSValue?
+			const char *end = typestr;
+			while (!isdigit(*end)) { end++; }
+			string typestring = string(typestr, end - typestr);
+			Value *args[] = {V, CGM->MakeConstantString(typestring.c_str())};
+			return Runtime->GenerateMessageSend(*B, IdTy, LoadSelf(), NSValueClass,
+				Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL),
+				args, 2);
+		}
+		// Map void returns to nil
+		case 'v':
+		{
+			return ConstantPointerNull::get(IdTy);
+		}
+		// If it's already an object, we don't need to do anything
+		case '@': case '#':
+			return V;
+	}
 }
 
 #define NEXT(typestr) \
-  while (!(*typestr == '\0') && !isdigit(*typestr)) { typestr++; }\
-  while (isdigit(*typestr)) { typestr++; }
-Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B, Function *F, Value
-    *val, const char *Type) {
-  string returnTypeString = string(1, *Type);
-  const char *castSelName;
-  switch(*Type) {
-    case 'c':
-      castSelName = "charValue";
-      break;
-    case 'C':
-      castSelName = "unsignedCharValue";
-      break;
-    case 's':
-      castSelName = "shortValue";
-      break;
-    case 'S':
-      castSelName = "unsignedShortValue";
-      break;
-    case 'i':
-      castSelName = "intValue";
-      break;
-    case 'I':
-      castSelName = "unsignedIntValue";
-      break;
-    case 'l':
-      castSelName = "longValue";
-      break;
-    case 'L':
-      castSelName = "unsignedLongValue";
-      break;
-    case 'q':
-      castSelName = "longLongValue";
-      break;
-    case 'Q':
-      castSelName = "unsignedLongLongValue";
-      break;
-    case 'f':
-      castSelName = "floatValue";
-      break;
-    case 'd':
-      castSelName = "doubleValue";
-      break;
-    case 'B':
-      castSelName = "boolValue";
-      break;
-    case ':':
-      castSelName = "selValue";
-      break;
-    case '#':
-    case '@': {
-      Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxObject");
-      val = B->CreateBitCast(val, IdTy);
-      return B->CreateCall(BoxFunction, val, "boxed_small_int");
-    }
-    case 'v':
-      return val;
-  case '{': {
-    const char *end = Type;
-    while(!isdigit(*end)) { end++; }
-    returnTypeString = string(Type, (int)(end - Type));
-    //Special cases for NSRect and NSPoint
-    if (0 == strncmp(Type, "{_NSRect", 8)) {
-      castSelName = "rectValue";
-      break;
-    }
-    if (0 == strncmp(Type, "{_NSRange", 9)) {
-      castSelName = "rangeValue";
-      break;
-    }
-    if (0 == strncmp(Type, "{_NSPoint", 9)) {
-      castSelName = "pointValue";
-      break;
-    }
-    if (0 == strncmp(Type, "{_NSSize", 8)) {
-      castSelName = "sizeValue";
-      break;
-    }
-  }
-    default:
-      LOG("Found type value: %s\n", Type);
-      castSelName = "";
-      assert(false && "Unable to transmogriy object to compound type");
-  }
-  //TODO: We don't actually use the size numbers for anything, but someone else
-  //does, so make these sensible:
-  returnTypeString += "12@0:4";
-  return MessageSend(B, F, val, castSelName, returnTypeString.c_str());
+	while (!(*typestr == '\0') && !isdigit(*typestr)) { typestr++; }\
+	while (isdigit(*typestr)) { typestr++; }
+
+Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
+                                  Function *F,
+                                  Value *val,
+                                  const char *Type)
+{
+	string returnTypeString = string(1, *Type);
+	const char *castSelName;
+	switch(*Type)
+	{
+		case 'c':
+			castSelName = "charValue";
+			break;
+		case 'C':
+			castSelName = "unsignedCharValue";
+			break;
+		case 's':
+			castSelName = "shortValue";
+			break;
+		case 'S':
+			castSelName = "unsignedShortValue";
+			break;
+		case 'i':
+			castSelName = "intValue";
+			break;
+		case 'I':
+			castSelName = "unsignedIntValue";
+			break;
+		case 'l':
+			castSelName = "longValue";
+			break;
+		case 'L':
+			castSelName = "unsignedLongValue";
+			break;
+		case 'q':
+			castSelName = "longLongValue";
+			break;
+		case 'Q':
+			castSelName = "unsignedLongLongValue";
+			break;
+		case 'f':
+			castSelName = "floatValue";
+			break;
+		case 'd':
+			castSelName = "doubleValue";
+			break;
+		case 'B':
+			castSelName = "boolValue";
+			break;
+		case ':':
+			castSelName = "selValue";
+			break;
+		case '#':
+		case '@':
+		{
+			Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxObject");
+			val = B->CreateBitCast(val, IdTy);
+			return B->CreateCall(BoxFunction, val, "boxed_small_int");
+		}
+		case 'v':
+			return val;
+		case '{':
+		{
+			const char *end = Type;
+			while(!isdigit(*end)) { end++; }
+			returnTypeString = string(Type, (int)(end - Type));
+			//Special cases for NSRect and NSPoint
+			if (0 == strncmp(Type, "{_NSRect", 8))
+			{
+				castSelName = "rectValue";
+				break;
+			}
+			if (0 == strncmp(Type, "{_NSRange", 9))
+			{
+				castSelName = "rangeValue";
+				break;
+			}
+			if (0 == strncmp(Type, "{_NSPoint", 9))
+			{
+				castSelName = "pointValue";
+				break;
+			}
+			if (0 == strncmp(Type, "{_NSSize", 8))
+			{
+				castSelName = "sizeValue";
+				break;
+			}
+		}
+		default:
+			LOG("Found type value: %s\n", Type);
+			castSelName = "";
+			assert(false && "Unable to transmogriy object to compound type");
+	}
+	//TODO: We don't actually use the size numbers for anything, but someone else
+	//does, so make these sensible:
+	returnTypeString += "12@0:4";
+	return MessageSend(B, F, val, castSelName, returnTypeString.c_str());
 }
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
@@ -229,7 +254,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	Type *PtrTy = PointerType::getUnqual(IntegerType::Int8Ty);
 	// Create the context type
 	std::vector<const Type*> contextTypes;
-	contextTypes.push_back(IdTy);  // 0 - isa
+	contextTypes.push_back(IdTy);                 // 0 - isa
 	if (CodeGenLexicalScope *parent = getParentScope())
 	{
 		// Set the parent context type correctly so we can use GEPs later
@@ -418,8 +443,12 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	PromoteBuilder.CreateBr(RetBB);
 }
 
-void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B, Function *F,  Value **
-    argv, Value **args, unsigned argc, const char *selTypes) 
+void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
+                                    Function *F,
+                                    Value ** argv,
+                                    Value **args,
+                                    unsigned argc,
+                                    const char *selTypes) 
 {
 	if (NULL == selTypes) 
 	{
@@ -462,94 +491,113 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 
 // Preform a real message send.  Reveicer must be a real object, not a
 // SmallInt.
-Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B, Value *receiver,
-    const char *selName, const char *selTypes, Value **argv, unsigned argc) {
+Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
+                                          Value *receiver,
+                                          const char *selName,
+                                          const char *selTypes,
+                                          Value **argv,
+                                          unsigned argc)
+{
 	//FIXME: Find out why this crashes.
-  Value *SelfPtr = NULL;//LoadSelf();
+	Value *SelfPtr = NULL;//LoadSelf();
 
-  FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
-  CGObjCRuntime *Runtime = CGM->getRuntime();
-  llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-  return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), SelfPtr,
-      receiver, cmd, argv, argc);
+	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
+	CGObjCRuntime *Runtime = CGM->getRuntime();
+	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
+	return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), SelfPtr,
+		receiver, cmd, argv, argc);
 }
 
-Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B, Function *F, Value *receiver,
-    const char *selName, const char *selTypes, Value **argv, Value **boxedArgs,
-    unsigned argc) {
-  //LOG("Sending message to %s", selName);
-  //LOG(" (%s)\n", selTypes);
-  Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
-  Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
+Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
+                                        Function *F,
+                                        Value *receiver,
+                                        const char *selName,
+                                        const char *selTypes,
+                                        Value **argv,
+                                        Value **boxedArgs,
+                                        unsigned argc)
+{
+	//LOG("Sending message to %s", selName);
+	//LOG(" (%s)\n", selTypes);
+	Value *Int = B->CreatePtrToInt(receiver, IntPtrTy);
+	Value *IsSmallInt = B->CreateTrunc(Int, Type::Int1Ty, "is_small_int");
 
-  // Basic blocks for messages to SmallInts and ObjC objects:
-  BasicBlock *SmallInt = BasicBlock::Create(string("small_int_message") + selName, F);
-  IRBuilder<> SmallIntBuilder = IRBuilder<>(SmallInt);
-  BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") +
-      selName, F);
+	// Basic blocks for messages to SmallInts and ObjC objects:
+	BasicBlock *SmallInt = BasicBlock::Create(string("small_int_message") + selName, F);
+	IRBuilder<> SmallIntBuilder = IRBuilder<>(SmallInt);
+	BasicBlock *RealObject = BasicBlock::Create(string("real_object_message") +
+			selName, F);
 
-  IRBuilder<> RealObjectBuilder = IRBuilder<>(RealObject);
-  // Branch to whichever is the correct implementation
-  B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
-  B->ClearInsertionPoint();
+	IRBuilder<> RealObjectBuilder = IRBuilder<>(RealObject);
+	// Branch to whichever is the correct implementation
+	B->CreateCondBr(IsSmallInt, SmallInt, RealObject);
+	B->ClearInsertionPoint();
 
-  Value *Result = 0;
+	Value *Result = 0;
 
-  // See if there is a function defined to implement this message
-  Value *SmallIntFunction =
-    getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
+	// See if there is a function defined to implement this message
+	Value *SmallIntFunction =
+		getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
 
-  // Send a message to a small int, using a static function or by promoting to
-  // a big int.
-  if (0 != SmallIntFunction) {
-    SmallVector<Value*, 8> Args;
-    Args.push_back(receiver);
-    Args.insert(Args.end(), boxedArgs, boxedArgs+argc);
-    for (unsigned i=0 ; i<Args.size() ;i++) {
-      const Type *ParamTy =
-        cast<Function>(SmallIntFunction)->getFunctionType()->getParamType(i);
-      if (Args[i]->getType() != ParamTy) {
-        Args[i] = SmallIntBuilder.CreateBitCast(Args[i], ParamTy);
-      }
-    }
-    Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
-        Args.end(), "small_int_message_result");
-  } else {
-    //Promote to big int and send a real message.
-    Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxSmallInt");
-    Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
-    Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
-        "boxed_small_int");
-    Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes, argv,
-        argc);
-  }
-  Value *args[argc];
-  UnboxArgs(&RealObjectBuilder, F, argv, args, argc, selTypes);
-  // This will create some branches - get the new basic block.
-  RealObject = RealObjectBuilder.GetInsertBlock();
-  Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
-      selTypes, args, argc);
+	// Send a message to a small int, using a static function or by promoting to
+	// a big int.
+	if (0 != SmallIntFunction)
+	{
+		SmallVector<Value*, 8> Args;
+		Args.push_back(receiver);
+		Args.insert(Args.end(), boxedArgs, boxedArgs+argc);
+		for (unsigned i=0 ; i<Args.size() ;i++)
+		{
+			const Type *ParamTy =
+				cast<Function>(SmallIntFunction)->getFunctionType()->getParamType(i);
+			if (Args[i]->getType() != ParamTy)
+			{
+				Args[i] = SmallIntBuilder.CreateBitCast(Args[i], ParamTy);
+			}
+		}
+		Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
+			Args.end(), "small_int_message_result");
+	}
+	else
+	{
+		//Promote to big int and send a real message.
+		Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxSmallInt");
+		Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
+		Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
+			"boxed_small_int");
+		Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes,
+			argv, argc);
+	}
 
-  if ((Result->getType() != ObjResult->getType())
-      && (ObjResult->getType() != Type::VoidTy)) {
-    Result = new BitCastInst(Result, ObjResult->getType(),
-        "cast_small_int_result", SmallInt);
-  }
-  
-  // Join the two paths together again:
-  BasicBlock *Continue = BasicBlock::Create("Continue", F);
+	Value *args[argc];
+	UnboxArgs(&RealObjectBuilder, F, argv, args, argc, selTypes);
+	// This will create some branches - get the new basic block.
+	RealObject = RealObjectBuilder.GetInsertBlock();
+	Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
+		selTypes, args, argc);
 
-  RealObjectBuilder.CreateBr(Continue);
-  SmallIntBuilder.CreateBr(Continue);
-  B->SetInsertPoint(Continue);
-  if (ObjResult->getType() != Type::VoidTy) {
-    PHINode *Phi = B->CreatePHI(Result->getType(),  selName);
-    Phi->reserveOperandSpace(2);
-    Phi->addIncoming(Result, SmallInt);
-    Phi->addIncoming(ObjResult, RealObject);
-    return Phi;
-  }
-  return ConstantPointerNull::get(IdTy);
+	if ((Result->getType() != ObjResult->getType())
+			&& (ObjResult->getType() != Type::VoidTy))
+	{
+		Result = new BitCastInst(Result, ObjResult->getType(),
+			"cast_small_int_result", SmallInt);
+	}
+	
+	// Join the two paths together again:
+	BasicBlock *Continue = BasicBlock::Create("Continue", F);
+
+	RealObjectBuilder.CreateBr(Continue);
+	SmallIntBuilder.CreateBr(Continue);
+	B->SetInsertPoint(Continue);
+	if (ObjResult->getType() != Type::VoidTy)
+	{
+		PHINode *Phi = B->CreatePHI(Result->getType(),	selName);
+		Phi->reserveOperandSpace(2);
+		Phi->addIncoming(Result, SmallInt);
+		Phi->addIncoming(ObjResult, RealObject);
+		return Phi;
+	}
+	return ConstantPointerNull::get(IdTy);
 }
 
 Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index, unsigned depth)
@@ -627,67 +675,84 @@ void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned
 		CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size()));
 }
 
-Value *CodeGenLexicalScope::LoadClass(const char *classname) {
-  return CGM->getRuntime()->LookupClass(Builder,
-      CGM->MakeConstantString(classname));
+Value *CodeGenLexicalScope::LoadClass(const char *classname)
+{
+	return CGM->getRuntime()->LookupClass(Builder,
+		CGM->MakeConstantString(classname));
 }
 
-Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject( const char*
-    type, unsigned offset, Value *object) {
-  // FIXME: This is really ugly.  We should really create an LLVM type for
-  // the object and use a GEP.
-  // FIXME: Non-id loads
-  assert(*type == '@' || *type == '#');
-  Value *addr = Builder.CreatePtrToInt(object, IntTy);
-  addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
-  addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
-  return Builder.CreateLoad(addr, true, "ivar");
+Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
+	const char* type,
+	unsigned offset,
+	Value *object)
+{
+	// FIXME: This is really ugly.	We should really create an LLVM type for
+	// the object and use a GEP.
+	// FIXME: Non-id loads
+	assert(*type == '@' || *type == '#');
+	Value *addr = Builder.CreatePtrToInt(object, IntTy);
+	addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
+	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
+	return Builder.CreateLoad(addr, true, "ivar");
 }
 
-void CodeGenLexicalScope::CreatePrintf(IRBuilder<> &Builder, const char *str, Value *val)
+// Generate a printf() call with the specified string and value.  Used for
+// debugging.
+void CodeGenLexicalScope::CreatePrintf(IRBuilder<> &Builder,
+                                       const char *str, 
+                                       Value *val)
 {
 	std::vector<const Type*> Params;
 	Params.push_back(PointerType::getUnqual(Type::Int8Ty));
-	Value *PrintF = CGM->getModule()->getOrInsertFunction("printf", FunctionType::get(Type::VoidTy, Params, true));
+	Value *PrintF = CGM->getModule()->getOrInsertFunction("printf", 
+			FunctionType::get(Type::VoidTy, Params, true));
 	Builder.CreateCall2(PrintF, CGM->MakeConstantString(str), val);
 }
 
-void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(Value *value,
-    const char* type, unsigned offset, Value *object) {
-  // Turn the value into something valid for storing in this ivar
-  Value *box = Unbox(&Builder, CurrentFunction, value, type);
-  // Calculate the offset of the ivar
-  Value *addr = Builder.CreateGEP(object, ConstantInt::get(IntTy, offset));
-  addr = Builder.CreateBitCast(addr, PointerType::getUnqual(box->getType()), "ivar");
-  // Do the ASSIGN() thing if it's an object.
-  if (type[0] == '@') {
-    CGObjCRuntime *Runtime = CGM->getRuntime();
-	// Some objects may return a different object when retained.  Store that
+void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
+	Value *value,
+	const char* type,
+	unsigned offset,
+	Value *object)
+{
+	// Turn the value into something valid for storing in this ivar
+	Value *box = Unbox(&Builder, CurrentFunction, value, type);
+	// Calculate the offset of the ivar
+	Value *addr = Builder.CreateGEP(object, ConstantInt::get(IntTy, offset));
+	addr = Builder.CreateBitCast(addr, PointerType::getUnqual(box->getType()),
+		"ivar");
+	// Do the ASSIGN() thing if it's an object.
+	if (type[0] == '@')
+	{
+		CGObjCRuntime *Runtime = CGM->getRuntime();
+	// Some objects may return a different object when retained.	Store that
 	// instead.
-    box = Runtime->GenerateMessageSend(Builder, IdTy, NULL, box,
-          Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
-    Value *old = Builder.CreateLoad(addr);
-    Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
-          Runtime->GetSelector(Builder, "release", NULL), 0, 0);
-  }
-  Builder.CreateStore(box, addr, true);
+		box = Runtime->GenerateMessageSend(Builder, IdTy, NULL, box,
+			Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
+		Value *old = Builder.CreateLoad(addr);
+		Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
+			Runtime->GetSelector(Builder, "release", NULL), 0, 0);
+	}
+	Builder.CreateStore(box, addr, true);
 }
 
 void CodeGenLexicalScope::EndChildBlock(CodeGenBlock *block) {
-
+	// No longer does anything.  Might again in future...
 }
 
-Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs) {
-  lhs = Builder.CreatePtrToInt(lhs, IntPtrTy);
-  rhs = Builder.CreatePtrToInt(rhs, IntPtrTy);
-  Value *result = Builder.CreateICmpEQ(rhs, lhs, "pointer_compare_result");
-  result = Builder.CreateZExt(result, IntPtrTy);
-  result = Builder.CreateShl(result, ConstantInt::get(IntPtrTy, 1));
-  result = Builder.CreateOr(result, ConstantInt::get(IntPtrTy, 1));
-  return Builder.CreateIntToPtr(result, IdTy);
+Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs)
+{
+	lhs = Builder.CreatePtrToInt(lhs, IntPtrTy);
+	rhs = Builder.CreatePtrToInt(rhs, IntPtrTy);
+	Value *result = Builder.CreateICmpEQ(rhs, lhs, "pointer_compare_result");
+	result = Builder.CreateZExt(result, IntPtrTy);
+	result = Builder.CreateShl(result, ConstantInt::get(IntPtrTy, 1));
+	result = Builder.CreateOr(result, ConstantInt::get(IntPtrTy, 1));
+	return Builder.CreateIntToPtr(result, IdTy);
 }
 
-Value *CodeGenLexicalScope::SymbolConstant(const char *symbol) {
+Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
+{
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	IRBuilder<> * initBuilder = CGM->getInitBuilder();
 	Value *SymbolClass = Runtime->LookupClass(*initBuilder,
@@ -702,25 +767,36 @@ Value *CodeGenLexicalScope::SymbolConstant(const char *symbol) {
 	return Builder.CreateLoad(GS);
 }
 
-Value *CodeGenLexicalScope::MessageSendId(Value *receiver, const char *selName,
-    const char *selTypes, Value **argv, unsigned argc) {
-  Value *args[argc];
-  UnboxArgs(&Builder, CurrentFunction, argv, args, argc, selTypes);
-  LOG("Generating object message send %s\n", selName);
-  return BoxValue(&Builder, MessageSendId(&Builder, receiver, selName,
-        selTypes, args, argc), selTypes);
+Value *CodeGenLexicalScope::MessageSendId(Value *receiver,
+                                          const char *selName,
+                                          const char *selTypes,
+                                          Value **argv,
+                                          unsigned argc)
+{
+	Value *args[argc];
+	UnboxArgs(&Builder, CurrentFunction, argv, args, argc, selTypes);
+	LOG("Generating object message send %s\n", selName);
+	return BoxValue(&Builder, MessageSendId(&Builder, receiver, selName,
+		selTypes, args, argc), selTypes);
 }
 
-Value *CodeGenLexicalScope::MessageSendSuper(const char *selName, const char
-    *selTypes, Value **argv, unsigned argc) {
-  return BoxValue(&Builder, MessageSendSuper(&Builder, CurrentFunction, selName,
-			  selTypes, argv, argc), selTypes);
+Value *CodeGenLexicalScope::MessageSendSuper(const char *selName,
+                                             const char *selTypes,
+                                             Value **argv,
+                                             unsigned argc)
+{
+	return BoxValue(&Builder, MessageSendSuper(&Builder, CurrentFunction, selName,
+		selTypes, argv, argc), selTypes);
 }
-Value *CodeGenLexicalScope::MessageSend(Value *receiver, const char *selName,
-    const char *selTypes, Value **argv, unsigned argc) {
-  LOG("Generating %s (%s)\n", selName, selTypes);
-  return BoxValue(&Builder, MessageSend(&Builder, CurrentFunction, receiver,
-			  selName, selTypes, argv, argv, argc), selTypes);
+Value *CodeGenLexicalScope::MessageSend(Value *receiver,
+                                        const char *selName,
+                                        const char *selTypes,
+                                        Value **argv,
+                                        unsigned argc)
+{
+	LOG("Generating %s (%s)\n", selName, selTypes);
+	return BoxValue(&Builder, MessageSend(&Builder, CurrentFunction, receiver,
+		selName, selTypes, argv, argv, argc), selTypes);
 }
 Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 		cVarName)
@@ -730,12 +806,12 @@ Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 		cVarName, Value *object)
 {
-    CGObjCRuntime *Runtime = CGM->getRuntime();
-    object = Runtime->GenerateMessageSend(Builder, IdTy, NULL, object,
-          Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
-    Value *old = LoadClassVariable(className, cVarName);
-    Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
-          Runtime->GetSelector(Builder, "release", NULL), 0, 0);
+	CGObjCRuntime *Runtime = CGM->getRuntime();
+	object = Runtime->GenerateMessageSend(Builder, IdTy, NULL, object,
+		Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
+	Value *old = LoadClassVariable(className, cVarName);
+	Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
+		Runtime->GetSelector(Builder, "release", NULL), 0, 0);
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
 
