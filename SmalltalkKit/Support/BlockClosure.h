@@ -19,5 +19,5 @@
 - (id) value:(id)a1 value:(id)a2;
 - (id) value:(id)a1 value:(id)a2 value:(id)a3;
 - (id) value:(id)a1 value:(id)a2 value:(id)a3 value:(id)a4;
-- (id) on:(NSString*)exceptionName do:(BlockClosure*)handler;
+- (id) onException:(NSString*)exceptionName do:(BlockClosure*)handler;
 @end
