@@ -20,6 +20,10 @@
 	// Comments do not turn into code.
 	return NULL;
 }
+- (BOOL) isComment
+{
+	return YES;
+}
 // Comments are always semantically valid - no checking needed.
 - (void) check {}
 - (void) dealloc

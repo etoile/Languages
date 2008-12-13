@@ -121,4 +121,8 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 {
 	return symbols;
 }
+- (BOOL) isComment
+{
+	return NO;
+}
 @end

@@ -64,7 +64,10 @@
 	void * lastValue = NULL;
 	FOREACH(statements, statement, LKAST*)
 	{
-		lastValue = [statement compileWith:aGenerator];
+		if (![statement isComment])
+		{
+			lastValue = [statement compileWith:aGenerator];
+		}
 	}
 	[aGenerator blockReturn:lastValue];
 	return [aGenerator endBlock];

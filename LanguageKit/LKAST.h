@@ -68,6 +68,10 @@
  * Compile this AST node with the specified code generator.
  */
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator;
+/**
+ * Returns YES for AST nodes with no code generation
+ */
+- (BOOL) isComment;
 @end
 
 #define SAFECAST(type, obj) ([obj isKindOfClass:[type class]] ? (type*)obj : ([NSException raise:@"InvalidCast" format:@"Can not cast %@ to %s", obj, #type], (type*)nil))

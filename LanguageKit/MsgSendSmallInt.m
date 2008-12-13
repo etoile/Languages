@@ -85,10 +85,12 @@ id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f)
 }
 MSG1(timesRepeat_)
 	Block *block = other;
+	void *ret = NULL;
 	for (intptr_t i=0 ; i<val ; i++)
 	{
-		block->value(other, @selector(value));
+		ret = block->value(other, @selector(value));
 	}
+	return ret;
 }
 
 BOOL SmallIntMsgisEqual_(void *obj, void *other)
