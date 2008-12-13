@@ -119,7 +119,7 @@ op2(div, tdiv_q)
 	// FIXME: Test if v can be safely cast to an unsigned, and if not do a
 	// slower loop with gmp operations.
 	unsigned  max = mpz_get_ui(v);
-	id result;
+	id result = nil;
 	for (unsigned i=0 ; i<max ; i++)
 	{
 		result = [aBlock value];
