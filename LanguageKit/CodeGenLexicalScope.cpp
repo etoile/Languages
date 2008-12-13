@@ -321,6 +321,8 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	{
 		Self = Builder.CreateAlloca(ScopeSelf->getType());
 		Builder.CreateStore(ScopeSelf, Self);
+		Value *contextPtr = Builder.CreateStructGEP(Context, 1);
+		Builder.CreateStore(ConstantPointerNull::get(IdTy), contextPtr);
 	}
 	else
 	{
