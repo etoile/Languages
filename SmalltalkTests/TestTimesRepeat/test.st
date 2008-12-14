@@ -1,19 +1,20 @@
 
 NSObject subclass: SmalltalkTool [
-	 | three |
+	 | two |
 	 
 	 run [
-	     "
-	     Tests whether integers can be used as instance variables.
-	     
-	     This breaks for me (Günther) on Ubuntu 8.10. Looks as if
-	     three doesn't repond to the message. Possibly, the variable
-	     doesn't change its value and stays nil.
-	     "
-	     three := 3.
-	     
-	     ETTranscript show: 'Santa:'.
-	     three timesRepeat: [ ETTranscript show: ' Ho!'. ].
-	     ETTranscript cr.
+		" 2 becomes a BigInt when assigned to an ivar."
+		two := 2.
+
+		ETTranscript show: 'Santa:'.
+		" Test BitInt"
+		two timesRepeat: [ ETTranscript show: ' Ho!'. ].
+		" Test SmallInt"
+		1 timesRepeat: [ ETTranscript show: ' Ho!'. ].
+		" Test BigInt negative arithmetic results with timesRepeat: "
+		( two - 5) timesRepeat: [ ETTranscript show: ' Ho!'. ].
+		" Test SmallInt negative arithmetic results with timesRepeat: "
+		( 2 - 5) timesRepeat: [ ETTranscript show: ' Ho!'. ].
+		ETTranscript cr.
 	 ]
 ]
