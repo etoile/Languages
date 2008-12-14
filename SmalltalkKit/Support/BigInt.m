@@ -116,13 +116,25 @@ op2(div, tdiv_q)
 }
 - (id) timesRepeat:(id) aBlock
 {
-	// FIXME: Test if v can be safely cast to an unsigned, and if not do a
-	// slower loop with gmp operations.
-	unsigned  max = mpz_get_ui(v);
 	id result = nil;
-	for (unsigned i=0 ; i<max ; i++)
+	if (mpz_fits_sint_p(v))
 	{
-		result = [aBlock value];
+		int  max = mpz_get_si(v);
+		for (int i=0 ; i<max ; i++)
+		{
+			result = [aBlock value];
+		}
+	}
+	else
+	{
+		//TODO: This is very slow, and can be optimised a lot
+		mpz_t i;
+		mpz_init_set(i, v);
+		while(mpz_sgn(i) > 0)
+		{
+			result = [aBlock value];
+			mpz_sub_ui(i, i, 1);
+		}
 	}
 	return result;
 }
