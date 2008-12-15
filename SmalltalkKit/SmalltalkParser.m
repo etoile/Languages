@@ -206,6 +206,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	NS_ENDHANDLER
 	Parse(parser, 0, nil, self);
 	ParseFree(parser, free);
+	[delegate check];
 	return delegate;
 }
 

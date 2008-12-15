@@ -15,7 +15,6 @@ domain parser generator, to produce an Objective-C parser.
 
 file ::= module(M).
 {
-	[M check];
 	[p setDelegate:M];
 }
 
