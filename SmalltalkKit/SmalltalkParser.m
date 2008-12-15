@@ -1,5 +1,6 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "SmalltalkParser.h"
+#import <LanguageKit/LKAST.h>
 #include <ctype.h>
 #include "smalltalk.h"
 
