@@ -77,8 +77,8 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	std::vector<const llvm::Type*> VoidArgs;
 	LiteralInitFunction = llvm::Function::Create(
 		llvm::FunctionType::get(llvm::Type::VoidTy, VoidArgs, false),
-		llvm::GlobalValue::InternalLinkage, ".languagekit_constants",
-		TheModule);
+		llvm::GlobalValue::ExternalLinkage, string(".languagekit_constants:") +
+		ModuleName, TheModule);
 	BasicBlock *EntryBB = 
 		llvm::BasicBlock::Create("entry", LiteralInitFunction);
 	InitialiseBuilder.SetInsertPoint(EntryBB);
