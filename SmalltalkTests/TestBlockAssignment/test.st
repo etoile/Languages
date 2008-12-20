@@ -25,7 +25,8 @@ NSObject subclass: SmalltalkTool [
 	     p := FilteredStringPrinter new withBlock: [ :x |
 	          ETTranscript show: 'block called with '; show: x; cr.
 	     ].
-	     
+
+
 	     p doSomethingWith: 'the first string';
 	       doSomethingWith: 'the second string'.
 	     

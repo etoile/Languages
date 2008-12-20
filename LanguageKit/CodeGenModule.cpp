@@ -77,7 +77,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	std::vector<const llvm::Type*> VoidArgs;
 	LiteralInitFunction = llvm::Function::Create(
 		llvm::FunctionType::get(llvm::Type::VoidTy, VoidArgs, false),
-		llvm::GlobalValue::ExternalLinkage, ".languagekit_constants",
+		llvm::GlobalValue::InternalLinkage, ".languagekit_constants",
 		TheModule);
 	BasicBlock *EntryBB = 
 		llvm::BasicBlock::Create("entry", LiteralInitFunction);
@@ -237,6 +237,7 @@ void CodeGenModule::BeginFreestandingMethod(const char *MethodName, const char *
 void CodeGenModule::EndMethod()
 {
 	//assert(isa<CodeGenMethod>(ScopeStack.back()));
+	ScopeStack.back()->EndScope();
 	delete ScopeStack.back();
 	ScopeStack.pop_back();
 }

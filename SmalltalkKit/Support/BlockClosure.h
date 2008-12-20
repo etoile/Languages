@@ -14,6 +14,7 @@
 	/** The context for this block. */
 	BlockContext *context;
 }
+- (int32_t) argumentCount;
 - (id) value;
 - (id) value:(id)a1;
 - (id) value:(id)a1 value:(id)a2;

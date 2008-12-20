@@ -190,6 +190,10 @@
 	// Not reached
 	return nil;
 }
+- (int32_t) argumentCount
+{
+	return args;
+}
 - (void) dealloc
 {
 	[context release];

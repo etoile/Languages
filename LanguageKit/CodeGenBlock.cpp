@@ -92,6 +92,7 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 
 Value *CodeGenBlock::EndBlock(void)
 {
+	EndScope();
 	parentScope->EndChildBlock(this);
 	return Block;
 }

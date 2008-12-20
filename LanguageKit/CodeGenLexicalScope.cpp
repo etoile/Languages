@@ -387,7 +387,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
 		}
 	}
-	BasicBlock * RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
+	RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
 	IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
 	if (CurrentFunction->getFunctionType()->getReturnType() !=
 			llvm::Type::VoidTy) 
@@ -413,34 +413,49 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
 		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL,
-				retObj, Runtime->GetSelector(CleanupBuilder, "retain", NULL),
-				0, 0);
+			retObj, Runtime->GetSelector(CleanupBuilder, "retain", NULL), 0, 0);
 		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL, retObj,
-				Runtime->GetSelector(CleanupBuilder, "autorelease", NULL), 0, 0);
+			Runtime->GetSelector(CleanupBuilder, "autorelease", NULL), 0, 0);
 		CleanupBuilder.CreateStore(retObj, RetVal);
 	}
+	PromoteBB = BasicBlock::Create("promote", CurrentFunction);
+	IRBuilder<> PromoteBuilder = IRBuilder<>(PromoteBB);
 
 	// Get the current class of the context and the class of retained contexts
 	// and cast both to integers for comparison.
-	Value *retainedClass = CleanupBuilder.CreateLoad(
+	Value *retainedClass = PromoteBuilder.CreateLoad(
 		CGM->getModule()->getGlobalVariable(".smalltalk_context_retained_class", true));
-	retainedClass = CleanupBuilder.CreatePtrToInt(retainedClass, IntPtrTy);
-	Value *contextClass = CleanupBuilder.CreateLoad(
-			CleanupBuilder.CreateStructGEP(Context, 0));
-	contextClass = CleanupBuilder.CreatePtrToInt(contextClass, IntPtrTy);
+	retainedClass = PromoteBuilder.CreatePtrToInt(retainedClass, IntPtrTy);
+	Value *contextClass = PromoteBuilder.CreateLoad(
+			PromoteBuilder.CreateStructGEP(Context, 0));
+	contextClass = PromoteBuilder.CreatePtrToInt(contextClass, IntPtrTy);
 
 	// See whether the context has been retained
-	Value *isContextRetained = CleanupBuilder.CreateICmpEQ(contextClass, retainedClass);
+	Value *isContextRetained = PromoteBuilder.CreateICmpEQ(contextClass, retainedClass);
 
 	// If so, we need to promote it to the heap, if not then jump to the return block
-	BasicBlock *PromoteBB = BasicBlock::Create("promote_context", CurrentFunction);
-	CleanupBuilder.CreateCondBr(isContextRetained, PromoteBB, RetBB);
+	BasicBlock *PromotionBB = BasicBlock::Create("promote_context", CurrentFunction);
+	PromoteBuilder.CreateCondBr(isContextRetained, PromotionBB, RetBB);
 
 	// Promote the context, if required
-	IRBuilder<> PromoteBuilder = IRBuilder<>(PromoteBB);
-	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::VoidTy, Context,
-		Context, CGM->getRuntime()->GetSelector(PromoteBuilder, "promote", NULL), 0, 0);
+	PromoteBuilder = IRBuilder<>(PromotionBB);
+	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::VoidTy,
+		Context, Context, CGM->getRuntime()->GetSelector(PromoteBuilder,
+		"promote", NULL), 0, 0);
 	PromoteBuilder.CreateBr(RetBB);
+}
+
+void CodeGenLexicalScope::EndScope(void)
+{
+	IRBuilder<> CleanupBuilder = IRBuilder<>(CleanupBB);
+	if (containsBlocks)
+	{
+		CleanupBuilder.CreateBr(PromoteBB);
+	}
+	else
+	{
+		CleanupBuilder.CreateBr(RetBB);
+	}
 }
 
 void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
@@ -737,7 +752,7 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 }
 
 void CodeGenLexicalScope::EndChildBlock(CodeGenBlock *block) {
-	// No longer does anything.  Might again in future...
+	containsBlocks = true;
 }
 
 Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs)

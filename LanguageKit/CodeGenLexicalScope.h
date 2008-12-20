@@ -17,17 +17,22 @@ class CodeGenModule;
 
 class CodeGenLexicalScope {
 protected:
-  CodeGenModule *CGM;
-  Value *Context;
-  SmallVector<Value*, 8> Locals;
-  SmallVector<Value*, 8> Args;
-  Value * RetVal;
-  BasicBlock * CleanupBB;
-  Function *CurrentFunction;
-  IRBuilder<> Builder;
-  Value *Self;
-  Value *ScopeSelf;
-  const char *ReturnType;
+	CodeGenModule *CGM;
+	Value *Context;
+	SmallVector<Value*, 8> Locals;
+	SmallVector<Value*, 8> Args;
+	Value * RetVal;
+	BasicBlock * CleanupBB;
+	BasicBlock * PromoteBB;
+	BasicBlock * RetBB;
+	Function *CurrentFunction;
+	IRBuilder<> Builder;
+	Value *Self;
+	Value *ScopeSelf;
+
+	const char *ReturnType;
+	bool containsBlocks;
+
 	virtual void SetParentScope(void) {};
   /**
    * Intialises a Function object to be used as a Smalltalk method or block
@@ -80,7 +85,11 @@ protected:
    */
 	void CreatePrintf(IRBuilder<> &Builder, const char *str, Value *val);
 public:
-  CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod){}
+	/**
+	 * Ends the current lexical scope.
+	 */
+	void EndScope(void);
+  CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod), containsBlocks(false) {}
   IRBuilder<> *getBuilder() { return &Builder; }
   Value *getContext() { return Context; }
   /**

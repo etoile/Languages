@@ -211,14 +211,6 @@ __objc_responds_to (id object, SEL sel)
   return (res != 0);
 }
 
-struct _sender_stack
-{
-        void * addr;
-        id object;
-};
-static struct _sender_stack sender_stack[100];
-static int stack_top = -1;
-
 IMP (*objc_msg_intercept_lookup)(id sender, id receiver, SEL op) = NULL;
 
 /* This is the lookup function.  All entries in the table are either a 
@@ -226,48 +218,11 @@ IMP (*objc_msg_intercept_lookup)(id sender, id receiver, SEL op) = NULL;
    needs to be installed or it doesn't exist and forwarding is attempted. */
 inline
 IMP
-objc_real_msg_lookup (id receiver, SEL op)
+objc_msg_lookup (id receiver, SEL op)
 {
   IMP result;
   if (receiver)
     {
-	  /* Check for per-object dispatch */
-      if(CLS_ISOBJECTMESSAGEDISPATCH(receiver->class_pointer))
-        {
-          static SEL selector = NULL;
-		  if (selector == NULL)
-		    {
-			  selector = sel_get_any_uid ("messageLookupForObject:selector:");
-			}
-          IMP alternate = objc_msg_lookup ((id)receiver->class_pointer, selector);
-          if (alternate != NULL)
-            {
-			  IMP method = (IMP)alternate ((id)receiver->class_pointer, selector, receiver, op);
-			  if(method != NULL)
-			    {
-                  return method;
-                }
-            }
-        }
-
-      /* Check for a custom message lookup mechanism */
-      if(CLS_ISCUSTOMMESSAGEDISPATCH(receiver->class_pointer))
-        {
-          static SEL selector = NULL;
-		  if (selector == NULL)
-		    {
-			  selector = sel_get_any_uid ("messageLookupForSelector:");
-			}
-          IMP alternate = objc_msg_lookup ((id)receiver->class_pointer, selector);
-          if (alternate != NULL)
-            {
-			  IMP method = (IMP)alternate ((id)receiver->class_pointer, selector, op);
-			  if(method != NULL)
-			    {
-                  return method;
-                }
-            }
-        }
 	  result = sarray_get_safe (receiver->class_pointer->dtable, 
                         (sidx)op->sel_id);
       if (result == 0)
@@ -305,36 +260,17 @@ objc_real_msg_lookup (id receiver, SEL op)
     return (IMP)nil_method;
 }
 
-inline
 IMP
-objc_msg_lookup (id receiver, SEL op)
+objc_plane_msg_lookup (id sender, id receiver, SEL op)
 {
-  IMP result;
-  if(stack_top < 0)
-  {
-        sender_stack[0].object = nil;
-        sender_stack[0].addr = (void*)-1;
-        stack_top = 0;
-  }
   if (objc_msg_intercept_lookup != NULL)
-        {
-          while(stack_top > 0 && (void*)&result > sender_stack[stack_top].addr)
-          {
-                  stack_top--;
-          }
-          if((void*)&result <= sender_stack[stack_top].addr)
-          {
-                  stack_top++;
-                  sender_stack[stack_top].object = receiver;
-                  sender_stack[stack_top].addr = &result;
-          }
-          result = objc_msg_intercept_lookup(sender_stack[stack_top-1].object, receiver, op);
-        }
+    {
+      return objc_msg_intercept_lookup(sender, receiver, op);
+    }
   else
     {
-          result = objc_real_msg_lookup(receiver, op);
-        }
-  return result;
+      return objc_msg_lookup(receiver, op);
+    }
 }
 
 

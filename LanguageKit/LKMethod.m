@@ -1,4 +1,5 @@
 #import "LKMethod.h"
+#import "LKModule.h"
 
 @implementation LKMethod
 + (id) methodWithSignature:(LKMessageSend*)aSignature
@@ -65,7 +66,9 @@
 {
 	const char *sel = [[signature selector] UTF8String];
 	// FIXME: Should get method signature from superclass
-	const char *types = sel_get_type(sel_get_any_typed_uid(sel));
+	const char *types = [[self module] typeForMethod:[signature selector]];
+	// If the types don't come from somewhere else, then assume all arguments
+	// are id and the return type is id
 	if (NULL == types) 
 	{
 		int args = [[signature arguments] count];
