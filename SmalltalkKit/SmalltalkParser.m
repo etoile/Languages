@@ -14,7 +14,7 @@ void SmalltalkParse(void *yyp, int yymajor, id yyminor, SmalltalkParser* p);
 void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 
 
-#define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
+#define CALL_PARSER(token, arg) SmalltalkParse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
 #define WHILE(is) for(j=i ; j<sLength-1 && is(c) ; c=CHAR(++j)) {}
 #define WORD_TOKEN substr(LKTokenClass, substrSel, NSMakeRange(i, j-i), s)
