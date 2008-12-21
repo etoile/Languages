@@ -1,0 +1,7 @@
+Overview
+========
+
+EtoileScript is a dialect of ECMAScript for the Étoilé environment.  It is not
+intended as being a full ECMAScript environment, but rather as a demonstration
+of the ability for LanguageKit to support differing languages.
+
