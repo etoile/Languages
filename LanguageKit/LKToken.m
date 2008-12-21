@@ -29,6 +29,10 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 {
 	return range;
 }
+- (NSString*) sourceDocument
+{
+	return source;
+}
 - (void) dealloc
 {
 	[source release];

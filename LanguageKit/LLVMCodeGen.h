@@ -164,6 +164,32 @@ void LLVMinitialise(const char *bcFilename);
  * Construct a Smalltalk symbol (a boxed selector)
  */
 LLVMValue SymbolConstant(ModuleBuilder B, const char *symbol);
+
+/**
+ * Creates a new basic block with the specified name and returns a pointer
+ * to the block.
+ */
+void *StartBasicBlock(ModuleBuilder B, const char* BBName);
+/**
+ * Returns a pointer to the current basic block.
+ */
+void *CurrentBasicBlock(ModuleBuilder B);
+/**
+ * Moves the insert point to the specified basic block.
+ */
+void MoveInsertPointToBasicBlock(ModuleBuilder B, void *BB);
+/**
+ * Ends the current basic block with an unconditional jump to the specified
+ * basic block and sets the insert point to that block.
+ */
+void GoTo(ModuleBuilder B, void *BB);
+/**
+ * Ends the current basic block with a conditional branch, to FalseBB if
+ * condition is the SmallInt value corresponding to the Objective-C 'NO' or
+ * to TrueBB if it is any other value.
+ */
+void BranchOnCondition(ModuleBuilder B, LLVMValue condition, void *TrueBB,
+	void *FalseBB);
 /**
  * Debug flag used to set whether excessive amounts of debugging info should be
  * spammed to stderr.

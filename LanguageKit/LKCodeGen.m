@@ -220,6 +220,28 @@ lexicalScopeAtDepth:(unsigned) scope
 {
 	return SymbolConstant(Builder, [aSymbol UTF8String]);
 }
+- (void*) startBasicBlock:(NSString*)aName
+{
+	return StartBasicBlock(Builder, [aName UTF8String]);
+}
+- (void*) currentBasicBlock
+{
+	return CurrentBasicBlock(Builder);
+}
+- (void) moveInsertPointToBasicBlock:(void*)aBasicBlock
+{
+	MoveInsertPointToBasicBlock(Builder, aBasicBlock);
+}
+- (void) branchOnCondition:(void*)aCondition
+                      true:(void*)trueBlock
+                     false:(void*)falseBlock
+{
+	BranchOnCondition(Builder, aCondition, trueBlock, falseBlock);
+}
+- (void) goTo:(void*)aBasicBlock
+{
+	GoTo(Builder, aBasicBlock);
+}
 @end
 @interface LLVMStaticCodeGen : LLVMCodeGen {
 	NSString *outFile;

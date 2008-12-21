@@ -225,4 +225,26 @@ LLVMValue SymbolConstant(ModuleBuilder B, const char *symbol)
 	return B->getCurrentScope()->SymbolConstant(symbol);
 }
 
+void *StartBasicBlock(ModuleBuilder B, const char* BBName)
+{
+	return B->getCurrentScope()->StartBasicBlock(BBName);
+}
+void *CurrentBasicBlock(ModuleBuilder B)
+{
+	return B->getCurrentScope()->CurrentBasicBlock();
+}
+void MoveInsertPointToBasicBlock(ModuleBuilder B, void *BB)
+{
+	B->getCurrentScope()->GoTo((BasicBlock*)BB);
+}
+void GoTo(ModuleBuilder B, void *BB)
+{
+	B->getCurrentScope()->GoTo((BasicBlock*)BB);
+}
+void BranchOnCondition(ModuleBuilder B, LLVMValue condition, void *TrueBB,
+	void *FalseBB)
+{
+	B->getCurrentScope()->BranchOnCondition(condition, (BasicBlock*)TrueBB,
+			(BasicBlock*)FalseBB);
+}
 } // extern 'C'

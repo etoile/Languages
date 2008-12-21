@@ -185,6 +185,30 @@ lexicalScopeAtDepth:(unsigned) scope;
  * Generates a constant symbol (a boxed selector).
  */
 - (void*) generateConstantSymbol:(NSString*)aSymbol;
+/**
+ * Starts a new basic block and returns a pointer to the basic block.
+ */
+- (void*) startBasicBlock:(NSString*)aName;
+/**
+ * returns a pointer to the current basic block.
+ */
+- (void*) currentBasicBlock;
+/**
+ * Sets the current insert point to the specified basic block.  
+ */
+- (void) moveInsertPointToBasicBlock:(void*)aBasicBlock;
+/**
+ * Compares aCondition to the SmallInt value for NO (1) and executes the first
+ * block if it matches, the second if it doesn't.
+ */
+- (void) branchOnCondition:(void*)aCondition
+                      true:(void*)trueBlock
+                     false:(void*)falseBlock;
+/**
+ * Ends the current basic block with an unconditional jump to the specified
+ * basic block
+ */
+- (void) goTo:(void*)aBasicBlock;
 @end
 /**
  * Returns the default code generator for JIT compilation.

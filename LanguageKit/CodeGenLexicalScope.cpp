@@ -830,6 +830,41 @@ void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
 
+BasicBlock *CodeGenLexicalScope::StartBasicBlock(const char* BBName)
+{
+	BasicBlock * newBB = llvm::BasicBlock::Create(BBName, CurrentFunction);
+	Builder.SetInsertPoint(newBB);
+	return newBB;
+}
+
+BasicBlock *CodeGenLexicalScope::CurrentBasicBlock(void)
+{
+	return Builder.GetInsertBlock();
+}
+
+void CodeGenLexicalScope::MoveInsertPointToBasicBlock(BasicBlock *BB)
+{
+	Builder.SetInsertPoint(BB);
+}
+
+void CodeGenLexicalScope::GoTo(BasicBlock *BB)
+{
+	Builder.CreateBr(BB);
+	Builder.SetInsertPoint(BB);
+}
+
+void CodeGenLexicalScope::BranchOnCondition(Value *condition,
+		BasicBlock *TrueBB, BasicBlock *FalseBB)
+{
+	// Make the condition an int
+	Value *lhs = Builder.CreatePtrToInt(condition, IntPtrTy);
+	// SmallInt value NO (0 << 1 & 1)
+	Value *rhs = ConstantInt::get(IntPtrTy, 1);
+	// If condition != NO
+	Value *result = Builder.CreateICmpNE(rhs, lhs, "pointer_compare_result");
+	Builder.CreateCondBr(result, TrueBB, FalseBB);
+}
+
 void CodeGenLexicalScope::SetReturn(Value * Ret) 
 {
 	if (Ret != 0)

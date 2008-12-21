@@ -111,6 +111,7 @@ const Type *LLVMTypeFromString(const char * typestr)
 #define NEXT(typestr) \
 	while (!isdigit(*typestr)) { typestr++; }\
 	while (isdigit(*typestr)) { typestr++; }
+
 FunctionType *LLVMFunctionTypeFromString(const char *typestr)
 {
 	std::vector<const Type*> ArgTypes;
@@ -131,6 +132,5 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr)
 	}
 	return FunctionType::get(ReturnTy, ArgTypes, false);
 }
-
 
 CGObjCRuntime::~CGObjCRuntime() {}

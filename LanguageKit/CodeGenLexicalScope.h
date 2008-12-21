@@ -178,6 +178,33 @@ public:
    * Compare two pointers for equality.
    */
   Value *ComparePointers(Value *lhs, Value *rhs);
+
+
+	/**
+	 * Creates a new basic block with the specified name and returns a pointer
+	 * to the block.
+	 */
+	BasicBlock *StartBasicBlock(const char* BBName);
+	/**
+	 * Returns the current basic block.
+	 */
+	BasicBlock *CurrentBasicBlock(void);
+	/**
+	 * Moves the insert point to the specified basic block.
+	 */
+	void MoveInsertPointToBasicBlock(BasicBlock *BB);
+	/**
+	 * Ends the current basic block with an unconditional jump to the specified
+	 * basic block and sets the insert point to that block.
+	 */
+	void GoTo(BasicBlock *BB);
+	/**
+	 * Ends the current basic block with a conditional branch, to FalseBB if
+	 * condition is the SmallInt value corresponding to the Objective-C 'NO' or
+	 * to TrueBB if it is any other value.
+	 */
+	void BranchOnCondition(Value *condition, BasicBlock *TrueBB, BasicBlock
+		*FalseBB);
   virtual ~CodeGenLexicalScope() {
     if (0 == Builder.GetInsertBlock()->getTerminator()) {
       SetReturn();

@@ -22,4 +22,8 @@
  * Returns the location in the original program of this token.
  */
 - (NSRange) sourceLocation;
+/**
+ * Returns the source file from which this token was generated.
+ */
+- (NSString*) sourceDocument;
 @end
