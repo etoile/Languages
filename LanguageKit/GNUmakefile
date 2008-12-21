@@ -37,7 +37,8 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKReturn.m\
 	LKSubclass.m\
 	LKSymbolRef.m\
-	LKSymbolTable.m
+	LKSymbolTable.m\
+	LKToken.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKAST.h\
@@ -60,7 +61,8 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LanguageKit.h\
 	LKSubclass.h\
 	LKSymbolRef.h\
-	LKSymbolTable.h
+	LKSymbolTable.h\
+	LKToken.h
 
 
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE

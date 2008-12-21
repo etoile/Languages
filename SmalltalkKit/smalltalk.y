@@ -7,6 +7,7 @@ domain parser generator, to produce an Objective-C parser.
 #import <LanguageKit/LanguageKit.h>
 #import "SmalltalkParser.h"
 }
+%name SmalltalkParse
 %token_prefix TOKEN_
 %token_type {id}
 %extra_argument {SmalltalkParser *p}

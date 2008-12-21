@@ -1,61 +1,23 @@
-#import <EtoileFoundation/EtoileFoundation.h>
 #import "SmalltalkParser.h"
+#import <EtoileFoundation/EtoileFoundation.h>
+#import <LanguageKit/LKToken.h>
 #import <LanguageKit/LKAST.h>
 #include <ctype.h>
 #include "smalltalk.h"
 
 typedef unichar(*CIMP)(id, SEL, unsigned);
 
-@interface Token : NSString {
-	NSString *source;
-	NSRange range;
-	CIMP charAtIndex;
-}
-+ (Token*) tokenWithRange:(NSRange)aRange inSource:(NSString*)aString;
-@end
-@implementation Token
-- (Token*) initWithRange:(NSRange)aRange inSource:(NSString*)aString
-{
-	SELFINIT;
-	charAtIndex = (CIMP)[aString methodForSelector:@selector(characterAtIndex:)];
-	ASSIGN(source, aString);
-	range = aRange;
-	return self;
-}
-+ (Token*) tokenWithRange:(NSRange)aRange inSource:(NSString*)aString
-{
-	return [[[Token alloc] initWithRange:aRange inSource:aString] autorelease];
-}
-- (unsigned) length
-{
-	return range.length;
-}
-- (unichar) characterAtIndex:(unsigned)index
-{
-	return charAtIndex(source, @selector(characterAtIndex:), index +
-			range.location);
-}
-- (void) dealloc
-{
-	[source release];
-	[super dealloc];
-}
-@end
-
-
-
-
 @implementation SmalltalkParser
 /* From Lemon: */
-void *ParseAlloc(void *(*mallocProc)(size_t));
-void Parse(void *yyp, int yymajor, id yyminor, SmalltalkParser* p);
-void ParseFree(void *p, void (*freeProc)(void*));
+void *SmalltalkParseAlloc(void *(*mallocProc)(size_t));
+void SmalltalkParse(void *yyp, int yymajor, id yyminor, SmalltalkParser* p);
+void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 
 
 #define CALL_PARSER(token, arg) Parse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
 #define WHILE(is) for(j=i ; j<sLength-1 && is(c) ; c=CHAR(++j)) {}
-#define WORD_TOKEN substr(TokenClass, substrSel, NSMakeRange(i, j-i), s)
+#define WORD_TOKEN substr(LKTokenClass, substrSel, NSMakeRange(i, j-i), s)
 #define CASE(start, end, function)\
 	if(start(c))\
 	{\
@@ -66,7 +28,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 //#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
 #define CHARCASE(letter, token) case letter: CALL_PARSER(token, @"char"); break;
 
-- (AST*) parseString:(NSString*)s
+- (LKAST*) parseString:(NSString*)s
 {
 	unsigned sLength = [s length];
 	/* Cache some IMPs of methods we call a lot */
@@ -74,10 +36,10 @@ void ParseFree(void *p, void (*freeProc)(void*));
 	SEL substrSel = @selector(tokenWithRange:inSource:);
 	CIMP charAt = (CIMP)[s methodForSelector:charSel];
 
-	IMP substr = [Token methodForSelector:substrSel];
-	Class TokenClass = [Token class];
+	IMP substr = [LKToken methodForSelector:substrSel];
+	Class LKTokenClass = [LKToken class];
 	/* Set up the parser */
-	void * parser = ParseAlloc( malloc );
+	void * parser = SmalltalkParseAlloc( malloc );
 
 	// Volatile to ensure that they are preserved over longjmp calls.  This is
 	// going to make things a bit slower, so a better solution might be to move
@@ -190,7 +152,7 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		}
 	}
 	NS_HANDLER
-		ParseFree(parser, free);
+		SmalltalkParseFree(parser, free);
 		NSString * errorLine = [s substringFromIndex:lineStart+1];
 		NSRange lineEnd = [errorLine rangeOfString:@"\n"];
 		if (lineEnd.location != NSNotFound)
@@ -205,13 +167,13 @@ void ParseFree(void *p, void (*freeProc)(void*));
 		                         reason:@"Unexpected token"
 		                       userInfo:userinfo] raise];
 	NS_ENDHANDLER
-	Parse(parser, 0, nil, self);
-	ParseFree(parser, free);
+	SmalltalkParse(parser, 0, nil, self);
+	SmalltalkParseFree(parser, free);
 	[delegate check];
 	return delegate;
 }
 
-- (void) setDelegate:(AST*)ast
+- (void) setDelegate:(LKAST*)ast
 {
 	ASSIGN(delegate, ast);
 }
