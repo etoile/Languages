@@ -26,11 +26,12 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKBlockExpr.m\
 	LKCategory.m\
 	LKCodeGen.m\
-	LKComparison.m\
 	LKComment.m\
-	LKDeclRef.m\
-	LKLiteral.m\
+	LKComparison.m\
 	LKCompiler.m\
+	LKDeclRef.m\
+	LKIfStatement.m\
+	LKLiteral.m\
 	LKMessageSend.m\
 	LKMethod.m\
 	LKModule.m\
@@ -42,29 +43,30 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKVariableDecl.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
+	CodeGenBlock.h\
+	CodeGenModule.h\
 	LKAST.h\
 	LKArrayExpr.h\
 	LKAssignExpr.h\
 	LKBlockExpr.h\
 	LKCategory.h\
 	LKCodeGen.h\
-	CodeGenBlock.h\
-	CodeGenModule.h\
 	LKComment.h\
 	LKComparison.h\
-	LKDeclRef.h\
-	LKLiteral.h\
 	LKCompiler.h\
+	LKDeclRef.h\
+	LKIfStatement.h\
+	LKLiteral.h\
 	LKMessageSend.h\
 	LKMethod.h\
 	LKModule.h\
 	LKReturn.h\
-	LanguageKit.h\
 	LKSubclass.h\
 	LKSymbolRef.h\
 	LKSymbolTable.h\
 	LKToken.h\
-	LKVariableDecl.h
+	LKVariableDecl.h\
+	LanguageKit.h
 
 
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE
