@@ -25,6 +25,7 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	NSObject+log.m\
 	NSString+casting.m\
 	NSValue+structs.m\
+	SmalltalkExceptions.m\
 	Symbol.m
 
 -include GNUmakefile.preamble
