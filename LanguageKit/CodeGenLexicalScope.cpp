@@ -244,12 +244,23 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes) 
 {
+	// FIXME: This is a very long function and difficult to follow.  Split it
+	// up into more sensibly-sized chunks.
+	Module *TheModule = CGM->getModule();
+	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::Int8Ty);
 	ReturnType = MethodTypes;
 	llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();
 	ScopeSelf = AI;
 	// Create the skeleton
 	BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentFunction);
 	Builder.SetInsertPoint(EntryBB);
+	// Flag indicating if we are in an exception handler.  Used for branching
+	// later - should be removed by mem2reg and subsequent passes.
+	Value *inException = Builder.CreateAlloca(Type::Int1Ty);
+	Value *exceptionPtr = Builder.CreateAlloca(Int8PtrTy);
+
+	Builder.CreateStore(ConstantInt::get(Type::Int1Ty, 0), inException);
+	Builder.CreateStore(Constant::getNullValue(Int8PtrTy), exceptionPtr);
 
 	Type *PtrTy = PointerType::getUnqual(IntegerType::Int8Ty);
 	// Create the context type
@@ -281,7 +292,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	int contextOffset = CONTEXT_VARIABLE_OFFSET;
 
-	// We need a pointer hidden away in front of the context for storing
+	/// We need a pointer hidden away in front of the context for storing
 	// pointers to pointers to the context.
 	std::vector<const Type*> frameTypes;
 	frameTypes.push_back(PtrTy);
@@ -404,6 +415,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	CleanupBB = BasicBlock::Create("cleanup", CurrentFunction);
 	IRBuilder<> CleanupBuilder = IRBuilder<>(CleanupBB);
+	ExceptionBB = CleanupBB;
 
 	// If we are returning a block that is currently on the stack, we need to
 	// promote it first.  For now, we -retain / -autorelease every object
@@ -413,9 +425,9 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
 		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL,
-			retObj, Runtime->GetSelector(CleanupBuilder, "retain", NULL), 0, 0);
+			retObj, Runtime->GetSelector(CleanupBuilder, "retain", NULL));
 		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL, retObj,
-			Runtime->GetSelector(CleanupBuilder, "autorelease", NULL), 0, 0);
+			Runtime->GetSelector(CleanupBuilder, "autorelease", NULL));
 		CleanupBuilder.CreateStore(retObj, RetVal);
 	}
 	PromoteBB = BasicBlock::Create("promote", CurrentFunction);
@@ -442,7 +454,67 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::VoidTy,
 		Context, Context, CGM->getRuntime()->GetSelector(PromoteBuilder,
 		"promote", NULL), 0, 0);
-	PromoteBuilder.CreateBr(RetBB);
+
+	//// Handle an exception
+
+
+	//// Set up the exception landing pad.
+
+	ExceptionBB = 
+		BasicBlock::Create("non_local_return_handler", CurrentFunction);
+	IRBuilder<> ExceptionBuilder = IRBuilder<>(ExceptionBB);
+	Value *exception = ExceptionBuilder.CreateCall(
+		TheModule->getOrInsertFunction("llvm.eh.exception", Int8PtrTy, NULL));
+	ExceptionBuilder.CreateStore(exception, exceptionPtr);
+	std::vector<const Type*> ehSelectorTypes;
+	ehSelectorTypes.push_back(Int8PtrTy);
+	ehSelectorTypes.push_back(Int8PtrTy);
+	Value *ehPersonality =
+		ExceptionBuilder.CreateBitCast(TheModule->getOrInsertFunction(
+			"__SmalltalkEHPersonalityRoutine", Type::VoidTy, NULL), Int8PtrTy);
+	FunctionType *ehSelectorFunctionTy = 
+		FunctionType::get(Type::Int32Ty, ehSelectorTypes, true);
+	ExceptionBuilder.CreateCall3(
+		TheModule->getOrInsertFunction("llvm.eh.selector.i32",
+			ehSelectorFunctionTy), exception, ehPersonality,
+		ConstantPointerNull::get(Int8PtrTy));
+	Builder.CreateStore(ConstantInt::get(Type::Int1Ty, 1), inException);
+	ExceptionBuilder.CreateBr(CleanupBB);
+	ExceptionBuilder.ClearInsertionPoint();
+
+
+	BasicBlock *EHBlock = BasicBlock::Create("exception_handler", CurrentFunction);
+	// Jump to the exception handler if we did a cleanup after
+	PromoteBuilder.CreateCondBr(PromoteBuilder.CreateLoad(inException),
+		EHBlock, RetBB);
+	ExceptionBuilder = IRBuilder<>(EHBlock);
+
+	// This function will rethrow if the frames do not match.  Otherwise it will
+	// insert the correct 
+	Value *RetPtr = RetVal;
+	if (0 != RetVal)
+	{
+		RetPtr = ExceptionBuilder.CreateBitCast(RetVal, PtrTy);
+	}
+	else
+	{
+		RetPtr = Constant::getNullValue(PtrTy);
+	}
+
+	Function *EHFunction = cast<Function>(
+		TheModule->getOrInsertFunction("__SmalltalkTestNonLocalReturn",
+			Type::VoidTy, PtrTy, PtrTy, PtrTy, NULL));
+	// Note: This is not an invoke - if this throws we want it to unwind up the
+	// stack past the current frame.  If it didn't, we'd get an infinite loop,
+	// with the function continually catching the non-local return exception
+	// and rethrowing it.
+	ExceptionBuilder.CreateCall3(EHFunction, 
+		ExceptionBuilder.CreateBitCast(Context, PtrTy),
+		ExceptionBuilder.CreateLoad(exceptionPtr),
+	   	RetPtr);
+	// If we get to here, then the exception was for this frame - return
+
+	ExceptionBuilder.CreateBr(RetBB);
 }
 
 void CodeGenLexicalScope::EndScope(void)
@@ -501,7 +573,7 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	return Runtime->GenerateMessageSendSuper(*B, MethodTy->getReturnType(),
 			Sender, CGM->getSuperClassName().c_str(), SelfPtr, cmd, args, argc,
-			CGM->inClassMethod);
+			CGM->inClassMethod, CleanupBB);
 }
 
 // Preform a real message send.  Reveicer must be a real object, not a
@@ -520,7 +592,7 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), SelfPtr,
-		receiver, cmd, argv, argc);
+		receiver, cmd, argv, argc, ExceptionBB);
 }
 
 Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
@@ -549,6 +621,8 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	B->ClearInsertionPoint();
 
 	Value *Result = 0;
+	// Basic block for rejoining the two cases.
+	BasicBlock *Continue = BasicBlock::Create("Continue", F);
 
 	// See if there is a function defined to implement this message
 	Value *SmallIntFunction =
@@ -570,8 +644,10 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 				Args[i] = SmallIntBuilder.CreateBitCast(Args[i], ParamTy);
 			}
 		}
-		Result = SmallIntBuilder.CreateCall(SmallIntFunction, Args.begin(),
-			Args.end(), "small_int_message_result");
+		Result = SmallIntBuilder.CreateInvoke(SmallIntFunction, Continue,
+			ExceptionBB, Args.begin(), Args.end(),
+			"small_int_message_result");
+		SmallInt = SmallIntBuilder.GetInsertBlock();
 	}
 	else
 	{
@@ -582,14 +658,16 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 			"boxed_small_int");
 		Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes,
 			argv, argc);
+		SmallInt = SmallIntBuilder.GetInsertBlock();
+		SmallIntBuilder.CreateBr(Continue);
 	}
 
 	Value *args[argc];
 	UnboxArgs(&RealObjectBuilder, F, argv, args, argc, selTypes);
-	// This will create some branches - get the new basic block.
-	RealObject = RealObjectBuilder.GetInsertBlock();
 	Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
 		selTypes, args, argc);
+	// This will create some branches - get the new basic block.
+	RealObject = RealObjectBuilder.GetInsertBlock();
 
 	if ((Result->getType() != ObjResult->getType())
 			&& (ObjResult->getType() != Type::VoidTy))
@@ -599,10 +677,8 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	}
 	
 	// Join the two paths together again:
-	BasicBlock *Continue = BasicBlock::Create("Continue", F);
 
 	RealObjectBuilder.CreateBr(Continue);
-	SmallIntBuilder.CreateBr(Continue);
 	B->SetInsertPoint(Continue);
 	if (ObjResult->getType() != Type::VoidTy)
 	{
@@ -877,5 +953,6 @@ void CodeGenLexicalScope::SetReturn(Value * Ret)
 		Builder.CreateStore(Ret, RetVal);
 	}
 	Builder.CreateBr(CleanupBB);
+	Builder.ClearInsertionPoint();
 }
 

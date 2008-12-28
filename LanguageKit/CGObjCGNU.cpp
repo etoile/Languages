@@ -90,16 +90,18 @@ public:
 	                                         llvm::Value *Receiver,
 	                                         llvm::Value *Selector,
 	                                         llvm::Value** ArgV,
-	                                         unsigned ArgC);
+	                                         unsigned ArgC,
+                                             llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	                                              const llvm::Type *ReturnTy,
-	                                               llvm::Value *Sender,
-	                                               const char *SuperClassName,
-	                                               llvm::Value *Receiver,
-	                                               llvm::Value *Selector,
-	                                               llvm::Value** ArgV,
-	                                               unsigned ArgC,
-	                                               bool isClassMessage);
+	                                              llvm::Value *Sender,
+	                                              const char *SuperClassName,
+	                                              llvm::Value *Receiver,
+	                                              llvm::Value *Selector,
+	                                              llvm::Value** ArgV,
+	                                              unsigned ArgC,
+	                                              bool isClassMessage,
+                                                  llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder,
 	                                 llvm::Value *ClassName);
 	virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
@@ -354,7 +356,8 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Selector,
                                             llvm::Value** ArgV,
                                             unsigned ArgC,
-											bool isClassMessage) 
+											bool isClassMessage,
+                                            llvm::BasicBlock *CleanupBlock)
 {
 	// FIXME: Posing will break this.
 	llvm::Value *ReceiverClass = LookupClass(Builder,
@@ -384,9 +387,9 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	// Get the IMP
 	llvm::Constant *lookupFunction = 
 		TheModule.getOrInsertFunction("objc_msg_lookup_super",
-		                               llvm::PointerType::getUnqual(impType),
-		                               llvm::PointerType::getUnqual(ObjCSuperTy),
-		                               SelectorTy, (void*)0);
+		                              llvm::PointerType::getUnqual(impType),
+		                              llvm::PointerType::getUnqual(ObjCSuperTy),
+		                              SelectorTy, (void*)0);
 	llvm::Value *lookupArgs[] = {ObjCSuper, Selector};
 	llvm::Value *imp = Builder.CreateCall(lookupFunction, lookupArgs,
 		lookupArgs+2);
@@ -397,6 +400,16 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	callArgs.push_back(Receiver);
 	callArgs.push_back(Selector);
 	callArgs.insert(callArgs.end(), ArgV, ArgV+ArgC);
+	if (0 != CleanupBlock)
+	{
+		llvm::BasicBlock *continueBB =
+			llvm::BasicBlock::Create("invoke_continue",
+					Builder.GetInsertBlock()->getParent());
+		llvm::Value *ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
+			callArgs.begin(), callArgs.end());
+		Builder.SetInsertPoint(continueBB);
+		return ret;
+	}
 	return Builder.CreateCall(imp, callArgs.begin(), callArgs.end());
 }
 
@@ -407,7 +420,9 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
                                             llvm::Value** ArgV,
-                                            unsigned ArgC) {
+                                            unsigned ArgC,
+                                            llvm::BasicBlock *CleanupBlock)
+{
 
 	// Look up the method implementation.
 	std::vector<const llvm::Type*> impArgTypes;
@@ -432,6 +447,16 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	Args.push_back(Receiver);
 	Args.push_back(Selector);
 	Args.insert(Args.end(), ArgV, ArgV+ArgC);
+	if (0 != CleanupBlock)
+	{
+		llvm::BasicBlock *continueBB =
+			llvm::BasicBlock::Create("invoke_continue",
+					Builder.GetInsertBlock()->getParent());
+		llvm::Value *ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
+			Args.begin(), Args.end());
+		Builder.SetInsertPoint(continueBB);
+		return ret;
+	}
 	return Builder.CreateCall(imp, Args.begin(), Args.end());
 }
 

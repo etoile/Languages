@@ -23,6 +23,7 @@ protected:
 	SmallVector<Value*, 8> Args;
 	Value * RetVal;
 	BasicBlock * CleanupBB;
+	BasicBlock * ExceptionBB;
 	BasicBlock * PromoteBB;
 	BasicBlock * RetBB;
 	Function *CurrentFunction;
@@ -205,11 +206,14 @@ public:
 	 */
 	void BranchOnCondition(Value *condition, BasicBlock *TrueBB, BasicBlock
 		*FalseBB);
-  virtual ~CodeGenLexicalScope() {
-    if (0 == Builder.GetInsertBlock()->getTerminator()) {
-      SetReturn();
-    }
-  }
+	virtual ~CodeGenLexicalScope()
+	{
+		BasicBlock *BB = Builder.GetInsertBlock();
+		if (0 != BB && 0 == BB->getTerminator())
+		{
+			SetReturn();
+		}
+	}
 };
 
 class CodeGenMethod : public CodeGenLexicalScope {

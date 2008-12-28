@@ -38,8 +38,9 @@ public:
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
                                            llvm::Value *Selector,
-                                           llvm::Value** ArgV,
-                                           unsigned ArgC) =0;
+                                           llvm::Value** ArgV=0,
+                                           unsigned ArgC=0,
+                                           llvm::BasicBlock *CleanupBlock=0)=0;
   /// Generate the function required to register all Objective-C components in
   /// this compilation unit with the runtime library.
   virtual llvm::Function *ModuleInitFunction() =0;
@@ -86,7 +87,8 @@ public:
                                                 llvm::Value *Sel,
                                                 llvm::Value** ArgV,
                                                 unsigned ArgC,
-												bool isClassMessage) = 0;
+												bool isClassMessage,
+											    llvm::BasicBlock *CleanupBlock=0)=0;
   /// Generate the named protocol.  Protocols contain method metadata but no 
   /// implementations. 
   virtual void GenerateProtocol(const char *ProtocolName,

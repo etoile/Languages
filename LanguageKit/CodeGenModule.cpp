@@ -23,6 +23,12 @@
 #include <iostream>
 #include <fstream>
 
+namespace llvm 
+{
+	// Flag used to indicate whether exception handling stuff should be emitted.
+	extern bool ExceptionHandling;
+}
+
 // A copy of the Small Int message module, used when static compiling.
 static Module *SmallIntMessages = NULL;
 
@@ -330,6 +336,7 @@ Value *CodeGenModule::LoadClassVar(const char *cVarName)
 
 static ExecutionEngine *EE = NULL;
 
+
 void CodeGenModule::compile(void)
 {
 	InitialiseBuilder.CreateRetVoid();
@@ -359,6 +366,7 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
+		ExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
 	}
 	else
