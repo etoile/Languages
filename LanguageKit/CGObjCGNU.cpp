@@ -380,7 +380,6 @@ static llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
 		if (isSRet)
 		{
 			cast<llvm::InvokeInst>(ret)->addAttribute(1, Attribute::StructRet);
-			ret = sret;
 		}
 	}
 	else
@@ -389,8 +388,11 @@ static llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
 		if (isSRet)
 		{
 			cast<llvm::CallInst>(ret)->addAttribute(1, Attribute::StructRet);
-			ret = sret;
 		}
+	}
+	if (isSRet)
+	{
+		ret = Builder.CreateLoad(sret);
 	}
 	return ret;
 }
