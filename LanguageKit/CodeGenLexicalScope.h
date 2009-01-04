@@ -40,7 +40,8 @@ protected:
    * function.
    */
   void InitialiseFunction( SmallVectorImpl<Value*> &Args,
-     SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes="@");
+     SmallVectorImpl<Value*> &Locals, unsigned locals, 
+	 const char *MethodTypes="@", bool isSRet=false);
   /**
    * Maps a selector to a SmallInt function name.
    */

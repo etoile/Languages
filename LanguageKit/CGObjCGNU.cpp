@@ -86,6 +86,7 @@ public:
 		const size_t length);
 	virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	                                         const llvm::Type *ReturnTy,
+	                                         bool isSRet,
 	                                         llvm::Value *Sender,
 	                                         llvm::Value *Receiver,
 	                                         llvm::Value *Selector,
@@ -94,6 +95,7 @@ public:
                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	                                              const llvm::Type *ReturnTy,
+	                                              bool isSRet,
 	                                              llvm::Value *Sender,
 	                                              const char *SuperClassName,
 	                                              llvm::Value *Receiver,
@@ -119,6 +121,7 @@ public:
 	                                       const llvm::Type **ArgTy,
 	                                       unsigned ArgC,
 	                                       bool isClassMethod,
+	                                       bool isSRet,
 	                                       bool isVarArg);
 	virtual void GenerateCategory(
 		const char *ClassName, const char *CategoryName,
@@ -344,12 +347,60 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
 	return ObjCStr;
 }
+static llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
+                            llvm::Value *imp,
+                            const llvm::Type *ReturnTy,
+                            bool isSRet,
+                            llvm::Value *Receiver,
+                            llvm::Value *Selector,
+                            llvm::Value** ArgV,
+                            unsigned ArgC,
+                            llvm::BasicBlock *CleanupBlock)
+{
+	// Call the method
+	llvm::SmallVector<llvm::Value*, 8> callArgs;
+	llvm::Value *sret = 0;
+	if (isSRet)
+	{
+		sret = Builder.CreateAlloca(ReturnTy);
+		callArgs.push_back(sret);
+	}
+	callArgs.push_back(Receiver);
+	callArgs.push_back(Selector);
+	callArgs.insert(callArgs.end(), ArgV, ArgV+ArgC);
+	llvm::Value *ret = 0;
+	if (0 != CleanupBlock)
+	{
+		llvm::BasicBlock *continueBB =
+			llvm::BasicBlock::Create("invoke_continue",
+					Builder.GetInsertBlock()->getParent());
+		ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
+			callArgs.begin(), callArgs.end());
+		Builder.SetInsertPoint(continueBB);
+		if (isSRet)
+		{
+			cast<llvm::InvokeInst>(ret)->addAttribute(1, Attribute::StructRet);
+			ret = sret;
+		}
+	}
+	else
+	{
+		ret = Builder.CreateCall(imp, callArgs.begin(), callArgs.end());
+		if (isSRet)
+		{
+			cast<llvm::CallInst>(ret)->addAttribute(1, Attribute::StructRet);
+			ret = sret;
+		}
+	}
+	return ret;
+}
 
 ///Generates a message send where the super is the receiver.  This is a message
 ///send to self with special delivery semantics indicating which class's method
 ///should be called.
 llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             const llvm::Type *ReturnTy,
+                                            bool isSRet,
                                             llvm::Value *Sender,
                                             const char *SuperClassName,
                                             llvm::Value *Receiver,
@@ -370,13 +421,18 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 		ReceiverClass = Builder.CreateLoad(ReceiverClass);
 	}
 	std::vector<const llvm::Type*> impArgTypes;
+	if (isSRet)
+	{
+		impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
+	}
 	impArgTypes.push_back(Receiver->getType());
 	impArgTypes.push_back(SelectorTy);
 	
 	// Avoid an explicit cast on the IMP by getting a version that has the right
 	// return type.
-	llvm::FunctionType *impType = llvm::FunctionType::get(ReturnTy,
-		impArgTypes, true);
+	llvm::FunctionType *impType = isSRet ?
+		llvm::FunctionType::get(llvm::Type::VoidTy, impArgTypes, true) :
+		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	// Construct the structure used to look up the IMP
 	llvm::StructType *ObjCSuperTy = llvm::StructType::get(Receiver->getType(),
 		IdTy, (void*)0);
@@ -394,28 +450,14 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	llvm::Value *imp = Builder.CreateCall(lookupFunction, lookupArgs,
 		lookupArgs+2);
 	llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
-
-	// Call the method
-	llvm::SmallVector<llvm::Value*, 8> callArgs;
-	callArgs.push_back(Receiver);
-	callArgs.push_back(Selector);
-	callArgs.insert(callArgs.end(), ArgV, ArgV+ArgC);
-	if (0 != CleanupBlock)
-	{
-		llvm::BasicBlock *continueBB =
-			llvm::BasicBlock::Create("invoke_continue",
-					Builder.GetInsertBlock()->getParent());
-		llvm::Value *ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
-			callArgs.begin(), callArgs.end());
-		Builder.SetInsertPoint(continueBB);
-		return ret;
-	}
-	return Builder.CreateCall(imp, callArgs.begin(), callArgs.end());
+	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver, Selector, ArgV,
+		ArgC, CleanupBlock);
 }
 
 /// Generate code for a message send expression.
 llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                             const llvm::Type *ReturnTy,
+                                            bool isSRet,
                                             llvm::Value *Sender,
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
@@ -426,13 +468,18 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 
 	// Look up the method implementation.
 	std::vector<const llvm::Type*> impArgTypes;
+	if (isSRet)
+	{
+		impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
+	}
 	impArgTypes.push_back(Receiver->getType());
-	impArgTypes.push_back(Selector->getType());
+	impArgTypes.push_back(SelectorTy);
 	
 	// Avoid an explicit cast on the IMP by getting a version that has the right
 	// return type.
-	llvm::FunctionType *impType = llvm::FunctionType::get(ReturnTy,
-			impArgTypes, true);
+	llvm::FunctionType *impType = isSRet ?
+		llvm::FunctionType::get(llvm::Type::VoidTy, impArgTypes, true) :
+		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	
 	llvm::Constant *lookupFunction = 
 		TheModule.getOrInsertFunction("objc_msg_lookup",
@@ -443,21 +490,8 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
 
 	// Call the method.
-	llvm::SmallVector<llvm::Value*, 16> Args;
-	Args.push_back(Receiver);
-	Args.push_back(Selector);
-	Args.insert(Args.end(), ArgV, ArgV+ArgC);
-	if (0 != CleanupBlock)
-	{
-		llvm::BasicBlock *continueBB =
-			llvm::BasicBlock::Create("invoke_continue",
-					Builder.GetInsertBlock()->getParent());
-		llvm::Value *ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
-			Args.begin(), Args.end());
-		Builder.SetInsertPoint(continueBB);
-		return ret;
-	}
-	return Builder.CreateCall(imp, Args.begin(), Args.end());
+	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver, Selector, ArgV,
+		ArgC, CleanupBlock);
 }
 
 /// Generates a MethodList.  Used in construction of a objc_class and 
@@ -968,6 +1002,7 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 	const llvm::Type **ArgTy,
 	unsigned ArgC,
 	bool isClassMethod,
+	bool isSRet,
 	bool isVarArg)
 {
 	std::vector<const llvm::Type*> Args;
@@ -986,6 +1021,12 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 		FunctionName,
 		&TheModule);
 	llvm::Function::arg_iterator AI = Method->arg_begin();
+	if (isSRet)
+	{
+		Method->addAttribute(1, Attribute::StructRet);
+		AI->setName("retval");
+		++AI;
+	}
 	AI->setName("self");
 	++AI;
 	AI->setName("_cmd");

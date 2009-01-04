@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <errno.h>
 
+#include "ABI.h"
 
 // C++ Implementation
 using namespace llvm;
@@ -112,7 +113,67 @@ const Type *LLVMTypeFromString(const char * typestr)
 	while (!isdigit(*typestr)) { typestr++; }\
 	while (isdigit(*typestr)) { typestr++; }
 
-FunctionType *LLVMFunctionTypeFromString(const char *typestr)
+static void const countIntsAndFloats(const Type *ty,
+                                     unsigned &ints,
+                                     unsigned &floats)
+{
+	if(ty->getTypeID() == Type::VoidTyID)
+	{
+		return;
+	}
+	if (ty->isInteger())
+	{
+		ints++;
+	}
+	else if (ty->isFloatingPoint())
+	{
+		floats++;
+	}
+	// Assume that pointers count as integers for now.
+	else if(ty->getTypeID() == Type::PointerTyID)
+	{
+		ints++;
+	}
+	else if (ty->isAggregateType())
+	{
+		for (Type::subtype_iterator i=ty->subtype_begin(), end=ty->subtype_end()
+		     ; i!=end ; ++i)
+		{
+			countIntsAndFloats(i->get(), ints, floats);
+		}
+	}
+	else
+	{
+		ty->dump();
+		assert(0 && "Unrecgnised type.");
+	}
+}
+
+/**
+ * Determines whether a specific structure should be returned on the stack.
+ * 
+ * Note that this is not expressive enough for all ABIs - we will eventually
+ * need to have it handle complex and structure types differently.
+ */
+static inline bool shouldReturnValueOnStack(const Type *sTy)
+{
+	unsigned ints = 0;
+	unsigned floats = 0;
+	if (isa<StructType>(sTy))
+	{
+		countIntsAndFloats(sTy, ints, floats);
+		LOG("Found %d ints and %d floats in ", ints, floats);
+		DUMP(sTy);
+		if (ints > MAX_INTS_IN_REGISTERS || floats > MAX_FLOATS_IN_REGISTERS)
+		{
+			LOG("Returning value on stack\n");
+			return true;
+		}
+	}
+	return false;
+}
+
+FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet)
 {
 	std::vector<const Type*> ArgTypes;
 	if (NULL == typestr)
@@ -124,6 +185,14 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr)
 	// Function encodings look like this:
 	// v12@0:4@8 - void f(id, SEL, id)
 	const Type * ReturnTy = LLVMTypeFromString(typestr);
+	isSRet = shouldReturnValueOnStack(ReturnTy);
+	/*
+	if (isSRet)
+	{
+		ArgTypes.push_back(ReturnTy);
+		ReturnTy = Type::VoidTy;
+	}
+	*/
 	NEXT(typestr);
 	while(*typestr)
 	{

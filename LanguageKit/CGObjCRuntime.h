@@ -35,6 +35,7 @@ public:
   /// Generate an Objective-C message send operation
   virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                            const llvm::Type *ReturnTy,
+	                                       bool isSRet,
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
                                            llvm::Value *Selector,
@@ -81,6 +82,7 @@ public:
       *ProtocolName) =0;
   virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                                 const llvm::Type *ReturnTy,
+	                                            bool isSRet,
                                                 llvm::Value *Sender,
                                                 const char *SuperClassName,
                                                 llvm::Value *Receiver,
@@ -106,8 +108,9 @@ public:
                                          const llvm::Type *SelfTy,
                                          const llvm::Type **ArgTy,
                                          unsigned ArgC,
-                                         bool isClassMethod,
-                                         bool isVarArg) = 0;
+                                         bool isClassMethod=false,
+	                                     bool isSRet=false,
+                                         bool isVarArg=false) = 0;
   /// Look up the class for the specified name
   virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder, llvm::Value
       *ClassName) =0;

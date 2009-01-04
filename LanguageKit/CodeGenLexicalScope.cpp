@@ -72,8 +72,9 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 		{
 			Value *SymbolCalss = CGM->getModule()->getGlobalVariable(
 					".smalltalk_symbol_class", true);
-			return Runtime->GenerateMessageSend(*B, IdTy, NULL, SymbolCalss,
-				Runtime->GetSelector(*B, "SymbolForCString:", NULL), &V, 1);
+			return Runtime->GenerateMessageSend(*B, IdTy, false, NULL,
+					SymbolCalss, Runtime->GetSelector(*B, "SymbolForCString:",
+						NULL), &V, 1);
 		}
 		case '{':
 		{
@@ -103,8 +104,9 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			}
 			if (passValue)
 			{
-				Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, NULL, NSValueClass,
-					Runtime->GetSelector(*B, castSelName, NULL), &V, 1);
+				Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
+						NULL, NSValueClass, Runtime->GetSelector(*B,
+							castSelName, NULL), &V, 1);
 				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 				{
 						call->setOnlyReadsMemory();
@@ -124,8 +126,9 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			while (!isdigit(*end)) { end++; }
 			string typestring = string(typestr, end - typestr);
 			Value *args[] = {V, CGM->MakeConstantString(typestring.c_str())};
-			return Runtime->GenerateMessageSend(*B, IdTy, LoadSelf(), NSValueClass,
-				Runtime->GetSelector(*B, "valueWithBytesOrNil:objCType:", NULL),
+			return Runtime->GenerateMessageSend(*B, IdTy, false, LoadSelf(),
+					NSValueClass, Runtime->GetSelector(*B,
+						"valueWithBytesOrNil:objCType:", NULL),
 				args, 2);
 		}
 		// Map void returns to nil
@@ -242,7 +245,8 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
 }
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
-	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes) 
+	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes,
+	bool isSRet) 
 {
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
@@ -250,6 +254,10 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::Int8Ty);
 	ReturnType = MethodTypes;
 	llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();
+	if (isSRet)
+	{
+		++AI;
+	}
 	ScopeSelf = AI;
 	// Create the skeleton
 	BasicBlock * EntryBB = llvm::BasicBlock::Create("entry", CurrentFunction);
@@ -387,7 +395,14 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	RetVal = 0;
 	if (RetTy != Type::VoidTy)
 	{
-		RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
+		if (isSRet)
+		{
+			RetVal = CurrentFunction->arg_begin();
+		}
+		else
+		{
+			RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
+		}
 		// On id returns, default to returning self, otherwise default to 0.
 		if (ReturnType[0] == '@')
 		{
@@ -424,10 +439,11 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	{
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
-		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL,
-			retObj, Runtime->GetSelector(CleanupBuilder, "retain", NULL));
-		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, NULL, retObj,
-			Runtime->GetSelector(CleanupBuilder, "autorelease", NULL));
+		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false,
+				NULL, retObj, Runtime->GetSelector(CleanupBuilder, "retain",
+					NULL));
+		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false, NULL, retObj,
+				Runtime->GetSelector(CleanupBuilder, "autorelease", NULL));
 		CleanupBuilder.CreateStore(retObj, RetVal);
 	}
 	PromoteBB = BasicBlock::Create("promote", CurrentFunction);
@@ -451,7 +467,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	// Promote the context, if required
 	PromoteBuilder = IRBuilder<>(PromotionBB);
-	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::VoidTy,
+	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::VoidTy, false,
 		Context, Context, CGM->getRuntime()->GetSelector(PromoteBuilder,
 		"promote", NULL), 0, 0);
 
@@ -566,14 +582,15 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 	Value *args[argc];
 	UnboxArgs(B, F, argv, args, argc, selTypes);
 
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
+	bool isSRet;
+	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	return Runtime->GenerateMessageSendSuper(*B, MethodTy->getReturnType(),
-			Sender, CGM->getSuperClassName().c_str(), SelfPtr, cmd, args, argc,
-			CGM->inClassMethod, CleanupBB);
+		isSRet, Sender, CGM->getSuperClassName().c_str(), SelfPtr, cmd, args,
+		argc, CGM->inClassMethod, CleanupBB);
 }
 
 // Preform a real message send.  Reveicer must be a real object, not a
@@ -588,11 +605,14 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 	//FIXME: Find out why this crashes.
 	Value *SelfPtr = NULL;//LoadSelf();
 
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes);
+	bool isSRet;
+	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet);
+
 	CGObjCRuntime *Runtime = CGM->getRuntime();
+
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-	return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), SelfPtr,
-		receiver, cmd, argv, argc, ExceptionBB);
+	return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), isSRet,
+		SelfPtr, receiver, cmd, argv, argc, ExceptionBB);
 }
 
 Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
@@ -849,9 +869,9 @@ Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 	Value *SymbolClass = Runtime->LookupClass(*initBuilder,
 		CGM->MakeConstantString("Symbol"));
 	Value *V = CGM->MakeConstantString(symbol);
-	Value *S = Runtime->GenerateMessageSend(*initBuilder, IdTy, NULL,
-			SymbolClass, Runtime->GetSelector(*initBuilder, 
-				"SymbolForCString:", NULL), &V, 1);
+	Value *S = Runtime->GenerateMessageSend(*initBuilder, IdTy, false,  NULL,
+		SymbolClass, Runtime->GetSelector(*initBuilder, "SymbolForCString:",
+			NULL), &V, 1);
 	GlobalVariable *GS = new GlobalVariable(IdTy, false,
 			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
 			symbol, CGM->getModule()); initBuilder->CreateStore(S, GS);

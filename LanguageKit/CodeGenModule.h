@@ -173,11 +173,29 @@ public:
 extern "C" {
   extern int DEBUG_DUMP_MODULES;
 }
+/** Debugging macro: dumps the object if the debug flag is set */
 #define DUMP(x) do { if (DEBUG_DUMP_MODULES) x->dump(); } while(0)
+/** Debugging macro: dumps the object's type if the debug flag is set */
 #define DUMPT(x) DUMP((x->getType()))
-#define LOG(x,...) do { if (DEBUG_DUMP_MODULES) fprintf(stderr, x,##__VA_ARGS__); } while(0)
+/** Debugging macro: logs an error message to stderr if the debug flag is set. */
+#define LOG(x,...) \
+	do { if (DEBUG_DUMP_MODULES) fprintf(stderr, x,##__VA_ARGS__); } while(0)
+/**
+ * Skip method type qualifiers.  Increments typestr to skip past qualifiers
+ * that are not needed by LanguageKit (e.g. oneway).
+ */
 void SkipTypeQualifiers(const char **typestr);
+/**
+ * Returns an LLVM type from a type string.
+ */
 const Type *LLVMTypeFromString(const char * typestr);
-llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr);
-    // Set up the arguments
+/**
+ * Returns an LLVM function type from a string.  Sets isSRet if the function
+ * contains a structure which should be returned on the stack.
+ */
+llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr,
+                                               bool &isSRet);
+
+
+
 #endif // __CODE_GEN_MODULE__INCLUDED__
