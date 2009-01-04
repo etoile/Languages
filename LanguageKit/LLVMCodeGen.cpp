@@ -186,13 +186,6 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet)
 	// v12@0:4@8 - void f(id, SEL, id)
 	const Type * ReturnTy = LLVMTypeFromString(typestr);
 	isSRet = shouldReturnValueOnStack(ReturnTy);
-	/*
-	if (isSRet)
-	{
-		ArgTypes.push_back(ReturnTy);
-		ReturnTy = Type::VoidTy;
-	}
-	*/
 	NEXT(typestr);
 	while(*typestr)
 	{

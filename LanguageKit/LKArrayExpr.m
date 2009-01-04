@@ -1,4 +1,5 @@
 #import "LKArrayExpr.h"
+#import "LKModule.h"
 
 @implementation LKArrayExpr
 + (id) arrayWithElements:(NSArray*)anArray

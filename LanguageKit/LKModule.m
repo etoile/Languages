@@ -102,7 +102,28 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		return [type UTF8String];
 	}
 	// Otherwise, grab the type from the runtime
-	return sel_get_type(sel_get_any_typed_uid([methodName UTF8String]));
+	const char *types = sel_get_type(sel_get_any_typed_uid([methodName UTF8String]));
+	if (NULL == types) 
+	{
+		int args = 0;
+		for (unsigned i=0, len = [methodName length] ; i<len ; i++)
+		{
+			if ([methodName characterAtIndex:i] == ':')
+			{
+				args++;
+			}
+		}
+		int offset = sizeof(id) + sizeof(SEL);
+		NSMutableString *ty = [NSMutableString stringWithFormat:@"@%d@0:%d",
+			sizeof(SEL) + sizeof(id) * (args + 2), offset];
+		for (int i=0 ; i<args ; i++)
+		{
+			offset += sizeof(id);
+			[ty appendFormat:@"@%d", offset];
+		}
+		types = [ty UTF8String];
+	}
+	return types;
 }
 - (void) check
 {

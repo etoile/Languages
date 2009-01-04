@@ -264,8 +264,9 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	Builder.SetInsertPoint(EntryBB);
 	// Flag indicating if we are in an exception handler.  Used for branching
 	// later - should be removed by mem2reg and subsequent passes.
-	Value *inException = Builder.CreateAlloca(Type::Int1Ty);
-	Value *exceptionPtr = Builder.CreateAlloca(Int8PtrTy);
+	Value *inException = Builder.CreateAlloca(Type::Int1Ty, 0, "inException");
+	Value *exceptionPtr = 
+		Builder.CreateAlloca(Int8PtrTy, 0, "exception_pointer");
 
 	Builder.CreateStore(ConstantInt::get(Type::Int1Ty, 0), inException);
 	Builder.CreateStore(Constant::getNullValue(Int8PtrTy), exceptionPtr);
@@ -494,7 +495,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		TheModule->getOrInsertFunction("llvm.eh.selector.i32",
 			ehSelectorFunctionTy), exception, ehPersonality,
 		ConstantPointerNull::get(Int8PtrTy));
-	Builder.CreateStore(ConstantInt::get(Type::Int1Ty, 1), inException);
+	ExceptionBuilder.CreateStore(ConstantInt::get(Type::Int1Ty, 1), inException);
 	ExceptionBuilder.CreateBr(CleanupBB);
 	ExceptionBuilder.ClearInsertionPoint();
 
@@ -582,7 +583,7 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 	Value *args[argc];
 	UnboxArgs(B, F, argv, args, argc, selTypes);
 
-	bool isSRet;
+	bool isSRet = false;
 	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
@@ -605,7 +606,7 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 	//FIXME: Find out why this crashes.
 	Value *SelfPtr = NULL;//LoadSelf();
 
-	bool isSRet;
+	bool isSRet = false;
 	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
@@ -838,10 +839,10 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 		CGObjCRuntime *Runtime = CGM->getRuntime();
 	// Some objects may return a different object when retained.	Store that
 	// instead.
-		box = Runtime->GenerateMessageSend(Builder, IdTy, NULL, box,
+		box = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, box,
 			Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
 		Value *old = Builder.CreateLoad(addr);
-		Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
+		Runtime->GenerateMessageSend(Builder, Type::VoidTy, false, NULL, old,
 			Runtime->GetSelector(Builder, "release", NULL), 0, 0);
 	}
 	Builder.CreateStore(box, addr, true);
@@ -918,10 +919,10 @@ void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 		cVarName, Value *object)
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();
-	object = Runtime->GenerateMessageSend(Builder, IdTy, NULL, object,
+	object = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, object,
 		Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
 	Value *old = LoadClassVariable(className, cVarName);
-	Runtime->GenerateMessageSend(Builder, Type::VoidTy, NULL, old,
+	Runtime->GenerateMessageSend(Builder, Type::VoidTy, false, NULL, old,
 		Runtime->GetSelector(Builder, "release", NULL), 0, 0);
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
