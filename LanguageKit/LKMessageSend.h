@@ -14,6 +14,18 @@
 	const char *type;
 }
 /**
+ * Return a new message send.
+ */
++ (id) message;
+/**
+ * Return a new message send with the specified selector.
+ */
++ (id) message:(NSString*)aSelector;
+/**
+ * Initialize with the specified selector.
+ */
+- (id) initWithSelectorName:(NSString*)aSelector;
+/**
  * Set the receiver of the message.
  */
 - (void) setTarget:(id)anObject;

@@ -6,36 +6,33 @@ domain parser generator, to produce an Objective-C parser.
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LanguageKit.h>
 #import "EScriptParser.h"
+#import "EScriptPreamble.h"
 }
+%name EScriptParse
 %token_prefix TOKEN_
 %token_type {id}
 %extra_argument {EScriptParser *p}
-%left PLUS MINUS STAR SLASH EQ LT GT.
-%left WORD.
+%right IF ELSE.
+%right EQ.
+%nonassoc EQEQ.
+%left EQEQEQ.
+%nonassoc LT GT.
+%right PLUSEQ MINUSEQ.
+%right MULEQ DIVEQ MODEQ.
+%left PLUS MINUS.
+%left MUL DIV MOD.
+%left DOT LBRACK.
 
-file ::= module(M).
+file ::= module(M) script(S).
 {
+	[M addClass:S];
 	[M check];
 	[p setDelegate:M];
 }
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
 {
-	[O addPragmas: P];
-	M = O;
-}
-module(M) ::= module(O) subclass(S).
-{
-	[O addClass:S];
-	M = O;
-}
-module(M) ::= module(O) category(C).
-{
-	[O addCategory:C];
-	M = O;
-}
-module(M) ::= module(O) comment.
-{
+	[O addPragmas:P];
 	M = O;
 }
 module(M) ::= .
@@ -53,382 +50,379 @@ pragma_dict(P) ::= WORD(K) EQ pragma_value(V).
 	P = [NSMutableDictionary dictionaryWithObject:V forKey:K];
 }
 
-pragma_value(V) ::= WORD(W).
+pragma_value(V) ::= WORD(W).   { V = W; }
+pragma_value(V) ::= STRING(S). { V = S; }
+pragma_value(V) ::= NUMBER(N). { V = N; }
+
+script(S) ::= statement_list(L).
 {
-	V = W;
-}
-pragma_value(V) ::= STRING(S).
-{
-	V = S;
-}
-pragma_value(V) ::= NUMBER(N).
-{
-	V = N;
+	id globals = [NSArray arrayWithObjects:@"Object", @"Array", nil];
+
+	id m = [LKClassMethod methodWithSignature:[LKMessageSend message:@"load"]
+	                                   locals:nil
+	                               statements:L];
+
+	S = [LKSubclass subclassWithName:[[ETUUID UUID] stringValue]
+	                      superclass:@"NSObject"
+	                           cvars:globals
+	                           ivars:nil
+	                         methods:[NSArray arrayWithObject:m]];
 }
 
-if_statement(I) ::= IF LPAREN expression(E) RPAREN statements(S).
-{
-	I = S;
-	I = E;
-}
-
-while_loop(W) ::= WHILE LPAREN expression(E) RPAREN statements(S).
-{
-	W = S;
-	W = E;
-}
-
-
-variable_declaration ::= VAR WORD(W).
-{
-	W;
-}
-
-new_expression ::= NEW.
-{}
-
-function_expression ::= FUNCTION.
-
-subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list(M) RSQBRACK.
-{
-	S = [LKSubclass subclassWithName:N
-	                      superclass:C
-	                           cvars:[L objectAtIndex:1]
-	                           ivars:[L objectAtIndex:0]
-	                         methods:M];
-}
-
-category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
-{
-	D = [LKCategoryDef categoryWithClass:C methods:M];
-}
-
-ivar_list(L) ::= BAR ivars(T) BAR.
-{
-	L = T;
-}
-ivar_list ::= .
-
-ivars(L) ::= ivars(T) WORD(W).
-{
-	/* First element is the list of instance variables. */
-	[[T objectAtIndex:0] addObject:W];
-	L = T;
-}
-ivars(L) ::= ivars(T) PLUS WORD(W).
-{
-	/* Second element is the list of class variables. */
-	[[T objectAtIndex:1] addObject:W];
-	L = T;
-}
-ivars(L) ::= .
-{
-	/*
-	Separate lists need to be built for instance and class variables.
-	Put them in a fixed size array since we can only pass one value.
-	*/
-	L = [NSArray arrayWithObjects: [NSMutableArray array],
-	                               [NSMutableArray array],
-	                               nil];
-}
-
-method_list(L) ::= method_list(T) method(M).
-{
-	[T addObject:M];
-	L = T;
-}
-method_list(L) ::= method_list(T) comment.
-{
-	L = T;
-}
-method_list(L) ::= .
-{
-	L = [NSMutableArray array];
-}
-
-method(M) ::= signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
-{
-	M = [LKInstanceMethod methodWithSignature:S locals:L statements:E];
-}
-method(M) ::= PLUS signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRACK.
-{
-	M = [LKClassMethod methodWithSignature:S locals:L statements:E];
-}
-
-signature(S) ::= WORD(M).
-{
-	S = [[[LKMessageSend alloc] init] autorelease];
-	[S addSelectorComponent:M];
-}
-signature(S) ::= keyword_signature(M).
-{
-	S = M;
-}
-keyword_signature(S) ::= keyword_signature(M) KEYWORD(K) WORD(E).
-{
-	S = M;
-	[S addSelectorComponent:K];
-	[S addArgument:E];
-}
-keyword_signature(S) ::= KEYWORD(K) WORD(E).
-{ 
-	S = [[[LKMessageSend alloc] init] autorelease];
-	[S addSelectorComponent:K];
-	[S addArgument:E];
-}
-
-local_list(L) ::= BAR locals(T) BAR.
-{
-	L = T;
-}
-local_list ::= .
-
-locals(L) ::= locals(T) WORD(W).
-{
-	[T addObject:W];
-	L = T;
-}
-locals(L) ::= .
-{
-	L = [NSMutableArray array];
-}
-
-statement_list(L) ::= statements(T).
-{
-	L = T;
-}
-statement_list(L) ::= statements(T) statement(S).
+statement_list(L) ::= statement_list(T) statement(S).
 {
 	[T addObject:S];
 	L = T;
 }
-
-statements(L) ::= statements(T) statement(S) STOP.
+statement_list(L) ::= statement_list(T) COMMENT(C).
 {
-	[T addObject:S];
+	[T addObject:[LKComment commentForString:C]];
 	L = T;
 }
-statements(L) ::= statements(T) comment(C).
+statement_list(L) ::= statement_list(T) FUNCTION WORD(F)
+                                        LPAREN  argument_list(A) RPAREN
+                                        LBRACE statement_list(B) RBRACE.
 {
-	[T addObject:C];
+	[T addObject:[LKVariableDecl variableDeclWithName:F]];
+	[T addObject:
+		[LKAssignExpr assignWithTarget:[LKDeclRef reference:F]
+		                          expr:[LKBlockExpr blockWithArguments:A
+		                                                        locals:nil
+		                                                    statements:B]]];
 	L = T;
 }
-statements(L) ::= .
+statement_list(L) ::= statement_list(T) VAR declarations(A) SEMI.
 {
-	L = [NSMutableArray array];
+	[T addObjectsFromArray:A];
+	L = T;
+}
+statement_list(L) ::= .
+{
+	L = [NSMutableArray arrayWithObject:[EScriptPreamble preamble]];
 }
 
-comment(S) ::= COMMENT(C).
+declarations(L) ::= declarations(T) COMMA WORD(V).
 {
-	S = [LKComment commentForString:C];
+	[T addObject:[LKVariableDecl variableDeclWithName:V]];
+	L = T;
+}
+declarations(L) ::= declarations(T) COMMA WORD(V) EQ expression(E).
+{
+	[T addObject:[LKVariableDecl variableDeclWithName:V]];
+	[T addObject:[LKAssignExpr assignWithTarget:[LKDeclRef reference:V]
+	                                       expr:E]];
+	L = T;
+}
+declarations(L) ::= WORD(V).
+{
+	L = [NSMutableArray arrayWithObject:
+			[LKVariableDecl variableDeclWithName:V]];
+}
+declarations(L) ::= WORD(V) EQ expression(E).
+{
+	L = [NSMutableArray arrayWithObjects:
+			[LKVariableDecl variableDeclWithName:V],
+			[LKAssignExpr assignWithTarget:[LKDeclRef reference:V] expr:E],
+			nil];
 }
 
-statement(S) ::= expression(E).
+statement(S) ::= RETURN SEMI.
 {
-	S = E;
+	S = [LKReturn returnWithExpr:[LKDeclRef reference:@"nil"]];
 }
-statement(S) ::= RETURN expression(E).
+statement(S) ::= RETURN expression(E) SEMI.
 {
 	S = [LKReturn returnWithExpr:E];
 }
-statement(S) ::= WORD(T) COLON EQ expression(E).
+statement(S) ::= statement_expression(E) SEMI.
 {
-	S = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:E];
+	S = E;
+}
+statement(S) ::= IF LPAREN expression(C) RPAREN body(T).
+{
+	S = [LKIfStatement ifStatementWithCondition:C then:T else:nil];
+}
+statement(S) ::= IF LPAREN expression(C) RPAREN body(T) ELSE body(E).
+{
+	S = [LKIfStatement ifStatementWithCondition:C then:T else:E];
+}
+// FIXME: Allow VAR in I, and I/U are assignments not expressions.
+statement(S) ::= FOR LPAREN expression_list(I) SEMI
+                                 expression(C) SEMI
+                            expression_list(U) RPAREN body(B).
+{
+	// TODO
+	S = I = C = U = B;
+}
+statement(S) ::= FOR LPAREN WORD(V) IN expression(E) RPAREN body(B).
+{
+	// TODO
+	S = V = E = B;
+}
+statement(S) ::= FOR LPAREN VAR WORD(V) IN expression(E) RPAREN body(B).
+{
+	// TODO
+	S = V = E = B;
+}
+statement(S) ::= WHILE LPAREN expression(C) RPAREN body(B).
+{
+	// TODO
+	S = C = B;
+}
+statement(S) ::= DO body(B) WHILE LPAREN expression(C) RPAREN SEMI.
+{
+	// TODO
+	S = C = B;
 }
 
-%syntax_error 
+body(L) ::= LBRACE statement_list(S) RBRACE.
 {
-	[NSException raise:@"ParserError" format:@"Parsing failed"];
+	L = S;
+}
+/*
+// FIXME: Parsing conflicts
+body(L) ::= statement(S).
+{
+	L = [NSArray arrayWithObject:S];
+}
+*/
+body ::= SEMI.
+
+/* Constructs allowed both as statements and as expressions.
+   This includes all assignments and function applications. */
+statement_expression(E) ::= WORD(T) EQ expression(V).
+{
+	E = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:V];
+}
+statement_expression(E) ::= expression(T) DOT WORD(K) EQ expression(V).
+{
+	// TODO: foo.bar += 4;
+	E = [LKMessageSend message:@"setValue:forKey:"];
+	[E setTarget:T];
+	[E addArgument:V];
+	[E addArgument:[LKStringLiteral literalFromString:K]];
+}
+statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
+                                              EQ expression(V).
+{
+	// TODO: foo["bar"] += 4;
+	E = [LKMessageSend message:@"setValue:forKey:"];
+	[E setTarget:T];
+	[E addArgument:V];
+	[E addArgument:K];
+}
+statement_expression(E) ::= WORD(T) shortcut_assign(S) expression(R). [PLUSEQ]
+{
+	E = [LKMessageSend message:S];
+	[E setTarget:[LKDeclRef reference:T]];
+	[E addArgument:R];
+	E = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:E];
+}
+statement_expression(E) ::= WORD(V) LPAREN RPAREN.
+{
+	E = [LKMessageSend message:@"value"];
+	[E setTarget:[LKDeclRef reference:V]];
+}
+statement_expression(E) ::= WORD(V) LPAREN expressions(A) RPAREN.
+{
+	E = [LKMessageSend message];
+	[E setTarget:[LKDeclRef reference:V]];
+	FOREACH(A, arg, LKAST*)
+	{
+		[E addSelectorComponent:@"value:"];
+		[E addArgument:arg];
+	}
+}
+statement_expression(E) ::= expression(T) DOT keyword_selector(S)
+                                       LPAREN expression_list(A) RPAREN.
+{
+	if ([A count] != 0)
+	{
+		S = [S stringByAppendingString:@":"];
+	}
+	E = [LKMessageSend message:S];
+	[E setTarget:T];
+	FOREACH(A, arg, LKAST*)
+	{
+		[E addArgument:arg];
+	}
 }
 
-message(M) ::= keyword_message(K).
+keyword_selector(S) ::= keyword_selector(T) COLON WORD(K).
 {
-	M = K;
+	S = [T stringByAppendingFormat:@":%@", K];
 }
-message(M) ::= simple_message(S).
+keyword_selector(S) ::= WORD(K).
 {
-	M = S;
-}
-
-keyword_message(M) ::= keyword_message(G) KEYWORD(K) simple_expression(A).
-{
-	M = G;
-	[M addSelectorComponent:K];
-	[M addArgument:A];
-}
-keyword_message(M) ::= KEYWORD(K) simple_expression(A).
-{
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:K];
-	[M addArgument:A];
+	S = K;
 }
 
-simple_message(M) ::= WORD(S).
-{
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:S];
-}
-simple_message(M) ::= binary_selector(S) simple_expression(R). [PLUS]
-{
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:S];
-	[M addArgument:R];
-}
-
-binary_selector(S) ::= PLUS.
-{
-	S = @"plus:";
-}
-binary_selector(S) ::= MINUS.
-{
-	S = @"sub:";
-}
-binary_selector(S) ::= STAR.
-{
-	S = @"mul:";
-}
-binary_selector(S) ::= SLASH.
-{
-	S = @"div:";
-}
-binary_selector(S) ::= EQ.
-{
-	S = @"isEqual:";
-}
-binary_selector(S) ::= LT.
-{
-	S = @"isLessThan:";
-}
-binary_selector(S) ::= GT.
-{
-	S = @"isGreaterThan:";
-}
-binary_selector(S) ::= LT EQ.
-{
-	S = @"isLessThanOrEqualTo:";
-}
-binary_selector(S) ::= GT EQ.
-{
-	S = @"isGreaterThanOrEqualTo:";
-}
-
-expression(E) ::= cascade_expression(C).
-{
-	E = C;
-}
-expression(E) ::= keyword_expression(K).
-{
-	E = K;
-}
-expression(E) ::= simple_expression(S).
+expression(E) ::= statement_expression(S).
 {
 	E = S;
 }
-
-cascade_expression(E) ::= cascade_expression(C) SEMICOLON message(M).
+expression(E) ::= NEW WORD(V) LPAREN RPAREN.
 {
-	[C addMessage:M];
-	E = C;
+	// TODO
+	E = V;
 }
-cascade_expression(E) ::= simple_expression(T) message(M) SEMICOLON message(G).
+expression(E) ::= NEW WORD(V) LPAREN expressions(L) RPAREN.
 {
-	E = [LKMessageCascade messageCascadeWithTarget:T messages:
-		[NSMutableArray arrayWithObjects:M, G, nil]];
+	// TODO
+	E = V = L;
 }
-
-keyword_expression(E) ::= simple_expression(T) keyword_message(M).
+expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
+                           LBRACE statement_list(B) RBRACE.
 {
-	[M setTarget:T];
-	E = M;
+	E = [LKBlockExpr blockWithArguments:A locals:nil statements:B];
 }
-
-simple_expression(E) ::= WORD(V).
+expression(E) ::= expression(T) DOT WORD(K).
 {
-	if ([V isEqualToString:@"true"])
-	{
-		E = [LKNumberLiteral literalFromString:@"1"];
-	}
-	else if ([V isEqualToString:@"false"])
-	{
-		E = [LKNumberLiteral literalFromString:@"0"];
-	}
-	else
-	{
-		E = [LKDeclRef reference:V];
-	}
+	E = [LKMessageSend message:@"valueForKey:"];
+	[E setTarget:T];
+	[E addArgument:[LKStringLiteral literalFromString:K]];
 }
-simple_expression(E) ::= SYMBOL(S).
+expression(E) ::= expression(T) LBRACK expression(K) RBRACK.
 {
-	E = [LKSymbolRef reference:S];
+	E = [LKMessageSend message:@"valueForKey:"];
+	[E setTarget:T];
+	[E addArgument:K];
 }
-simple_expression(E) ::= STRING(S).
+expression(E) ::= expression(L) binary_selector(S) expression(R). [PLUS]
+{
+	E = [LKMessageSend message:S];
+	[E setTarget:L];
+	[E addArgument:R];
+}
+expression(E) ::= TRUE.
+{
+	E = [LKNumberLiteral literalFromString:@"1"];
+}
+expression(E) ::= FALSE.
+{
+	E = [LKNumberLiteral literalFromString:@"0"];
+}
+expression(E) ::= NULL.
+{
+	E = [LKDeclRef reference:@"nil"];
+}
+expression(E) ::= WORD(V).
+{
+	E = [LKDeclRef reference:V];
+}
+expression(E) ::= STRING(S).
 {
 	E = [LKStringLiteral literalFromString:S];
 }
-simple_expression(E) ::= NUMBER(N).
+expression(E) ::= NUMBER(N).
 {
 	E = [LKNumberLiteral literalFromString:N];
 }
-simple_expression(E) ::= AT WORD(S).
+expression(E) ::= AT WORD(S).
 {
 	E = [LKNumberLiteral literalFromSymbol:S];
 }
-simple_expression(E) ::= simple_expression(T) simple_message(M).
-{
-	[M setTarget:T];
-	E = M;
-}
-simple_expression(E) ::= simple_expression(L) EQ EQ simple_expression(R).
+expression(E) ::= expression(L) EQEQEQ expression(R).
 {
 	E = [LKCompare compare:L to:R];
 }
-simple_expression(E) ::= LPAREN expression(X) RPAREN.
+expression(E) ::= LPAREN expression(X) RPAREN.
 {
 	[X setBracketed:YES];
 	E = X;
 }
-simple_expression(E) ::= LBRACE expression_list(L) RBRACE.
+expression(E) ::= LBRACK expression_list(L) RBRACK.
 {
 	E = [LKArrayExpr arrayWithElements:L];
 }
-simple_expression(E) ::= LSQBRACK argument_list(A) statement_list(S) RSQBRACK.
+expression(E) ::= LBRACE RBRACE.
 {
-	//FIXME: block locals
-	E = [LKBlockExpr blockWithArguments:A locals:nil statements:S];
+	E = [LKMessageSend message:@"clone"];
+	[E setTarget:[LKDeclRef reference:@"Object"]];
+}
+expression(E) ::= LBRACE keys_and_values(L) RBRACE.
+{
+	// FIXME: Get rid of the self message
+	[L addObject:[LKMessageSend message:@"self"]];
+	id msg = [LKMessageSend message:@"clone"];
+	[msg setTarget:[LKDeclRef reference:@"Object"]];
+	E = [LKMessageCascade messageCascadeWithTarget:msg messages:L];
 }
 
-argument_list(L) ::= arguments(T) BAR.
+keys_and_values(L) ::= keys_and_values(T) COMMA key(K) COLON expression(V).
+{
+	id msg = [LKMessageSend message:@"setValue:forKey:"];
+	[msg addArgument:V];
+	[msg addArgument:K];
+	[T addObject:msg];
+	L = T;
+}
+keys_and_values(L) ::= key(K) COLON expression(V).
+{
+	id msg = [LKMessageSend message:@"setValue:forKey:"];
+	[msg addArgument:V];
+	[msg addArgument:K];
+	L = [NSMutableArray arrayWithObject:msg];
+}
+
+key(K) ::= WORD(W).
+{
+	K = [LKStringLiteral literalFromString:W];
+}
+key(K) ::= STRING(S).
+{
+	K = [LKStringLiteral literalFromString:S];
+}
+
+argument_list(L) ::= arguments(T).
 {
 	L = T;
 }
 argument_list ::= .
 
-arguments(L) ::= arguments(T) COLON WORD(A).
+arguments(L) ::= arguments(T) COMMA WORD(A).
 {
 	[T addObject:A];
 	L = T;
 }
-arguments(L) ::= .
+arguments(L) ::= WORD(A).
 {
-	L = [NSMutableArray array];
+	L = [NSMutableArray arrayWithObject:A];
 }
 
 expression_list(L) ::= expressions(T).
 {
 	L = T;
 }
-expression_list(L) ::= expressions(T) expression(E).
+expression_list ::= .
+
+expressions(L) ::= expressions(T) COMMA expression(E).
 {
 	[T addObject:E];
 	L = T;
+}
+expressions(L) ::= expression(E).
+{
+	L = [NSMutableArray arrayWithObject:E];
 }
 
-expressions(L) ::= expressions(T) expression(E) STOP.
+%syntax_error 
 {
-	[T addObject:E];
-	L = T;
+	NSLog(@"Syntax error near: '%@'.", TOKEN);
+	[NSException raise:@"ParserError" format:@"Parsing failed"];
 }
-expressions(L) ::= .
-{
-	L = [NSMutableArray array];
-}
+
+binary_selector(S) ::= PLUS.  { S = @"plus:"; }
+binary_selector(S) ::= MINUS. { S = @"sub:"; }
+binary_selector(S) ::= MUL.   { S = @"mul:"; }
+binary_selector(S) ::= DIV.   { S = @"div:"; }
+binary_selector(S) ::= MOD.   { S = @"mod:"; }
+binary_selector(S) ::= EQEQ.  { S = @"isEqual:"; }
+binary_selector(S) ::= LT.    { S = @"isLessThan:"; }
+binary_selector(S) ::= GT.    { S = @"isGreaterThan:"; }
+
+shortcut_assign(S) ::= PLUSEQ.  { S = @"plus:"; }
+shortcut_assign(S) ::= MINUSEQ. { S = @"sub:"; }
+shortcut_assign(S) ::= MULEQ.   { S = @"mul:"; }
+shortcut_assign(S) ::= DIVEQ.   { S = @"div:"; }
+shortcut_assign(S) ::= MODEQ.   { S = @"mod:"; }

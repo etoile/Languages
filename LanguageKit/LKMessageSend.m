@@ -12,6 +12,21 @@ static NSMutableDictionary *SelectorConflicts = nil;
 }
 @end
 @implementation LKMessageSend 
++ (id) message
+{
+	return AUTORELEASE([[self alloc] init]);
+}
++ (id) message:(NSString*)aSelector
+{
+	return AUTORELEASE([[self alloc] initWithSelectorName:aSelector]);
+}
+- (id) initWithSelectorName:(NSString*)aSelector
+{
+	SELFINIT;
+	ASSIGN(selector, aSelector);
+	return self;
+}
+
 - (void) setTarget:(id)anObject
 {
 	ASSIGN(target, anObject);

@@ -10,6 +10,7 @@ FRAMEWORK_NAME = EScriptKit
 ${FRAMEWORK_NAME}_OBJC_FILES = \
 	escript.m\
 	EScriptCompiler.m\
+	EScriptPreamble.m\
 	EScriptParser.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \

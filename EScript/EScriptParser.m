@@ -28,7 +28,6 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 		function\
 		i = MAX(i,j-1);\
 	}
-//#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
 #define CHARCASE(letter, token) case letter: CALL_PARSER(token, WORD_TOKEN); break;
 
 #define SET_KEYWORD(key, token) \
@@ -38,9 +37,17 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	keywords = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 2);
 	SET_KEYWORD(new, NEW);
 	SET_KEYWORD(function, FUNCTION);
+	SET_KEYWORD(return, RETURN);
 	SET_KEYWORD(if, IF);
+	SET_KEYWORD(else, ELSE);
+	SET_KEYWORD(do, DO);
 	SET_KEYWORD(while, WHILE);
+	SET_KEYWORD(for, FOR);
+	SET_KEYWORD(in, IN);
 	SET_KEYWORD(var, VAR);
+	SET_KEYWORD(true, TRUE);
+	SET_KEYWORD(false, FALSE);
+	SET_KEYWORD(null, NULL);
 }
 
 - (AST*) parseString:(NSString*)s
@@ -56,6 +63,8 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	/* Set up the parser */
 	void * parser = EScriptParseAlloc( malloc );
 
+	// EScriptParseTrace(stderr, "LEMON: ");
+
 	// Volatile to ensure that they are preserved over longjmp calls.  This is
 	// going to make things a bit slower, so a better solution might be to move
 	// them into ivars.
@@ -70,10 +79,10 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 		CASE(isalpha, isalnum, 
 		{
 			NSString * word = WORD_TOKEN;
-			int token = NSMapGet(keywords, word);
+			int token = (int)NSMapGet(keywords, word);
 			if (token == 0)
 			{
-				token = WORD_TOKEN;
+				token = TOKEN_WORD;
 			}
 			EScriptParse(parser, token, word, self);
 		})
@@ -84,7 +93,7 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 				if (c == '\n')
 				{
 					line++;
-					lineStart = j;
+					lineStart = j + 1;
 				}
 			}
 			i = MAX(i,j-1);
@@ -97,10 +106,10 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 				if (c == '\n')
 				{
 					line++;
-					lineStart = j;
+					lineStart = j + 1;
 				}
 			}
-			CALL_PARSER(COMMENT, WORD_TOKEN);
+			CALL_PARSER(STRING, WORD_TOKEN);
 			i = j;
 		}
 		else if ('\'' == c && i<sLength - 2)
@@ -118,29 +127,28 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 		else CASE(isdigit, isdigit, {CALL_PARSER(NUMBER, WORD_TOKEN);})
 		else
 		{
+			j = i + 1;
 			switch(c)
 			{
-				CHARCASE('|', BAR)
 				CHARCASE('@', AT)
-				//CHARCASE('#', HASH)
 				CHARCASE(',', COMMA)
 				CHARCASE(':', COLON)
-				CHARCASE(';', SEMICOLON)
-				CHARCASE('.', STOP)
+				CHARCASE(';', SEMI)
+				CHARCASE('.', DOT)
 				CHARCASE('+', PLUS)
 				CHARCASE('-', MINUS)
-				CHARCASE('*', STAR)
-				CHARCASE('/', SLASH)
+				CHARCASE('*', MUL)
+				CHARCASE('/', DIV)
+				CHARCASE('%', MOD)
 				CHARCASE('=', EQ)
 				CHARCASE('<', LT)
 				CHARCASE('>', GT)
 				CHARCASE('(', LPAREN)
 				CHARCASE(')', RPAREN)
-				CHARCASE('[', LSQBRACK)
-				CHARCASE(']', RSQBRACK)
+				CHARCASE('[', LBRACK)
+				CHARCASE(']', RBRACK)
 				CHARCASE('{', LBRACE)
 				CHARCASE('}', RBRACE)
-				CHARCASE('^', RETURN)
 				default:
 					NSLog(@"Weird character '%c' found on line %d", c, line);
 			}
@@ -148,15 +156,18 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	}
 	NS_HANDLER
 		EScriptParseFree(parser, free);
-		NSString * errorLine = [s substringFromIndex:lineStart+1];
+		NSString * errorLine = [s substringFromIndex:lineStart];
 		NSRange lineEnd = [errorLine rangeOfString:@"\n"];
 		if (lineEnd.location != NSNotFound)
 		{
 			errorLine = [errorLine substringToIndex:lineEnd.location];
 		}
+		j = i - lineStart + 1;
+		NSString * format = [NSString stringWithFormat:@"\n%%%dc", j];
+		errorLine = [errorLine stringByAppendingFormat:format, '^'];
 		NSDictionary *userinfo = D(
 		                          [NSNumber numberWithInt:line], @"lineNumber",
-		                          [NSNumber numberWithInt:(i-lineStart)], @"character",
+		                          [NSNumber numberWithInt:j], @"character",
 		                          errorLine, @"line");
 		[[NSException exceptionWithName:@"ParseError"
 		                         reason:@"Unexpected token"
