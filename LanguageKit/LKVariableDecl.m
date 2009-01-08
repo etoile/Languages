@@ -13,6 +13,10 @@
 {
 	return [[[self alloc] initWithName:declName] autorelease];
 }
+- (NSString*) description
+{
+	return [NSString stringWithFormat:@"var %@", variableName];
+}
 - (void) setParent:(LKAST*)aParent
 {
 	[super setParent:aParent];

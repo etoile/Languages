@@ -117,8 +117,22 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
                  args:(NSMutableArray*)args
 {
 	SELFINIT;
-	ASSIGN(localVariables, locals);
-	ASSIGN(arguments, args);
+	if (locals == nil)
+	{
+		localVariables = [[NSMutableArray alloc] init];
+	}
+	else
+	{
+		localVariables = [locals mutableCopy];
+	}
+	if (args == nil)
+	{
+		arguments = [[NSMutableArray alloc] init];
+	}
+	else
+	{
+		arguments = [args mutableCopy];
+	}
 	return self;
 }
 - (int) indexOfArgument:(NSString*)aName
