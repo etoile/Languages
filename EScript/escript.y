@@ -25,6 +25,7 @@ domain parser generator, to produce an Objective-C parser.
 
 file ::= module(M) script(S).
 {
+	// NSLog(@"%@", S);
 	[M addClass:S];
 	[M check];
 	[p setDelegate:M];
@@ -57,6 +58,8 @@ pragma_value(V) ::= NUMBER(N). { V = N; }
 script(S) ::= statement_list(L).
 {
 	id globals = [NSArray arrayWithObjects:@"Object", @"Array", nil];
+
+	[L insertObject:[EScriptPreamble preamble] atIndex:0];
 
 	id m = [LKClassMethod methodWithSignature:[LKMessageSend message:@"load"]
 	                                   locals:nil
@@ -98,7 +101,7 @@ statement_list(L) ::= statement_list(T) VAR declarations(A) SEMI.
 }
 statement_list(L) ::= .
 {
-	L = [NSMutableArray arrayWithObject:[EScriptPreamble preamble]];
+	L = [NSMutableArray array];
 }
 
 declarations(L) ::= declarations(T) COMMA WORD(V).
