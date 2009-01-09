@@ -120,7 +120,7 @@ public:
   /**
    * Set the return value for this method / block.
    */
-  void SetReturn(Value * Ret = 0);
+  virtual void SetReturn(Value * Ret = 0);
 
   /**
    * Load the value of self in the current context.

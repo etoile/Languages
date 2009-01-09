@@ -257,7 +257,7 @@ void CodeGenModule::BeginBlock(unsigned args, unsigned locals)
 
 void CodeGenModule::SetBlockReturn(Value *value)
 {
-	ScopeStack.back()->SetReturn(value);
+	((CodeGenBlock*)ScopeStack.back())->SetBlockReturn(value);
 }
 
 Value *CodeGenModule::EndBlock(void)

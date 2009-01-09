@@ -72,7 +72,14 @@ void CodeGenBlock::SetParentScope(void)
 	Builder.CreateStore(parentContext, Builder.CreateStructGEP(Context, 1));
 }
 
-void CodeGenBlock::SetReturn(Value* RetVal) 
+void CodeGenBlock::SetReturn(Value* RetVal)
+{
+	CGObjCRuntime *Runtime = CGM->getRuntime();
+	Runtime->GenerateMessageSend(Builder, Type::VoidTy, false, NULL, ScopeSelf,
+		Runtime->GetSelector(Builder, "nonLocalReturn:", 0), &RetVal, 1, ExceptionBB);
+}
+
+void CodeGenBlock::SetBlockReturn(Value* RetVal) 
 {
 	const Type *RetTy = CurrentFunction->getReturnType();
 	if (RetVal == 0) 

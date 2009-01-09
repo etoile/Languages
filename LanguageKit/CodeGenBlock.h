@@ -19,12 +19,13 @@ class CodeGenBlock : public CodeGenLexicalScope {
 	virtual void SetParentScope(void);
 public:
   virtual CodeGenLexicalScope *getParentScope() { return parentScope; }
+	virtual void SetReturn(Value* RetVal);
   llvm::Value *Block;
 
   CodeGenBlock(int args, int locals, CodeGenLexicalScope *enclosingScope,
 		  CodeGenModule *Mod);
 
-  void SetReturn(llvm::Value* RetVal);
+  void SetBlockReturn(llvm::Value* RetVal);
 
   llvm::Value *EndBlock(void); 
 };

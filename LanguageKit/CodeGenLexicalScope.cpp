@@ -414,8 +414,11 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
 		}
 	}
-	RetBB = llvm::BasicBlock::Create("return", CurrentFunction);
-	IRBuilder<> ReturnBuilder = IRBuilder<>(RetBB);
+	/// Handle returns
+	
+	// Create the real return handler
+	BasicBlock *realRetBB = llvm::BasicBlock::Create("return", CurrentFunction);
+	IRBuilder<> ReturnBuilder = IRBuilder<>(realRetBB);
 	if (CurrentFunction->getFunctionType()->getReturnType() !=
 			llvm::Type::VoidTy) 
 	{
@@ -426,6 +429,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	{
 		ReturnBuilder.CreateRetVoid();
 	}
+	RetBB = llvm::BasicBlock::Create("finish", CurrentFunction);
 
 	//// Setup the cleanup block
 
@@ -447,6 +451,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 				Runtime->GetSelector(CleanupBuilder, "autorelease", NULL));
 		CleanupBuilder.CreateStore(retObj, RetVal);
 	}
+
 	PromoteBB = BasicBlock::Create("promote", CurrentFunction);
 	IRBuilder<> PromoteBuilder = IRBuilder<>(PromoteBB);
 
@@ -501,9 +506,13 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 
 	BasicBlock *EHBlock = BasicBlock::Create("exception_handler", CurrentFunction);
+	// Set the return block to jump to the EH block instead of the real return block
+	// if we are unwinding.
+	ReturnBuilder = IRBuilder<>(RetBB);
+	ReturnBuilder.CreateCondBr(ReturnBuilder.CreateLoad(inException),
+		EHBlock, realRetBB);
 	// Jump to the exception handler if we did a cleanup after
-	PromoteBuilder.CreateCondBr(PromoteBuilder.CreateLoad(inException),
-		EHBlock, RetBB);
+	PromoteBuilder.CreateBr(RetBB);
 	ExceptionBuilder = IRBuilder<>(EHBlock);
 
 	// This function will rethrow if the frames do not match.  Otherwise it will
@@ -520,18 +529,28 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	Function *EHFunction = cast<Function>(
 		TheModule->getOrInsertFunction("__SmalltalkTestNonLocalReturn",
-			Type::VoidTy, PtrTy, PtrTy, PtrTy, NULL));
+			Type::Int8Ty, PtrTy, PtrTy, PtrTy, NULL));
 	// Note: This is not an invoke - if this throws we want it to unwind up the
 	// stack past the current frame.  If it didn't, we'd get an infinite loop,
 	// with the function continually catching the non-local return exception
 	// and rethrowing it.
-	ExceptionBuilder.CreateCall3(EHFunction, 
+	Value *isRet = ExceptionBuilder.CreateCall3(EHFunction, 
 		ExceptionBuilder.CreateBitCast(Context, PtrTy),
 		ExceptionBuilder.CreateLoad(exceptionPtr),
 	   	RetPtr);
-	// If we get to here, then the exception was for this frame - return
+	isRet = ExceptionBuilder.CreateTrunc(isRet, Type::Int1Ty);
+	BasicBlock *rethrowBB = BasicBlock::Create("rethrow", CurrentFunction);
+	ExceptionBuilder.CreateCondBr(isRet, realRetBB, rethrowBB);
 
-	ExceptionBuilder.CreateBr(RetBB);
+	// Rethrow the exception
+	ExceptionBuilder = IRBuilder<>(rethrowBB);
+	Function *rethrowFunction = cast<Function>(
+		TheModule->getOrInsertFunction("_Unwind_RaiseException", Type::VoidTy, PtrTy,
+			NULL));
+	ExceptionBuilder.CreateCall(rethrowFunction,
+			ExceptionBuilder.CreateLoad(exceptionPtr));
+	ExceptionBuilder.CreateUnreachable();
+
 }
 
 void CodeGenLexicalScope::EndScope(void)
@@ -649,10 +668,14 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	Value *SmallIntFunction =
 		getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
 
+	BasicBlock *smallIntContinueBB = 0;
+
 	// Send a message to a small int, using a static function or by promoting to
 	// a big int.
 	if (0 != SmallIntFunction)
 	{
+		smallIntContinueBB = 
+			BasicBlock::Create("small_int_bitcast_result", CurrentFunction);
 		SmallVector<Value*, 8> Args;
 		Args.push_back(receiver);
 		Args.insert(Args.end(), boxedArgs, boxedArgs+argc);
@@ -665,10 +688,10 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 				Args[i] = SmallIntBuilder.CreateBitCast(Args[i], ParamTy);
 			}
 		}
-		Result = SmallIntBuilder.CreateInvoke(SmallIntFunction, Continue,
-			ExceptionBB, Args.begin(), Args.end(),
+		Result = SmallIntBuilder.CreateInvoke(SmallIntFunction,
+			smallIntContinueBB, ExceptionBB, Args.begin(), Args.end(),
 			"small_int_message_result");
-		SmallInt = SmallIntBuilder.GetInsertBlock();
+		SmallIntBuilder.ClearInsertionPoint();
 	}
 	else
 	{
@@ -679,9 +702,9 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 			"boxed_small_int");
 		Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes,
 			argv, argc);
-		SmallInt = SmallIntBuilder.GetInsertBlock();
-		SmallIntBuilder.CreateBr(Continue);
+		smallIntContinueBB = SmallIntBuilder.GetInsertBlock();
 	}
+	SmallInt = 0;
 
 	Value *args[argc];
 	UnboxArgs(&RealObjectBuilder, F, argv, args, argc, selTypes);
@@ -690,12 +713,15 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	// This will create some branches - get the new basic block.
 	RealObject = RealObjectBuilder.GetInsertBlock();
 
+	SmallIntBuilder.SetInsertPoint(smallIntContinueBB);
 	if ((Result->getType() != ObjResult->getType())
 			&& (ObjResult->getType() != Type::VoidTy))
 	{
-		Result = new BitCastInst(Result, ObjResult->getType(),
-			"cast_small_int_result", SmallInt);
+		Result = SmallIntBuilder.CreateBitCast(Result, ObjResult->getType(), 
+			"cast_small_int_result");
 	}
+	SmallIntBuilder.CreateBr(Continue);
+
 	
 	// Join the two paths together again:
 
@@ -705,7 +731,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	{
 		PHINode *Phi = B->CreatePHI(Result->getType(),	selName);
 		Phi->reserveOperandSpace(2);
-		Phi->addIncoming(Result, SmallInt);
+		Phi->addIncoming(Result, smallIntContinueBB);
 		Phi->addIncoming(ObjResult, RealObject);
 		return Phi;
 	}
