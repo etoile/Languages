@@ -53,18 +53,9 @@ pragma_dict(P) ::= WORD(K) EQ pragma_value(V).
 	P = [NSMutableDictionary dictionaryWithObject:V forKey:K];
 }
 
-pragma_value(V) ::= WORD(W).
-{
-	V = W;
-}
-pragma_value(V) ::= STRING(S).
-{
-	V = S;
-}
-pragma_value(V) ::= NUMBER(N).
-{
-	V = N;
-}
+pragma_value(V) ::= WORD(W).   { V = W; }
+pragma_value(V) ::= STRING(S). { V = S; }
+pragma_value(V) ::= NUMBER(N). { V = N; }
 
 subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list(M) RSQBRACK.
 {
@@ -134,8 +125,7 @@ method(M) ::= PLUS signature(S) LSQBRACK local_list(L) statement_list(E) RSQBRAC
 
 signature(S) ::= WORD(M).
 {
-	S = [[[LKMessageSend alloc] init] autorelease];
-	[S addSelectorComponent:M];
+	S = [LKMessageSend message:M];
 }
 signature(S) ::= keyword_signature(M).
 {
@@ -149,8 +139,7 @@ keyword_signature(S) ::= keyword_signature(M) KEYWORD(K) WORD(E).
 }
 keyword_signature(S) ::= KEYWORD(K) WORD(E).
 { 
-	S = [[[LKMessageSend alloc] init] autorelease];
-	[S addSelectorComponent:K];
+	S = [LKMessageSend message:K];
 	[S addArgument:E];
 }
 
@@ -235,20 +224,17 @@ keyword_message(M) ::= keyword_message(G) KEYWORD(K) simple_expression(A).
 }
 keyword_message(M) ::= KEYWORD(K) simple_expression(A).
 {
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:K];
+	M = [LKMessageSend message:K];
 	[M addArgument:A];
 }
 
 simple_message(M) ::= WORD(S).
 {
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:S];
+	M = [LKMessageSend message:S];
 }
 simple_message(M) ::= binary_selector(S) simple_expression(R). [PLUS]
 {
-	M = [[[LKMessageSend alloc] init] autorelease];
-	[M addSelectorComponent:S];
+	M = [LKMessageSend message:S];
 	[M addArgument:R];
 }
 
