@@ -2,8 +2,8 @@
 
 @interface LKIfStatement : LKAST {
 	LKAST *condition;
-	NSArray *thenStatements;
-	NSArray *elseStatements;
+	NSMutableArray *thenStatements;
+	NSMutableArray *elseStatements;
 }
 + (LKIfStatement*) ifStatementWithCondition:(LKAST*) aCondition
                                        then:(NSArray*)thenClause

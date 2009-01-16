@@ -26,4 +26,10 @@
 	[aGenerator setReturn:retVal];
 	return retVal;
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	id tmp = [aVisitor visitASTNode:ret];
+	ASSIGN(ret, tmp);
+	[ret visitWithVisitor:aVisitor];
+}
 @end

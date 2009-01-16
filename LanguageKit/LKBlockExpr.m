@@ -72,4 +72,8 @@
 	[aGenerator blockReturn:lastValue];
 	return [aGenerator endBlock];
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	[self visitArray:statements withVisitor:aVisitor];
+}
 @end

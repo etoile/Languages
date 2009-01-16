@@ -157,4 +157,8 @@
 	[[[LKAST code] objectForKey: classname] addObject: self];
 	return NULL;
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	[self visitArray: methods withVisitor: aVisitor];
+}
 @end

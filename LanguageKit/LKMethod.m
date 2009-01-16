@@ -90,6 +90,10 @@
 	[aGenerator endMethod];
 	return NULL;
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	[self visitArray: statements withVisitor: aVisitor];
+}
 @end
 @implementation LKInstanceMethod
 - (void) beginMethodWith:(id)aGenerator

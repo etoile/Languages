@@ -1,6 +1,7 @@
 #import "LKSymbolTable.h"
 #import "LKCodeGen.h"
 
+
 @class LKCompilationUnit;
 /**
  * Root class for AST nodes.  Every node in the Smalltalk abstract syntax tree
@@ -73,5 +74,30 @@
  */
 - (BOOL) isComment;
 @end
+
+/**
+ * Protocol for AST visitors.  Used for classes that perform AST transforms.
+ */
+@protocol LKASTVisitor
+/**
+ * Visit the specified AST node.  The argument will be replaced by the return
+ * value in the AST if the two differ.
+ */
+- (LKAST*) visitASTNode:(LKAST*)anAST;
+@end
+@interface LKAST (Visitor)
+/**
+ * Visit the abstract syntax tree with the specified visitor.
+ */
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor;
+/**
+ * Convenience method.  Visits every element in a specified mutable array,
+ * replacing elements with the versions returned by the visitor if they have
+ * changed.
+ */
+- (void) visitArray:(NSMutableArray*)anArray
+        withVisitor:(id<LKASTVisitor>)aVisitor;
+@end
+
 
 #define SAFECAST(type, obj) ([obj isKindOfClass:[type class]] ? (type*)obj : ([NSException raise:@"InvalidCast" format:@"Can not cast %@ to %s", obj, #type], (type*)nil))

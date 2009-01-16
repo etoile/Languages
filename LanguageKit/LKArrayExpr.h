@@ -1,7 +1,7 @@
 #import "LKAST.h"
 
 @interface LKArrayExpr : LKAST {
-  NSArray *elements;
+  NSMutableArray *elements;
 }
 + (id) arrayWithElements:(NSArray*)anArray;
 - (id) initWithElements:(NSArray*)anArray;

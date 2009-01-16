@@ -1,8 +1,6 @@
 #import "LKDeclRef.h"
 #import "LKSymbolTable.h"
 
-@implementation LKClosedDeclRef
-@end
 
 @implementation LKDeclRef
 + (id) reference:(NSString*)sym

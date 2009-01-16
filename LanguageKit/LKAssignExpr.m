@@ -119,4 +119,14 @@ static char *ReleaseTypes;
 	// returning NULL.
 	return rval;
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	id tmp = [aVisitor visitASTNode:target];
+	ASSIGN(target, tmp);
+	[target visitWithVisitor:aVisitor];
+
+	tmp = [aVisitor visitASTNode:expr];
+	ASSIGN(expr, tmp);
+	[expr visitWithVisitor:aVisitor];
+}
 @end

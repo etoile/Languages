@@ -170,4 +170,9 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		              object:nil];
 	return NULL;
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	[self visitArray: classes withVisitor: aVisitor];
+	[self visitArray: categories withVisitor: aVisitor];
+}
 @end

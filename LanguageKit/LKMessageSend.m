@@ -178,6 +178,16 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	return [self compileWith:aGenerator
 	               forTarget:[target compileWith:aGenerator]];
 }
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	if (nil != target)
+	{
+		id tmp = [aVisitor visitASTNode:target];
+		ASSIGN(target, tmp);
+		[target visitWithVisitor:aVisitor];
+	}
+	[self visitArray: arguments withVisitor: aVisitor];
+}
 @end
 @implementation LKMessageCascade 
 - (LKMessageCascade*) initWithTarget:(LKAST*) aTarget
@@ -205,6 +215,13 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		result = [message compileWith:aGenerator forTarget:target];
 	}
 	return result;
+}
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	id tmp = [aVisitor visitASTNode:receiver];
+	ASSIGN(receiver, tmp);
+	[receiver visitWithVisitor:aVisitor];
+	[self visitArray: messages withVisitor: aVisitor];
 }
 - (void) addMessage:(LKMessageSend*)aMessage
 {

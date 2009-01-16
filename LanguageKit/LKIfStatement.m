@@ -9,8 +9,8 @@
 {
 	SELFINIT;
 	ASSIGN(condition, aCondition);
-	ASSIGN(thenStatements, thenClause);
-	ASSIGN(elseStatements, elseClause);
+	ASSIGN(thenStatements, [thenClause mutableCopy]);
+	ASSIGN(elseStatements, [elseClause mutableCopy]);
 	return self;
 }
 - (void) dealloc
@@ -53,5 +53,13 @@
 	[aGenerator branchOnCondition: compareValue true: thenBB false: elseBB];
 	[aGenerator moveInsertPointToBasicBlock: continueBB];
 	return NULL;
+}
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	id tmp = [aVisitor visitASTNode:condition];
+	ASSIGN(condition, tmp);
+	[condition visitWithVisitor:aVisitor];
+	[self visitArray:thenStatements withVisitor:aVisitor];
+	[self visitArray:elseStatements withVisitor:aVisitor];
 }
 @end

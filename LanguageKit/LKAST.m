@@ -126,3 +126,24 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 	return NO;
 }
 @end
+@implementation LKAST (Visitor)
+- (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
+{
+	// AST nodes with no children do nothing.
+}
+- (void) visitArray:(NSMutableArray*)anArray
+        withVisitor:(id<LKASTVisitor>)aVisitor
+{
+	unsigned count = [anArray count];
+	for (int i=0 ; i<count ; i++)
+	{
+		LKAST *old = [anArray objectAtIndex:i];
+		LKAST *new = [aVisitor visitASTNode:old];
+		if (new != old)
+		{
+			[anArray replaceObjectAtIndex:i withObject:new];
+		}
+		[new visitWithVisitor:aVisitor];
+	}
+}
+@end
