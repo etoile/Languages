@@ -102,4 +102,8 @@
 			return [super compileWith:aGenerator];
 	}
 }
+- (NSString*) symbol
+{
+	return symbol;
+}
 @end

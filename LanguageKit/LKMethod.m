@@ -98,6 +98,14 @@
 {
 	[self visitArray: statements withVisitor: aVisitor];
 }
+- (LKMessageSend*) signature
+{
+	return signature;
+}
+- (NSMutableArray*) statements
+{
+	return statements;
+}
 @end
 @implementation LKInstanceMethod
 - (void) beginMethodWith:(id)aGenerator

@@ -175,4 +175,16 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	[self visitArray: classes withVisitor: aVisitor];
 	[self visitArray: categories withVisitor: aVisitor];
 }
+- (NSMutableArray*) classes
+{
+	return classes;
+}
+- (NSMutableArray*) categories
+{
+	return categories;
+}
+- (NSMutableDictionary*) pragmas
+{
+	return pragmas;
+}
 @end

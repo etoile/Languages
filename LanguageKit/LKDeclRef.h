@@ -12,6 +12,10 @@
 + (id) reference:(NSString*)sym;
 /** Initialise a reference for the specified symbol. */
 - (id) initWithSymbol:(NSString*)sym;
+/**
+ * Returns the name of the variable being referenced.
+ */
+- (NSString*) symbol;
 @end
 
 /**

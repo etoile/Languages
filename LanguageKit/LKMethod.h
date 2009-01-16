@@ -23,6 +23,14 @@
  * Set the method signature for this method.
  */
 - (void) setSignature:(LKMessageSend*)aSignature;
+/**
+ * Returns the signature
+ */
+- (LKMessageSend*) signature;
+/**
+ * Returns the list of statements in the method
+ */
+- (NSMutableArray*) statements;
 @end
 @interface LKInstanceMethod : LKMethod {}
 @end

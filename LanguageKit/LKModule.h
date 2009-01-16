@@ -30,4 +30,16 @@
  * Returns the type that should be used for a given selector.
  */
 - (const char*) typeForMethod:(NSString*)methodName;
+/**
+ * Returns the classes in this module
+ */
+- (NSMutableArray*) classes;
+/**
+ * Returns the categories in this module
+ */
+- (NSMutableArray*) categories;
+/**
+ * Returns the pragmas in this module
+ */
+- (NSMutableDictionary*) pragmas;
 @end

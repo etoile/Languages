@@ -129,4 +129,12 @@ static char *ReleaseTypes;
 	ASSIGN(expr, tmp);
 	[expr visitWithVisitor:aVisitor];
 }
+- (LKDeclRef*) target
+{
+	return target;
+}
+- (LKAST*) expression
+{
+	return expr;
+}
 @end

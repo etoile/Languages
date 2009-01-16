@@ -24,4 +24,24 @@
                   cvars:(NSArray*)anIvarList
                   ivars:(NSArray*)anIvarList
                 methods:(NSArray*)aMethodList;
+/**
+ * Returns the class name
+ */
+- (NSString*) classname;
+/**
+ * Returns the superclass name
+ */
+- (NSString*) superclass;
+/**
+ * Returns the methods
+ */
+- (NSMutableArray*) methods;
+/**
+ * Returns the class variables
+ */
+- (NSArray*) cvars;
+/**
+ * Returns the instance variables
+ */
+- (NSArray*) ivars;
 @end

@@ -19,4 +19,12 @@
  * Initialise new assignment with target and expression.
  */
 - (id) initWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression;
+/**
+ * Returns the target of the assignment
+ */
+- (LKDeclRef*) target;
+/**
+ * Returns the expression representing the assigned value.
+ */
+- (LKAST*) expression;
 @end

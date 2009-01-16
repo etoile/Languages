@@ -55,13 +55,17 @@ static NSMutableDictionary *SelectorConflicts = nil;
 }
 - (NSMutableArray*) arguments
 {
-  return arguments;
+  	return arguments;
 }
 - (NSString*) selector
 {
 	return selector;
 }
 
+- (id) target
+{
+	return target;
+}
 - (void) check
 {
 	[target setParent:self];

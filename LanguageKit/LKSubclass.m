@@ -161,4 +161,24 @@
 {
 	[self visitArray: methods withVisitor: aVisitor];
 }
+- (NSString*) classname
+{
+	return classname;
+}
+- (NSString*) superclass
+{
+	return superclass;
+}
+- (NSMutableArray*) methods
+{
+	return methods;
+}
+- (NSArray*) cvars
+{
+	return cvars;
+}
+- (NSArray*) ivars
+{
+	return ivars;
+}
 @end

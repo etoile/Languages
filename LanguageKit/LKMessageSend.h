@@ -45,6 +45,10 @@
  * Return the selector.
  */
 - (NSString*) selector;
+/**
+ * Return the target
+ */
+- (id) target;
 @end
 /**
  * Send an array of messages to the same receiver.  The receiver expression
