@@ -243,4 +243,20 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	[messages release];
 	[super dealloc];
 }
+- (NSString*) description
+{
+	NSMutableString *str = [NSMutableString string];
+	[str appendString: [receiver description]];
+	[str appendString:@" "];
+	for (int i=0; i<[messages count]; i++)
+	{
+		NSString* message = [[messages objectAtIndex: i] description];
+		if (i>0)
+		{
+			[str appendString: @"; "];
+		}
+		[str appendString: message];
+	}
+	return str;
+}
 @end
