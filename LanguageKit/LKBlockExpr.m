@@ -72,6 +72,10 @@
 	[aGenerator blockReturn:lastValue];
 	return [aGenerator endBlock];
 }
+- (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable
+{
+	[symbols setScope:aSymbolTable];
+}
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
 	[self visitArray:statements withVisitor:aVisitor];

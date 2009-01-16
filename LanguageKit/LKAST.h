@@ -39,10 +39,18 @@
  */
 - (BOOL) isBracketed;
 /**
+ * Inherits the given symbol table from the parent.
+ */
+- (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable;
+/**
  * Sets the parent of this node.  Also sets connections between the nodes'
  * symbol tables.
  */
 - (void) setParent:(LKAST*)aNode;
+/**
+ * Returns the parent of this AST node.
+ */
+- (LKAST*) parent;
 /**
  * Returns the symbol table for this node.
  */

@@ -90,6 +90,10 @@
 	[aGenerator endMethod];
 	return NULL;
 }
+- (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable
+{
+	[symbols setScope:aSymbolTable];
+}
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
 	[self visitArray: statements withVisitor: aVisitor];

@@ -46,16 +46,17 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 {
 	printf("%s", [[self description] UTF8String]);
 }
+- (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable
+{
+	ASSIGN(symbols, aSymbolTable);
+}
+- (LKAST*) parent;
+{
+	return parent;
+}
 - (void) setParent:(LKAST*)aNode
 {
-	if (nil == symbols)
-	{
-		ASSIGN(symbols, [aNode symbols]);
-	}
-	else
-	{
-		[symbols setScope:[aNode symbols]];
-	}
+	[self inheritSymbolTable:[aNode symbols]];
 	ASSIGN(parent, aNode);
 }
 - (void) setBracketed:(BOOL)aFlag
