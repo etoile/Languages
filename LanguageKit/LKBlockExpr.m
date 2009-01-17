@@ -80,4 +80,8 @@
 {
 	[self visitArray:statements withVisitor:aVisitor];
 }
+- (NSMutableArray*) statements
+{
+	return statements;
+}
 @end

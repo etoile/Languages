@@ -5,8 +5,8 @@
  */
 @interface LKBlockExpr : LKAST {
 /** Counter used when binding variables. */
-  int nextClosed;
-/** Lost of statements in this node. */
+	int nextClosed;
+/** List of statements in this node. */
 	NSMutableArray * statements;
 }
 /**
@@ -21,4 +21,8 @@
  * Set the statements in this node.
  */
 - (void) setStatements: (NSMutableArray*)statements;
+/**
+ * Returns the list of statements in the block
+ */
+- (NSMutableArray*) statements;
 @end
