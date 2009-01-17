@@ -24,6 +24,7 @@ ifeq ($(smalltalk), yes)
 	SUBPROJECTS += LanguageKit 
 	SUBPROJECTS += SmalltalkKit
 	SUBPROJECTS += Compiler
+	SUBPROJECTS += LKPlugins
 endif
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
