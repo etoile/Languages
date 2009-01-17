@@ -15,6 +15,10 @@
 {
 	return [NSString stringWithFormat:@"\"%@\"", comment];
 }
+- (NSString*) stringValue
+{
+	return comment;
+}
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	// Comments do not turn into code.
