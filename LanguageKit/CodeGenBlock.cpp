@@ -81,19 +81,7 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 
 void CodeGenBlock::SetBlockReturn(Value* RetVal) 
 {
-	const Type *RetTy = CurrentFunction->getReturnType();
-	if (RetVal == 0) 
-	{
-			Builder.CreateRet(UndefValue::get(CurrentFunction->getReturnType()));
-	} 
-	else 
-	{
-		if (RetVal->getType() != RetTy) 
-		{
-			RetVal = Builder.CreateBitCast(RetVal, RetTy);
-		}
-		Builder.CreateRet(RetVal);
-	}
+	CodeGenLexicalScope::SetReturn(RetVal);
 }
 
 
