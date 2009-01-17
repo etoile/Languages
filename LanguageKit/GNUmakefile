@@ -21,6 +21,7 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKAST.m\
+	LKASTVisitor.m\
 	LKArrayExpr.m\
 	LKAssignExpr.m\
 	LKBlockExpr.m\
@@ -46,6 +47,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	CodeGenBlock.h\
 	CodeGenModule.h\
 	LKAST.h\
+	LKASTVisitor.h\
 	LKArrayExpr.h\
 	LKAssignExpr.h\
 	LKBlockExpr.h\

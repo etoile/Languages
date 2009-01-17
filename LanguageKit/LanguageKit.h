@@ -1,4 +1,5 @@
 #import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKASTVisitor.h>
 #import <LanguageKit/LKArrayExpr.h>
 #import <LanguageKit/LKAssignExpr.h>
 #import <LanguageKit/LKBlockExpr.h>
