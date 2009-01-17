@@ -35,12 +35,10 @@
 		[statement check];
 	}
 }
-- (NSString*) description
+- (NSString*) methodBody
 {
 	NSMutableString *str = [NSMutableString string];
 	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
-	[str appendString:[signature description]];
-	[str appendString:@"[ "];
 	if ([[st locals] count])
 	{
 		[str appendString:@"\n| "];
@@ -55,6 +53,15 @@
 	{
 		[str appendFormat:@"%@.\n", statement];
 	}
+	return str;
+}
+- (NSString*) description
+{
+	NSMutableString *str = [NSMutableString string];
+	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
+	[str appendString:[signature description]];
+	[str appendString:@"[ "];
+	[str appendString: [self methodBody]];
 	[str appendString:@"]"];
 	return str;
 }

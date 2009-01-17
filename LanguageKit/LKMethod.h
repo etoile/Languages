@@ -28,6 +28,10 @@
  */
 - (LKMessageSend*) signature;
 /**
+ * Returns the method's body
+ */
+- (NSString*) methodBody;
+/**
  * Returns the list of statements in the method
  */
 - (NSMutableArray*) statements;
