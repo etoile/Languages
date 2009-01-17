@@ -9,26 +9,30 @@ SUBPROJECTS = Support
 # Library
 #
 VERSION = 0.7
-FRAMEWORK_NAME = SmalltalkKit
+BUNDLE_NAME = Smalltalk
+BUNDLE_EXTENSION = .language
+BUNDLE_INSTALL_DIR = $(GNUSTEP_BUNDLES)/LanguageKit
 
-${FRAMEWORK_NAME}_OBJC_FILES = \
+${BUNDLE_NAME}_PRINCIPAL_CLASS = SmalltalkCompiler
+
+${BUNDLE_NAME}_OBJC_FILES = \
 	smalltalk.m\
 	SmalltalkCompiler.m\
 	SmalltalkParser.m
 
-${FRAMEWORK_NAME}_HEADER_FILES = \
+${BUNDLE_NAME}_HEADER_FILES = \
 	SmalltalkCompiler.h\
 	SmalltalkKit.h\
 	SmalltalkParser.h
 
 
-${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit \
+${BUNDLE_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
+${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit \
 	-lSmalltalkSupport
-${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
+${BUNDLE_NAME}_CFLAGS += -Wno-implicit -g
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
-include $(GNUSTEP_MAKEFILES)/framework.make
+include $(GNUSTEP_MAKEFILES)/bundle.make
 -include ../../etoile.make
 
 smalltalk.m: smalltalk.y

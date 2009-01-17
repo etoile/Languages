@@ -12,12 +12,47 @@ static NSMutableDictionary *compilersByLanguage;
 
 extern int DEBUG_DUMP_MODULES;
 @implementation LKCompiler
++ (void) loadBundles
+{
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSArray *dirs =
+		NSSearchPathForDirectoriesInDomains(
+			NSLibraryDirectory,
+			NSAllDomainsMask,
+			YES);
+	FOREACH(dirs, dir, NSString*)
+	{
+		NSString *f =
+			[[dir stringByAppendingPathComponent:@"Bundles"]
+				stringByAppendingPathComponent:@"LanguageKit"];
+		// Check that the framework exists and is a directory.
+		NSArray *bundles = [fm directoryContentsAtPath:f];
+		FOREACH(bundles, bundle, NSString*)
+		{
+			bundle = [f stringByAppendingPathComponent:bundle];
+			BOOL isDir = NO;
+			if ([fm fileExistsAtPath:bundle isDirectory:&isDir]
+				&& isDir)
+			{
+				NSBundle *b = [NSBundle bundleWithPath:bundle];
+				if ([b load])
+				{
+					// Message is ignored, just ensure that +initialize is
+					// called and the class is connected to the hierarchy.
+					[[b principalClass] description];
+				}
+			}
+		}
+	}
+}
 + (void) initialize 
 {
 	if (self != [LKCompiler class])
 	{
 		return;
 	}
+	[self loadBundles];
+
 	compilersByExtension = [NSMutableDictionary new];
 	compilersByLanguage = [NSMutableDictionary new];
 	NSArray *classes = [self directSubclasses];
