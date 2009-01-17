@@ -41,14 +41,13 @@
 	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	if ([[st locals] count])
 	{
-		[str appendString:@"\n| "];
+		[str appendString:@"| "];
 		FOREACH([st locals], symbol, NSString*)
 		{
 			[str appendFormat:@"%@ ", symbol];
 		}
-		[str appendString:@"|"];
+		[str appendString:@"|\n"];
 	}
-	[str appendString:@"\n"];
 	FOREACH(statements, statement, LKAST*)
 	{
 		[str appendFormat:@"%@.\n", statement];
@@ -60,7 +59,7 @@
 	NSMutableString *str = [NSMutableString string];
 	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	[str appendString:[signature description]];
-	[str appendString:@"[ "];
+	[str appendString:@"[\n"];
 	[str appendString: [self methodBody]];
 	[str appendString:@"]"];
 	return str;
