@@ -22,7 +22,6 @@ ${TOOL_NAME}_LDFLAGS += -g -lgmp -lEtoileFoundation -lgnustep-gui\
    	-L/usr/local/lib
 # Hacks to compile without installing the frameworks first.
 ${TOOL_NAME}_LDFLAGS += \
-	-lSmalltalkKit \
 	-lSmalltalkSupport \
 	-lLanguageKit
 
