@@ -891,7 +891,7 @@ Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs)
 
 Value *CodeGenLexicalScope::IntConstant(const char *value)
 {
-	CGM->IntConstant(Builder, value);
+	return CGM->IntConstant(Builder, value);
 }
 Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 {
