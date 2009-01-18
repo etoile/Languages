@@ -107,6 +107,8 @@ NSObject subclass: SmalltalkTool
 		#symbol log.
 		'Testing if empty methods return self:' log.
 		self init log.
+		"A really big integer:"
+		10000000000000000 log.
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray
