@@ -8,4 +8,17 @@
    NSViewMaxYMargin     = 32;
 
    NSUTF8StringEncoding = 4;
+
+   NSItalicFontMask = 1;
+   NSBoldFontMask = 2;
+   NSUnboldFontMask = 4;
+   NSNonStandardCharacterSetFontMask = 8;
+   NSNarrowFontMask = 16;
+   NSExpandedFontMask = 32;
+   NSCondensedFontMask = 64;
+   NSSmallCapsFontMask = 128;
+   NSPosterFontMask = 256;
+   NSCompressedFontMask = 512;
+   NSFixedPitchFontMask = 1024;
+   NSUnitalicFontMask = 16777216;
 }
