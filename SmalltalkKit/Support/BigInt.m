@@ -1,4 +1,5 @@
 #include "BigInt.h"
+#include "BlockClosure.h"
 
 static mpz_t ZERO;
 
@@ -31,6 +32,12 @@ static mpz_t ZERO;
 		mpz_mul_2exp(b->v, b->v, 32);
 		mpz_add_ui(b->v, b->v, (unsigned long)low);
 	}
+	return b;
+}
++ (BigInt*) bigIntWithMP:(mpz_t)aVal
+{
+	BigInt *b = [[[BigInt alloc] init] autorelease];
+	mpz_init_set(b->v, aVal);
 	return b;
 }
 #define op2(name, func) \
@@ -143,6 +150,87 @@ op2(div, tdiv_q)
 		}
 	}
 	return result;
+}
+- (id) to: (id) other by: (id) incr do: (id) aBlock
+{
+	id result = nil;
+	if ([other isKindOfClass: isa] && [incr isKindOfClass: isa])
+	{
+		if (mpz_fits_sint_p(v) 
+			&& mpz_fits_sint_p(((BigInt*)other)->v)
+			&& mpz_fits_sint_p(((BigInt*)incr)->v))
+		{
+			int i = mpz_get_si(v);
+			int max = mpz_get_si(((BigInt*)other)->v);
+			int inc = mpz_get_si(((BigInt*)incr)->v);
+			for (;i<max;i+=inc)
+			{
+				result = [(BlockClosure*)aBlock value: 
+					   [BigInt bigIntWithLongLong: (long long) i]];
+			}
+		}
+		else
+		{
+			mpz_t i, max, inc;
+			mpz_init_set(i, v);
+			mpz_init_set(max, ((BigInt*)other)->v);
+			mpz_init_set(inc, ((BigInt*)incr)->v);
+			while (mpz_cmp(i, max)<=0)
+			{
+				result = [(BlockClosure*)aBlock value: [BigInt bigIntWithMP: i]];
+				mpz_add(i, i, inc);
+			}
+		}
+	}
+	else
+	{
+		mpz_t i, max, inc;
+		mpz_init_set(i, v);
+
+		if ([other isKindOfClass: isa])
+		{
+			mpz_init_set(max, ((BigInt*)other)->v);
+		}
+		else if ([other respondsToSelector: @selector(intValue)])
+		{
+			mpz_init_set_si(max, [other intValue]);
+		}
+		else if ([other respondsToSelector: @selector(longValue)])
+		{
+			mpz_init_set_si(max, [other longValue]);
+		}
+		else
+		{
+			return NO;
+		}
+
+		if ([incr isKindOfClass: isa])
+		{
+			mpz_init_set(inc, ((BigInt*)incr)->v);
+		}
+		else if ([incr respondsToSelector: @selector(intValue)])
+		{
+			mpz_init_set_si(max, [incr intValue]);
+		}
+		else if ([incr respondsToSelector: @selector(longValue)])
+		{
+			mpz_init_set_si(max, [incr longValue]);
+		}
+		else
+		{
+			return NO;
+		}
+		while (mpz_cmp(i, max)<=0)
+		{
+			result = [(BlockClosure*)aBlock value: [BigInt bigIntWithMP: i]];
+			mpz_add(i, i, inc);
+		}
+	}
+	return result;
+}
+- (id) to: (id) other do: (id) aBlock
+{
+	return [self to: other by: [BigInt bigIntWithLongLong: 1] do: aBlock];
 }
 
 - (NSString*) description

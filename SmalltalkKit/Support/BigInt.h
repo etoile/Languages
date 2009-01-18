@@ -10,4 +10,5 @@
 	mpz_t v;
 }
 + (BigInt*) bigIntWithLongLong:(long long)aVal;
++ (BigInt*) bigIntWithMP:(mpz_t)aVal;
 @end
