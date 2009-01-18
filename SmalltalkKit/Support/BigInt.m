@@ -7,6 +7,12 @@ static mpz_t ZERO;
 {
 	mpz_init_set_si(ZERO, 0);
 }
++ (BigInt*) bigIntWithCString:(char*) aString
+{
+	BigInt *b = [[[BigInt alloc] init] autorelease];
+	mpz_init_set_str(b->v, aString, 10);
+	return b;
+}
 + (BigInt*) bigIntWithLongLong:(long long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
