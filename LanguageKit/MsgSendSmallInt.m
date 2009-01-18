@@ -1,6 +1,7 @@
 #import <objc/objc-api.h>
 #include <sys/types.h>
 #include <string.h>
+#include <stdint.h>
 
 // Dummy interfaces to make warnings go away
 @interface BigInt {}
@@ -10,6 +11,8 @@
 - (id) div:(id)a;
 - (id) mul:(id)a;
 - (id) mod:(id)a;
+- (id) to:(id)a by:(id)b do:(id)c;
+- (id) to:(id)a do:(id)c;
 @end
 @interface NSString {}
 + (id) stringWithFormat:(NSString*)a, ...;
@@ -19,7 +22,7 @@ NSLog(NSString*, ...);
 typedef struct
 {
 	void* isa;
-	id(*value)(void*, SEL);
+	id(*value)(void*, SEL,...);
 } Block;
 
 /**
@@ -92,6 +95,46 @@ MSG1(timesRepeat_)
 	}
 	return ret;
 }
+id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
+{
+	intptr_t val = (intptr_t)obj;
+	val >>= 1;
+	intptr_t inc = (intptr_t) by;
+	intptr_t max = (intptr_t) to;
+	if (((inc & 1) == 0) || ((max & 1) == 0))
+	{
+		BigInt* increment = (BigInt*) by;
+		BigInt* maximum = (BigInt*) to;
+		if ((inc & 1) != 0)
+		{
+			inc >>= 1;
+			increment = [BigInt bigIntWithLongLong: (long long)inc];	
+		}
+		if ((max & 1) != 0)
+		{
+			max >>= 1;
+			maximum = [BigInt bigIntWithLongLong: (long long)max];	
+		}
+		BigInt* conv = [BigInt bigIntWithLongLong: (long long)val];
+		return [conv to: maximum by: increment do: tdo];
+	}
+	inc >>= 1;
+	max >>= 1;
+	
+	id result = nil;
+	for (;val<=max;val+=inc)
+	{
+		Block *block = tdo;
+		result = block->value(tdo, @selector(value:), [BigInt bigIntWithLongLong:(long long)val]);
+	}
+	return result;
+}
+id SmallIntMsgto_do_(void* obj, void *to, void *tdo)
+{
+	// increment by one -- ((1 << 1) & 1) == 3
+	return SmallIntMsgto_by_do_(obj, to, (void*)3, tdo);
+}
+
 
 BOOL SmallIntMsgisEqual_(void *obj, void *other)
 {
