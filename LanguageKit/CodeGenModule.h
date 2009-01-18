@@ -144,11 +144,11 @@ public:
    * Set the (local) return value for a block.
    */
   void SetBlockReturn(Value *value);
-  /**
-   * Create an integer constant.  Either a SmallInt or a BigInt, depending on
-   * the size.
-   */
-  Value *IntConstant(const char *value);
+	/**
+	* Create an integer constant.  Either a SmallInt or a BigInt, depending on
+	* the size.  
+	*/
+	Value *IntConstant(IRBuilder<> &Builder, const char *value);
   /**
    * Create a string (object) constant.
    */

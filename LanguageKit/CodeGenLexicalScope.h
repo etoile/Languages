@@ -172,6 +172,10 @@ public:
    */
   Value *SymbolConstant(const char *symbol);
   /**
+   * Create an integer constant.
+   */
+  Value *IntConstant(const char *value);
+  /**
    * Returns the parent lexical scope.
    */
   virtual CodeGenLexicalScope *getParentScope() { return 0; }

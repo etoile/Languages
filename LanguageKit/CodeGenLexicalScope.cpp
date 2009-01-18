@@ -889,6 +889,10 @@ Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs)
 	return Builder.CreateIntToPtr(result, IdTy);
 }
 
+Value *CodeGenLexicalScope::IntConstant(const char *value)
+{
+	CGM->IntConstant(Builder, value);
+}
 Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();

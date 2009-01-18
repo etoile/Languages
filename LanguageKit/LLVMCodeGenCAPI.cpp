@@ -183,7 +183,7 @@ void BeginBlock(ModuleBuilder B, unsigned args, unsigned locals)
 
 LLVMValue IntConstant(ModuleBuilder B, const char *value)
 {
-	return B->IntConstant(value);
+	return B->getCurrentScope()->IntConstant(value);
 }
 
 LLVMValue StringConstant(ModuleBuilder B, const char *value)

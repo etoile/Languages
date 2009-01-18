@@ -273,13 +273,30 @@ Value *CodeGenModule::StringConstant(const char *value)
 	return Runtime->GenerateConstantString(value, strlen(value));
 }
 
-Value *CodeGenModule::IntConstant(const char *value)
+Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 {
 	errno = 0;
 	long long val = strtoll(value, NULL, 10);
 	intptr_t ptrVal = (val << 1);
 	if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val))
 	{
+		Value *BigIntClass = Runtime->LookupClass(InitialiseBuilder,
+			MakeConstantString("BigInt"));
+		Value *V = MakeConstantString(value);
+		// Create the BigInt
+		Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
+			false,  NULL, BigIntClass, Runtime->GetSelector(InitialiseBuilder,
+				"bigIntWithCString:", NULL), &V, 1);
+		// Retain it
+		S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
+			S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));
+		// Define a global variable and store it there.
+		GlobalVariable *GS = new GlobalVariable(IdTy, false,
+				GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
+				value, getModule());
+	   	InitialiseBuilder.CreateStore(S, GS);
+		// Load the global.
+		return Builder.CreateLoad(GS);
 		//FIXME: Promote to BigInt
 		assert(false && "BigInt constants not yet implemented.");
 	}
