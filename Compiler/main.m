@@ -2,7 +2,7 @@
 #import <AppKit/AppKit.h>
 #include <time.h>
 #include <sys/resource.h>
-#import <LanguageKit/LKCompiler.h>
+#import <LanguageKit/LanguageKit.h>
 
 @implementation NSObject (DumpObject)
 - (void) dumpObject
@@ -36,24 +36,58 @@ static NSString* stripScriptPreamble(NSString *script)
 	return script;
 }
 
+static LKAST *parseScript(NSString *script, NSString *extension)
+{
+	[LKCompiler compilerForExtension:extension];
+	script = stripScriptPreamble(script);
+	id parser = [[[LKCompiler compilerForExtension:extension] parser] new];
+	LKAST *module = [parser parseString:script];
+	[parser release];
+	return module;
+}
+
+static NSArray *Transforms = nil;
+
+static void  applyTransforms(LKAST* anAST)
+{
+	FOREACH(Transforms, transform, id<LKASTVisitor>)
+	{
+		[anAST visitWithVisitor:transform];
+	}
+}
+
 static BOOL jitScript(NSString *script, NSString *extension)
 {
-	script = stripScriptPreamble(script);
-	return [[LKCompiler compilerForExtension:extension] compileString:script];
+	NS_DURING
+		LKAST *ast = parseScript(script, extension);
+		applyTransforms(ast);
+		[ast compileWith:defaultJIT()];
+	NS_HANDLER
+		return NO;
+	NS_ENDHANDLER
+	return YES;
 }
 
 static BOOL staticCompileScript(NSString *script, NSString *outFile, 
 		NSString *extension)
 {
-	script = stripScriptPreamble(script);
-	return [[LKCompiler compilerForExtension:extension] compileString:script
-	                                                           output:outFile];
+	NS_DURING
+		LKAST *ast = parseScript(script, extension);
+		applyTransforms(ast);
+		[ast compileWith:defaultStaticCompilterWithFile(outFile)];
+	NS_HANDLER
+		return NO;
+	NS_ENDHANDLER
+	return YES;
 }
 
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
-	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:", argc, argv);
+	// Forces the compiler to load plugins
+	[LKCompiler supportedLanguages];
+
+	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	NSCAssert(nil == bundle, 
 			@"Smalltalk bundles are not yet supported.  Sorry.");
@@ -77,6 +111,20 @@ int main(int argc, char **argv)
 		}
 	}
 
+	NSString *transformName = [opts objectForKey:@"v"];
+	if (nil != transformName)
+	{
+		Class transform = NSClassFromString(transformName);
+		if ([transform conformsToProtocol:@protocol(LKASTVisitor)])
+		{
+			Transforms = A([[transform new] autorelease]);
+		}
+		else
+		{
+			fprintf(stderr, "warning: Invalid transform '%s' specified \n",
+				   	[transformName UTF8String]);
+		}
+	}
 	// Debug mode.
 	if ([[opts objectForKey:@"d"] boolValue])
 	{
