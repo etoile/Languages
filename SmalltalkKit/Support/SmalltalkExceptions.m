@@ -134,21 +134,15 @@ static size_t landingPadForInvoke(struct _Unwind_Context *context)
 	// End of the callsites table.
 	unsigned char *tableStart = tables;
 	unsigned char *actions = tables + read_uleb128(&tables);
-	size_t old_action = 0;
 	while(tables <= actions)
 	{
 		size_t callsite = read_long(&tables);
 		size_t callsiteSize= read_long(&tables);
 		size_t action = read_long(&tables);
-		if (invokesite == callsite)
-		{
-			return old_action;
-		}
-		if (invokesite > callsite && invokesite <= (callsite + callsiteSize))
+		if (invokesite >= callsite && invokesite <= (callsite + callsiteSize))
 		{
 			return action;
 		}
-		old_action = action;
 		read_uleb128(&tables);
 	}
 	return 0;
