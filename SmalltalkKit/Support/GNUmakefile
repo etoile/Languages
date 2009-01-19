@@ -12,8 +12,8 @@ LIBRARY_NAME = SmalltalkSupport
 LIBRARIES_DEPEND_UPON += -lgmp $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
 
 ${LIBRARY_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2
-${LIBRARY_NAME}_OBJCFLAGS += -std=c99 
-${LIBRARY_NAME}_CFLAGS += -std=c99
+${LIBRARY_NAME}_OBJCFLAGS += -std=c99 -fexceptions 
+${LIBRARY_NAME}_CFLAGS += -std=c99 -fexceptions 
 
 #
 # Class files

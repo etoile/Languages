@@ -116,9 +116,28 @@
 	[context retainWithPointer:&(block->context)];
 	return block;
 }
+void __SmalltalkThrowNonLocalReturn(void *context, void *retval);
+- (void) nonLocalReturn:(id) anObject
+{
+	//TODO: We can do this without the loop if we do it in the compiler.  Is
+	//that worth bloating the code and churning the icache?  Probably not -
+	//test it later.
+	BlockContext *aContext = context;
+	while (aContext != nil && nil != aContext->parent)
+	{
+		aContext = aContext->parent;
+	}
+	__SmalltalkThrowNonLocalReturn(aContext, anObject);
+}
 @end
 
+
 @implementation BlockClosure
+- (void) nonLocalReturn:(id) anObject
+{
+	[NSException raise:@"NoSkillException!"
+	            format:@"You fail."];
+}
 - (id) value
 {
 	if (args > 0)

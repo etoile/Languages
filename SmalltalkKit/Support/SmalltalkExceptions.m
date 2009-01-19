@@ -1,4 +1,5 @@
 #import <Foundation/NSObject.h>
+#import <Foundation/NSString.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -38,6 +39,8 @@ struct _Unwind_Exception {
 _Unwind_Reason_Code _Unwind_RaiseException
 	  ( struct _Unwind_Exception *exception_object );
 
+void _Unwind_Resume (struct _Unwind_Exception *exception_object);
+
 struct _Unwind_Context;
 uintptr_t _Unwind_GetIP(struct _Unwind_Context *context);
 uintptr_t _Unwind_GetLanguageSpecificData(struct _Unwind_Context *context);
@@ -49,6 +52,20 @@ static const _Unwind_Action _UA_CLEANUP_PHASE = 2;
 static const _Unwind_Action _UA_HANDLER_FRAME = 4;
 static const _Unwind_Action _UA_FORCE_UNWIND = 8;
 
+
+/**
+ * Thread-local Smalltalk exception object.  Could be allocated with
+ * malloc/free, but not really worth it.
+ */
+__thread struct 
+{
+	/** The unwinding lib's exception object. */
+	struct _Unwind_Exception exception;
+	/** The context object for the method frame for the block. */
+	void *context;
+	/** The value to be returned.  */
+	void *retval;
+} SmalltalkException;
 
 /** 
  * Read an unsigned, little-endian, base-128, DWARF value.  Updates *data to
@@ -67,7 +84,7 @@ static size_t read_uleb128(unsigned char** data)
 		// bit of the digit.
 		assert(bit < sizeof(size_t) * 8);
 		// Get the base 128 digit 
-		unsigned char digit = (**data) & 0x7f;
+		digit = (**data) & 0x7f;
 		// Add it to the current value
 		uleb += digit << bit;
 		// Proceed to the next octet
@@ -82,8 +99,8 @@ static size_t read_uleb128(unsigned char** data)
  */
 static size_t read_long(unsigned char **data)
 {
-	size_t value = *(long*)(*data);
-	*data += sizeof(long);
+	size_t value = *(size_t*)(*data);
+	*data += sizeof(size_t);
 	return value;
 }
 
@@ -94,7 +111,7 @@ static inline void expect(unsigned char **data, unsigned char value)
 {
 	if (**data != value)
 	{
-		fprintf(stderr, "Expected byte %x, got %x", (int)value, (int)**data);
+		fprintf(stderr, "Expected byte %x, got %x\n", (int)value, (int)**data);
 		abort();
 	}
 	(*data)++;
@@ -111,23 +128,30 @@ static size_t landingPadForInvoke(struct _Unwind_Context *context)
 	expect(&tables, 0xff);
 	expect(&tables, 0x00);
 	read_uleb128(&tables);
+
+	if (*tables != 0x03) return -1;
 	expect(&tables, 0x03);
 	// End of the callsites table.
+	unsigned char *tableStart = tables;
 	unsigned char *actions = tables + read_uleb128(&tables);
-	size_t old_action = -1;
+	size_t old_action = 0;
 	while(tables <= actions)
 	{
 		size_t callsite = read_long(&tables);
-		size_t landingpad = read_long(&tables);
+		size_t callsiteSize= read_long(&tables);
 		size_t action = read_long(&tables);
 		if (invokesite == callsite)
 		{
 			return old_action;
 		}
+		if (invokesite > callsite && invokesite <= (callsite + callsiteSize))
+		{
+			return action;
+		}
 		old_action = action;
-		read_uleb128(&tables);;
+		read_uleb128(&tables);
 	}
-	return -1;
+	return 0;
 }
 
 _Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
@@ -140,7 +164,7 @@ _Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
 	if ((actions & _UA_SEARCH_PHASE))
 	{
 		// Try to find a landing pad in this function
-		if (landingPadForInvoke(context) != -1)
+		if (landingPadForInvoke(context) != 0)
 		{
 			return _URC_HANDLER_FOUND;
 		}
@@ -148,7 +172,7 @@ _Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
 	}
 	// Always install the handler - we check if it's a valid Smalltalk
 	// exception elsewhere.
-	if ((actions & _UA_HANDLER_FRAME || actions & _UA_CLEANUP_PHASE))
+	if (actions & _UA_HANDLER_FRAME) 
 	{
 		size_t offset = landingPadForInvoke(context);
 		_Unwind_SetIP(context, _Unwind_GetRegionStart(context) + offset);
@@ -156,20 +180,6 @@ _Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
 	}
 	return _URC_CONTINUE_UNWIND;
 }
-
-/**
- * Thread-local Smalltalk exception object.  Could be allocated with
- * malloc/free, but not really worth it.
- */
-__thread struct 
-{
-	/** The unwinding lib's exception object. */
-	struct _Unwind_Exception exception;
-	/** The context object for the method frame for the block. */
-	void *context;
-	/** The value to be returned.  */
-	void *retval;
-} SmalltalkException;
 
 /**
  * Create an exception object that will be unwound to the frame containing
@@ -188,27 +198,35 @@ void __SmalltalkThrowNonLocalReturn(void *context, void *retval)
 	{
 		retval = [(id)retval retain];
 	}
-	SmalltalkException.context = retval;
-	_Unwind_RaiseException(&SmalltalkException.exception);
-	fprintf(stderr, "Exception unaware code in stack frames between .\n"); 
+	SmalltalkException.retval = retval;
+	_Unwind_Reason_Code fail = 
+		_Unwind_RaiseException(&SmalltalkException.exception);
 }
 
 /**
  * Rest whether a given exception object is a valid non-local return.  Returns
- * 0 if it isn't.  Copies the return value from the Smalltalk exception to the
- * address pointed to by retval.
+ * if it is, otherwise instructs the unwinding runtime to continue propagating
+ * the exception up the stack.  Copies the return value from the Smalltalk
+ * exception to the address pointed to by retval.
  */
 char __SmalltalkTestNonLocalReturn(void *context,
                                    struct _Unwind_Exception *exception,
-                                   void **retval)
+								   void **retval)
 {
-	if (exception->exception_class == *(uint64*)"ETOILEST")
+	// Test if this is a smalltalk exception at all
+	if (exception == &SmalltalkException.exception)
 	{
+		// Test if this frame is the correct one.
 		if (SmalltalkException.context == context)
 		{
 			*retval = SmalltalkException.retval;
 			return 1;
 		}
+		// Rethrow it if it isn't.
+		_Unwind_RaiseException(&SmalltalkException.exception);
 	}
+	// This does not return, it jumps back to the unwind library, which jumps
+	// to the Smalltalk personality function, and proceeds to unwind the stack.
+	_Unwind_Resume(exception);
 	return 0;
 }
