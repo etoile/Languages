@@ -22,7 +22,6 @@ ${BUNDLE_NAME}_OBJC_FILES = \
 
 ${BUNDLE_NAME}_HEADER_FILES = \
 	SmalltalkCompiler.h\
-	SmalltalkKit.h\
 	SmalltalkParser.h
 
 

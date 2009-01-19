@@ -1,5 +1,7 @@
-#import "SmalltalkKit.h"
+#import "SmalltalkCompiler.h"
 #import <Foundation/Foundation.h>
+
+@class SmalltalkParser;
 
 extern int DEBUG_DUMP_MODULES;
 @implementation SmalltalkCompiler
