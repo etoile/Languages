@@ -1,6 +1,17 @@
 #import <Foundation/NSObject.h>
 @class NSBundle;
 @class NSString;
+@class LKAST;
+
+/**
+ * Informal protocol for parsers to conform to.
+ */
+@interface NSObject (LKParser)
+/**
+ * Parse a string and return an AST for the contained program.
+ */
+- (LKAST*) parseString:(NSString*)aProgram;
+@end
 
 /**
  * Abstract class implementing a dynamic language compiler.  Concrete

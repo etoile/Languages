@@ -378,7 +378,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		Value *context = Context;
 		while(0 != scope->getParentScope())
 		{
-			// Get a pointer to the parent in the contect
+			// Get a pointer to the parent in the context
 			context = Builder.CreateStructGEP(context, 1);
 			// Load it.
 			context = Builder.CreateLoad(context);
@@ -747,7 +747,7 @@ Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index, unsigned depth)
 	Value *context = Context;
 	for (unsigned i=0 ; i<depth ; ++i)
 	{
-		// Get a pointer to the parent in the contect
+		// Get a pointer to the parent in the context
 		context = Builder.CreateStructGEP(context, 1);
 		// Load it.
 		context = Builder.CreateLoad(context);
