@@ -10,9 +10,7 @@ ${BUNDLE_NAME}_LDFLAGS += -lUnitKit
 unexport ADDITIONAL_OBJCFLAGS
 
 # Hacks to compile without installing the frameworks first.
-${BUNDLE_NAME}_LDFLAGS += -lSmalltalkKit -L../SmalltalkKit/SmalltalkKit.framework/Versions/Current
 ${BUNDLE_NAME}_LDFLAGS += -lSmalltalkSupport -L../Support/obj
 ${BUNDLE_NAME}_CFLAGS += -g
-${BUNDLE_NAME}_CPPFLAGS += -I..//SmalltalkKit/SmalltalkKit.framework
 
 include $(GNUSTEP_MAKEFILES)/bundle.make

@@ -1,11 +1,9 @@
 #import <EtoileFoundation/EtoileFoundation.h>
-#import "LKCompiler.h"
 #import "LKAST.h"
-
-// Semi-formal protocol for parsers.
-@protocol LKParser
-- (LKAST*) parseString:(NSString*)aProgram;
-@end
+#import "LKCategory.h"
+#import "LKCompiler.h"
+#import "LKMethod.h"
+#import "LKModule.h"
 
 static NSMutableDictionary *compilersByExtension;
 static NSMutableDictionary *compilersByLanguage;
@@ -66,20 +64,30 @@ extern int DEBUG_DUMP_MODULES;
 }
 + (id) alloc
 {
-	[NSException raise:@"InstantiationError"
-				format:@"LKCompiler instances are invalid"];
-	return nil;
+	if (self == [LKCompiler class])
+	{
+		[NSException raise:@"InstantiationError"
+		            format:@"LKCompiler instances are invalid"];
+		return nil;
+	}
+	return [super alloc];
+}
++ (LKCompiler*) compiler
+{
+	return AUTORELEASE([[self alloc] init]);
 }
 + (void) setDebugMode:(BOOL)aFlag
 {
 	DEBUG_DUMP_MODULES = (int) aFlag;
 }
-+ (BOOL) compileString:(NSString*)s withGenerator:(id<LKCodeGenerator>)cg
+
+- (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
 {
-	id p = [[[[self parser] alloc] init] autorelease];
-	LKAST *ast;
+	id p = AUTORELEASE([[[[self class] parser] alloc] init]);
+	LKModule *ast;
 	NS_DURING
-		ast = [p parseString: s];
+		ast = [p parseString: source];
+		[ast check];
 	NS_HANDLER
 		NSDictionary *e = [localException userInfo];
 		if ([[localException name] isEqualToString:@"ParseError"])
@@ -93,19 +101,71 @@ extern int DEBUG_DUMP_MODULES;
 		{
 			NSLog(@"Semantic error: %@", [localException reason]);
 		}
-		NS_VALUERETURN(NO, BOOL);
+		return NO;
 	NS_ENDHANDLER	
+	if (nil == ast)
+	{
+		return NO;
+	}
 	[ast compileWith:cg];
 	return YES;
 }
-+ (BOOL) compileString:(NSString*) source output:(NSString*)bitcode;
+- (BOOL) compileString:(NSString*)source output:(NSString*)bitcode;
 {
 	id<LKCodeGenerator> cg = defaultStaticCompilterWithFile(bitcode);
 	return [self compileString:source withGenerator:cg];
 }
-+ (BOOL) compileString:(NSString*)s
+- (BOOL) compileString:(NSString*)source
 {
-	return [self compileString:s withGenerator:defaultJIT()];
+	return [self compileString:source withGenerator:defaultJIT()];
+}
+
+- (BOOL) compileMethod:(NSString*)source
+               onClass:(NSString*)name
+         withGenerator:(id<LKCodeGenerator>)cg
+{
+	id p = AUTORELEASE([[[[self class] parser] alloc] init]);
+	LKAST *ast;
+	LKModule *module;
+	NS_DURING
+		ast = [p parseMethod: source];
+		ast = [LKCategoryDef categoryWithClass:name
+		                               methods:[NSArray arrayWithObject:ast]];
+		module = [LKModule module];
+		[module addCategory:ast];
+		[module check];
+	NS_HANDLER
+		NSDictionary *e = [localException userInfo];
+		if ([[localException name] isEqualToString:@"ParseError"])
+		{
+			NSLog(@"Parse error on line %@.  Unexpected token at character %@ while parsing:\n%@",
+										   [e objectForKey:@"lineNumber"],
+										   [e objectForKey:@"character"],
+										   [e objectForKey:@"line"]);
+		}
+		else
+		{
+			NSLog(@"Semantic error: %@", [localException reason]);
+		}
+		return NO;
+	NS_ENDHANDLER	
+	if (nil == ast)
+	{
+		return NO;
+	}
+	[module compileWith:cg];
+	return YES;
+}
+- (BOOL) compileMethod:(NSString*)source
+               onClass:(NSString*)name
+                output:(NSString*)bitcode
+{
+	id<LKCodeGenerator> cg = defaultStaticCompilterWithFile(bitcode);
+	return [self compileMethod:source onClass:name withGenerator:cg];
+}
+- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name
+{
+	return [self compileMethod:source onClass:name withGenerator:defaultJIT()];
 }
 
 + (BOOL) loadFramework:(NSString*)framework
@@ -132,25 +192,50 @@ extern int DEBUG_DUMP_MODULES;
 	return NO;
 }
 
-+ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name
++ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)fileName
 {
-	NSString *path = [bundle pathForResource:name ofType:[self fileExtension]];
+	NSString *name = [fileName stringByDeletingPathExtension];
+	NSString *extension = [fileName pathExtension];
+	id compiler = [[compilersByExtension objectForKey: extension] compiler];
+	return [compiler loadScriptInBundle: bundle named: name];
+}
+- (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name
+{
+	NSString *extension = [[self class] fileExtension];
+	NSString *path = [bundle pathForResource:name ofType:extension];
 	if (nil == path)
 	{
-		NSLog(@"Unable to find %@.%@ in bundle %@.", name,
-				[self fileExtension], bundle);
+		NSLog(@"Unable to find %@.%@ in bundle %@.", name, extension, bundle);
 		return NO;
 	}
 	return [self compileString:[NSString stringWithContentsOfFile:path]];
 }
-+ (BOOL) loadApplicationScriptNamed:(NSString*)name
+
++ (BOOL) loadApplicationScriptNamed:(NSString*)fileName
 {
-        return [self loadScriptInBundle: [NSBundle mainBundle] named: name];
+	return [self loadScriptInBundle: [NSBundle mainBundle] named: fileName];
 }
+- (BOOL) loadApplicationScriptNamed:(NSString*)name
+{
+	return [self loadScriptInBundle: [NSBundle mainBundle] named: name];
+}
+
 + (BOOL) loadScriptsInBundle:(NSBundle*) aBundle
 {
+	BOOL success = YES;
+	FOREACH(compilersByLanguage, class, Class)
+	{
+		id compiler = [[class alloc] init];
+		success &= [compiler loadScriptsInBundle: aBundle];
+		RELEASE(compiler);
+	}
+	return success;
+}
+- (BOOL) loadScriptsInBundle:(NSBundle*) aBundle
+{
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	NSArray *scripts = [aBundle pathsForResourcesOfType:[self fileExtension]
+	NSString *extension = [[self class] fileExtension];
+	NSArray *scripts = [aBundle pathsForResourcesOfType:extension
 	                                        inDirectory:nil];
 	BOOL success = YES;
 	FOREACH(scripts, scriptFile, NSString*)
@@ -161,13 +246,16 @@ extern int DEBUG_DUMP_MODULES;
 	[pool release];
 	return success;
 }
+
 + (BOOL) loadAllScriptsForApplication
 {
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	BOOL result = [self loadScriptsInBundle:[NSBundle mainBundle]];
-	[pool release];
-	return result;
+	return [self loadScriptsInBundle:[NSBundle mainBundle]];
 }
+- (BOOL) loadAllScriptsForApplication
+{
+	return [self loadScriptsInBundle:[NSBundle mainBundle]];
+}
+
 + (NSString*) fileExtension
 {
 	[self subclassResponsibility:_cmd];
@@ -192,7 +280,7 @@ extern int DEBUG_DUMP_MODULES;
 }
 + (Class) parser
 {
-	return [self subclassResponsibility:_cmd];
+	[self subclassResponsibility:_cmd];
 	return Nil;
 }
 @end

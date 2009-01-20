@@ -27,7 +27,6 @@ file ::= module(M) script(S).
 {
 	// NSLog(@"%@", S);
 	[M addClass:S];
-	[M check];
 	[p setDelegate:M];
 }
 
@@ -38,7 +37,7 @@ module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
 }
 module(M) ::= .
 {
-	M = [[[LKCompilationUnit alloc] init] autorelease];
+	M = [LKModule module];
 }
 
 pragma_dict(P) ::= pragma_dict(D) COMMA WORD(K) EQ pragma_value(V).

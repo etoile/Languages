@@ -5,25 +5,23 @@ include $(GNUSTEP_MAKEFILES)/common.make
 PROJECT_DIR = $(CURDIR)
 
 VERSION = 0.1
-FRAMEWORK_NAME = EScriptKit
+BUNDLE_NAME = EScript
+BUNDLE_EXTENSION = .language
+BUNDLE_INSTALL_DIR = $(GNUSTEP_BUNDLES)/LanguageKit
 
-${FRAMEWORK_NAME}_OBJC_FILES = \
+${BUNDLE_NAME}_PRINCIPAL_CLASS = EScriptCompiler
+
+${BUNDLE_NAME}_OBJC_FILES = \
 	escript.m\
 	EScriptCompiler.m\
 	EScriptPreamble.m\
 	EScriptParser.m
 
-${FRAMEWORK_NAME}_HEADER_FILES = \
-	EScriptCompiler.h\
-	EScriptKit.h\
-	EScriptParser.h
+${BUNDLE_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
+${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit
+${BUNDLE_NAME}_CFLAGS += -Wno-implicit -g
 
-
-${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit
-${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
-
-include $(GNUSTEP_MAKEFILES)/framework.make
+include $(GNUSTEP_MAKEFILES)/bundle.make
 -include ../../etoile.make
 
 escript.m: escript.y

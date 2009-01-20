@@ -1,16 +1,24 @@
 #import <Foundation/NSObject.h>
 @class NSBundle;
 @class NSString;
-@class LKAST;
+@class LKModule;
+@class LKMethod;
+@protocol LKCodeGenerator;
 
 /**
- * Informal protocol for parsers to conform to.
+ * All languages must use a parser conforming to this protocol.
  */
-@interface NSObject (LKParser)
+@protocol LKParser <NSObject>
 /**
- * Parse a string and return an AST for the contained program.
+ * Returns a module AST constructed by parsing the specified source.
+ * The result is nil if parsing failed.
  */
-- (LKAST*) parseString:(NSString*)aProgram;
+- (LKModule*) parseString:(NSString*)source;
+/**
+ * Returns a method AST constructed by parsing the specified source, or nil if
+ * parsing failed or method parsing is not supported by this language.
+ */
+- (LKMethod*) parseMethod:(NSString*)source;
 @end
 
 /**
@@ -19,44 +27,81 @@
  */
 @interface LKCompiler : NSObject {}
 /**
+ * Returns a new autoreleased compiler for this language.
+ */
++ (LKCompiler*) compiler;
+/**
  * Specifies whether the compiler should run in debug mode.  Enabling this will
  * spam stderr with a huge amount of debugging information.  Note that this is
  * a global setting and will apply to all compilers.
  */
 + (void) setDebugMode:(BOOL)aFlag;
 /**
- * Compile and load the specified string.
- *
- * Must be implemented by subclasses.
+ * Compiles and loads the specified source code.
  */
-+ (BOOL) compileString:(NSString*)s;
+- (BOOL) compileString:(NSString*)source;
 /**
  * Compiles the specified source code to LLVM bitcode.  This can then be
  * optimised with the LLVM opt utility and converted to object code with llc.
  */
-+ (BOOL) compileString:(NSString*) source output:(NSString*)bitcode;
+- (BOOL) compileString:(NSString*)source output:(NSString*)bitcode;
+/**
+ * Compiles the specified source code using the given code generator.
+ */
+- (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg;
+/**
+ * Compiles and loads a method on the class with the specified name.
+ */
+- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name;
+/**
+ * Compiles a method to LLVM bitcode for the class with the specified name.
+ */
+- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name output:(NSString*)bitcode;
+/**
+ * Compiles a method on the class with the specified name using the given code
+ * generator.
+ */
+- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name withGenerator:(id<LKCodeGenerator>)cg;
 /**
  * Load a framework with the specified name.
  */
 + (BOOL) loadFramework:(NSString*)framework;
 /**
- * Compile and load a .st file from the specified bundle.
- * Omit the .st extension in the name paramater.
+ * Compiles and loads a file from the specified bundle.
+ * The file name extension will be used to select a suitable compiler.
  */
-+ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name;
++ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)fileName;
 /**
- * Compile and load a .st file from the application bundle.
- * Omit the .st extension in the name paramater.
+ * Compiles and loads a file from the specified bundle.
+ * Omit the extension in the name paramater.
  */
-+ (BOOL) loadApplicationScriptNamed:(NSString*)name;
+- (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name;
 /**
- * Load all of the Smalltalk scripts in the specified bundle.
+ * Compiles and loads a file from the application bundle.
+ * The file name extension will be used to select a suitable compiler.
+ */
++ (BOOL) loadApplicationScriptNamed:(NSString*)fileName;
+/**
+ * Compiles and loads a file from the application bundle.
+ * Omit the extension in the name paramater.
+ */
+- (BOOL) loadApplicationScriptNamed:(NSString*)name;
+/**
+ * Loads all scripts for all known languages from the specified bundle.
  */
 + (BOOL) loadScriptsInBundle:(NSBundle*) aBundle;
 /**
- * Load all of the Smalltalk scripts in the application bundle.
+ * Loads all scripts written in this language from the specified bundle.
+ */
+- (BOOL) loadScriptsInBundle:(NSBundle*) aBundle;
+/**
+ * Loads all scripts for all known languages from the application bundle.
  */
 + (BOOL) loadAllScriptsForApplication;
+/**
+ * Loads all scripts written in this language from the application bundle.
+ */
+- (BOOL) loadAllScriptsForApplication;
 /**
  * Returns the extension used for scripts in this language.
  *

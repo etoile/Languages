@@ -19,7 +19,7 @@ typedef int bool;
 			path = [[[NSBundle bundleForClass:self] 
 				pathForResource:@"MsgSendSmallInt" ofType:@"bc"] UTF8String];
 		}
-		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc.  This must be in either the current working directory or in the Resources directory of the SmalltalkKit framework installed on your system.");
+		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc.  This must be in either the current working directory or in the Resources directory of the Smalltalk language bundle installed on your system.");
 		LLVMinitialise(path);
 	}
 }

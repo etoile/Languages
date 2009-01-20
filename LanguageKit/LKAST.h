@@ -2,7 +2,7 @@
 #import "LKCodeGen.h"
 
 
-@class LKCompilationUnit;
+@class LKModule;
 /**
  * Root class for AST nodes.  Every node in the Smalltalk abstract syntax tree
  * inherits from this.  It stores the parent, allowing navigation up the tree,
@@ -25,7 +25,7 @@
 /**
  * Returns the module containing the current AST.
  */
-- (LKCompilationUnit*) module;
+- (LKModule*) module;
 /**
  * Initialise a new AST node with the specified symbol table.
  */

@@ -20,11 +20,6 @@ ${BUNDLE_NAME}_OBJC_FILES = \
 	SmalltalkCompiler.m\
 	SmalltalkParser.m
 
-${BUNDLE_NAME}_HEADER_FILES = \
-	SmalltalkCompiler.h\
-	SmalltalkParser.h
-
-
 ${BUNDLE_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit \
 	-lSmalltalkSupport

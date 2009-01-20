@@ -1,7 +1,5 @@
 #import <LanguageKit/LKAST.h>
 
-@interface EScriptPreamble : LKAST
-{
-}
+@interface EScriptPreamble : LKAST {}
 + (id) preamble;
 @end

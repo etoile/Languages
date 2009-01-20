@@ -18,29 +18,49 @@ file ::= module(M).
 {
 	[p setDelegate:M];
 }
+file ::= method(M).
+{
+	[p setDelegate:M];
+}
+file ::= .
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
 {
-	[O addPragmas: P];
+	[O addPragmas:P];
 	M = O;
+}
+module(M) ::= LT LT pragma_dict(P) GT GT.
+{
+	M = [LKModule module];
+	[M addPragmas:P];
 }
 module(M) ::= module(O) subclass(S).
 {
 	[O addClass:S];
 	M = O;
 }
+module(M) ::= subclass(S).
+{
+	M = [LKModule module];
+	[M addClass:S];
+}
 module(M) ::= module(O) category(C).
 {
 	[O addCategory:C];
 	M = O;
 }
+module(M) ::= category(C).
+{
+	M = [LKModule module];
+	[M addCategory:C];
+}
 module(M) ::= module(O) comment.
 {
 	M = O;
 }
-module(M) ::= .
+module(M) ::= comment.
 {
-	M = [[[LKCompilationUnit alloc] init] autorelease];
+	M = [LKModule module];
 }
 
 pragma_dict(P) ::= pragma_dict(D) COMMA WORD(K) EQ pragma_value(V).

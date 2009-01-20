@@ -3,10 +3,10 @@
 static NSMutableDictionary *SelectorConflicts = nil;
 
 
-@implementation LKCompilationUnit 
+@implementation LKModule 
 + (void) initialize
 {
-	if (self != [LKCompilationUnit class])
+	if (self != [LKModule class])
 	{
 		return;
 	}
@@ -47,6 +47,10 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	// loaded from a plist.
 	[SelectorConflicts setObject:@"I8@0:4" forKey:@"count"];
 	[types release];
+}
++ (id) module
+{
+	return AUTORELEASE([[self alloc] init]);
 }
 - (id) init
 {

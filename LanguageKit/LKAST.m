@@ -20,16 +20,16 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 + (void) initialize
 {
 	DeclRefClass = [LKDeclRef class];
-	ModuleClass = [LKCompilationUnit class];
+	ModuleClass = [LKModule class];
 }
 
-- (LKCompilationUnit*) module
+- (LKModule*) module
 {
 	while (nil != self && ModuleClass != isa)
 	{
 		self = parent;
 	}
-	return (LKCompilationUnit*)self;
+	return (LKModule*)self;
 }
 
 

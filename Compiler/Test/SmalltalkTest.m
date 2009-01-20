@@ -1,6 +1,6 @@
 #import <EtoileFoundation/EtoileFoundation.h>
+#import <LanguageKit/LKCompiler.h>
 #import <AppKit/AppKit.h>
-#import <SmalltalkKit/SmalltalkKit.h>
 #import <UnitKit/UnitKit.h>
 
 @interface UKWrapper : NSObject
@@ -32,8 +32,8 @@
 
 - (void) testStringReturn
 {
-	UKTrue([SmalltalkCompiler loadScriptInBundle: [NSBundle bundleForClass: [self class]] 
-	                                       named: @"TestStringReturn"]);
+	UKTrue([LKCompiler loadScriptInBundle: [NSBundle bundleForClass: [self class]] 
+	                                named: @"TestStringReturn.st"]);
 	UKStringsEqual([[NSClassFromString(@"TestStringReturn") new] test], @"hello");
 }
 

@@ -4,7 +4,8 @@
  * AST node representing a module - a set of classes and categories compiled
  * together.
  */
-@interface LKCompilationUnit : LKAST {
+@interface LKModule : LKAST
+{
   /** Classes defined in this module. */
   NSMutableArray * classes;
   /** Categories defined in this module. */
@@ -14,6 +15,10 @@
   /** Manually-specified method types. */
   NSMutableDictionary *typeOverrides;
 }
+/**
+ * Return a new autoreleased module.
+ */
++ (id) module;
 /**
  * Add compile-time pragmas.
  */

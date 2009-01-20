@@ -1,9 +1,12 @@
-#import "SmalltalkParser.h"
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LKToken.h>
 #import <LanguageKit/LKAST.h>
+#import "SmalltalkParser.h"
 #include <ctype.h>
 #include "smalltalk.h"
+
+@class LKMethod;
+@class LKModule;
 
 typedef unichar(*CIMP)(id, SEL, unsigned);
 
@@ -12,7 +15,6 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 void *SmalltalkParseAlloc(void *(*mallocProc)(size_t));
 void SmalltalkParse(void *yyp, int yymajor, id yyminor, SmalltalkParser* p);
 void SmalltalkParseFree(void *p, void (*freeProc)(void*));
-
 
 #define CALL_PARSER(token, arg) SmalltalkParse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
@@ -28,7 +30,7 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 //#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
 #define CHARCASE(letter, token) case letter: CALL_PARSER(token, @"char"); break;
 
-- (LKAST*) parseString:(NSString*)s
+- (LKAST*) parse:(NSString*)s
 {
 	unsigned sLength = [s length];
 	/* Cache some IMPs of methods we call a lot */
@@ -40,6 +42,8 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 	Class LKTokenClass = [LKToken class];
 	/* Set up the parser */
 	void * parser = SmalltalkParseAlloc( malloc );
+
+	// SmalltalkParseTrace(stderr, "LEMON: ");
 
 	// Volatile to ensure that they are preserved over longjmp calls.  This is
 	// going to make things a bit slower, so a better solution might be to move
@@ -169,8 +173,27 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 	NS_ENDHANDLER
 	SmalltalkParse(parser, 0, nil, self);
 	SmalltalkParseFree(parser, free);
-	[delegate check];
 	return delegate;
+}
+
+- (LKModule*) parseString:(NSString*)source
+{
+	LKAST *ast = [self parse: source];
+	if ([ast isKindOfClass:[LKModule class]])
+	{
+		return (LKModule*)ast;
+	}
+	return nil;
+}
+
+- (LKMethod*) parseMethod:(NSString*)source
+{
+	LKAST *ast = [self parse: source];
+	if ([ast isKindOfClass:[LKMethod class]])
+	{
+		return (LKMethod*)ast;
+	}
+	return nil;
 }
 
 - (void) setDelegate:(LKAST*)ast

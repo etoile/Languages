@@ -1,14 +1,9 @@
-#import "SmalltalkCompiler.h"
 #import <Foundation/Foundation.h>
+#import "SmalltalkCompiler.h"
 
 @class SmalltalkParser;
 
-extern int DEBUG_DUMP_MODULES;
 @implementation SmalltalkCompiler
-+ (id) alloc
-{
-	return [super alloc];
-}
 + (NSString*) languageName
 {
 	return @"Smalltalk";

@@ -5,8 +5,10 @@
 #include <ctype.h>
 #include "escript.h"
 
-typedef unichar(*CIMP)(id, SEL, unsigned);
+@class LKMethod;
+@class LKModule;
 
+typedef unichar(*CIMP)(id, SEL, unsigned);
 
 NSMapTable *keywords;
 
@@ -15,7 +17,6 @@ NSMapTable *keywords;
 void *EScriptParseAlloc(void *(*mallocProc)(size_t));
 void EScriptParse(void *yyp, int yymajor, id yyminor, EScriptParser* p);
 void EScriptParseFree(void *p, void (*freeProc)(void*));
-
 
 #define CALL_PARSER(token, arg) EScriptParse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
@@ -50,7 +51,7 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	SET_KEYWORD(null, NULL);
 }
 
-- (AST*) parseString:(NSString*)s
+- (LKAST*) parse:(NSString*)s
 {
 	unsigned sLength = [s length];
 	/* Cache some IMPs of methods we call a lot */
@@ -178,7 +179,22 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	return delegate;
 }
 
-- (void) setDelegate:(AST*)ast
+- (LKModule*) parseString:(NSString*)source
+{
+	LKAST *ast = [self parse: source];
+	if ([ast isKindOfClass:[LKModule class]])
+	{
+		return ast;
+	}
+	return nil;
+}
+
+- (LKMethod*) parseMethod:(NSString*)source
+{
+	return nil;
+}
+
+- (void) setDelegate:(LKAST*)ast
 {
 	ASSIGN(delegate, ast);
 }

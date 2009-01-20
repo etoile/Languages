@@ -1,12 +1,9 @@
-#import "EScriptKit.h"
 #import <Foundation/Foundation.h>
+#import "EScriptCompiler.h"
 
-extern int DEBUG_DUMP_MODULES;
+@class EScriptParser;
+
 @implementation EScriptCompiler
-+ (id) alloc
-{
-	return [super alloc];
-}
 + (NSString*) languageName
 {
 	return @"EScript";

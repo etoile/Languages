@@ -60,6 +60,7 @@ static BOOL jitScript(NSString *script, NSString *extension)
 {
 	NS_DURING
 		LKAST *ast = parseScript(script, extension);
+		[ast check];
 		applyTransforms(ast);
 		[ast compileWith:defaultJIT()];
 	NS_HANDLER
@@ -73,6 +74,7 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 {
 	NS_DURING
 		LKAST *ast = parseScript(script, extension);
+		[ast check];
 		applyTransforms(ast);
 		[ast compileWith:defaultStaticCompilterWithFile(outFile)];
 	NS_HANDLER
