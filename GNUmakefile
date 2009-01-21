@@ -22,7 +22,7 @@ endif
 
 ifeq ($(smalltalk), yes)
 	SUBPROJECTS += LanguageKit 
-	SUBPROJECTS += SmalltalkKit
+	SUBPROJECTS += Smalltalk
 	SUBPROJECTS += Compiler
 	SUBPROJECTS += LKPlugins
 endif
