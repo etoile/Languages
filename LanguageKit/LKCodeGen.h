@@ -6,7 +6,7 @@
  * generator-specific type, which can then be passed in to the generator later
  * when it expects a value.
  */
-@protocol LKCodeGenerator
+@protocol LKCodeGenerator <NSObject>
 /**
  * Begin generating a module.  A module is a set of classes and categories
  * which are compiled and optimised at once.
@@ -210,12 +210,41 @@ lexicalScopeAtDepth:(unsigned) scope;
  */
 - (void) goTo:(void*)aBasicBlock;
 @end
+/** 
+ * Class used to instantiate the default code generators.  Lazily loads the code
+ * generator components the first time it receives a message.
+ */
+@interface LKCodeGenLoader : NSObject {}
 /**
  * Returns the default code generator for JIT compilation.
+ */
++ (id<LKCodeGenerator>) defaultJIT;
+/**
+ * Returns the default code generator for static compilation, outputting to the
+ * file specified in the argument.
+ */
++ (id<LKCodeGenerator>) defaultStaticCompilerWithFile:(NSString*)outFile;
+@end
+/**
+ * Protocol for static code generators.
+ */
+@protocol LKStaticCodeGenerator <LKCodeGenerator>
+/**
+ * Initializes the code generator with the specified file.
+ */
+- (id<LKStaticCodeGenerator>) initWithFile:(NSString*)outFile;
+@end
+/**
+ * Returns the default code generator for JIT compilation.
+ *
+ * Deprecated.  Use [LKCodeGenLoader defaultJIT] in new code.
  */
 id <LKCodeGenerator> defaultJIT(void);
 /**
  * Returns the default code generator for static compilation, outputting to the
  * file specified in the argument.
+ *
+ * Deprecated.  Use [LKCodeGenLoader defaultStaticCompilerWithFile:] in new
+ * code.
  */
 id <LKCodeGenerator> defaultStaticCompilterWithFile(NSString*);

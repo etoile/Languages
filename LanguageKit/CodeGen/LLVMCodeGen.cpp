@@ -24,10 +24,6 @@
 // C++ Implementation
 using namespace llvm;
 using std::string;
-extern "C"
-{
-	int DEBUG_DUMP_MODULES = 0;
-}
 
 void SkipTypeQualifiers(const char **typestr)
 {

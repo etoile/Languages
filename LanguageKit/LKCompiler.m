@@ -8,7 +8,7 @@
 static NSMutableDictionary *compilersByExtension;
 static NSMutableDictionary *compilersByLanguage;
 
-extern int DEBUG_DUMP_MODULES;
+int DEBUG_DUMP_MODULES = 0;
 @implementation LKCompiler
 + (void) loadBundles
 {
