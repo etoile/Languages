@@ -7,18 +7,18 @@ PROJECT_DIR = $(CURDIR)
 # of the project directory (Support)
 PROJECT_NAME = SmalltalkSupport
 
-LIBRARY_NAME = SmalltalkSupport
+FRAMEWORK_NAME = SmalltalkSupport
 
 LIBRARIES_DEPEND_UPON += -lgmp $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
 
-${LIBRARY_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2
-${LIBRARY_NAME}_OBJCFLAGS += -std=c99 -fexceptions 
-${LIBRARY_NAME}_CFLAGS += -std=c99 -fexceptions 
+${FRAMEWORK_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2
+${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions 
+${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions 
 
 #
 # Class files
 #
-${LIBRARY_NAME}_OBJC_FILES = \
+${FRAMEWORK_NAME}_OBJC_FILES = \
 	BigInt.m\
 	BlockClosure.m\
 	NSArray+map.m\
@@ -29,6 +29,6 @@ ${LIBRARY_NAME}_OBJC_FILES = \
 	Symbol.m
 
 -include GNUmakefile.preamble
-include $(GNUSTEP_MAKEFILES)/library.make
+include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
 -include GNUmakefile.postamble
