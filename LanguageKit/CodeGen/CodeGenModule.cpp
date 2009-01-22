@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <iostream>
 #include <fstream>
+#include <dlfcn.h>
 
 namespace llvm 
 {
@@ -354,6 +355,10 @@ Value *CodeGenModule::LoadClassVar(const char *cVarName)
 
 static ExecutionEngine *EE = NULL;
 
+static void *findSymbol(const std::string &str)
+{
+	return dlsym(RTLD_DEFAULT, str.c_str());
+}
 
 void CodeGenModule::compile(void)
 {
@@ -386,6 +391,7 @@ void CodeGenModule::compile(void)
 	{
 		ExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
+		EE->InstallLazyFunctionCreator(findSymbol);
 	}
 	else
 	{
