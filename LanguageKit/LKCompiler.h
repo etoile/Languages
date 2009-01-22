@@ -103,6 +103,18 @@
  */
 - (BOOL) loadAllScriptsForApplication;
 /**
+ * Loads a bundle containing an LKInfo.plist file.  This should contain a
+ * Source key giving an array of source files in the order in which they should
+ * be compiled, a Frameworks key giving an array of frameworks and a
+ * PrincipalClass key for the class that should be instantiated when it is
+ * loaded.
+ */
++ (BOOL) loadLanguageKitBundle:(NSBundle*)bundle;
+/**
+ * Loads all of the LanguageKit plugins for the current application.
+ */
++ (BOOL) loadPluginsForApplication;
+/**
  * Returns the extension used for scripts in this language.
  *
  * Implemented by subclasses.

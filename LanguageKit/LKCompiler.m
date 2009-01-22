@@ -192,6 +192,60 @@ int DEBUG_DUMP_MODULES = 0;
 	return NO;
 }
 
++ (BOOL) loadLanguageKitBundle:(NSBundle*)bundle
+{
+	//TODO: Static compile and cache the result in a .so, and load this on
+	// subsequent runs
+	NSString *path = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
+	NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile:path];
+	NSArray *frameworks = [plist objectForKey:@"Frameworks"];
+	BOOL success = YES;
+	FOREACH(frameworks, framework, NSString*)
+	{
+		success &= [self loadFramework:framework];
+	}
+	// TODO: Specify a set of AST transforms to apply.
+	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
+	FOREACH(sourceFiles, source, NSString*)
+	{
+		success &= [self loadScriptInBundle:bundle named:source];
+	}
+	NSString *className = [plist objectForKey:@"PrincipalClass"];
+	if (nil != className)
+	{
+		[[[NSClassFromString(className) alloc] init] release];
+	}
+	return success;
+}
++ (BOOL) loadPluginsForApplication
+{
+	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+		NSUserDomainMask, YES);
+	NSString *processName = [[NSProcessInfo processInfo] processName];
+	NSFileManager *fm = [NSFileManager defaultManager];
+	BOOL success = YES;
+	FOREACH(dirs, dir, NSString*)
+	{
+		NSString *pluginDir = 
+			[[dir stringByAppendingPathComponent:@"LKPlugins"]
+				stringByAppendingPathComponent:processName];
+		NSArray *plugins = [fm directoryContentsAtPath:pluginDir];
+		BOOL isDir = NO;
+		FOREACH(plugins, plugin, NSString*)
+		{
+			plugin = [pluginDir stringByAppendingPathComponent:plugin];
+			if ([fm fileExistsAtPath:plugin isDirectory:&isDir] && isDir &&
+			    [@"lkplugin" isEqualToString:[plugin pathExtension]])
+			{
+NSLog(@"Trying to load plugin: %@", plugin);
+				success &= [self loadLanguageKitBundle:
+							  [NSBundle bundleWithPath:plugin]];
+			}
+		}
+	}
+	return success;
+}
+
 + (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)fileName
 {
 	NSString *name = [fileName stringByDeletingPathExtension];
