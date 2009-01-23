@@ -91,8 +91,22 @@ int main(int argc, char **argv)
 
 	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
-	NSCAssert(nil == bundle, 
-			@"Smalltalk bundles are not yet supported.  Sorry.");
+	if (nil != bundle)
+	{
+		if (![bundle isAbsolutePath])
+		{
+			bundle = [[[NSFileManager defaultManager] currentDirectoryPath]
+			   	stringByAppendingPathComponent:bundle];
+		}
+		Class principalClass = 
+			[LKCompiler loadLanguageKitBundle:[NSBundle bundleWithPath:bundle]];
+		if (principalClass == (Class)-1)
+		{
+			return 1;
+		}
+		[[[principalClass alloc] init] run];
+		return 0;
+	}
 	// Load specified framework
 	NSString *framework = [opts objectForKey:@"l"];
 	if (nil != framework)
