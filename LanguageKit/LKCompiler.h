@@ -108,8 +108,11 @@
  * be compiled, a Frameworks key giving an array of frameworks and a
  * PrincipalClass key for the class that should be instantiated when it is
  * loaded.
+ *
+ * Returns (Class)-1 in case of error, or the principal class if loading
+ * succeeds (Nil if no principal class is specified).
  */
-+ (BOOL) loadLanguageKitBundle:(NSBundle*)bundle;
++ (Class) loadLanguageKitBundle:(NSBundle*)bundle;
 /**
  * Loads all of the LanguageKit plugins for the current application.
  */

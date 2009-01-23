@@ -184,7 +184,6 @@ int DEBUG_DUMP_MODULES = 0;
 			NSBundle *bundle = [NSBundle bundleWithPath:f];
 			if ([bundle load]) 
 			{
-				NSLog(@"Loaded bundle %@", f);
 				return YES;
 			}
 		}
@@ -192,7 +191,7 @@ int DEBUG_DUMP_MODULES = 0;
 	return NO;
 }
 
-+ (BOOL) loadLanguageKitBundle:(NSBundle*)bundle
++ (Class) loadLanguageKitBundle:(NSBundle*)bundle
 {
 	//TODO: Static compile and cache the result in a .so, and load this on
 	// subsequent runs
@@ -210,12 +209,16 @@ int DEBUG_DUMP_MODULES = 0;
 	{
 		success &= [self loadScriptInBundle:bundle named:source];
 	}
+	if (!success)
+	{
+		return (Class)-1;
+	}
 	NSString *className = [plist objectForKey:@"PrincipalClass"];
 	if (nil != className)
 	{
-		[[[NSClassFromString(className) alloc] init] release];
+		return NSClassFromString(className);
 	}
-	return success;
+	return Nil;
 }
 + (BOOL) loadPluginsForApplication
 {
@@ -237,9 +240,16 @@ int DEBUG_DUMP_MODULES = 0;
 			if ([fm fileExistsAtPath:plugin isDirectory:&isDir] && isDir &&
 			    [@"lkplugin" isEqualToString:[plugin pathExtension]])
 			{
-NSLog(@"Trying to load plugin: %@", plugin);
-				success &= [self loadLanguageKitBundle:
-							  [NSBundle bundleWithPath:plugin]];
+				Class newclass = [self loadLanguageKitBundle:
+					[NSBundle bundleWithPath:plugin]];
+				if (newclass == (Class)-1)
+				{
+					success = NO;
+				}
+				else
+				{
+					[[[newclass alloc] init] release];
+				}
 			}
 		}
 	}
