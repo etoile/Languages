@@ -16,6 +16,20 @@
 	printf("\n");
 }
 @end
+static NSBundle *mainBundle = nil;
+@interface NSBundleHack : NSBundle {}
++ (void) enableHack;
+@end
+@implementation NSBundleHack
++ (void) enableHack
+{
+	[self poseAsClass:[NSBundle class]];
+}
++ (NSBundle*) mainBundle
+{
+	return mainBundle;
+}
+@end
 
 static NSString* stripScriptPreamble(NSString *script)
 {
@@ -98,8 +112,10 @@ int main(int argc, char **argv)
 			bundle = [[[NSFileManager defaultManager] currentDirectoryPath]
 			   	stringByAppendingPathComponent:bundle];
 		}
+		mainBundle = [NSBundle bundleWithPath:bundle];
+		[NSBundleHack enableHack];
 		Class principalClass = 
-			[LKCompiler loadLanguageKitBundle:[NSBundle bundleWithPath:bundle]];
+			[LKCompiler loadLanguageKitBundle:mainBundle];
 		if (principalClass == (Class)-1)
 		{
 			return 1;
