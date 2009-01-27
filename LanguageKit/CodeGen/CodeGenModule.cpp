@@ -298,8 +298,6 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 	   	InitialiseBuilder.CreateStore(S, GS);
 		// Load the global.
 		return Builder.CreateLoad(GS);
-		//FIXME: Promote to BigInt
-		assert(false && "BigInt constants not yet implemented.");
 	}
 	ptrVal |= 1;
 	Constant *Val = ConstantInt::get(IntPtrTy, ptrVal);
