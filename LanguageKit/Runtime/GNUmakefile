@@ -5,11 +5,11 @@ include $(GNUSTEP_MAKEFILES)/common.make
 PROJECT_DIR = $(CURDIR)
 # We redefine the project name since the target name doesn't match the name
 # of the project directory (Support)
-PROJECT_NAME = SmalltalkSupport
+#PROJECT_NAME = LanguageKitRuntime
 
-FRAMEWORK_NAME = SmalltalkSupport
+FRAMEWORK_NAME = LanguageKitRuntime
 
-LIBRARIES_DEPEND_UPON += -lgmp -lLanguageKitRuntime $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
+LIBRARIES_DEPEND_UPON += -lgmp $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
 
 ${FRAMEWORK_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2
 ${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions 
@@ -19,11 +19,10 @@ ${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions
 # Class files
 #
 ${FRAMEWORK_NAME}_OBJC_FILES = \
+	BigInt.m\
 	BlockClosure.m\
-	NSArray+map.m\
-	NSObject+log.m\
-	NSString+casting.m\
 	NSValue+structs.m\
+	LanguageKitExceptions.m\
 	Symbol.m
 
 -include GNUmakefile.preamble

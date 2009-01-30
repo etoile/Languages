@@ -1,17 +1,29 @@
 #import "LKCategory.h"
 
 @implementation LKCategoryDef
-+ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList
-{
-	return [[[self alloc] initWithClass: aName
-	                            methods: aMethodList] autorelease];
-}
-- (id) initWithClass:(NSString*)aName methods:(NSArray*)aMethodList
+- (id) initWithName:(NSString*)aName
+              class:(NSString*)aClass
+            methods:(NSArray*)aMethodList
 {
 	SELFINIT;
-	ASSIGN(classname, aName);
+	ASSIGN(classname, aClass);
+	ASSIGN(categoryName, aName);
 	ASSIGN(methods, aMethodList);
 	return self;
+}
++ (id) categoryWithName:(NSString*)aName 
+                  class:(NSString*)aClass 
+                methods:(NSArray*)aMethodList
+{
+	return [[[self alloc] initWithName:aName
+	                             class:aClass
+	                           methods:aMethodList] autorelease];
+}
++ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList
+{
+	return [self categoryWithName:@"AnonymousCategory"
+	                        class:aName
+	                      methods:aMethodList];
 }
 - (void) check
 {
@@ -24,7 +36,7 @@
 	else
 	{
 		ASSIGN(symbols,
-			   	[LKObjectSymbolTable symbolTableForNewClassNamed:classname]);
+			   [LKObjectSymbolTable symbolTableForNewClassNamed:classname]);
 	}
 	FOREACH(methods, method, LKAST*)
 	{
@@ -35,7 +47,7 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString stringWithFormat:@"%@ extend [ \n",
-   		classname];
+		classname];
 	FOREACH(methods, method, LKAST*)
 	{
 		[str appendString:[method description]];
@@ -46,7 +58,7 @@
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator createCategoryOn:classname
-                         named:@"SmalltalkCategory"];
+	                       named:categoryName];
 	FOREACH(methods, method, LKAST*)
 	{
 		[method compileWith:aGenerator];

@@ -197,7 +197,7 @@ void BranchOnCondition(ModuleBuilder B, LLVMValue condition, void *TrueBB,
 extern int DEBUG_DUMP_MODULES;
 #ifdef __OBJC__
 #import <Foundation/NSObject.h>
-#import <LKCodeGen.h>
+#import <LanguageKit/LKCodeGen.h>
 /**
  * Concrete implementation of the CodeGenerator protocol using LLVM.
  */

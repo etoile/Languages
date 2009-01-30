@@ -1,6 +1,6 @@
 typedef int bool;
 #import "LLVMCodeGen.h"
-#import "LKSymbolTable.h"
+#import "../LKSymbolTable.h"
 #include <objc/objc-api.h>
 
 @implementation LLVMCodeGen 

@@ -493,7 +493,8 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	ehSelectorTypes.push_back(Int8PtrTy);
 	Value *ehPersonality =
 		ExceptionBuilder.CreateBitCast(TheModule->getOrInsertFunction(
-			"__SmalltalkEHPersonalityRoutine", Type::VoidTy, NULL), Int8PtrTy);
+			"__LanguageKitEHPersonalityRoutine", Type::VoidTy, NULL),
+			Int8PtrTy);
 	FunctionType *ehSelectorFunctionTy = 
 		FunctionType::get(Type::Int32Ty, ehSelectorTypes, true);
 	ExceptionBuilder.CreateCall3(
@@ -528,7 +529,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	}
 
 	Function *EHFunction = cast<Function>(
-		TheModule->getOrInsertFunction("__SmalltalkTestNonLocalReturn",
+		TheModule->getOrInsertFunction("__LanguageKitTestNonLocalReturn",
 			Type::Int8Ty, PtrTy, PtrTy, PtrTy, NULL));
 	// Note: This is not an invoke - if this throws we want it to unwind up the
 	// stack past the current frame.  If it didn't, we'd get an infinite loop,

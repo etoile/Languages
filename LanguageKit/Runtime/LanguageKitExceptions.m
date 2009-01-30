@@ -54,7 +54,7 @@ static const _Unwind_Action _UA_FORCE_UNWIND = 8;
 
 
 /**
- * Thread-local Smalltalk exception object.  Could be allocated with
+ * Thread-local LanguageKit exception object.  Could be allocated with
  * malloc/free, but not really worth it.
  */
 __thread struct 
@@ -65,7 +65,7 @@ __thread struct
 	void *context;
 	/** The value to be returned.  */
 	void *retval;
-} SmalltalkException;
+} LanguageKitException;
 
 /** 
  * Read an unsigned, little-endian, base-128, DWARF value.  Updates *data to
@@ -148,7 +148,7 @@ static size_t landingPadForInvoke(struct _Unwind_Context *context)
 	return 0;
 }
 
-_Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
+_Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
 			int version,
 			_Unwind_Action actions,
 			uint64 exceptionClass,
@@ -164,7 +164,7 @@ _Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
 		}
 		return _URC_CONTINUE_UNWIND;
 	}
-	// Always install the handler - we check if it's a valid Smalltalk
+	// Always install the handler - we check if it's a valid LanguageKit
 	// exception elsewhere.
 	if (actions & _UA_HANDLER_FRAME) 
 	{
@@ -179,10 +179,10 @@ _Unwind_Reason_Code __SmalltalkEHPersonalityRoutine(
  * Create an exception object that will be unwound to the frame containing
  * context, return retval.
  */
-void __SmalltalkThrowNonLocalReturn(void *context, void *retval)
+void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
 {
-	SmalltalkException.exception.exception_class = *(uint64*)"ETOILEST";
-	SmalltalkException.context = context;
+	LanguageKitException.exception.exception_class = *(uint64*)"ETOILEST";
+	LanguageKitException.context = context;
 	// TODO: We could probably have the return value space allocated in the
 	// top-level method frame, and then it could be written there directly from
 	// the block.
@@ -192,35 +192,35 @@ void __SmalltalkThrowNonLocalReturn(void *context, void *retval)
 	{
 		retval = [(id)retval retain];
 	}
-	SmalltalkException.retval = retval;
+	LanguageKitException.retval = retval;
 	_Unwind_Reason_Code fail = 
-		_Unwind_RaiseException(&SmalltalkException.exception);
+		_Unwind_RaiseException(&LanguageKitException.exception);
 }
 
 /**
  * Rest whether a given exception object is a valid non-local return.  Returns
  * if it is, otherwise instructs the unwinding runtime to continue propagating
- * the exception up the stack.  Copies the return value from the Smalltalk
+ * the exception up the stack.  Copies the return value from the LanguageKit
  * exception to the address pointed to by retval.
  */
-char __SmalltalkTestNonLocalReturn(void *context,
+char __LanguageKitTestNonLocalReturn(void *context,
                                    struct _Unwind_Exception *exception,
 								   void **retval)
 {
 	// Test if this is a smalltalk exception at all
-	if (exception == &SmalltalkException.exception)
+	if (exception == &LanguageKitException.exception)
 	{
 		// Test if this frame is the correct one.
-		if (SmalltalkException.context == context)
+		if (LanguageKitException.context == context)
 		{
-			*retval = SmalltalkException.retval;
+			*retval = LanguageKitException.retval;
 			return 1;
 		}
 		// Rethrow it if it isn't.
-		_Unwind_RaiseException(&SmalltalkException.exception);
+		_Unwind_RaiseException(&LanguageKitException.exception);
 	}
 	// This does not return, it jumps back to the unwind library, which jumps
-	// to the Smalltalk personality function, and proceeds to unwind the stack.
+	// to the LanguageKit personality function, and proceeds to unwind the stack.
 	_Unwind_Resume(exception);
 	return 0;
 }

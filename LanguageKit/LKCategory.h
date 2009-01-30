@@ -6,6 +6,8 @@
 @interface LKCategoryDef : LKAST {
   /** Name of this class. */
   NSString * classname;
+  /** Name of the category. */
+  NSString *categoryName;
   /** Array of methods defined in this category. */
   NSMutableArray * methods;
 }
@@ -13,10 +15,11 @@
  * Return a new Category with the specified name, class and list of
  * methods.
  */
-+ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList;
++ (id) categoryWithName:(NSString*)aName 
+                  class:(NSString*)aClass 
+                methods:(NSArray*)aMethodList;
 /**
- * Initialise a new Category with the specified name, class and list of
- * methods.
+ * Returns a new anonymous category.
  */
-- (id) initWithClass:(NSString*)aName methods:(NSArray*)aMethodList;
++ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList;
 @end

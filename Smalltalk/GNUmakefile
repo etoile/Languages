@@ -35,3 +35,6 @@ smalltalk.m: smalltalk.y
 
 clean::
 	@rm -f smalltalk.h smalltalk.m smalltalk.out
+
+test:
+	@cd Tests && sh runall.sh -q
