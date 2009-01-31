@@ -11,7 +11,7 @@ FRAMEWORK_NAME = SmalltalkSupport
 
 LIBRARIES_DEPEND_UPON += -lgmp -lLanguageKitRuntime $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
 
-${FRAMEWORK_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2
+${FRAMEWORK_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=2 -I../../LanguageKit/Runtime
 ${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions 
 ${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions 
 
