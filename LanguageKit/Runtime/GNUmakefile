@@ -25,6 +25,10 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LanguageKitExceptions.m\
 	Symbol.m
 
+${FRAMEWORK_NAME}_HEADER_FILES = \
+	BigInt.h\
+	BlockClosure.h
+
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
