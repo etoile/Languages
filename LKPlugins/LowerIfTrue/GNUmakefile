@@ -5,17 +5,17 @@ include $(GNUSTEP_MAKEFILES)/common.make
 PROJECT_DIR = $(CURDIR)
 
 VERSION = 1.0
-BUNDLE_NAME = CommentToLog
+BUNDLE_NAME = LowerIfTrue
 BUNDLE_EXTENSION = .ast
 BUNDLE_INSTALL_DIR = $(GNUSTEP_BUNDLES)/LanguageKit
 
-${BUNDLE_NAME}_PRINCIPAL_CLASS = LKCommentToLogTransform
+${BUNDLE_NAME}_PRINCIPAL_CLASS = LKLowerIfTrueTransform
 
 ${BUNDLE_NAME}_OBJC_FILES = \
 	transform.m
 
 ${BUNDLE_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit
+${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit 
 ${BUNDLE_NAME}_CFLAGS += -Wno-implicit -g
 
 include $(GNUSTEP_MAKEFILES)/bundle.make
