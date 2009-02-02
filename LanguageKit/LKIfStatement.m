@@ -31,8 +31,8 @@
 
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
-	void *startBB = [aGenerator currentBasicBlock];
 	void *compareValue = [condition compileWith: aGenerator];
+	void *startBB = [aGenerator currentBasicBlock];
 	void *continueBB = [aGenerator startBasicBlock: @"if_continue"];
 	// Emit the 'then' clause
 	void *thenBB = [aGenerator startBasicBlock: @"if_then"];
@@ -61,5 +61,23 @@
 	[condition visitWithVisitor:aVisitor];
 	[self visitArray:thenStatements withVisitor:aVisitor];
 	[self visitArray:elseStatements withVisitor:aVisitor];
+}
+- (void) check
+{
+	[condition setParent:self];
+	[condition check];
+	FOREACH(thenStatements, then, LKAST*)
+	{
+	}
+	FOREACH(thenStatements, thenStatement, LKAST*)
+	{
+		[thenStatement setParent:self];
+		[thenStatement check];
+	}
+	FOREACH(elseStatements, elseStatement, LKAST*)
+	{
+		[elseStatement setParent:self];
+		[elseStatement check];
+	}
 }
 @end

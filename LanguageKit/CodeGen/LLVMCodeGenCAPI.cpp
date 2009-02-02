@@ -235,7 +235,7 @@ void *CurrentBasicBlock(ModuleBuilder B)
 }
 void MoveInsertPointToBasicBlock(ModuleBuilder B, void *BB)
 {
-	B->getCurrentScope()->GoTo((BasicBlock*)BB);
+	B->getCurrentScope()->MoveInsertPointToBasicBlock((BasicBlock*)BB);
 }
 void GoTo(ModuleBuilder B, void *BB)
 {
