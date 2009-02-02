@@ -80,6 +80,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 		}
 		TheModule = new Module(ModuleName);
 		SmallIntModule = SmallIntMessages;
+		TheModule->setDataLayout(SmallIntModule->getDataLayout());
 	}
 	std::vector<const llvm::Type*> VoidArgs;
 	LiteralInitFunction = llvm::Function::Create(
@@ -382,7 +383,7 @@ void CodeGenModule::compile(void)
 	pm.add(createStripDeadPrototypesPass());
 //	pm.add(createUnboxPass());
 	pm.add(createAggressiveDCEPass());
-	//pm.add(createCFGSimplificationPass());
+	pm.add(createCFGSimplificationPass());
 	pm.run(*TheModule);
 	DUMP(TheModule);
 	if (NULL == EE)
