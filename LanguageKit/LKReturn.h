@@ -15,4 +15,8 @@
  * Initialise with an expression containing the value to return.
  */
 - (id) initWithExpr:(LKAST*)anExpression;
+/**
+ * Returns the return statement's expression AST node.
+ */
+- (LKAST*) expression;
 @end

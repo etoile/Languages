@@ -55,6 +55,12 @@
 	[str appendString:@"\n]"];
 	return str;
 }
+
+- (NSMutableArray*) methods
+{
+	return methods;
+}
+
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator createCategoryOn:classname
@@ -71,6 +77,7 @@
 	[[[LKAST code] objectForKey: classname] addObject: self];
 	return NULL;
 }
+
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
 	[self visitArray:methods withVisitor:aVisitor];

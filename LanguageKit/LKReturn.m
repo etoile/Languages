@@ -32,4 +32,8 @@
 	ASSIGN(ret, tmp);
 	[ret visitWithVisitor:aVisitor];
 }
+- (LKAST*) expression
+{
+	return ret;
+}
 @end

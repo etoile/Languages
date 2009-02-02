@@ -22,4 +22,9 @@
  * Returns a new anonymous category.
  */
 + (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList;
+
+/**
+ * Returns the methods.
+ */
+- (NSMutableArray*) methods;
 @end
