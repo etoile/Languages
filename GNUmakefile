@@ -9,16 +9,11 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 -include ../modules.make
 
-export io ?= no
 export smalltalk ?= yes
 
 #
 # Projects (listed by dependency order, then alphabetical order)
 #
-
-ifeq ($(io), yes)
-	SUBPROJECTS += Io
-endif
 
 ifeq ($(smalltalk), yes)
 	SUBPROJECTS += LanguageKit 
