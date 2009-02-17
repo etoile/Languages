@@ -5,7 +5,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 PROJECT_DIR = $(CURDIR)
 # We redefine the project name since the target name doesn't match the name
 # of the project directory (Support)
-#PROJECT_NAME = LanguageKitRuntime
+PROJECT_NAME = LanguageKitRuntime
 
 FRAMEWORK_NAME = LanguageKitRuntime
 
