@@ -1,6 +1,9 @@
 #import <Foundation/Foundation.h>
 #import "BlockClosure.h"
 
+// Small int 0 is ((0 << 1) & 1).  
+#define IS_NIL_OR_ZERO(x) (((uintptr_t)(x)) < 2)
+
 @interface BlockContext : NSObject {
 @public
 	BlockContext *parent;
@@ -185,7 +188,9 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval);
 		[NSException raise:@"InvalidBlockValueCall" format:@"Block expects %d arguments", args];
 	}
 	id last = nil;
-	while(nil != function(self, _cmd))
+	for (id ret = ret = function(self, _cmd) ;
+		(uintptr_t)ret != 1 && [ret boolValue] ;
+		ret = function(self, _cmd)) 
 	{
 		last = [anotherBlock value];
 	}
