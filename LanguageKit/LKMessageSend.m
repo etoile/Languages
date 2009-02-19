@@ -16,7 +16,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 {
 	return AUTORELEASE([[self alloc] init]);
 }
-+ (id) message:(NSString*)aSelector
++ (id) messageWithSelectorName:(NSString*)aSelector
 {
 	return AUTORELEASE([[self alloc] initWithSelectorName:aSelector]);
 }
@@ -26,7 +26,13 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	ASSIGN(selector, aSelector);
 	return self;
 }
-
+- (void)dealloc
+{
+	[selector release];
+	[target release];
+	[arguments release];
+	[super dealloc];
+}
 - (void) setTarget:(id)anObject
 {
 	ASSIGN(target, anObject);
@@ -53,7 +59,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	[arguments addObject:anObject];
 }
-- (NSMutableArray*) arguments
+- (NSArray*) arguments
 {
   	return arguments;
 }
@@ -85,7 +91,6 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	[str appendString:[target description]];
 	[str appendString:@" "];
 	NSArray *sel = [selector componentsSeparatedByString:@":"];
-	int i;
 	if ([sel count] == 1)
 	{
 		[str appendString:selector];
@@ -98,7 +103,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	{
 		[str appendFormat:@": %@", [arguments objectAtIndex:0]];
 	}
-	for (i=1 ; i<[arguments count] ; i++)
+	for (unsigned int i=1 ; i<[arguments count] ; i++)
 	{
 		if (i<[sel count])
 		{
@@ -111,9 +116,9 @@ static NSMutableDictionary *SelectorConflicts = nil;
 }
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator forTarget:(void*)receiver
 {
-	unsigned argc = [arguments count];
+	unsigned int argc = [arguments count];
 	void *argv[argc];
-	for (unsigned i=0 ; i<argc ; i++)
+	for (unsigned int i=0 ; i<argc ; i++)
 	{
 		argv[i] = [[arguments objectAtIndex:i] compileWith:aGenerator];
 	}
@@ -205,10 +210,8 @@ static NSMutableDictionary *SelectorConflicts = nil;
 + (LKMessageCascade*) messageCascadeWithTarget:(LKAST*) aTarget
                                       messages:(NSMutableArray*) messageArray
 {
-	LKMessageCascade *obj = [[self alloc] initWithTarget:aTarget
-	                                            messages:messageArray];
-	[obj autorelease];
-	return obj;
+	return [[[self alloc] initWithTarget:aTarget
+	                            messages:messageArray] autorelease];
 }
 - (void*) compileWith:(id<LKCodeGenerator>)aGenerator
 {

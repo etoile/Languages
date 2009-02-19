@@ -9,7 +9,8 @@
 	int i = 0;
 	FOREACHI(self, obj)
 	{
-		new[i++] = [aClosure value:obj];
+		new[i] = [aClosure value:obj];
+		i++;
 	}
 	return [NSArray arrayWithObjects:new count:i];
 }

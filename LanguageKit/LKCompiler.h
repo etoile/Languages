@@ -144,5 +144,5 @@
 /**
  * Returns the parser used by this language.
  */
-+ (Class) parser;
++ (Class) parserClass;
 @end

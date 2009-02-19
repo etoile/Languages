@@ -12,7 +12,7 @@
 {
 	return @"escript";
 }
-+ (Class) parser
++ (Class) parserClass
 {
 	return [EScriptParser class];
 }

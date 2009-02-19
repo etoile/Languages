@@ -12,7 +12,7 @@
 {
 	return @"st";
 }
-+ (Class) parser
++ (Class) parserClass
 {
 	return [SmalltalkParser class];
 }

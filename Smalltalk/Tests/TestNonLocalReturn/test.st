@@ -9,8 +9,8 @@ NSObject subclass: SmalltalkTool [
 	
 	returnsObject
 	[
-		self ignoresReturn:[  ^'test succeeded' ].
-		"1 ifTrue: [ ^'test succeeded'] ."
+		"self ignoresReturn:[  ^'test succeeded' ]."
+		1 ifTrue: [ ^'test succeeded'] .
 		^'test failed'
 	]
 

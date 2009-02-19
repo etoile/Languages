@@ -11,6 +11,10 @@
 	selector = aSelector;
 	return self;
 }
+/***
+ * Used by LanguageKit to construct constant boxed selectors.  Returned
+ * selectors should persist for the length of the program.
+ */
 + (id) SymbolForCString:(char*)aSymbol
 {
 	return [[Symbol alloc] initWithSelector:sel_get_uid(aSymbol)];

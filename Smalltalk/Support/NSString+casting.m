@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 
 @implementation NSString (Casting)
-- (unsigned) unsignedIntValue
+- (unsigned int) unsignedIntValue
 {
-	return (unsigned)[self intValue];
+	return (unsigned int)[self intValue];
 }
 - (SEL) selValue
 {

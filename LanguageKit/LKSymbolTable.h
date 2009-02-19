@@ -74,8 +74,8 @@ typedef	enum
 /**
  * Initialise the symbol table with local variables and arguments.
  */
-- (id) initWithLocals:(NSMutableArray*)locals 
-                 args:(NSMutableArray*)args;
+- (id) initWithLocals:(NSArray*)locals 
+                 args:(NSArray*)args;
 /**
  * Returns the local variables declared in this scope.
  */

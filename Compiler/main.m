@@ -54,7 +54,7 @@ static LKAST *parseScript(NSString *script, NSString *extension)
 {
 	[LKCompiler compilerForExtension:extension];
 	script = stripScriptPreamble(script);
-	id parser = [[[LKCompiler compilerForExtension:extension] parser] new];
+	id parser = [[[LKCompiler compilerForExtension:extension] parserClass] new];
 	LKAST *module = [parser parseString:script];
 	[parser release];
 	return module;

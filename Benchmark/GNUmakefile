@@ -22,7 +22,8 @@ ADDITIONAL_OBJCFLAGS +=  -march=i686
 
 ${TOOL_NAME}_CFLAGS += -Wno-implicit -g 
 
-SMALLTALK_FILES =  prototype.st fib.st
+#SMALLTALK_FILES += prototype.st
+SMALLTALK_FILES += fib.st
 
 all:: smalltalk.optimised.o
 

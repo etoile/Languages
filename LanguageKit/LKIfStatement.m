@@ -9,15 +9,15 @@
 {
 	SELFINIT;
 	ASSIGN(condition, aCondition);
-	ASSIGN(thenStatements, [thenClause mutableCopy]);
-	ASSIGN(elseStatements, [elseClause mutableCopy]);
+	thenStatements = [thenClause mutableCopy];
+	elseStatements = [elseClause mutableCopy];
 	return self;
 }
 - (void) dealloc
 {
 	[condition release];
 	[thenStatements release];
-	[elseStatements dealloc];
+	[elseStatements release];
 	[super dealloc];
 }
 + (LKIfStatement*) ifStatementWithCondition:(LKAST*) aCondition

@@ -5,9 +5,9 @@ NSArray *statementsFromBlock(LKAST*aBlock)
 	if ([aBlock isKindOfClass: [LKBlockExpr class]])
 	{
 		LKBlockExpr *blockExpr = (LKBlockExpr*)aBlock;
-		return [[blockExpr statements] copy];
+		return [[[blockExpr statements] copy] autorelease];
 	}
-	LKMessageSend *valueMsg = [LKMessageSend message: @"value"];
+	LKMessageSend *valueMsg = [LKMessageSend messageWithSelectorName: @"value"];
 	[valueMsg setTarget: aBlock];
 	return A(valueMsg);
 }	
@@ -40,7 +40,8 @@ NSArray *statementsFromBlock(LKAST*aBlock)
 		return aNode;
 	}
 	LKAST *receiver = [aNode target];
-	LKMessageSend *condition = [LKMessageSend message: @"boolValue"];
+	LKMessageSend *condition = 
+		[LKMessageSend messageWithSelectorName: @"boolValue"];
 	[condition setTarget: receiver];
 
 	LKIfStatement *ifStatement = 

@@ -60,7 +60,7 @@ script(S) ::= statement_list(L).
 
 	[L insertObject:[EScriptPreamble preamble] atIndex:0];
 
-	id m = [LKClassMethod methodWithSignature:[LKMessageSend message:@"load"]
+	id m = [LKClassMethod methodWithSignature:[LKMessageSend messageWithSelectorName:@"load"]
 	                                   locals:nil
 	                               statements:L];
 
@@ -199,7 +199,7 @@ statement_expression(E) ::= WORD(T) EQ expression(V).
 statement_expression(E) ::= expression(T) DOT WORD(K) EQ expression(V).
 {
 	// TODO: foo.bar += 4;
-	E = [LKMessageSend message:@"setValue:forKey:"];
+	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[E setTarget:T];
 	[E addArgument:V];
 	[E addArgument:[LKStringLiteral literalFromString:K]];
@@ -208,21 +208,21 @@ statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
                                               EQ expression(V).
 {
 	// TODO: foo["bar"] += 4;
-	E = [LKMessageSend message:@"setValue:forKey:"];
+	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[E setTarget:T];
 	[E addArgument:V];
 	[E addArgument:K];
 }
 statement_expression(E) ::= WORD(T) shortcut_assign(S) expression(R). [PLUSEQ]
 {
-	E = [LKMessageSend message:S];
+	E = [LKMessageSend messageWithSelectorName:S];
 	[E setTarget:[LKDeclRef reference:T]];
 	[E addArgument:R];
 	E = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:E];
 }
 statement_expression(E) ::= WORD(V) LPAREN RPAREN.
 {
-	E = [LKMessageSend message:@"value"];
+	E = [LKMessageSend messageWithSelectorName:@"value"];
 	[E setTarget:[LKDeclRef reference:V]];
 }
 statement_expression(E) ::= WORD(V) LPAREN expressions(A) RPAREN.
@@ -242,7 +242,7 @@ statement_expression(E) ::= expression(T) DOT keyword_selector(S)
 	{
 		S = [S stringByAppendingString:@":"];
 	}
-	E = [LKMessageSend message:S];
+	E = [LKMessageSend messageWithSelectorName:S];
 	[E setTarget:T];
 	FOREACH(A, arg, LKAST*)
 	{
@@ -280,19 +280,19 @@ expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
 }
 expression(E) ::= expression(T) DOT WORD(K).
 {
-	E = [LKMessageSend message:@"valueForKey:"];
+	E = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
 	[E setTarget:T];
 	[E addArgument:[LKStringLiteral literalFromString:K]];
 }
 expression(E) ::= expression(T) LBRACK expression(K) RBRACK.
 {
-	E = [LKMessageSend message:@"valueForKey:"];
+	E = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
 	[E setTarget:T];
 	[E addArgument:K];
 }
 expression(E) ::= expression(L) binary_selector(S) expression(R). [PLUS]
 {
-	E = [LKMessageSend message:S];
+	E = [LKMessageSend messageWithSelectorName:S];
 	[E setTarget:L];
 	[E addArgument:R];
 }
@@ -339,21 +339,21 @@ expression(E) ::= LBRACK expression_list(L) RBRACK.
 }
 expression(E) ::= LBRACE RBRACE.
 {
-	E = [LKMessageSend message:@"clone"];
+	E = [LKMessageSend messageWithSelectorName:@"clone"];
 	[E setTarget:[LKDeclRef reference:@"Object"]];
 }
 expression(E) ::= LBRACE keys_and_values(L) RBRACE.
 {
 	// FIXME: Get rid of the self message
-	[L addObject:[LKMessageSend message:@"self"]];
-	id msg = [LKMessageSend message:@"clone"];
+	[L addObject:[LKMessageSend messageWithSelectorName:@"self"]];
+	id msg = [LKMessageSend messageWithSelectorName:@"clone"];
 	[msg setTarget:[LKDeclRef reference:@"Object"]];
 	E = [LKMessageCascade messageCascadeWithTarget:msg messages:L];
 }
 
 keys_and_values(L) ::= keys_and_values(T) COMMA key(K) COLON expression(V).
 {
-	id msg = [LKMessageSend message:@"setValue:forKey:"];
+	id msg = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[msg addArgument:V];
 	[msg addArgument:K];
 	[T addObject:msg];
@@ -361,7 +361,7 @@ keys_and_values(L) ::= keys_and_values(T) COMMA key(K) COLON expression(V).
 }
 keys_and_values(L) ::= key(K) COLON expression(V).
 {
-	id msg = [LKMessageSend message:@"setValue:forKey:"];
+	id msg = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[msg addArgument:V];
 	[msg addArgument:K];
 	L = [NSMutableArray arrayWithObject:msg];

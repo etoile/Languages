@@ -32,7 +32,7 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 
 - (LKAST*) parse:(NSString*)s
 {
-	unsigned sLength = [s length];
+	unsigned int sLength = [s length];
 	/* Cache some IMPs of methods we call a lot */
 	SEL charSel = @selector(characterAtIndex:);
 	SEL substrSel = @selector(tokenWithRange:inSource:);
@@ -173,31 +173,31 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 	NS_ENDHANDLER
 	SmalltalkParse(parser, 0, nil, self);
 	SmalltalkParseFree(parser, free);
-	return delegate;
+	return ast;
 }
 
 - (LKModule*) parseString:(NSString*)source
 {
-	LKAST *ast = [self parse: source];
-	if ([ast isKindOfClass:[LKModule class]])
+	LKAST *module = [self parse: source];
+	if ([module isKindOfClass:[LKModule class]])
 	{
-		return (LKModule*)ast;
+		return (LKModule*)module;
 	}
 	return nil;
 }
 
 - (LKMethod*) parseMethod:(NSString*)source
 {
-	LKAST *ast = [self parse: source];
-	if ([ast isKindOfClass:[LKMethod class]])
+	LKAST *method = [self parse: source];
+	if ([method isKindOfClass:[LKMethod class]])
 	{
-		return (LKMethod*)ast;
+		return (LKMethod*)method;
 	}
 	return nil;
 }
 
-- (void) setDelegate:(LKAST*)ast
+- (void) setAST:(LKAST*)anAST
 {
-	ASSIGN(delegate, ast);
+	ASSIGN(ast, anAST);
 }
 @end

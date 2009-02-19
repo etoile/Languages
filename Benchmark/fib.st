@@ -15,4 +15,7 @@ NSObject subclass: SmalltalkFibonacci [
 		].
 		^ret.
 	]
+	run [
+		(self fibonacci:30) log.
+	]
 ]

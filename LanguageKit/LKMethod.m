@@ -15,8 +15,8 @@
               statements:(NSMutableArray*)statementList
 {
 	LKMethodSymbolTable *st = 
-		[[LKMethodSymbolTable alloc] initWithLocals:locals
-		                                       args:[aSignature arguments]];
+		[[LKMethodSymbolTable alloc] initWithLocals: locals
+		                                       args: [aSignature arguments]];
 	[self initWithSymbolTable: st];
 	RELEASE(st);
 	ASSIGN(signature, aSignature);

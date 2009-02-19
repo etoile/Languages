@@ -20,7 +20,7 @@
 /**
  * Return a new message send with the specified selector.
  */
-+ (id) message:(NSString*)aSelector;
++ (id) messageWithSelectorName:(NSString*)aSelector;
 /**
  * Initialize with the specified selector.
  */
@@ -40,7 +40,7 @@
 /**
  * Return all of the arguments of this message.
  */
-- (NSMutableArray*) arguments;
+- (NSArray*) arguments;
 /**
  * Return the selector.
  */

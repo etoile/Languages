@@ -113,8 +113,8 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 
 @end
 @implementation LKMethodSymbolTable
-- (id) initWithLocals:(NSMutableArray*)locals
-                 args:(NSMutableArray*)args
+- (id) initWithLocals:(NSArray*)locals
+                 args:(NSArray*)args
 {
 	SELFINIT;
 	if (locals == nil)

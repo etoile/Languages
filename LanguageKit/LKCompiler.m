@@ -83,7 +83,7 @@ int DEBUG_DUMP_MODULES = 0;
 
 - (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
 {
-	id p = AUTORELEASE([[[[self class] parser] alloc] init]);
+	id p = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKModule *ast;
 	NS_DURING
 		ast = [p parseString: source];
@@ -124,7 +124,7 @@ int DEBUG_DUMP_MODULES = 0;
                onClass:(NSString*)name
          withGenerator:(id<LKCodeGenerator>)cg
 {
-	id p = AUTORELEASE([[[[self class] parser] alloc] init]);
+	id p = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKAST *ast;
 	LKModule *module;
 	NS_DURING
@@ -342,7 +342,7 @@ int DEBUG_DUMP_MODULES = 0;
 {
 	return [compilersByExtension objectForKey:anExtension];
 }
-+ (Class) parser
++ (Class) parserClass
 {
 	[self subclassResponsibility:_cmd];
 	return Nil;
