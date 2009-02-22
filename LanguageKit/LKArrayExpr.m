@@ -30,13 +30,13 @@
 	[str replaceCharactersInRange:NSMakeRange([str length] - 2, 2) withString:@")"];
 	return str;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	void *values[[elements count] + 1];
 	int i = 0;
 	FOREACH(elements, element, LKAST*)
 	{
-		values[i++] = [element compileWith:aGenerator];
+		values[i++] = [element compileWithGenerator: aGenerator];
 	}
 	values[i++] = [aGenerator nilConstant];
 	void *arrayClass = [aGenerator loadClass:@"NSMutableArray"];

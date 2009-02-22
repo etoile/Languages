@@ -76,7 +76,7 @@
 /**
  * Compile this AST node with the specified code generator.
  */
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator;
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator;
 /**
  * Returns YES for AST nodes with no code generation
  */

@@ -57,7 +57,7 @@
 	[str appendString:@"]"];
 	return str;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator beginBlockWithArgs:[[(LKMethodSymbolTable*)symbols args] count]
 	                        locals:[[(LKMethodSymbolTable*)symbols locals] count]];
@@ -66,7 +66,7 @@
 	{
 		if (![statement isComment])
 		{
-			lastValue = [statement compileWith:aGenerator];
+			lastValue = [statement compileWithGenerator: aGenerator];
 		}
 	}
 	[aGenerator blockReturn:lastValue];

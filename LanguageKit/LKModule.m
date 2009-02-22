@@ -157,16 +157,16 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	return str;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator startModule];
 	FOREACH(classes, class, LKAST*)
 	{
-		[class compileWith:aGenerator];
+		[class compileWithGenerator: aGenerator];
 	}
 	FOREACH(categories, category, LKAST*)
 	{
-		[category compileWith:aGenerator];
+		[category compileWithGenerator: aGenerator];
 	}
 	[aGenerator endModule];
 	[[NSNotificationCenter defaultCenter]

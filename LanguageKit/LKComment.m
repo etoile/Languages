@@ -19,7 +19,7 @@
 {
 	return comment;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	// Comments do not turn into code.
 	return NULL;

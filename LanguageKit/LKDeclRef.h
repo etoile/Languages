@@ -8,10 +8,8 @@
   /** The name of the variable being referenced. */
 	NSString *symbol;
 }
-/** Construct a reference for the specified symbol. */
-+ (id) reference:(NSString*)sym;
-/** Initialise a reference for the specified symbol. */
-- (id) initWithSymbol:(NSString*)sym;
+/** Returns autoreleased reference for the specified symbol. */
++ (id) referenceWithSymbol:(NSString*)sym;
 /**
  * Returns the name of the variable being referenced.
  */

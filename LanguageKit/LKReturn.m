@@ -20,9 +20,9 @@
 {
 	return [NSString stringWithFormat:@"^%@.", ret];
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	void *retVal = [ret compileWith:aGenerator];
+	void *retVal = [ret compileWithGenerator: aGenerator];
 	[aGenerator setReturn:retVal];
 	return retVal;
 }

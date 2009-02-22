@@ -23,7 +23,7 @@
 	[symbols addSymbol:variableName];
 }
 - (void) check {}
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	return NULL;
 }

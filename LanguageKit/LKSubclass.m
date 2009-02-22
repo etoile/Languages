@@ -87,7 +87,7 @@
 	[str appendString:@"\n]"];
 	return str;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	const char *ivarNames[[ivars count] + 1];
 	const char *ivarTypes[[ivars count] + 1];
@@ -122,7 +122,7 @@
                        offsets:ivarOffsets];
 	FOREACH(methods, method, LKAST*)
 	{
-		[method compileWith:aGenerator];
+		[method compileWithGenerator: aGenerator];
 	}
 	// Create dealloc method
 	if ([ivars count] > 0)

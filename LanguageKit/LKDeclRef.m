@@ -3,15 +3,15 @@
 
 
 @implementation LKDeclRef
-+ (id) reference:(NSString*)sym
-{
-	return [[[self alloc] initWithSymbol: sym] autorelease];
-}
 - (id) initWithSymbol:(NSString*)sym
 {
 	SELFINIT;
 	ASSIGN(symbol, sym);
 	return self;
+}
++ (id) referenceWithSymbol:(NSString*)sym
+{
+	return [[[self alloc] initWithSymbol: sym] autorelease];
 }
 - (void) check
 {
@@ -41,7 +41,7 @@
 {
 	return symbol;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	switch([symbols scopeOfSymbol:symbol])
 	{
@@ -100,11 +100,16 @@
 		default:
 			NSLog(@"Compiling declref to symbol %@ of type %d",
 					symbol, [symbols scopeOfSymbol:symbol]);
-			return [super compileWith:aGenerator];
+			return [super compileWithGenerator: aGenerator];
 	}
 }
 - (NSString*) symbol
 {
 	return symbol;
+}
+- (void)dealloc
+{
+	[symbol release];
+	[super dealloc];
 }
 @end

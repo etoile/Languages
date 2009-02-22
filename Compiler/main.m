@@ -52,9 +52,11 @@ static NSString* stripScriptPreamble(NSString *script)
 
 static LKAST *parseScript(NSString *script, NSString *extension)
 {
-	[LKCompiler compilerForExtension:extension];
+	[LKCompiler compilerClassForFileExtension:extension];
 	script = stripScriptPreamble(script);
-	id parser = [[[LKCompiler compilerForExtension:extension] parserClass] new];
+	id parser = 
+		[[[LKCompiler compilerClassForFileExtension:extension]
+	   			parserClass] new];
 	LKAST *module = [parser parseString:script];
 	[parser release];
 	return module;
@@ -76,7 +78,7 @@ static BOOL jitScript(NSString *script, NSString *extension)
 		LKAST *ast = parseScript(script, extension);
 		[ast check];
 		applyTransforms(ast);
-		[ast compileWith:defaultJIT()];
+		[ast compileWithGenerator: defaultJIT()];
 	NS_HANDLER
 		return NO;
 	NS_ENDHANDLER
@@ -90,7 +92,7 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 		LKAST *ast = parseScript(script, extension);
 		[ast check];
 		applyTransforms(ast);
-		[ast compileWith:defaultStaticCompilterWithFile(outFile)];
+		[ast compileWithGenerator: defaultStaticCompilterWithFile(outFile)];
 	NS_HANDLER
 		return NO;
 	NS_ENDHANDLER
@@ -101,7 +103,7 @@ int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
 	// Forces the compiler to load plugins
-	[LKCompiler supportedLanguages];
+	[LKCompiler supportedLanguageNames];
 
 	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
@@ -127,7 +129,7 @@ int main(int argc, char **argv)
 	NSString *framework = [opts objectForKey:@"l"];
 	if (nil != framework)
 	{
-		[LKCompiler loadFramework:framework];
+		[LKCompiler loadFrameworkNamed: framework];
 	}
 	// Load frameworks specified in plist.
 	NSString *frameworks = [opts objectForKey:@"L"];
@@ -138,7 +140,7 @@ int main(int argc, char **argv)
 		{
 			FOREACH(frameworkarray, f, NSString*)
 			{
-				[LKCompiler loadFramework:f];
+				[LKCompiler loadFrameworkNamed: f];
 			}
 		}
 	}

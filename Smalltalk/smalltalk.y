@@ -219,7 +219,8 @@ statement(S) ::= RETURN expression(E).
 }
 statement(S) ::= WORD(T) COLON EQ expression(E).
 {
-	S = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:E];
+	S = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T] 
+	                              expr:E];
 }
 
 %syntax_error 
@@ -337,12 +338,12 @@ simple_expression(E) ::= WORD(V).
 	}
 	else
 	{
-		E = [LKDeclRef reference:V];
+		E = [LKDeclRef referenceWithSymbol: V];
 	}
 }
 simple_expression(E) ::= SYMBOL(S).
 {
-	E = [LKSymbolRef reference:S];
+	E = [LKSymbolRef referenceWithSymbol: S];
 }
 simple_expression(E) ::= STRING(S).
 {

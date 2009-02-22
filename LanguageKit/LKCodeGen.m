@@ -10,7 +10,7 @@ static Class defaultStaticClass;
 {
 	if (self == [LKCodeGenLoader class])
 	{
-		[LKCompiler loadFramework:@"LanguageKitCodeGen"];
+		[LKCompiler loadFrameworkNamed: @"LanguageKitCodeGen"];
 		defaultJitClass = NSClassFromString(@"LLVMCodeGen");
 		defaultStaticClass = NSClassFromString(@"LLVMStaticCodeGen");
 	}

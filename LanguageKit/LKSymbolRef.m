@@ -6,7 +6,7 @@
 {
 	return [NSString stringWithFormat:@"#%@", symbol];
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	return [aGenerator generateConstantSymbol:symbol];
 }

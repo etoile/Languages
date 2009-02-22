@@ -68,7 +68,7 @@
         forSelectorNamed:(const char*)sel
 			   withTypes:(const char*)types
 {}
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	const char *sel = [[signature selector] UTF8String];
 	// FIXME: Should get method signature from superclass
@@ -91,7 +91,7 @@
 	[self beginMethodWith:aGenerator forSelectorNamed:sel withTypes:types];
 	FOREACH(statements, statement, LKAST*)
 	{
-		[statement compileWith:aGenerator];
+		[statement compileWithGenerator: aGenerator];
 	}
 	[aGenerator endMethod];
 	return NULL;

@@ -29,23 +29,23 @@
 	                                   else: elseClause] autorelease];
 }
 
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	void *compareValue = [condition compileWith: aGenerator];
+	void *compareValue = [condition compileWithGenerator:  aGenerator];
 	void *startBB = [aGenerator currentBasicBlock];
 	void *continueBB = [aGenerator startBasicBlock: @"if_continue"];
 	// Emit the 'then' clause
 	void *thenBB = [aGenerator startBasicBlock: @"if_then"];
 	FOREACH(thenStatements, thenStatement, LKAST*)
 	{
-		[thenStatement compileWith: aGenerator];
+		[thenStatement compileWithGenerator:  aGenerator];
 	}
 	[aGenerator goTo:continueBB];
 	// Emit 'else' clause
 	void *elseBB = [aGenerator startBasicBlock:@"if_else"];
 	FOREACH(elseStatements, elseStatement, LKAST*)
 	{
-		[elseStatement compileWith: aGenerator];
+		[elseStatement compileWithGenerator:  aGenerator];
 	}
 	[aGenerator goTo:continueBB];
 	// Emit branch

@@ -114,13 +114,13 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	return str;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator forTarget:(void*)receiver
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator forTarget:(void*)receiver
 {
 	unsigned int argc = [arguments count];
 	void *argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
-		argv[i] = [[arguments objectAtIndex:i] compileWith:aGenerator];
+		argv[i] = [[arguments objectAtIndex:i] compileWithGenerator: aGenerator];
 	}
 	const char *sel = [selector UTF8String];
 	void *result = NULL;
@@ -182,10 +182,10 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	return result;
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	return [self compileWith:aGenerator
-	               forTarget:[target compileWith:aGenerator]];
+	return [self compileWithGenerator: aGenerator
+	               forTarget:[target compileWithGenerator: aGenerator]];
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
@@ -213,13 +213,13 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	return [[[self alloc] initWithTarget:aTarget
 	                            messages:messageArray] autorelease];
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	id target = [receiver compileWith:aGenerator];
+	id target = [receiver compileWithGenerator: aGenerator];
 	id result;
 	FOREACH(messages, message, LKMessageSend*)
 	{
-		result = [message compileWith:aGenerator forTarget:target];
+		result = [message compileWithGenerator: aGenerator forTarget:target];
 	}
 	return result;
 }

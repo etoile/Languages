@@ -61,13 +61,13 @@
 	return methods;
 }
 
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator createCategoryOn:classname
 	                       named:categoryName];
 	FOREACH(methods, method, LKAST*)
 	{
-		[method compileWith:aGenerator];
+		[method compileWithGenerator: aGenerator];
 	}
 	[aGenerator endCategory];
 	if ([[LKAST code] objectForKey: classname] == nil)

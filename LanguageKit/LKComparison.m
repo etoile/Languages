@@ -23,10 +23,10 @@
 	[lhs check];
 	[rhs check];
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	void * l = [lhs compileWith:aGenerator];
-	void * r = [rhs compileWith:aGenerator];
+	void * l = [lhs compileWithGenerator: aGenerator];
+	void * r = [rhs compileWithGenerator: aGenerator];
 	return [aGenerator comparePointer:l to:r];
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor

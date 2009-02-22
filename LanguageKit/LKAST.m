@@ -110,7 +110,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 					format:@"Result of an expression (%@) may not be used as an l-value", aChild];
 	}
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	NSLog(@"Compiling...");
 	[NSException raise:@"NotImplementedException"

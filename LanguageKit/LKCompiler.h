@@ -5,6 +5,12 @@
 @class LKMethod;
 @protocol LKCodeGenerator;
 
+typedef enum
+{
+	LKDebuggingDisabled = 0,
+	LKDebuggingEnabled = 1
+} LKDebuggingMode;
+
 /**
  * All languages must use a parser conforming to this protocol.
  */
@@ -35,7 +41,7 @@
  * spam stderr with a huge amount of debugging information.  Note that this is
  * a global setting and will apply to all compilers.
  */
-+ (void) setDebugMode:(BOOL)aFlag;
++ (void) setDebugMode:(LKDebuggingMode)aFlag;
 /**
  * Compiles and loads the specified source code.
  */
@@ -52,30 +58,34 @@
 /**
  * Compiles and loads a method on the class with the specified name.
  */
-- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name;
+- (BOOL) compileMethod:(NSString*)source onClassNamed:(NSString*)name;
 /**
  * Compiles a method to LLVM bitcode for the class with the specified name.
  */
-- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name output:(NSString*)bitcode;
+- (BOOL) compileMethod:(NSString*)source 
+          onClassNamed:(NSString*)name 
+                output:(NSString*)bitcode;
 /**
  * Compiles a method on the class with the specified name using the given code
  * generator.
  */
-- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name withGenerator:(id<LKCodeGenerator>)cg;
+- (BOOL) compileMethod:(NSString*)source
+          onClassNamed:(NSString*)name
+         withGenerator:(id<LKCodeGenerator>)cg;
 /**
  * Load a framework with the specified name.
  */
-+ (BOOL) loadFramework:(NSString*)framework;
++ (BOOL) loadFrameworkNamed:(NSString*)framework;
 /**
  * Compiles and loads a file from the specified bundle.
  * The file name extension will be used to select a suitable compiler.
  */
-+ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)fileName;
++ (BOOL) loadScriptNamed: (NSString*)fileName fromBundle: (NSBundle*)bundle;
 /**
  * Compiles and loads a file from the specified bundle.
  * Omit the extension in the name paramater.
  */
-- (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name;
+- (BOOL) loadScriptNamed: (NSString*)fileName fromBundle: (NSBundle*)bundle;
 /**
  * Compiles and loads a file from the application bundle.
  * The file name extension will be used to select a suitable compiler.
@@ -89,11 +99,11 @@
 /**
  * Loads all scripts for all known languages from the specified bundle.
  */
-+ (BOOL) loadScriptsInBundle:(NSBundle*) aBundle;
++ (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle;
 /**
  * Loads all scripts written in this language from the specified bundle.
  */
-- (BOOL) loadScriptsInBundle:(NSBundle*) aBundle;
+- (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle;
 /**
  * Loads all scripts for all known languages from the application bundle.
  */
@@ -116,14 +126,16 @@
 /**
  * Loads all of the LanguageKit plugins for the current application.
  */
-+ (BOOL) loadPluginsForApplication;
++ (BOOL) loadAllPlugInsForApplication;
 /**
+ * <override-subclass /> 
  * Returns the extension used for scripts in this language.
  *
  * Implemented by subclasses.
  */
 + (NSString*) fileExtension;
 /**
+ * <override-subclass /> 
  * Returns the name of the language supported by this compiler.
  *
  * Implemented by subclasses.
@@ -132,7 +144,7 @@
 /**
  * Returns the languages for which compilers are currently supported.
  */
-+ (NSArray*) supportedLanguages;
++ (NSArray*) supportedLanguageNames;
 /**
  *	Returns the compiler for a named language. 
  */
@@ -140,8 +152,9 @@
 /**
  * Returns the compiler for files with a given extension.
  */
-+ (Class) compilerForExtension:(NSString*) anExtension;
++ (Class) compilerClassForFileExtension:(NSString*) anExtension;
 /**
+ * <override-subclass /> 
  * Returns the parser used by this language.
  */
 + (Class) parserClass;

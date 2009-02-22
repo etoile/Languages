@@ -44,9 +44,9 @@ static char *ReleaseTypes;
 {
 	return [NSString stringWithFormat:@"%@ := %@", target->symbol, expr];
 }
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	void * rval = [expr compileWith:aGenerator];
+	void * rval = [expr compileWithGenerator: aGenerator];
 	switch([symbols scopeOfSymbol:target->symbol])
 	{
 		case LKSymbolScopeLocal:
@@ -112,7 +112,7 @@ static char *ReleaseTypes;
 		default:
 			NSLog(@"Scope of %@ is %d.", target->symbol, [symbols scopeOfSymbol:target->symbol]);
 			// Throws exception
-			[super compileWith:aGenerator];
+			[super compileWithGenerator: aGenerator];
 	}
 	// Assignments aren't expressions in Smalltalk, but they might be in some
 	// other language that wants to use this code and it doesn't cost more than

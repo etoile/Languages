@@ -66,7 +66,7 @@ int DEBUG_DUMP_MODULES = 0;
 {
 	if (self == [LKCompiler class])
 	{
-		[NSException raise:@"InstantiationError"
+		[NSException raise:@"LKInstantiationError"
 		            format:@"LKCompiler instances are invalid"];
 		return nil;
 	}
@@ -76,7 +76,7 @@ int DEBUG_DUMP_MODULES = 0;
 {
 	return AUTORELEASE([[self alloc] init]);
 }
-+ (void) setDebugMode:(BOOL)aFlag
++ (void) setDebugMode:(LKDebuggingMode)aFlag
 {
 	DEBUG_DUMP_MODULES = (int) aFlag;
 }
@@ -107,7 +107,7 @@ int DEBUG_DUMP_MODULES = 0;
 	{
 		return NO;
 	}
-	[ast compileWith:cg];
+	[ast compileWithGenerator: cg];
 	return YES;
 }
 - (BOOL) compileString:(NSString*)source output:(NSString*)bitcode;
@@ -120,19 +120,19 @@ int DEBUG_DUMP_MODULES = 0;
 	return [self compileString:source withGenerator:defaultJIT()];
 }
 
-- (BOOL) compileMethod:(NSString*)source
-               onClass:(NSString*)name
-         withGenerator:(id<LKCodeGenerator>)cg
+- (BOOL) compileMethod: (NSString*)source
+          onClassNamed: (NSString*)name
+         withGenerator: (id<LKCodeGenerator>)cg
 {
 	id p = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKAST *ast;
 	LKModule *module;
 	NS_DURING
 		ast = [p parseMethod: source];
-		ast = [LKCategoryDef categoryWithClass:name
-		                               methods:[NSArray arrayWithObject:ast]];
+		ast = [LKCategoryDef categoryWithClass: name
+		                               methods: [NSArray arrayWithObject:ast]];
 		module = [LKModule module];
-		[module addCategory:ast];
+		[module addCategory: ast];
 		[module check];
 	NS_HANDLER
 		NSDictionary *e = [localException userInfo];
@@ -153,22 +153,24 @@ int DEBUG_DUMP_MODULES = 0;
 	{
 		return NO;
 	}
-	[module compileWith:cg];
+	[module compileWithGenerator: cg];
 	return YES;
 }
 - (BOOL) compileMethod:(NSString*)source
-               onClass:(NSString*)name
+          onClassNamed:(NSString*)name
                 output:(NSString*)bitcode
 {
 	id<LKCodeGenerator> cg = defaultStaticCompilterWithFile(bitcode);
-	return [self compileMethod:source onClass:name withGenerator:cg];
+	return [self compileMethod:source onClassNamed:name withGenerator:cg];
 }
-- (BOOL) compileMethod:(NSString*)source onClass:(NSString*)name
+- (BOOL) compileMethod:(NSString*)source onClassNamed:(NSString*)name
 {
-	return [self compileMethod:source onClass:name withGenerator:defaultJIT()];
+	return [self compileMethod: source
+	              onClassNamed: name 
+	             withGenerator: defaultJIT()];
 }
 
-+ (BOOL) loadFramework:(NSString*)framework
++ (BOOL) loadFrameworkNamed:(NSString*)framework
 {
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
@@ -201,13 +203,13 @@ int DEBUG_DUMP_MODULES = 0;
 	BOOL success = YES;
 	FOREACH(frameworks, framework, NSString*)
 	{
-		success &= [self loadFramework:framework];
+		success &= [self loadFrameworkNamed: framework];
 	}
 	// TODO: Specify a set of AST transforms to apply.
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
 	FOREACH(sourceFiles, source, NSString*)
 	{
-		success &= [self loadScriptInBundle:bundle named:source];
+		success &= [self loadScriptNamed: source fromBundle: bundle];
 	}
 	if (!success)
 	{
@@ -220,7 +222,7 @@ int DEBUG_DUMP_MODULES = 0;
 	}
 	return Nil;
 }
-+ (BOOL) loadPluginsForApplication
++ (BOOL) loadAllPlugInsForApplication
 {
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
 		NSUserDomainMask, YES);
@@ -248,6 +250,8 @@ int DEBUG_DUMP_MODULES = 0;
 				}
 				else
 				{
+					// Create an instance of the new class that can perform any
+					// loading code it needs in +initialize
 					[[[newclass alloc] init] release];
 				}
 			}
@@ -256,14 +260,14 @@ int DEBUG_DUMP_MODULES = 0;
 	return success;
 }
 
-+ (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)fileName
++ (BOOL) loadScriptNamed: (NSString*)fileName fromBundle: (NSBundle*)bundle
 {
 	NSString *name = [fileName stringByDeletingPathExtension];
 	NSString *extension = [fileName pathExtension];
 	id compiler = [[compilersByExtension objectForKey: extension] compiler];
-	return [compiler loadScriptInBundle: bundle named: name];
+	return [compiler loadScriptNamed: name fromBundle: bundle];
 }
-- (BOOL) loadScriptInBundle:(NSBundle*)bundle named:(NSString*)name
+- (BOOL) loadScriptNamed: (NSString*)name fromBundle:(NSBundle*)bundle
 {
 	NSString *extension = [[self class] fileExtension];
 	NSString *path = [bundle pathForResource:name ofType:extension];
@@ -277,25 +281,25 @@ int DEBUG_DUMP_MODULES = 0;
 
 + (BOOL) loadApplicationScriptNamed:(NSString*)fileName
 {
-	return [self loadScriptInBundle: [NSBundle mainBundle] named: fileName];
+	return [self loadScriptNamed: fileName fromBundle: [NSBundle mainBundle]];
 }
 - (BOOL) loadApplicationScriptNamed:(NSString*)name
 {
-	return [self loadScriptInBundle: [NSBundle mainBundle] named: name];
+	return [self loadScriptNamed: name fromBundle: [NSBundle mainBundle]];
 }
 
-+ (BOOL) loadScriptsInBundle:(NSBundle*) aBundle
++ (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle
 {
 	BOOL success = YES;
 	FOREACH(compilersByLanguage, class, Class)
 	{
 		id compiler = [[class alloc] init];
-		success &= [compiler loadScriptsInBundle: aBundle];
+		success &= [compiler loadScriptsFromBundle: aBundle];
 		RELEASE(compiler);
 	}
 	return success;
 }
-- (BOOL) loadScriptsInBundle:(NSBundle*) aBundle
+- (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle
 {
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 	NSString *extension = [[self class] fileExtension];
@@ -313,11 +317,11 @@ int DEBUG_DUMP_MODULES = 0;
 
 + (BOOL) loadAllScriptsForApplication
 {
-	return [self loadScriptsInBundle:[NSBundle mainBundle]];
+	return [self loadScriptsFromBundle:[NSBundle mainBundle]];
 }
 - (BOOL) loadAllScriptsForApplication
 {
-	return [self loadScriptsInBundle:[NSBundle mainBundle]];
+	return [self loadScriptsFromBundle:[NSBundle mainBundle]];
 }
 
 + (NSString*) fileExtension
@@ -330,7 +334,7 @@ int DEBUG_DUMP_MODULES = 0;
 	[self subclassResponsibility:_cmd];
 	return nil;
 }
-+ (NSArray*) supportedLanguages
++ (NSArray*) supportedLanguageNames
 {
 	return [compilersByLanguage allKeys];
 }
@@ -338,7 +342,7 @@ int DEBUG_DUMP_MODULES = 0;
 {
 	return [compilersByLanguage objectForKey:aLanguage];
 }
-+ (Class) compilerForExtension:(NSString*) anExtension
++ (Class) compilerClassForFileExtension:(NSString*) anExtension
 {
 	return [compilersByExtension objectForKey:anExtension];
 }
