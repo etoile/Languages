@@ -49,11 +49,11 @@ static char *ReleaseTypes;
 	void * rval = [expr compileWith:aGenerator];
 	switch([symbols scopeOfSymbol:target->symbol])
 	{
-		case local:
+		case LKSymbolScopeLocal:
 			[aGenerator storeValue:rval
 			        inLocalAtIndex:[symbols offsetOfLocal:target->symbol]];
 			break;
-		case object:
+		case LKSymbolScopeObject:
 		{
 			// TODO: Move this to -check
 			if ([[symbols typeOfSymbol:target->symbol] characterAtIndex:0] != '@')
@@ -68,26 +68,26 @@ static char *ReleaseTypes;
 			            fromObject:[aGenerator loadSelf]];
 			break;
 		}
-		case class:
+		case LKSymbolScopeClass:
 		{
 			[aGenerator storeValue:rval inClassVariable:target->symbol];
 			break;
 		}
-		case external:
+		case LKSymbolScopeExternal:
 		{
 			LKExternalSymbolScope scope = [(LKBlockSymbolTable*)symbols
-				scopeOfExternal:target->symbol];
+				scopeOfExternalSymbol:target->symbol];
 			switch([scope.scope scopeOfSymbol:target->symbol])
 			{
-				case argument:
+				case LKSymbolScopeArgument:
 					NSAssert(NO,
 						@"Storing values in arguments is not currently supported");
-				case local:
+				case LKSymbolScopeLocal:
 					[aGenerator storeValue:rval
 					        inLocalAtIndex:[scope.scope offsetOfLocal:target->symbol]
 			           lexicalScopeAtDepth:scope.depth];
 					break;
-				case object:
+				case LKSymbolScopeObject:
 				{
 					// TODO: Move this to -check
 					if ([[scope.scope typeOfSymbol:target->symbol] characterAtIndex:0] != '@')

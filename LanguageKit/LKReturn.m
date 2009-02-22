@@ -36,4 +36,9 @@
 {
 	return ret;
 }
+- (void)dealloc
+{
+	[ret release];
+	[super dealloc];
+}
 @end

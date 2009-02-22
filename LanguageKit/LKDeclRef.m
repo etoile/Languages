@@ -19,13 +19,13 @@
 	{
 		switch ([symbols scopeOfSymbol:symbol])
 		{
-			case invalid:
+			case LKSymbolScopeInvalid:
 				[NSException raise:@"InvalidSymbol"
 							format:@"Unrecognised symbol %@", symbol];
-			case external:
+			case LKSymbolScopeExternal:
 			{
 				LKExternalSymbolScope s = 
-					[(LKBlockSymbolTable*)symbols scopeOfExternal:symbol];
+					[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol:symbol];
 				if (nil == s.scope)
 				{
 					[NSException raise:@"InvalidSymbol"
@@ -45,9 +45,9 @@
 {
 	switch([symbols scopeOfSymbol:symbol])
 	{
-		case local:
+		case LKSymbolScopeLocal:
 			return [aGenerator loadLocalAtIndex:[symbols offsetOfLocal:symbol]];
-		case builtin:
+		case LKSymbolScopeBuiltin:
 			if ([symbol isEqual:@"self"] || [symbol isEqual:@"super"])
 			{
 				return [aGenerator loadSelf];
@@ -56,29 +56,30 @@
 			{
 				return [aGenerator nilConstant];
 			}
-		case global:
+		case LKSymbolScopeGlobal:
 			return [aGenerator loadClass:symbol];
-		case argument:
+		case LKSymbolScopeArgument:
 	   		return [aGenerator loadArgumentAtIndex:
 						  [symbols indexOfArgument:symbol]];
-		case external:
+		case LKSymbolScopeExternal:
 		{
-			LKExternalSymbolScope s = [(LKBlockSymbolTable*)symbols scopeOfExternal: symbol];
+			LKExternalSymbolScope s = 
+				[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol: symbol];
 			switch([s.scope scopeOfSymbol: symbol])
 			{
-				case local:
+				case LKSymbolScopeLocal:
 					return [aGenerator loadLocalAtIndex: [s.scope offsetOfLocal:symbol]
 					                lexicalScopeAtDepth: s.depth];
-				case argument:
+				case LKSymbolScopeArgument:
 					return [aGenerator loadArgumentAtIndex: [s.scope indexOfArgument:symbol]
 					                   lexicalScopeAtDepth: s.depth];
-				case object:
+				case LKSymbolScopeObject:
 				{
 					return [aGenerator loadValueOfType: [s.scope typeOfSymbol:symbol]
 											  atOffset: [s.scope offsetOfIVar:symbol]
 											fromObject: [aGenerator loadSelf]];
 				}
-				case class:
+				case LKSymbolScopeClass:
 				{
 					return [aGenerator loadClassVariable: symbol];
 				}
@@ -86,13 +87,13 @@
 					NSAssert(NO, @"Invalid scope for external");
 			}
 		}
-		case object:
+		case LKSymbolScopeObject:
 		{
 			return [aGenerator loadValueOfType: [symbols typeOfSymbol:symbol]
 			                          atOffset: [symbols offsetOfIVar:symbol]
 			                        fromObject: [aGenerator loadSelf]];
 		}
-		case class:
+		case LKSymbolScopeClass:
 		{
 			return [aGenerator loadClassVariable: symbol];
 		}

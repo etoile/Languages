@@ -23,7 +23,7 @@
  */
 - (NSRange) sourceLocation;
 /**
- * Returns the source file from which this token was generated.
+ * Returns the source code string from which this token was generated.
  */
 - (NSString*) sourceDocument;
 @end

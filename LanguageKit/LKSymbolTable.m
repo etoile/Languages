@@ -9,13 +9,13 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	   || [aName isEqualToString:@"self"]
 	   || [aName isEqualToString:@"super"])
 	{
-		return builtin;
+		return LKSymbolScopeBuiltin;
 	}
 	if(NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName])
 	{
-		return global;
+		return LKSymbolScopeGlobal;
 	}
-	return invalid;
+	return LKSymbolScopeInvalid;
 }
 
 @implementation LKObjectSymbolTable
@@ -31,7 +31,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	return nextOffset;
 }
-- (void) registerNewClass:(NSString*)aClass
+- (void) registerNewClassNamed:(NSString*)aClass
 {
 	[NewClasses setObject:self forKey:aClass];
 }
@@ -43,6 +43,11 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	instanceVariables = NSCopyMapTableWithZone(map, aZone);
 	nextOffset = next;
 	return self;
+}
+- (void)dealloc
+{
+	NSFreeMapTable(instanceVariables);
+	[super dealloc];
 }
 - (id) copyWithZone:(NSZone*)aZone
 {
@@ -102,13 +107,13 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	if (NSMapMember(instanceVariables, aName, 0, 0))
 	{
-		return object;
+		return LKSymbolScopeObject;
 	}
 	if ([classVariables containsObject:aName])
 	{
-		return class;
+		return LKSymbolScopeClass;
 	}
-	return invalid;
+	return LKSymbolScopeInvalid;
 }
 
 @end
@@ -161,13 +166,13 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
 	if ([localVariables containsObject:aName])
 	{
-		return local;
+		return LKSymbolScopeLocal;
 	}
 	if ([arguments containsObject:aName])
 	{
-		return argument;
+		return LKSymbolScopeArgument;
 	}
-	return invalid;
+	return LKSymbolScopeInvalid;
 }
 - (void) dealloc
 {
@@ -177,15 +182,15 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 @end
 @implementation LKBlockSymbolTable
-- (LKExternalSymbolScope) scopeOfExternal:(NSString*)aSymbol
+- (LKExternalSymbolScope) scopeOfExternalSymbol:(NSString*)aSymbol
 {
 	LKExternalSymbolScope scope = {0, nil};
 	LKSymbolTable *nextscope = enclosingScope;
-	while (nextscope) 
+	while (nil != nextscope) 
 	{
 		scope.depth++;
 		LKSymbolScope result = [nextscope scopeOfSymbol:aSymbol];
-		if (result != invalid && result != external)
+		if (result != LKSymbolScopeInvalid && result != LKSymbolScopeExternal)
 		{
 			scope.scope = nextscope;
 			break;
@@ -198,23 +203,23 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 - (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
 	LKSymbolScope scope = lookupUnscopedSymbol(aName);
-	if (scope == invalid)
+	if (scope == LKSymbolScopeInvalid)
 	{
 		scope = [super scopeOfSymbolNonrecursive:aName];
-		if (scope == invalid)
+		if (scope == LKSymbolScopeInvalid)
 		{
-			return external;
+			return LKSymbolScopeExternal;
 		}
 	}
 	return scope;
 }
 @end
 @implementation LKSymbolTable
-// You can't insert global symbols in Smalltalk.  
+//TODO You can't insert LKSymbolScopeGlobal symbols yet.
 - (void) addSymbol:(NSString*)aSymbol {}
 - (void) setScope:(LKSymbolTable*)scope
 {
-	ASSIGN(enclosingScope, scope);
+	enclosingScope = scope;
 }
 - (int) indexOfArgument:(NSString*)aName
 {
@@ -228,10 +233,10 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 - (LKSymbolScope) scopeOfSymbol:(NSString*)aName
 {
 	LKSymbolTable *scope = self;
-	while (scope) 
+	while (nil != scope) 
 	{
 		LKSymbolScope result = [scope scopeOfSymbolNonrecursive:aName];
-		if (result != invalid)
+		if (result != LKSymbolScopeInvalid)
 		{
 			return result;
 		}
@@ -263,7 +268,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 - (void) dealloc
 {
-	[enclosingScope release];
+	[types release];
 	[super dealloc];
 }
 @end

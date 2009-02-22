@@ -12,7 +12,7 @@
 	ASSIGN(superclass, aClass);
 	ASSIGN(ivars, anIvarList);
 	ASSIGN(cvars, aCvarList);
-	ASSIGN(methods, aMethodList);
+	methods = [aMethodList mutableCopy];
 	return self;
 }
 + (id) subclassWithName:(NSString*)aName
@@ -33,8 +33,8 @@
 	//Construct symbol table.
 	if (Nil == SuperClass)
 	{
-		symbols = 
-			[[LKObjectSymbolTable symbolTableForNewClassNamed:superclass] copy];
+		ASSIGNCOPY(symbols,
+			[LKObjectSymbolTable symbolTableForNewClassNamed:superclass]);
 		if (symbols == nil)
 		{
 			[NSException raise:@"SemanticError"
@@ -60,7 +60,7 @@
 	{
 		[(LKObjectSymbolTable*)symbols addClassVariable:cvar];
 	}
-    [(LKObjectSymbolTable*)symbols registerNewClass:classname];
+    [(LKObjectSymbolTable*)symbols registerNewClassNamed: classname];
 	FOREACH(methods, method, LKAST*)
 	{
 		[method setParent:self];
@@ -169,7 +169,7 @@
 {
 	return superclass;
 }
-- (NSMutableArray*) methods
+- (NSArray*) methods
 {
 	return methods;
 }
@@ -180,5 +180,14 @@
 - (NSArray*) ivars
 {
 	return ivars;
+}
+- (void)dealloc
+{
+  [classname release];
+  [superclass release];
+  [methods release];
+  [cvars release];
+  [ivars release];
+  [super dealloc];
 }
 @end

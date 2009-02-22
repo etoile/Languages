@@ -7,15 +7,16 @@
  */
 typedef	enum 
 {
-	invalid = 0,
-	external, // Bound variable referenced in a block
-	promoted, // Bound variable promoted into a block
-	argument, // Variable passed in to method / block
-	local,    // Variable declared in this lexical scope
-	object,   // Instance variable
-	class,    // Class variable
-	global,   // Global (only clas names)
-	builtin   // Variable with special semantics (e.g. self / super)
+	LKSymbolScopeInvalid = 0,
+	LKSymbolScopeExternal, /** Bound variable referenced in a block */
+	LKSymbolScopePromoted, /** Bound variable promoted into a block */
+	LKSymbolScopeArgument, /** Variable passed in to method / block */
+	LKSymbolScopeLocal,    /** Variable declared in this lexical scope */
+	LKSymbolScopeObject,   /** Instance variable */
+	LKSymbolScopeClass,    /** Class variable */
+	LKSymbolScopeGlobal,   /** Global (only clas names) */
+	LKSymbolScopeBuiltin   /** Variable with special semantics 
+							 (e.g. self / super) */
 } LKSymbolScope;
 
 /**
@@ -33,8 +34,8 @@ typedef	enum
  */
 - (void) addSymbol:(NSString*)aSymbol;
 /**
- * Returns the scope of a specified symbol.  Calls the non-recursive variant in
- * each of the parent scopes until it reaches the top of the AST.
+ * Returns the scope of a specified symbol.  Calls the (private) non-recursive
+ * variant in each of the parent scopes until it reaches the top of the AST.
  */
 - (LKSymbolScope) scopeOfSymbol:(NSString*)aName;
 /**
@@ -88,8 +89,8 @@ typedef	enum
 
 /**
  * External symbols are those that reside in a lexical scope outside of the
- * current one.  This structure stores the symbol table and the depth of
- * nesting away.  
+ * current one.  This structure stores the symbol table and the distance to
+ * where a variable is declared, in scopes.
  */
 typedef struct
 {
@@ -104,7 +105,7 @@ typedef struct
 /**
  * The scope of an externally-referenced variable.
  */
-- (LKExternalSymbolScope) scopeOfExternal:(NSString*)aSymbol;
+- (LKExternalSymbolScope) scopeOfExternalSymbol:(NSString*)aSymbol;
 @end
 
 
@@ -131,10 +132,10 @@ typedef struct
  * Adds a new class to the global symbol table.  Allows classes to be
  * referenced before they have been compiled. 
  */
-- (void) registerNewClass:(NSString*)aClass;
+- (void) registerNewClassNamed:(NSString*)aClass;
 /**
  * Initialise for the specified class.  All instance variables in the specified
- * class will be imported.
+ * class will be added to the symbol table.
  */
 - (LKSymbolTable*) initForClass:(Class)aClass;
 /**

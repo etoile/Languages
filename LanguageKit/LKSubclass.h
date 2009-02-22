@@ -35,7 +35,7 @@
 /**
  * Returns the methods
  */
-- (NSMutableArray*) methods;
+- (NSArray*) methods;
 /**
  * Returns the class variables
  */

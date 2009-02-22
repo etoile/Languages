@@ -131,7 +131,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		LKDeclRef *ref = SAFECAST(LKDeclRef, target);
 		NSString *symbol = ref->symbol;
 		LKSymbolScope scope = [symbols scopeOfSymbol:symbol];
-		if (scope == global)
+		if (scope == LKSymbolScopeGlobal)
 		{
 			result = [aGenerator sendMessage:sel
 			                           types:type
@@ -139,7 +139,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 			                        withArgs:argv
 			                           count:argc];
 		}
-		else if (scope == builtin)
+		else if (scope == LKSymbolScopeBuiltin)
 		{
 			if ([symbol isEqualToString:@"self"])
 			{

@@ -93,7 +93,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 				[NSException raise:@"InvalidSymbol"
 							format:@"Unrecognised symbol %@", aChild];
 			}
-			case global:
+			case LKSymbolScopeGlobal:
 			{
 				[NSException raise:@"InvalidLValue"
 							format:@"Global symbol %@ is not a valid l-value", aChild];
