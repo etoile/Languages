@@ -4,8 +4,6 @@
  * AST node representing a block closure expression.
  */
 @interface LKBlockExpr : LKAST {
-/** Counter used when binding variables. */
-	int nextClosed;
 /** List of statements in this node. */
 	NSMutableArray * statements;
 }

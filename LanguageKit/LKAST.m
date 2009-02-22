@@ -1,8 +1,8 @@
 #import "LKAST.h"
 #import "LKDeclRef.h"
 
-Class DeclRefClass;
-Class ModuleClass;
+static Class DeclRefClass;
+static Class ModuleClass;
 
 static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 
@@ -57,7 +57,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 - (void) setParent:(LKAST*)aNode
 {
 	[self inheritSymbolTable:[aNode symbols]];
-	ASSIGN(parent, aNode);
+	parent = aNode;
 }
 - (void) setBracketed:(BOOL)aFlag
 {
@@ -71,44 +71,6 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 {
 	// Subclasses should implement this.
 	[self doesNotRecognizeSelector:_cmd];
-}
-- (void) resolveScopeOf:(NSString*)aSymbol
-{
-	[parent resolveScopeOf:aSymbol];
-}
-- (void) checkLValue:(id) aChild
-{
-	if (nil == aChild)
-	{
-		// nil is valid as a target since it signifies the result is ignored
-		return;
-	}
-	if ([aChild isKindOfClass:DeclRefClass])
-	{
-		LKDeclRef *child = aChild;
-		switch ([symbols scopeOfSymbol:child->symbol])
-		{
-			case 0:
-			{
-				[NSException raise:@"InvalidSymbol"
-							format:@"Unrecognised symbol %@", aChild];
-			}
-			case LKSymbolScopeGlobal:
-			{
-				[NSException raise:@"InvalidLValue"
-							format:@"Global symbol %@ is not a valid l-value", aChild];
-			}
-			default: 
-			{
-				return;
-			}
-		}
-	}
-	else
-	{
-		[NSException raise:@"InvalidLValue"
-					format:@"Result of an expression (%@) may not be used as an l-value", aChild];
-	}
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
@@ -135,7 +97,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 - (void) visitArray:(NSMutableArray*)anArray
         withVisitor:(id<LKASTVisitor>)aVisitor
 {
-	unsigned count = [anArray count];
+	unsigned int count = [anArray count];
 	for (int i=0 ; i<count ; i++)
 	{
 		LKAST *old = [anArray objectAtIndex:i];
@@ -146,5 +108,10 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 		}
 		[new visitWithVisitor:aVisitor];
 	}
+}
+- (void)dealloc
+{
+	[symbols release];
+	[super dealloc];
 }
 @end

@@ -1,16 +1,19 @@
 #import "LKComparison.h"
 
 @implementation LKCompare
-+ (LKCompare*) compare:(LKAST*)expr1 to:(LKAST*)expr2
-{
-	return [[[LKCompare alloc] initComparing:expr1 to:expr2] autorelease];
-}
-- (id) initComparing:(LKAST*)expr1 to:(LKAST*)expr2
+- (LKCompare*) initWithLeftExpression: (LKAST*)expr1
+                      rightExpression: (LKAST*)expr2;
 {
 	SELFINIT;
 	ASSIGN(lhs, expr1);
 	ASSIGN(rhs, expr2);
 	return self;
+}
++ (LKCompare*) comparisonWithLeftExpression: (LKAST*)expr1
+					        rightExpression: (LKAST*)expr2;
+{
+	return [[[LKCompare alloc] initWithLeftExpression:expr1
+	                                  rightExpression: expr2] autorelease];
 }
 - (NSString*) description
 {
@@ -38,5 +41,11 @@
 	tmp = [aVisitor visitASTNode:rhs];
 	ASSIGN(rhs, tmp);
 	[rhs visitWithVisitor:aVisitor];
+}
+- (void)dealloc
+{
+	[lhs release];
+	[rhs release];
+	[super dealloc];
 }
 @end

@@ -7,7 +7,7 @@
 	ASSIGN(comment, aString);
 	return self;
 }
-+ (LKComment*) commentForString:(NSString*)aString
++ (LKComment*) commentWithString:(NSString*)aString
 {
 	return [[[LKComment alloc] initWithString:aString] autorelease];
 }

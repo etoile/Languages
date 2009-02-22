@@ -15,6 +15,7 @@ static char *ReleaseTypes;
 @implementation LKAssignExpr
 + (void) initialize
 {
+	if (self != [LKAssignExpr class]) { return; }
 	RetainTypes = 
 		strdup([[NSObject instanceMethodSignatureForSelector:@selector(retain)]
 		        _methodTypes]);
@@ -88,7 +89,6 @@ static char *ReleaseTypes;
 			           lexicalScopeAtDepth:scope.depth];
 					break;
 				case LKSymbolScopeObject:
-				{
 					// TODO: Move this to -check
 					if ([[scope.scope typeOfSymbol:target->symbol] characterAtIndex:0] != '@')
 					{
@@ -101,8 +101,6 @@ static char *ReleaseTypes;
 								  atOffset:[scope.scope offsetOfIVar:target->symbol]
 								fromObject:[aGenerator loadSelf]];
 					break;
-				}
-
 				default:
 					NSAssert(NO, 
 						@"External symbols must be local or arguments.");
@@ -136,5 +134,11 @@ static char *ReleaseTypes;
 - (LKAST*) expression
 {
 	return expr;
+}
+- (void)dealloc
+{
+	[target release];
+	[expr release];
+	[super dealloc];
 }
 @end

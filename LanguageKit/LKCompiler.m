@@ -132,7 +132,7 @@ int DEBUG_DUMP_MODULES = 0;
 		ast = [LKCategoryDef categoryWithClass: name
 		                               methods: [NSArray arrayWithObject:ast]];
 		module = [LKModule module];
-		[module addCategory: ast];
+		[module addCategory: (LKCategory*)ast];
 		[module check];
 	NS_HANDLER
 		NSDictionary *e = [localException userInfo];

@@ -4,9 +4,9 @@
 
 @class LKModule;
 /**
- * Root class for AST nodes.  Every node in the Smalltalk abstract syntax tree
- * inherits from this.  It stores the parent, allowing navigation up the tree,
- * and a pointer to the symbol table for this scope.  
+ * Root class for AST nodes.  Every node in the abstract syntax tree inherits
+ * from this.  It stores the parent, allowing navigation up the tree, and a
+ * pointer to the symbol table for this scope.  
  */
 @interface LKAST : NSObject {
 	/** Node above this one in the tree. */
@@ -21,7 +21,7 @@
 /**
  * Returns the AST nodes available at runtime for subclasses and categories.
  */
-+ (NSMutableDictionary *) code;
++ (NSMutableDictionary*)code;
 /**
  * Returns the module containing the current AST.
  */
@@ -64,16 +64,6 @@
  */
 - (void) check;
 /**
- * Resolve the scope of a symbol used inside a block (closure) representing a
- * variable declared outside.
- */
-- (void) resolveScopeOf:(NSString*)aSymbol;
-/**
- * Checks whether the specified node is a valid LValue (i.e. something that can
- * be assigned to).
- */
-- (void) checkLValue:(id) aChild;
-/**
  * Compile this AST node with the specified code generator.
  */
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator;
@@ -106,6 +96,5 @@
 - (void) visitArray:(NSMutableArray*)anArray
         withVisitor:(id<LKASTVisitor>)aVisitor;
 @end
-
 
 #define SAFECAST(type, obj) ([obj isKindOfClass:[type class]] ? (type*)obj : ([NSException raise:@"InvalidCast" format:@"Can not cast %@ to %s", obj, #type], (type*)nil))

@@ -10,17 +10,13 @@
 }
 - (id) initWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
 {
-	SELFINIT;
 	LKBlockSymbolTable *st = [[LKBlockSymbolTable alloc] initWithLocals:locals args:arguments];
-	[self initWithSymbolTable: st];
+	self = [self initWithSymbolTable: st];
 	RELEASE(st);
-	ASSIGN(statements, statementList);
-	return self;
-}
-- (id) init
-{
-	SUPERINIT;
-	nextClosed = 1;
+	if (self != nil)
+	{
+		ASSIGN(statements, statementList);
+	}
 	return self;
 }
 - (void) setStatements: (NSMutableArray*)anArray
@@ -40,7 +36,7 @@
 	NSMutableString *str = [NSMutableString string];
 	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	[str appendString:@"[ "];
-	if ([[st args] count])
+	if ([[st args] count] > 0)
 	{
 		FOREACH([st args], symbol, NSString*)
 		{
@@ -83,5 +79,10 @@
 - (NSMutableArray*) statements
 {
 	return statements;
+}
+- (void)dealloc
+{
+	[statements release];
+	[super dealloc];
 }
 @end

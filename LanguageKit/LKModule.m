@@ -1,7 +1,8 @@
 #import "LKModule.h"
 
 static NSMutableDictionary *SelectorConflicts = nil;
-
+NSString *LKCompilerDidCompileNewClassesNotification = 
+	@"LKCompilerDidCompileNewClassesNotification";
 
 @implementation LKModule 
 + (void) initialize
@@ -20,7 +21,7 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		struct objc_method_list *methods = class->methods;
 		while (methods != NULL)
 		{
-			for (unsigned i=0 ; i<methods->method_count ; i++)
+			for (unsigned int i=0 ; i<methods->method_count ; i++)
 			{
 				Method *m = &methods->method_list[i];
 
@@ -82,19 +83,19 @@ static NSMutableDictionary *SelectorConflicts = nil;
 		}
 	}
 }
-- (void) addClass:(LKAST*)aClass
+- (void) addClass:(LKSubclass*)aClass
 {
 	[classes addObject:aClass];
 }
-- (void) addCategory:(LKAST*)aCategory
+- (void) addCategory:(LKCategory*)aCategory
 {
 	[categories addObject:aCategory];
 }
 - (const char*) typeForMethod:(NSString*)methodName
 {
-	NSString *type = nil;
+	NSString *type = [typeOverrides objectForKey:methodName];
 	// First see if this is an overridden type
-	if (nil != (type = [typeOverrides objectForKey:methodName]))
+	if (nil != type)
 	{
 		return [type UTF8String];
 	}
@@ -109,18 +110,18 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	const char *types = sel_get_type(sel_get_any_typed_uid([methodName UTF8String]));
 	if (NULL == types) 
 	{
-		int args = 0;
+		int argCount = 0;
 		for (unsigned i=0, len = [methodName length] ; i<len ; i++)
 		{
 			if ([methodName characterAtIndex:i] == ':')
 			{
-				args++;
+				argCount++;
 			}
 		}
 		int offset = sizeof(id) + sizeof(SEL);
 		NSMutableString *ty = [NSMutableString stringWithFormat:@"@%d@0:%d",
-			sizeof(SEL) + sizeof(id) * (args + 2), offset];
-		for (int i=0 ; i<args ; i++)
+			sizeof(SEL) + sizeof(id) * (argCount + 2), offset];
+		for (int i=0 ; i<argCount ; i++)
 		{
 			offset += sizeof(id);
 			[ty appendFormat:@"@%d", offset];
@@ -170,8 +171,8 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	}
 	[aGenerator endModule];
 	[[NSNotificationCenter defaultCenter]
-	   	postNotificationName:@"NewClassesCompiledNotification"
-		              object:nil];
+	   	postNotificationName: LKCompilerDidCompileNewClassesNotification
+		              object: nil];
 	return NULL;
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
@@ -179,16 +180,24 @@ static NSMutableDictionary *SelectorConflicts = nil;
 	[self visitArray: classes withVisitor: aVisitor];
 	[self visitArray: categories withVisitor: aVisitor];
 }
-- (NSMutableArray*) classes
+- (NSArray*)allClasses
 {
 	return classes;
 }
-- (NSMutableArray*) categories
+- (NSArray*)allCategories
 {
 	return categories;
 }
-- (NSMutableDictionary*) pragmas
+- (NSDictionary*) pragmas
 {
 	return pragmas;
+}
+- (void)dealloc
+{
+	[classes release];
+	[categories release];
+	[pragmas release];
+	[typeOverrides release];
+	[super dealloc];
 }
 @end

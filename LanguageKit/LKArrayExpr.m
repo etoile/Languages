@@ -9,7 +9,7 @@
 - (id) initWithElements:(NSArray*)anArray
 {
 	SELFINIT;
-	ASSIGN(elements, [anArray mutableCopy]);
+	elements = [anArray mutableCopy];
 	return self;
 }
 - (void) check
@@ -49,5 +49,10 @@
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
 	[self visitArray:elements withVisitor:aVisitor];
+}
+- (void)dealloc
+{
+	[elements release];
+	[super dealloc];
 }
 @end

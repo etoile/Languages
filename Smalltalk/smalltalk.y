@@ -206,7 +206,7 @@ statements(L) ::= .
 
 comment(S) ::= COMMENT(C).
 {
-	S = [LKComment commentForString:C];
+	S = [LKComment commentWithString:C];
 }
 
 statement(S) ::= expression(E).
@@ -364,7 +364,8 @@ simple_expression(E) ::= simple_expression(T) simple_message(M).
 }
 simple_expression(E) ::= simple_expression(L) EQ EQ simple_expression(R).
 {
-	E = [LKCompare compare:L to:R];
+	E = [LKCompare comparisonWithLeftExpression: L
+	                            rightExpression: R];
 }
 simple_expression(E) ::= LPAREN expression(X) RPAREN.
 {

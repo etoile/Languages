@@ -6,7 +6,7 @@
 /**
  * Creates a new comment with the given string.
  */
-+ (LKComment*) commentForString:(NSString*)aString;
++ (LKComment*) commentWithString:(NSString*)aString;
 /**
  * Returns the string value of the comment.
  */

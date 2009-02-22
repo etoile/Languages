@@ -4,6 +4,6 @@
 	LKAST *lhs;
 	LKAST *rhs;
 }
-+ (LKCompare*) compare:(LKAST*)expr1 to:(LKAST*)expr2;
-- (id) initComparing:(LKAST*)expr1 to:(LKAST*)expr2;
++ (LKCompare*) comparisonWithLeftExpression: (LKAST*)expr1
+					        rightExpression: (LKAST*)expr2;
 @end

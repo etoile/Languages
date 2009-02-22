@@ -1,5 +1,8 @@
 #import "LKAST.h"
 
+@class LKSubclass;
+@class LKCategory;
+
 /**
  * AST node representing a module - a set of classes and categories compiled
  * together.
@@ -26,11 +29,11 @@
 /**
  * Add a new class to this module.
  */
-- (void) addClass:(LKAST*)aClass;
+- (void) addClass: (LKSubclass*)aClass;
 /**
  * Add a new category to this module.
  */
-- (void) addCategory:(LKAST*)aCategory;
+- (void) addCategory: (LKCategory*)aCategory;
 /**
  * Returns the type that should be used for a given selector.
  */
@@ -38,13 +41,18 @@
 /**
  * Returns the classes in this module
  */
-- (NSMutableArray*) classes;
+- (NSArray*) allClasses;
 /**
  * Returns the categories in this module
  */
-- (NSMutableArray*) categories;
+- (NSArray*) allCategories;
 /**
  * Returns the pragmas in this module
  */
-- (NSMutableDictionary*) pragmas;
+- (NSDictionary*) pragmas;
 @end
+
+/**
+ * Notification posted when new classes have been compiled.
+ */
+extern NSString *LKCompilerDidCompileNewClassesNotification;
