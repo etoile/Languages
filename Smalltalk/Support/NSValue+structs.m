@@ -20,4 +20,44 @@
 {
 	return [NSValue valueWithSize:NSMakeSize(width, height)];
 }
+
+- (unsigned int) location
+{
+	return [self rangeValue].location;
+}
+
+- (unsigned int) length
+{
+	return [self rangeValue].length;
+}
+
+- (float) x
+{
+	return [self pointValue].x;
+}
+
+- (float) y
+{
+	return [self pointValue].y;
+}
+
+- (NSValue *) origin
+{
+	return [NSValue valueWithPoint: [self rectValue].origin];
+}
+
+- (NSValue *) size
+{
+	return [NSValue valueWithSize: [self rectValue].size];
+}
+
+- (float) width
+{
+	return [self sizeValue].width;
+}
+
+- (float) height
+{
+	return [self sizeValue].height;
+}
 @end
