@@ -30,7 +30,7 @@
 	return @"EScript Preamble";
 }
 
-- (void*) compileWith:(id<LKCodeGenerator>)aGenerator
+- (void*) compileWithGenerator:(id<LKCodeGenerator>)aGenerator
 {
 	id module = [self module];
 	const char *types_new = [module typeForMethod:@"new"];
