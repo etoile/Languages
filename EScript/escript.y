@@ -27,7 +27,7 @@ file ::= module(M) script(S).
 {
 	// NSLog(@"%@", S);
 	[M addClass:S];
-	[p setDelegate:M];
+	[p setAST:M];
 }
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
@@ -78,7 +78,7 @@ statement_list(L) ::= statement_list(T) statement(S).
 }
 statement_list(L) ::= statement_list(T) COMMENT(C).
 {
-	[T addObject:[LKComment commentForString:C]];
+	[T addObject:[LKComment commentWithString:C]];
 	L = T;
 }
 statement_list(L) ::= statement_list(T) FUNCTION WORD(F)
@@ -87,7 +87,7 @@ statement_list(L) ::= statement_list(T) FUNCTION WORD(F)
 {
 	[T addObject:[LKVariableDecl variableDeclWithName:F]];
 	[T addObject:
-		[LKAssignExpr assignWithTarget:[LKDeclRef reference:F]
+		[LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:F]
 		                          expr:[LKBlockExpr blockWithArguments:A
 		                                                        locals:nil
 		                                                    statements:B]]];
@@ -111,8 +111,9 @@ declarations(L) ::= declarations(T) COMMA WORD(V).
 declarations(L) ::= declarations(T) COMMA WORD(V) EQ expression(E).
 {
 	[T addObject:[LKVariableDecl variableDeclWithName:V]];
-	[T addObject:[LKAssignExpr assignWithTarget:[LKDeclRef reference:V]
-	                                       expr:E]];
+	[T addObject:
+		[LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:V]
+		                          expr:E]];
 	L = T;
 }
 declarations(L) ::= WORD(V).
@@ -124,13 +125,14 @@ declarations(L) ::= WORD(V) EQ expression(E).
 {
 	L = [NSMutableArray arrayWithObjects:
 			[LKVariableDecl variableDeclWithName:V],
-			[LKAssignExpr assignWithTarget:[LKDeclRef reference:V] expr:E],
+			[LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:V]
+			                          expr:E],
 			nil];
 }
 
 statement(S) ::= RETURN SEMI.
 {
-	S = [LKReturn returnWithExpr:[LKDeclRef reference:@"nil"]];
+	S = [LKReturn returnWithExpr:[LKDeclRef referenceWithSymbol:@"nil"]];
 }
 statement(S) ::= RETURN expression(E) SEMI.
 {
@@ -194,7 +196,8 @@ body ::= SEMI.
    This includes all assignments and function applications. */
 statement_expression(E) ::= WORD(T) EQ expression(V).
 {
-	E = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:V];
+	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
+	                              expr:V];
 }
 statement_expression(E) ::= expression(T) DOT WORD(K) EQ expression(V).
 {
@@ -216,19 +219,20 @@ statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
 statement_expression(E) ::= WORD(T) shortcut_assign(S) expression(R). [PLUSEQ]
 {
 	E = [LKMessageSend messageWithSelectorName:S];
-	[E setTarget:[LKDeclRef reference:T]];
+	[E setTarget:[LKDeclRef referenceWithSymbol:T]];
 	[E addArgument:R];
-	E = [LKAssignExpr assignWithTarget:[LKDeclRef reference:T] expr:E];
+	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
+	                              expr:E];
 }
 statement_expression(E) ::= WORD(V) LPAREN RPAREN.
 {
 	E = [LKMessageSend messageWithSelectorName:@"value"];
-	[E setTarget:[LKDeclRef reference:V]];
+	[E setTarget:[LKDeclRef referenceWithSymbol:V]];
 }
 statement_expression(E) ::= WORD(V) LPAREN expressions(A) RPAREN.
 {
 	E = [LKMessageSend message];
-	[E setTarget:[LKDeclRef reference:V]];
+	[E setTarget:[LKDeclRef referenceWithSymbol:V]];
 	FOREACH(A, arg, LKAST*)
 	{
 		[E addSelectorComponent:@"value:"];
@@ -306,11 +310,11 @@ expression(E) ::= FALSE.
 }
 expression(E) ::= NULL.
 {
-	E = [LKDeclRef reference:@"nil"];
+	E = [LKDeclRef referenceWithSymbol:@"nil"];
 }
 expression(E) ::= WORD(V).
 {
-	E = [LKDeclRef reference:V];
+	E = [LKDeclRef referenceWithSymbol:V];
 }
 expression(E) ::= STRING(S).
 {
@@ -326,7 +330,8 @@ expression(E) ::= AT WORD(S).
 }
 expression(E) ::= expression(L) EQEQEQ expression(R).
 {
-	E = [LKCompare compare:L to:R];
+	E = [LKCompare comparisonWithLeftExpression:L
+	                            rightExpression:R];
 }
 expression(E) ::= LPAREN expression(X) RPAREN.
 {
@@ -340,14 +345,14 @@ expression(E) ::= LBRACK expression_list(L) RBRACK.
 expression(E) ::= LBRACE RBRACE.
 {
 	E = [LKMessageSend messageWithSelectorName:@"clone"];
-	[E setTarget:[LKDeclRef reference:@"Object"]];
+	[E setTarget:[LKDeclRef referenceWithSymbol:@"Object"]];
 }
 expression(E) ::= LBRACE keys_and_values(L) RBRACE.
 {
 	// FIXME: Get rid of the self message
 	[L addObject:[LKMessageSend messageWithSelectorName:@"self"]];
 	id msg = [LKMessageSend messageWithSelectorName:@"clone"];
-	[msg setTarget:[LKDeclRef reference:@"Object"]];
+	[msg setTarget:[LKDeclRef referenceWithSymbol:@"Object"]];
 	E = [LKMessageCascade messageCascadeWithTarget:msg messages:L];
 }
 

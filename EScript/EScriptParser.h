@@ -8,11 +8,11 @@
  * parser created using the Lemon parser generator.
  */
 @interface EScriptParser : NSObject <LKParser> {
-  LKAST *delegate;
+  LKAST *ast;
 }
 /**
  * Used by the Lemon implementation to feed the generated AST back so the
  * Parser can return it.
  */
-- (void) setDelegate:(LKAST*)ast;
+- (void) setAST:(LKAST*)ast;
 @end

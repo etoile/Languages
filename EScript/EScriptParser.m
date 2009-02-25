@@ -53,7 +53,7 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 
 - (LKAST*) parse:(NSString*)s
 {
-	unsigned sLength = [s length];
+	unsigned int sLength = [s length];
 	/* Cache some IMPs of methods we call a lot */
 	SEL charSel = @selector(characterAtIndex:);
 	SEL substrSel = @selector(tokenWithRange:inSource:);
@@ -176,15 +176,15 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	NS_ENDHANDLER
 	EScriptParse(parser, 0, nil, self);
 	EScriptParseFree(parser, free);
-	return delegate;
+	return ast;
 }
 
 - (LKModule*) parseString:(NSString*)source
 {
-	LKAST *ast = [self parse: source];
-	if ([ast isKindOfClass:[LKModule class]])
+	LKAST *module = [self parse: source];
+	if ([module isKindOfClass:[LKModule class]])
 	{
-		return ast;
+		return (LKModule*)module;
 	}
 	return nil;
 }
@@ -194,8 +194,8 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	return nil;
 }
 
-- (void) setDelegate:(LKAST*)ast
+- (void) setAST:(LKAST*)anAST
 {
-	ASSIGN(delegate, ast);
+	ASSIGN(ast, anAST);
 }
 @end
