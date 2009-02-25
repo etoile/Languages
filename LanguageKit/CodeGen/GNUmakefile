@@ -26,8 +26,10 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	CodeGenBlock.h\
 	CodeGenModule.h
 
-#FIXME: -fno-inline is just for debugging and will make stuff very slow.  Remove it before committing.
-${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE -fno-inline
+# uncomment this line when debugging if you have problems with over-aggressive
+# inlining throwing away useful debugging info.
+#${FRAMEWORK_NAME}_CPPFLAGS =  -fno-inline
+${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
