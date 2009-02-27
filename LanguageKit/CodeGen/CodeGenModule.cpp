@@ -99,6 +99,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	CreateClassPointerGlobal("RetainedStackContext", ".smalltalk_context_retained_class");
 	CreateClassPointerGlobal("Symbol", ".smalltalk_symbol_class");
 	CreateClassPointerGlobal("NSValue", ".smalltalk_nsvalue_class");
+	CreateClassPointerGlobal("NSNumber", ".smalltalk_nsnumber_class");
 }
 
 void CodeGenModule::BeginClass(const char *Class,

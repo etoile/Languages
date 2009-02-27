@@ -68,18 +68,44 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			boxed->setOnlyReadsMemory();
 			return boxed;
 		}
+		case 'f': case 'd':
+		{
+			// Box float/double
+			Value *NSNumberClass = B->CreateLoad(
+				CGM->getModule()->getGlobalVariable(".smalltalk_nsnumber_class",
+					true));
+			const char *castSelName;
+			if (*typestr == 'f')
+			{
+				castSelName = "numberWithFloat:";
+			}
+			else
+			{
+				castSelName = "numberWithDouble:";
+			}
+			Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
+					NULL, NSNumberClass, Runtime->GetSelector(*B,
+						castSelName, NULL), &V, 1);
+			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
+			{
+				call->setOnlyReadsMemory();
+			}
+			return boxed;
+		}
 		case ':': 
 		{
-			Value *SymbolCalss = CGM->getModule()->getGlobalVariable(
-					".smalltalk_symbol_class", true);
+			Value *SymbolCalss = B->CreateLoad(
+				CGM->getModule()->getGlobalVariable(
+					".smalltalk_symbol_class", true));
 			return Runtime->GenerateMessageSend(*B, IdTy, false, NULL,
-					SymbolCalss, Runtime->GetSelector(*B, "SymbolForCString:",
+					SymbolCalss, Runtime->GetSelector(*B, "SymbolForSelector:",
 						NULL), &V, 1);
 		}
 		case '{':
 		{
-			Value *NSValueClass = Runtime->LookupClass(*B,
-				CGM->MakeConstantString("NSValue"));
+			Value *NSValueClass = B->CreateLoad(
+				CGM->getModule()->getGlobalVariable(
+					".smalltalk_nsvalue_class", true));
 			const char * castSelName = "valueWithBytes:objCType:";
 			bool passValue = false;
 			if (0 == strncmp(typestr, "{_NSRect", 8))
@@ -118,8 +144,9 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 		// Other types, just wrap them up in an NSValue
 		default:
 		{
-			Value *NSValueClass =
-				CGM->getModule()->getGlobalVariable(".smalltalk_nsvalue_class", true);
+			Value *NSValueClass = B->CreateLoad(
+				CGM->getModule()->getGlobalVariable(
+					".smalltalk_nsvalue_class",	true));
 			// TODO: We should probably copy this value somewhere, maybe with a
 			// custom object instead of NSValue?
 			const char *end = typestr;

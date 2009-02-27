@@ -15,6 +15,10 @@
 {
 	return [[Symbol alloc] initWithSelector:sel_get_uid(aSymbol)];
 }
++ (id) SymbolForSelector:(SEL) aSelector
+{
+	return [[Symbol alloc] initWithSelector:aSelector];
+}
 - (id) stringValue
 {
 	return NSStringFromSelector(selector);
