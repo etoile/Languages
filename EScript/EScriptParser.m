@@ -20,19 +20,49 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 
 #define CALL_PARSER(token, arg) EScriptParse(parser, TOKEN_##token, arg, self);// NSLog(@"Parsing %@ (%s)", arg, #token)
 #define CHAR(x) charAt(s, charSel, x)
-#define WHILE(is) for(j=i ; j<sLength-1 && is(c) ; c=CHAR(++j)) {}
 #define WORD_TOKEN substr(LKTokenClass, substrSel, NSMakeRange(i, j-i), s)
+
 #define CASE(start, end, function)\
 	if(start(c))\
 	{\
-		WHILE(end)\
+		for(j=i ; j<sLength-1 && end(c) ; c=CHAR(++j)) {}\
 		function\
 		i = MAX(i,j-1);\
 	}
-#define CHARCASE(letter, token) case letter: CALL_PARSER(token, WORD_TOKEN); break;
+
+#define CHARCASE1(char1, token1)\
+	case char1:\
+		CALL_PARSER(token1, WORD_TOKEN);\
+		break;
+
+#define CHARCASE2(char1, char2, token1, token2)\
+	case char1:\
+		if (i<sLength-1) if (char2 == CHAR(i + 1))\
+		{\
+			j++; CALL_PARSER(token2, WORD_TOKEN); i++;\
+			break;\
+		}\
+		CALL_PARSER(token1, WORD_TOKEN);\
+		break;
+
+#define CHARCASE3(char1, char2, char3, token1, token2, token3)\
+	case char1:\
+		if (i<sLength-1) if (char2 == CHAR(i + 1))\
+		{\
+			if (i<sLength-2) if (char3 == CHAR(i + 2))\
+			{\
+				j+=2; CALL_PARSER(token3, WORD_TOKEN); i+=2;\
+				break;\
+			}\
+			j++; CALL_PARSER(token2, WORD_TOKEN); i++;\
+			break;\
+		}\
+		CALL_PARSER(token1, WORD_TOKEN);\
+		break;
 
 #define SET_KEYWORD(key, token) \
 	NSMapInsert(keywords, @#key, (void*)(uintptr_t)TOKEN_ ## token)
+
 + (void) initialize
 {
 	keywords = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 2);
@@ -74,7 +104,7 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	volatile unsigned int i;
 	unsigned lineStart = 0;
 	NS_DURING
-	for(i=0 ; i<sLength; i++)
+	for (i=0 ; i<sLength ; i++)
 	{
 		unichar c = CHAR(i);
 		CASE(isalpha, isalnum, 
@@ -89,9 +119,9 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 		})
 		else if (isspace(c))
 		{
-			for(j=i ; j<sLength-1 && isspace(c) ; c=CHAR(++j))
+			for (j=i ; j<sLength-1 && isspace(c) ; c=CHAR(++j))
 		   	{
-				if (c == '\n')
+				if ('\n' == c)
 				{
 					line++;
 					lineStart = j + 1;
@@ -99,12 +129,12 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 			}
 			i = MAX(i,j-1);
 		}
-		else if ('"' == c && i<sLength - 2)
+		else if ('"' == c && i<sLength-1)
 		{
 			c=CHAR(++i);
-			for(j=i ; j<sLength-1 && '"' != c ; c=CHAR(++j))
+			for (j=i ; j<sLength-1 && '"' != c ; c=CHAR(++j))
 			{
-				if (c == '\n')
+				if ('\n' == c)
 				{
 					line++;
 					lineStart = j + 1;
@@ -113,17 +143,64 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 			CALL_PARSER(STRING, WORD_TOKEN);
 			i = j;
 		}
-		else if ('\'' == c && i<sLength - 2)
+		else if ('\'' == c && i<sLength-1)
 		{
-			j = i;
-			do
+			c=CHAR(++i);
+			for (j=i ; j<sLength-1 && '\'' != c ; c=CHAR(++j))
 			{
-				c=CHAR(++j);
-			} while (j<sLength-1 && '\'' != c);
-			i++;
+				if ('\n' == c)
+				{
+					line++;
+					lineStart = j + 1;
+				}
+			}
 			CALL_PARSER(STRING, WORD_TOKEN);
-			j++;
-			i = MAX(i,j-1);
+			i = j;
+		}
+		else if ('/' == c && i<sLength-1)
+		{
+			c=CHAR(++i);
+			if ('/' == c && i<sLength-1)
+			{
+				c=CHAR(++i);
+				for (j=i ; j<sLength-1 && '\n' != c ; c=CHAR(++j)) {}
+				if ('\n' == c)
+				{
+					line++;
+					lineStart = j + 1;
+				}
+				CALL_PARSER(COMMENT, WORD_TOKEN);
+				i = j;
+			}
+			else if ('*' == c && i<sLength-2)
+			{
+				unichar h = CHAR(++i);
+				j = i;
+				do {
+					c = h;
+					h = CHAR(++j);
+					if ('\n' == c)
+					{
+						line++;
+						lineStart = j;
+					}
+				} while (j<sLength-1 && ('*' != c || '/' != h));
+				j--;
+				CALL_PARSER(COMMENT, WORD_TOKEN);
+				i = j + 1;
+			}
+			else if ('=' == c)
+			{
+				j = i + 1;
+				i--;
+				CALL_PARSER(DIVEQ, WORD_TOKEN);
+				i++;
+			}
+			else
+			{
+				j = i--;
+				CALL_PARSER(DIV, WORD_TOKEN);
+			}
 		}
 		else CASE(isdigit, isdigit, {CALL_PARSER(NUMBER, WORD_TOKEN);})
 		else
@@ -131,25 +208,25 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 			j = i + 1;
 			switch(c)
 			{
-				CHARCASE('@', AT)
-				CHARCASE(',', COMMA)
-				CHARCASE(':', COLON)
-				CHARCASE(';', SEMI)
-				CHARCASE('.', DOT)
-				CHARCASE('+', PLUS)
-				CHARCASE('-', MINUS)
-				CHARCASE('*', MUL)
-				CHARCASE('/', DIV)
-				CHARCASE('%', MOD)
-				CHARCASE('=', EQ)
-				CHARCASE('<', LT)
-				CHARCASE('>', GT)
-				CHARCASE('(', LPAREN)
-				CHARCASE(')', RPAREN)
-				CHARCASE('[', LBRACK)
-				CHARCASE(']', RBRACK)
-				CHARCASE('{', LBRACE)
-				CHARCASE('}', RBRACE)
+				CHARCASE1('@', AT)
+				CHARCASE1(',', COMMA)
+				CHARCASE1(':', COLON)
+				CHARCASE1(';', SEMI)
+				CHARCASE1('.', DOT)
+				CHARCASE2('+', '=', PLUS, PLUSEQ)
+				CHARCASE2('-', '=', MINUS, MINUSEQ)
+				CHARCASE2('*', '=', MUL, MULEQ)
+				CHARCASE2('/', '=', DIV, DIVEQ)
+				CHARCASE2('%', '=', MOD, MODEQ)
+				CHARCASE3('=', '=', '=', EQ, EQEQ, EQEQEQ)
+				CHARCASE1('<', LT)
+				CHARCASE1('>', GT)
+				CHARCASE1('(', LPAREN)
+				CHARCASE1(')', RPAREN)
+				CHARCASE1('[', LBRACK)
+				CHARCASE1(']', RBRACK)
+				CHARCASE1('{', LBRACE)
+				CHARCASE1('}', RBRACE)
 				default:
 					NSLog(@"Weird character '%c' found on line %d", c, line);
 			}
