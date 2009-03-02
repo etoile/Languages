@@ -399,9 +399,9 @@ void CodeGenModule::compile(void)
 	}
 	LOG("Compiling...\n");
 	EE->runStaticConstructorsDestructors(TheModule, false);
+	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
 	void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
 	LOG("Loading %x...\n", (unsigned)(unsigned long)f);
 	f();
-	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
 	LOG("Loaded.\n");
 }
