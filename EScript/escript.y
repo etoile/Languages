@@ -199,18 +199,16 @@ statement_expression(E) ::= WORD(T) EQ expression(V).
 	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
 	                              expr:V];
 }
-statement_expression(E) ::= expression(T) DOT WORD(K) EQ expression(V).
+statement_expression(E) ::= expression(T) DOT WORD(K) EQ expression(V). [EQ]
 {
-	// TODO: foo.bar += 4;
 	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[E setTarget:T];
 	[E addArgument:V];
 	[E addArgument:[LKStringLiteral literalFromString:K]];
 }
 statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
-                                              EQ expression(V).
+                                              EQ expression(V). [EQ]
 {
-	// TODO: foo["bar"] += 4;
 	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[E setTarget:T];
 	[E addArgument:V];
@@ -223,6 +221,38 @@ statement_expression(E) ::= WORD(T) shortcut_assign(S) expression(R). [PLUSEQ]
 	[E addArgument:R];
 	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
 	                              expr:E];
+}
+statement_expression(E) ::= expression(T) DOT WORD(K) shortcut_assign(S)
+                                                      expression(R). [PLUSEQ]
+{
+	id old = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
+	[old setTarget:T];
+	[old addArgument:[LKStringLiteral literalFromString:K]];
+	
+	id new = [LKMessageSend messageWithSelectorName:S];
+	[new setTarget:old];
+	[new addArgument:R];
+
+	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
+	[E setTarget:T];
+	[E addArgument:new];
+	[E addArgument:[LKStringLiteral literalFromString:K]];
+}
+statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
+                              shortcut_assign(S) expression(R). [PLUSEQ]
+{
+	id old = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
+	[old setTarget:T];
+	[old addArgument:K];
+	
+	id new = [LKMessageSend messageWithSelectorName:S];
+	[new setTarget:old];
+	[new addArgument:R];
+
+	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
+	[E setTarget:T];
+	[E addArgument:new];
+	[E addArgument:K];
 }
 statement_expression(E) ::= WORD(V) LPAREN RPAREN.
 {
