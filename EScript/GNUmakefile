@@ -14,8 +14,9 @@ ${BUNDLE_NAME}_PRINCIPAL_CLASS = EScriptCompiler
 ${BUNDLE_NAME}_OBJC_FILES = \
 	escript.m\
 	EScriptCompiler.m\
-	EScriptPreamble.m\
-	EScriptParser.m
+	EScriptObject.m\
+	EScriptParser.m\
+	EScriptPreamble.m
 
 ${BUNDLE_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit

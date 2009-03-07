@@ -269,13 +269,15 @@ statement_expression(E) ::= WORD(V) LPAREN expressions(A) RPAREN.
 		[E addArgument:arg];
 	}
 }
-statement_expression(E) ::= expression(T) DOT keyword_selector(S)
-                                       LPAREN expression_list(A) RPAREN.
+statement_expression(E) ::= expression(T) DOT keyword_selector(S) LPAREN RPAREN.
 {
-	if ([A count] != 0)
-	{
-		S = [S stringByAppendingString:@":"];
-	}
+	E = [LKMessageSend messageWithSelectorName:S];
+	[E setTarget:T];
+}
+statement_expression(E) ::= expression(T) DOT keyword_selector(S)
+                                       LPAREN expressions(A) RPAREN.
+{
+	S = [S stringByAppendingString:@":"];
 	E = [LKMessageSend messageWithSelectorName:S];
 	[E setTarget:T];
 	FOREACH(A, arg, LKAST*)
@@ -299,13 +301,21 @@ expression(E) ::= statement_expression(S).
 }
 expression(E) ::= NEW WORD(V) LPAREN RPAREN.
 {
-	// TODO
-	E = V;
+	id m = [LKMessageSend messageWithSelectorName:@"clone"];
+	[m setTarget:[LKDeclRef referenceWithSymbol:V]];
+	E = [LKMessageSend messageWithSelectorName:@"construct"];
+	[E setTarget:m];
 }
-expression(E) ::= NEW WORD(V) LPAREN expressions(L) RPAREN.
+expression(E) ::= NEW WORD(V) LPAREN expressions(A) RPAREN.
 {
-	// TODO
-	E = V = L;
+	id m = [LKMessageSend messageWithSelectorName:@"clone"];
+	[m setTarget:[LKDeclRef referenceWithSymbol:V]];
+	E = [LKMessageSend messageWithSelectorName:@"construct:"];
+	[E setTarget:m];
+	FOREACH(A, arg, LKAST*)
+	{
+		[E addArgument:arg];
+	}
 }
 expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
                            LBRACE statement_list(B) RBRACE.

@@ -37,7 +37,7 @@
 	const char *types_pro = [module typeForMethod:@"becomePrototype"];
 
 	id res;
-	MAKE_PROTOTYPE(Object, NSObject)
+	MAKE_PROTOTYPE(Object, EScriptObject)
 	MAKE_PROTOTYPE(Array,  NSMutableArray)
 
 	return NULL;
