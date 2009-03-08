@@ -40,17 +40,17 @@ module(M) ::= .
 	M = [LKModule module];
 }
 
-pragma_dict(P) ::= pragma_dict(D) COMMA WORD(K) EQ pragma_value(V).
+pragma_dict(P) ::= pragma_dict(D) COMMA ident(K) EQ pragma_value(V).
 {
 	[D setObject:V forKey:K];
 	P = D;
 }
-pragma_dict(P) ::= WORD(K) EQ pragma_value(V).
+pragma_dict(P) ::= ident(K) EQ pragma_value(V).
 {
 	P = [NSMutableDictionary dictionaryWithObject:V forKey:K];
 }
 
-pragma_value(V) ::= WORD(W).   { V = W; }
+pragma_value(V) ::= ident(W).  { V = W; }
 pragma_value(V) ::= STRING(S). { V = S; }
 pragma_value(V) ::= NUMBER(N). { V = N; }
 
@@ -81,7 +81,7 @@ statement_list(L) ::= statement_list(T) COMMENT(C).
 	[T addObject:[LKComment commentWithString:C]];
 	L = T;
 }
-statement_list(L) ::= statement_list(T) FUNCTION WORD(F)
+statement_list(L) ::= statement_list(T) FUNCTION ident(F)
                                         LPAREN  argument_list(A) RPAREN
                                         LBRACE statement_list(B) RBRACE.
 {
@@ -103,12 +103,12 @@ statement_list(L) ::= .
 	L = [NSMutableArray array];
 }
 
-declarations(L) ::= declarations(T) COMMA WORD(V).
+declarations(L) ::= declarations(T) COMMA ident(V).
 {
 	[T addObject:[LKVariableDecl variableDeclWithName:V]];
 	L = T;
 }
-declarations(L) ::= declarations(T) COMMA WORD(V) EQ expression(E).
+declarations(L) ::= declarations(T) COMMA ident(V) EQ expression(E).
 {
 	[T addObject:[LKVariableDecl variableDeclWithName:V]];
 	[T addObject:
@@ -116,12 +116,12 @@ declarations(L) ::= declarations(T) COMMA WORD(V) EQ expression(E).
 		                          expr:E]];
 	L = T;
 }
-declarations(L) ::= WORD(V).
+declarations(L) ::= ident(V).
 {
 	L = [NSMutableArray arrayWithObject:
 			[LKVariableDecl variableDeclWithName:V]];
 }
-declarations(L) ::= WORD(V) EQ expression(E).
+declarations(L) ::= ident(V) EQ expression(E).
 {
 	L = [NSMutableArray arrayWithObjects:
 			[LKVariableDecl variableDeclWithName:V],
@@ -158,12 +158,12 @@ statement(S) ::= FOR LPAREN expression_list(I) SEMI
 	// TODO
 	S = I = C = U = B;
 }
-statement(S) ::= FOR LPAREN WORD(V) IN expression(E) RPAREN body(B).
+statement(S) ::= FOR LPAREN ident(V) IN expression(E) RPAREN body(B).
 {
 	// TODO
 	S = V = E = B;
 }
-statement(S) ::= FOR LPAREN VAR WORD(V) IN expression(E) RPAREN body(B).
+statement(S) ::= FOR LPAREN VAR ident(V) IN expression(E) RPAREN body(B).
 {
 	// TODO
 	S = V = E = B;
@@ -194,12 +194,12 @@ body ::= SEMI.
 
 /* Constructs allowed both as statements and as expressions.
    This includes all assignments and function applications. */
-statement_expression(E) ::= WORD(T) EQ expression(V).
+statement_expression(E) ::= ident(T) EQ expression(V).
 {
 	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
 	                              expr:V];
 }
-statement_expression(E) ::= expression(T) DOT WORD(K) EQ expression(V). [EQ]
+statement_expression(E) ::= expression(T) DOT ident(K) EQ expression(V). [EQ]
 {
 	E = [LKMessageSend messageWithSelectorName:@"setValue:forKey:"];
 	[E setTarget:T];
@@ -214,7 +214,7 @@ statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
 	[E addArgument:V];
 	[E addArgument:K];
 }
-statement_expression(E) ::= WORD(T) shortcut_assign(S) expression(R). [PLUSEQ]
+statement_expression(E) ::= ident(T) shortcut_assign(S) expression(R). [PLUSEQ]
 {
 	E = [LKMessageSend messageWithSelectorName:S];
 	[E setTarget:[LKDeclRef referenceWithSymbol:T]];
@@ -222,8 +222,8 @@ statement_expression(E) ::= WORD(T) shortcut_assign(S) expression(R). [PLUSEQ]
 	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
 	                              expr:E];
 }
-statement_expression(E) ::= expression(T) DOT WORD(K) shortcut_assign(S)
-                                                      expression(R). [PLUSEQ]
+statement_expression(E) ::= expression(T) DOT ident(K) shortcut_assign(S)
+                                                       expression(R). [PLUSEQ]
 {
 	id old = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
 	[old setTarget:T];
@@ -254,12 +254,12 @@ statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
 	[E addArgument:new];
 	[E addArgument:K];
 }
-statement_expression(E) ::= WORD(V) LPAREN RPAREN.
+statement_expression(E) ::= ident(V) LPAREN RPAREN.
 {
 	E = [LKMessageSend messageWithSelectorName:@"value"];
 	[E setTarget:[LKDeclRef referenceWithSymbol:V]];
 }
-statement_expression(E) ::= WORD(V) LPAREN expressions(A) RPAREN.
+statement_expression(E) ::= ident(V) LPAREN expressions(A) RPAREN.
 {
 	E = [LKMessageSend message];
 	[E setTarget:[LKDeclRef referenceWithSymbol:V]];
@@ -286,11 +286,11 @@ statement_expression(E) ::= expression(T) DOT keyword_selector(S)
 	}
 }
 
-keyword_selector(S) ::= keyword_selector(T) COLON WORD(K).
+keyword_selector(S) ::= keyword_selector(T) COLON ident(K).
 {
 	S = [T stringByAppendingFormat:@":%@", K];
 }
-keyword_selector(S) ::= WORD(K).
+keyword_selector(S) ::= ident(K).
 {
 	S = K;
 }
@@ -322,7 +322,7 @@ expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
 {
 	E = [LKBlockExpr blockWithArguments:A locals:nil statements:B];
 }
-expression(E) ::= expression(T) DOT WORD(K).
+expression(E) ::= expression(T) DOT ident(K).
 {
 	E = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
 	[E setTarget:T];
@@ -352,7 +352,7 @@ expression(E) ::= NULL.
 {
 	E = [LKDeclRef referenceWithSymbol:@"nil"];
 }
-expression(E) ::= WORD(V).
+expression(E) ::= ident(V).
 {
 	E = [LKDeclRef referenceWithSymbol:V];
 }
@@ -364,7 +364,7 @@ expression(E) ::= NUMBER(N).
 {
 	E = [LKNumberLiteral literalFromString:N];
 }
-expression(E) ::= AT WORD(S).
+expression(E) ::= AT ident(S).
 {
 	E = [LKNumberLiteral literalFromSymbol:S];
 }
@@ -412,7 +412,7 @@ keys_and_values(L) ::= key(K) COLON expression(V).
 	L = [NSMutableArray arrayWithObject:msg];
 }
 
-key(K) ::= WORD(W).
+key(K) ::= ident(W).
 {
 	K = [LKStringLiteral literalFromString:W];
 }
@@ -427,12 +427,12 @@ argument_list(L) ::= arguments(T).
 }
 argument_list ::= .
 
-arguments(L) ::= arguments(T) COMMA WORD(A).
+arguments(L) ::= arguments(T) COMMA ident(A).
 {
 	[T addObject:A];
 	L = T;
 }
-arguments(L) ::= WORD(A).
+arguments(L) ::= ident(A).
 {
 	L = [NSMutableArray arrayWithObject:A];
 }
@@ -458,6 +458,10 @@ expressions(L) ::= expression(E).
 	NSLog(@"Syntax error near: '%@'.", TOKEN);
 	[NSException raise:@"ParserError" format:@"Parsing failed"];
 }
+
+ident(I) ::= WORD(W). { I = W; }
+ident(I) ::= NEW(W).  { I = W; }
+ident(I) ::= IN(W).   { I = W; }
 
 binary_selector(S) ::= PLUS.  { S = @"plus:"; }
 binary_selector(S) ::= MINUS. { S = @"sub:"; }
