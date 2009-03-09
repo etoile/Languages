@@ -17,21 +17,23 @@
 }
 /**
  * Return a new Subclass with the specified name, superclass and list of
- * instance variables and methods.
+ * instance variables and methods.  The instance and class variable lists
+ * should be strings and the method list is an array of AST nodes representing
+ * methods.
  */
 + (id) subclassWithName:(NSString*)aName
-             superclass:(NSString*)aClass
+        superclassNamed:(NSString*)aClass
                   cvars:(NSArray*)anIvarList
                   ivars:(NSArray*)anIvarList
                 methods:(NSArray*)aMethodList;
 /**
- * Returns the class name
+ * Returns the class name for the represented class.
  */
 - (NSString*) classname;
 /**
- * Returns the superclass name
+ * Returns the superclass name for the class represented by this AST node.
  */
-- (NSString*) superclass;
+- (NSString*) superclassname;
 /**
  * Returns the methods
  */

@@ -129,8 +129,8 @@ int DEBUG_DUMP_MODULES = 0;
 	LKModule *module;
 	NS_DURING
 		ast = [p parseMethod: source];
-		ast = [LKCategoryDef categoryWithClass: name
-		                               methods: [NSArray arrayWithObject:ast]];
+		ast = [LKCategoryDef categoryOnClassNamed: name
+		                                  methods: [NSArray arrayWithObject:ast]];
 		module = [LKModule module];
 		[module addCategory: (LKCategory*)ast];
 		[module check];
@@ -213,7 +213,7 @@ int DEBUG_DUMP_MODULES = 0;
 	}
 	if (!success)
 	{
-		return (Class)-1;
+		return [NSNull class];
 	}
 	NSString *className = [plist objectForKey:@"PrincipalClass"];
 	if (nil != className)

@@ -13,15 +13,15 @@
 }
 /**
  * Return a new Category with the specified name, class and list of
- * methods.
+ * methods.  The third argument is an array of AST nodes representing methods.
  */
 + (id) categoryWithName:(NSString*)aName 
-                  class:(NSString*)aClass 
+           onClassNamed:(NSString*)aClass 
                 methods:(NSArray*)aMethodList;
 /**
  * Returns a new anonymous category.
  */
-+ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList;
++ (id) categoryOnClassNamed:(NSString*)aName methods:(NSArray*)aMethodList;
 
 /**
  * Returns the methods.

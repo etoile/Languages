@@ -17,11 +17,18 @@
 	LKMethodSymbolTable *st = 
 		[[LKMethodSymbolTable alloc] initWithLocals: locals
 		                                       args: [aSignature arguments]];
-	[self initWithSymbolTable: st];
+	self = [self initWithSymbolTable: st];
+	if (self == nil) { return nil; }
 	RELEASE(st);
 	ASSIGN(signature, aSignature);
 	ASSIGN(statements, statementList);
 	return self;
+}
+- (void)dealloc
+{
+	[signature release];
+	[statements release];
+	[super dealloc];
 }
 - (void) setSignature:(LKMessageSend*)aSignature
 {
@@ -64,9 +71,9 @@
 	[str appendString:@"]"];
 	return str;
 }
-- (void) beginMethodWith:(id)aGenerator
-        forSelectorNamed:(const char*)sel
-			   withTypes:(const char*)types
+- (void) beginMethodWithGenerator:(id)aGenerator
+                 forSelectorNamed:(const char*)sel
+			            withTypes:(const char*)types
 {}
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
@@ -77,18 +84,18 @@
 	// are id and the return type is id
 	if (NULL == types) 
 	{
-		int args = [[signature arguments] count];
+		int argCount = [[signature arguments] count];
 		int offset = sizeof(id) + sizeof(SEL);
 		NSMutableString *ty = [NSMutableString stringWithFormat:@"@%d@0:%d",
-			sizeof(SEL) + sizeof(id) * (args + 2), offset];
-		for (int i=0 ; i<args ; i++)
+			sizeof(SEL) + sizeof(id) * (argCount + 2), offset];
+		for (int i=0 ; i<argCount ; i++)
 		{
 			offset += sizeof(id);
 			[ty appendFormat:@"@%d", offset];
 		}
 		types = [ty UTF8String];
 	}
-	[self beginMethodWith:aGenerator forSelectorNamed:sel withTypes:types];
+	[self beginMethodWithGenerator:aGenerator forSelectorNamed:sel withTypes:types];
 	FOREACH(statements, statement, LKAST*)
 	{
 		[statement compileWithGenerator: aGenerator];
@@ -114,9 +121,9 @@
 }
 @end
 @implementation LKInstanceMethod
-- (void) beginMethodWith:(id)aGenerator
-        forSelectorNamed:(const char*)sel
-			   withTypes:(const char*)types
+- (void) beginMethodWithGenerator:(id)aGenerator
+                 forSelectorNamed:(const char*)sel
+			            withTypes:(const char*)types
 {
 	[aGenerator beginInstanceMethod:sel
 				          withTypes:types
@@ -125,9 +132,9 @@
 }
 @end
 @implementation LKClassMethod
-- (void) beginMethodWith:(id)aGenerator
-        forSelectorNamed:(const char*)sel
-			   withTypes:(const char*)types
+- (void) beginMethodWithGenerator:(id)aGenerator
+                 forSelectorNamed:(const char*)sel
+			            withTypes:(const char*)types
 {
 	[aGenerator beginClassMethod:sel
 				       withTypes:types

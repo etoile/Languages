@@ -40,14 +40,14 @@
 	{
 		[thenStatement compileWithGenerator:  aGenerator];
 	}
-	[aGenerator goTo:continueBB];
+	[aGenerator goToBasicBlock:continueBB];
 	// Emit 'else' clause
 	void *elseBB = [aGenerator startBasicBlock:@"if_else"];
 	FOREACH(elseStatements, elseStatement, LKAST*)
 	{
 		[elseStatement compileWithGenerator:  aGenerator];
 	}
-	[aGenerator goTo:continueBB];
+	[aGenerator goToBasicBlock:continueBB];
 	// Emit branch
 	[aGenerator moveInsertPointToBasicBlock: startBB];
 	[aGenerator branchOnCondition: compareValue true: thenBB false: elseBB];

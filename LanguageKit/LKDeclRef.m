@@ -57,7 +57,7 @@
 				return [aGenerator nilConstant];
 			}
 		case LKSymbolScopeGlobal:
-			return [aGenerator loadClass:symbol];
+			return [aGenerator loadClassNamed:symbol];
 		case LKSymbolScopeArgument:
 	   		return [aGenerator loadArgumentAtIndex:
 						  [symbols indexOfArgument:symbol]];

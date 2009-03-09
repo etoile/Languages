@@ -2,7 +2,7 @@
 #ifdef __i386__
 #	ifdef __FreeBSD__
 static const unsigned MAX_INTS_IN_REGISTERS = 2;
-static const unsigned MAX_FLOATS_IN_REGISTERS = 2;
+static const unsigned MAX_FLOATS_IN_REGISTERS = 0;
 #	elif defined(__linux__)
 static const unsigned MAX_INTS_IN_REGISTERS = 0;
 static const unsigned MAX_FLOATS_IN_REGISTERS = 0;

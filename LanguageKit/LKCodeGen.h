@@ -20,13 +20,13 @@
  * Create a new class, with the specified superclass and instance variables.
  * The types should be Objective-C type encoding strings.
  */
-- (void) createSubclass:(NSString*)aClass
-            subclassing:(NSString*)aSuperclass
-          withCvarNames:(const char**)cVarNames 
-                  types:(const char**)cVarTypes
-          withIvarNames:(const char**)iVarNames 
-                  types:(const char**)iVarTypes
-                offsets:(int*)offsets;
+- (void) createSubclassWithName:(NSString*)aClass
+                superclassNamed:(NSString*)aSuperclass
+                  withCvarNames:(const char**)cVarNames 
+                          types:(const char**)cVarTypes
+                  withIvarNames:(const char**)iVarNames 
+                          types:(const char**)iVarTypes
+                        offsets:(int*)offsets;
 /**
  * Finish the current class. 
  */
@@ -34,8 +34,8 @@
 /**
  * Create a new category with the specified name on the named class.
  */
-- (void) createCategoryOn:(NSString*)aClass
-                    named:(NSString*)aCategory;
+- (void) createCategoryWithName:(NSString*)aCategory
+                   onClassNamed:(NSString*)aClass;
 /**
  * Finish the current category. 
  */
@@ -45,9 +45,9 @@
  * variables.  Local variables and arguments are indexed by number, the code
  * generator is not aware of any symbol table information.
  */
-- (void) beginClassMethod:(const char*) aName
+- (void) beginClassMethod:(const char*)aName
                 withTypes:(const char*)types
-                   locals:(unsigned)locals;
+                   locals:(unsigned int)locals;
 /**
  * Begin an instance method with the specified type encoding and number of local
  * variables.  Local variables and arguments are indexed by number, the code
@@ -55,7 +55,7 @@
  */
 - (void) beginInstanceMethod:(const char*) aName
                    withTypes:(const char*)types
-                      locals:(unsigned)locals;
+                      locals:(unsigned int)locals;
 /**
  * Sends a message to a receiver which may be a SmallInt (a boxed Smalltalk
  * integer contained within an object pointer).
@@ -64,14 +64,14 @@
                 types:(const char*)types
                    to:(void*)receiver
              withArgs:(void**)argv
-                count:(unsigned)argc;
+                count:(unsigned int)argc;
 /**
  * Sends a message to the superclass.
  */
 - (void*) sendSuperMessage:(const char*)sel
                      types:(const char*)seltypes
                   withArgs:(void**)argv
-                     count:(unsigned)argc;
+                     count:(unsigned int)argc;
 /**
  * Sends a message to an object.  Similar to
  * sendMessage:type:to:withargs:count: but requires that receiver be an
@@ -81,7 +81,7 @@
                 types:(const char*)types
              toObject:(void*)receiver
              withArgs:(void**)argv
-                count:(unsigned)argc;
+                count:(unsigned int)argc;
 /**
  * Store the specified value in the named class variable.
  */
@@ -91,41 +91,41 @@
  * Stores a value in a local variable somewhere up the stack.
  */
 - (void) storeValue:(void*)aVal 
-     inLocalAtIndex:(unsigned)index
-lexicalScopeAtDepth:(unsigned) scope;
+     inLocalAtIndex:(unsigned int)index
+lexicalScopeAtDepth:(unsigned int) scope;
 /**
  * Load a local value from up the stack.
  */
-- (void*) loadLocalAtIndex:(unsigned)index
-	   lexicalScopeAtDepth:(unsigned) scope;
+- (void*) loadLocalAtIndex:(unsigned int)index
+	   lexicalScopeAtDepth:(unsigned int) scope;
 /**
  * Load an argument from up the stack.
  */
-- (void*) loadArgumentAtIndex:(unsigned) index
-		  lexicalScopeAtDepth:(unsigned) scope;
+- (void*) loadArgumentAtIndex:(unsigned int) index
+		  lexicalScopeAtDepth:(unsigned int) scope;
 - (void*) loadClassVariable:(NSString*) aSymbol;
 /**
  * Stores a value at a specific offset from an object.  Used for instance
- * variables.
+ * variables.  The type is an Objective-C type encoding.
  */
 - (void) storeValue:(void*)aValue
               ofType:(NSString*)aType
-            atOffset:(unsigned)anOffset
+            atOffset:(unsigned int)anOffset
           fromObject:(void*)anObject;
 /**
  * Loads a value at a specific offset from an object.  Used for instance
- * variables.
+ * variables. The type is an Objective-C type encoding.  
  */
 - (void*) loadValueOfType:(NSString*)aType
-                 atOffset:(unsigned)anOffset
+                 atOffset:(unsigned int)anOffset
                fromObject:(void*)anObject;
 /**
  * Begin generating a block expression with the specified number of arguments
  * and locals.  The bound variables are pointers to variables declared outside
  * the block's scope.
  */
-- (void) beginBlockWithArgs:(unsigned)args
-					 locals:(unsigned)locals;
+- (void) beginBlockWithArgs:(unsigned int)args
+					 locals:(unsigned int)locals;
 /**
  * Returns 'self' in the current method.
  */
@@ -133,19 +133,19 @@ lexicalScopeAtDepth:(unsigned) scope;
 /**
  * Load a pointer to the named class.
  */
-- (void*) loadClass:(NSString*)aClass;
+- (void*) loadClassNamed:(NSString*)aClass;
 /**
  * Stores a value in the specified local.
  */
-- (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned)index;
+- (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned int)index;
 /**
  * Load the value of the specified local variable.
  */
-- (void*) loadLocalAtIndex:(unsigned)index;
+- (void*) loadLocalAtIndex:(unsigned int)index;
 /**
  * Load the value of the specified argument.
  */
-- (void*) loadArgumentAtIndex:(unsigned)index;
+- (void*) loadArgumentAtIndex:(unsigned int)index;
 /**
  * End the current method.
  */
@@ -157,8 +157,7 @@ lexicalScopeAtDepth:(unsigned) scope;
 - (void*) endBlock;
 /**
  * Specify the return value for a block.  For Smalltalk, this is the result of
- * the last statement in a block.  Non-local block returns are not yet
- * implemented.
+ * the last statement in a block.  
  */
 - (void) blockReturn:(void*)aValue;
 /**
@@ -208,7 +207,7 @@ lexicalScopeAtDepth:(unsigned) scope;
  * Ends the current basic block with an unconditional jump to the specified
  * basic block
  */
-- (void) goTo:(void*)aBasicBlock;
+- (void) goToBasicBlock:(void*)aBasicBlock;
 @end
 /** 
  * Class used to instantiate the default code generators.  Lazily loads the code

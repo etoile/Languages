@@ -39,7 +39,7 @@
 		values[i++] = [element compileWithGenerator: aGenerator];
 	}
 	values[i++] = [aGenerator nilConstant];
-	void *arrayClass = [aGenerator loadClass:@"NSMutableArray"];
+	void *arrayClass = [aGenerator loadClassNamed:@"NSMutableArray"];
 	return [aGenerator sendMessage:"arrayWithObjects:"
 							 types:NULL
 						  toObject:arrayClass

@@ -16,7 +16,7 @@
 	return self;
 }
 + (id) subclassWithName:(NSString*)aName
-             superclass:(NSString*)aClass
+        superclassNamed:(NSString*)aClass
                   cvars:(NSArray*)aCvarList
                   ivars:(NSArray*)anIvarList
                 methods:(NSArray*)aMethodList
@@ -113,13 +113,13 @@
 	cvarNames[[cvars count]] = NULL;
 	cvarTypes[[cvars count]] = NULL;
 
-	[aGenerator createSubclass:classname
-                   subclassing:superclass
-                 withCvarNames:cvarNames
-                         types:cvarTypes
-                 withIvarNames:ivarNames
-                         types:ivarTypes
-                       offsets:ivarOffsets];
+	[aGenerator createSubclassWithName:classname
+                       superclassNamed:superclass
+                         withCvarNames:cvarNames
+                                 types:cvarTypes
+                         withIvarNames:ivarNames
+                                 types:ivarTypes
+                               offsets:ivarOffsets];
 	FOREACH(methods, method, LKAST*)
 	{
 		[method compileWithGenerator: aGenerator];
@@ -165,7 +165,7 @@
 {
 	return classname;
 }
-- (NSString*) superclass
+- (NSString*) superclassname
 {
 	return superclass;
 }

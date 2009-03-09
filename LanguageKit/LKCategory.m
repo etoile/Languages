@@ -11,18 +11,25 @@
 	ASSIGN(methods, aMethodList);
 	return self;
 }
+- (void)dealloc
+{
+	[classname release];
+	[categoryName release];
+	[methods release];
+	[super dealloc];
+}
 + (id) categoryWithName:(NSString*)aName 
-                  class:(NSString*)aClass 
+           onClassNamed:(NSString*)aClass 
                 methods:(NSArray*)aMethodList
 {
 	return [[[self alloc] initWithName:aName
 	                             class:aClass
 	                           methods:aMethodList] autorelease];
 }
-+ (id) categoryWithClass:(NSString*)aName methods:(NSArray*)aMethodList
++ (id) categoryOnClassNamed:(NSString*)aName methods:(NSArray*)aMethodList
 {
 	return [self categoryWithName:@"AnonymousCategory"
-	                        class:aName
+	                 onClassNamed:aName
 	                      methods:aMethodList];
 }
 - (void) check
@@ -63,8 +70,8 @@
 
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	[aGenerator createCategoryOn:classname
-	                       named:categoryName];
+	[aGenerator createCategoryWithName:categoryName
+	                      onClassNamed:classname];
 	FOREACH(methods, method, LKAST*)
 	{
 		[method compileWithGenerator: aGenerator];

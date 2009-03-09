@@ -80,7 +80,7 @@ pragma_value(V) ::= NUMBER(N). { V = N; }
 subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list(M) RSQBRACK.
 {
 	S = [LKSubclass subclassWithName:N
-	                      superclass:C
+	                 superclassNamed:C
 	                           cvars:[L objectAtIndex:1]
 	                           ivars:[L objectAtIndex:0]
 	                         methods:M];
@@ -88,7 +88,7 @@ subclass(S) ::= WORD(C) SUBCLASS COLON WORD(N) LSQBRACK ivar_list(L) method_list
 
 category(D) ::= WORD(C) EXTEND LSQBRACK method_list(M) RSQBRACK.
 {
-	D = [LKCategoryDef categoryWithClass:C methods:M];
+	D = [LKCategoryDef categoryOnClassNamed:C methods:M];
 }
 
 ivar_list(L) ::= BAR ivars(T) BAR.

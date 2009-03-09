@@ -33,13 +33,13 @@ typedef int bool;
 	Compile(Builder);
 }
 
-- (void) createSubclass:(NSString*)aClass
-            subclassing:(NSString*)aSuperclass
-          withCvarNames:(const char**)cVarNames 
-                  types:(const char**)cVarTypes
-          withIvarNames:(const char**)iVarNames 
-                  types:(const char**)iVarTypes
-                offsets:(int*)offsets
+- (void) createSubclassWithName:(NSString*)aClass
+                superclassNamed:(NSString*)aSuperclass
+                  withCvarNames:(const char**)cVarNames 
+                          types:(const char**)cVarTypes
+                  withIvarNames:(const char**)iVarNames 
+                          types:(const char**)iVarTypes
+                        offsets:(int*)offsets
 {
 	int supersize = 0;
 	Class sup = NSClassFromString(aSuperclass);
@@ -63,8 +63,8 @@ typedef int bool;
 {
 	EndClass(Builder);
 }
-- (void) createCategoryOn:(NSString*)aClass
-                    named:(NSString*)aCategory
+- (void) createCategoryWithName:(NSString*)aCategory
+                   onClassNamed:(NSString*)aClass
 {
 	BeginCategory(Builder, [aClass UTF8String], [aClass UTF8String]);
 }
@@ -191,7 +191,7 @@ lexicalScopeAtDepth:(unsigned) scope
 {
 	return LoadArgumentAtIndex(Builder, index, 0);
 }
-- (void*) loadClass:(NSString*)aClass
+- (void*) loadClassNamed:(NSString*)aClass
 {
 	return LoadClass(Builder, [aClass UTF8String]);
 }
@@ -238,7 +238,7 @@ lexicalScopeAtDepth:(unsigned) scope
 {
 	BranchOnCondition(Builder, aCondition, trueBlock, falseBlock);
 }
-- (void) goTo:(void*)aBasicBlock
+- (void) goToBasicBlock:(void*)aBasicBlock
 {
 	GoTo(Builder, aBasicBlock);
 }
