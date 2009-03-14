@@ -65,7 +65,7 @@ script(S) ::= statement_list(L).
 	                               statements:L];
 
 	S = [LKSubclass subclassWithName:[[ETUUID UUID] stringValue]
-	                      superclass:@"NSObject"
+	                 superclassNamed:@"NSObject"
 	                           cvars:globals
 	                           ivars:nil
 	                         methods:[NSArray arrayWithObject:m]];

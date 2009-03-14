@@ -2,7 +2,7 @@
 #import <LanguageKit/LKModule.h>
 
 #define MAKE_PROTOTYPE(name, class)\
-	res = [aGenerator loadClass:@#class];\
+	res = [aGenerator loadClassNamed:@#class];\
 	res = [aGenerator sendMessage:"new"\
 	                        types:types_new\
 	                     toObject:res\
