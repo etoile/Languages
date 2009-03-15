@@ -225,7 +225,7 @@ statement_expression(E) ::= ident(T) shortcut_assign(S) expression(R). [PLUSEQ]
 statement_expression(E) ::= expression(T) DOT ident(K) shortcut_assign(S)
                                                        expression(R). [PLUSEQ]
 {
-	id old = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
+	id old = [LKMessageSend messageWithSelectorName:@"slotValueForKey:"];
 	[old setTarget:T];
 	[old addArgument:[LKStringLiteral literalFromString:K]];
 	
@@ -241,7 +241,7 @@ statement_expression(E) ::= expression(T) DOT ident(K) shortcut_assign(S)
 statement_expression(E) ::= expression(T) LBRACK expression(K) RBRACK
                               shortcut_assign(S) expression(R). [PLUSEQ]
 {
-	id old = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
+	id old = [LKMessageSend messageWithSelectorName:@"slotValueForKey:"];
 	[old setTarget:T];
 	[old addArgument:K];
 	
@@ -324,13 +324,13 @@ expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
 }
 expression(E) ::= expression(T) DOT ident(K).
 {
-	E = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
+	E = [LKMessageSend messageWithSelectorName:@"slotValueForKey:"];
 	[E setTarget:T];
 	[E addArgument:[LKStringLiteral literalFromString:K]];
 }
 expression(E) ::= expression(T) LBRACK expression(K) RBRACK.
 {
-	E = [LKMessageSend messageWithSelectorName:@"valueForKey:"];
+	E = [LKMessageSend messageWithSelectorName:@"slotValueForKey:"];
 	[E setTarget:T];
 	[E addArgument:K];
 }
