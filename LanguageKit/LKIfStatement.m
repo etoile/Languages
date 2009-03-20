@@ -34,30 +34,25 @@ static void *emitBlock(id<LKCodeGenerator> aGenerator,
                        void *continueBB,
                        NSString *bbname)
 {
-	void *thenBB = [aGenerator startBasicBlock: bbname];
-	BOOL addBranch = YES;
+	void *bb = [aGenerator startBasicBlock: bbname];
 	FOREACH(statements, statement, LKAST*)
 	{
-		[statement compileWithGenerator:  aGenerator];
+		[statement compileWithGenerator: aGenerator];
 		if ([statement isBranch])
 		{
-			addBranch = NO;
-			break;
+			return bb;
 		}
 	}
-	if (addBranch)
-	{
-		[aGenerator goToBasicBlock: continueBB];
-	}
-	return thenBB;
+	[aGenerator goToBasicBlock: continueBB];
+	return bb;
 }
 
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	void *compareValue = [condition compileWithGenerator:  aGenerator];
+	void *compareValue = [condition compileWithGenerator: aGenerator];
 	void *startBB = [aGenerator currentBasicBlock];
 	void *continueBB = [aGenerator startBasicBlock: @"if_continue"];
-	// Emit the 'then' clause
+	// Emit 'then' and 'else' clauses
 	void *thenBB = 
 		emitBlock(aGenerator, thenStatements, continueBB, @"if_then");
 	void *elseBB = 
@@ -80,9 +75,6 @@ static void *emitBlock(id<LKCodeGenerator> aGenerator,
 {
 	[condition setParent:self];
 	[condition check];
-	FOREACH(thenStatements, then, LKAST*)
-	{
-	}
 	FOREACH(thenStatements, thenStatement, LKAST*)
 	{
 		[thenStatement setParent:self];
