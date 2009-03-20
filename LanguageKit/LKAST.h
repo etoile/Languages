@@ -71,6 +71,10 @@
  * Returns YES for AST nodes with no code generation
  */
 - (BOOL) isComment;
+/**
+ * Returns YES for AST nodes that branch unconditionally.
+ */
+- (BOOL) isBranch;
 @end
 
 /**

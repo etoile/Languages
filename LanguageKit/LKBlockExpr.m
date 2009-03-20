@@ -58,14 +58,23 @@
 	[aGenerator beginBlockWithArgs:[[(LKMethodSymbolTable*)symbols args] count]
 	                        locals:[[(LKMethodSymbolTable*)symbols locals] count]];
 	void * lastValue = NULL;
+	BOOL addBranch = YES;
 	FOREACH(statements, statement, LKAST*)
 	{
 		if (![statement isComment])
 		{
 			lastValue = [statement compileWithGenerator: aGenerator];
+			if ([statement isBranch])
+			{
+				addBranch = NO;
+				break;
+			}
 		}
 	}
-	[aGenerator blockReturn:lastValue];
+	if (addBranch)
+	{
+		[aGenerator blockReturn:lastValue];
+	}
 	return [aGenerator endBlock];
 }
 - (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable

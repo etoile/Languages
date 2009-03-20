@@ -36,18 +36,36 @@
 	void *continueBB = [aGenerator startBasicBlock: @"if_continue"];
 	// Emit the 'then' clause
 	void *thenBB = [aGenerator startBasicBlock: @"if_then"];
+	BOOL addBranch = YES;
 	FOREACH(thenStatements, thenStatement, LKAST*)
 	{
 		[thenStatement compileWithGenerator:  aGenerator];
+		if ([thenStatement isBranch])
+		{
+			addBranch = NO;
+			break;
+		}
 	}
-	[aGenerator goToBasicBlock:continueBB];
+	if (addBranch)
+	{
+		[aGenerator goToBasicBlock:continueBB];
+	}
 	// Emit 'else' clause
 	void *elseBB = [aGenerator startBasicBlock:@"if_else"];
+	addBranch = YES;
 	FOREACH(elseStatements, elseStatement, LKAST*)
 	{
 		[elseStatement compileWithGenerator:  aGenerator];
+		if ([elseStatement isBranch])
+		{
+			addBranch = NO;
+			break;
+		}
 	}
-	[aGenerator goToBasicBlock:continueBB];
+	if (addBranch)
+	{
+		[aGenerator goToBasicBlock:continueBB];
+	}
 	// Emit branch
 	[aGenerator moveInsertPointToBasicBlock: startBB];
 	[aGenerator branchOnCondition: compareValue true: thenBB false: elseBB];

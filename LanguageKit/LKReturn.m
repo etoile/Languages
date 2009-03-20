@@ -36,9 +36,22 @@
 {
 	return ret;
 }
+- (BOOL) isBranch
+{
+	return YES;
+}
 - (void)dealloc
 {
 	[ret release];
 	[super dealloc];
+}
+@end
+
+@implementation LKBlockReturn
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
+{
+	void *retVal = [ret compileWithGenerator: aGenerator];
+	[aGenerator blockReturn:retVal];
+	return retVal;
 }
 @end

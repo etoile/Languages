@@ -88,6 +88,10 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 {
 	return NO;
 }
+- (BOOL) isBranch
+{
+	return NO;
+}
 @end
 @implementation LKAST (Visitor)
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor

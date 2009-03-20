@@ -85,6 +85,9 @@ statement_list(L) ::= statement_list(T) FUNCTION ident(F)
                                         LPAREN  argument_list(A) RPAREN
                                         LBRACE statement_list(B) RBRACE.
 {
+	/* LanguageKit uses the result of the last statement as the return value
+	   of the function. Simply reference nil to return that by default. */
+	[B addObject:[LKDeclRef referenceWithSymbol:@"nil"]];
 	[T addObject:[LKVariableDecl variableDeclWithName:F]];
 	[T addObject:
 		[LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:F]
@@ -132,11 +135,11 @@ declarations(L) ::= ident(V) EQ expression(E).
 
 statement(S) ::= RETURN SEMI.
 {
-	S = [LKReturn returnWithExpr:[LKDeclRef referenceWithSymbol:@"nil"]];
+	S = [LKBlockReturn returnWithExpr:[LKDeclRef referenceWithSymbol:@"nil"]];
 }
 statement(S) ::= RETURN expression(E) SEMI.
 {
-	S = [LKReturn returnWithExpr:E];
+	S = [LKBlockReturn returnWithExpr:E];
 }
 statement(S) ::= statement_expression(E) SEMI.
 {
@@ -320,6 +323,9 @@ expression(E) ::= NEW WORD(V) LPAREN expressions(A) RPAREN.
 expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
                            LBRACE statement_list(B) RBRACE.
 {
+	/* LanguageKit uses the result of the last statement as the return value
+	   of the function. Simply reference nil to return that by default. */
+	[B addObject:[LKDeclRef referenceWithSymbol:@"nil"]];
 	E = [LKBlockExpr blockWithArguments:A locals:nil statements:B];
 }
 expression(E) ::= expression(T) DOT ident(K).

@@ -1,7 +1,7 @@
 #import "LKAST.h"
 
 /**
- * AST node representing a return statement.
+ * AST node representing a method return.
  */
 @interface LKReturn : LKAST {
   /** Value to be returned. */
@@ -19,4 +19,10 @@
  * Returns the return statement's expression AST node.
  */
 - (LKAST*) expression;
+@end
+
+/**
+ * AST node representing a block return.
+ */
+@interface LKBlockReturn : LKReturn {}
 @end
