@@ -29,43 +29,39 @@
 	                                   else: elseClause] autorelease];
 }
 
+static void *emitBlock(id<LKCodeGenerator> aGenerator, 
+                       NSArray *statements,
+                       void *continueBB,
+                       NSString *bbname)
+{
+	void *thenBB = [aGenerator startBasicBlock: bbname];
+	BOOL addBranch = YES;
+	FOREACH(statements, statement, LKAST*)
+	{
+		[statement compileWithGenerator:  aGenerator];
+		if ([statement isBranch])
+		{
+			addBranch = NO;
+			break;
+		}
+	}
+	if (addBranch)
+	{
+		[aGenerator goToBasicBlock: continueBB];
+	}
+	return thenBB;
+}
+
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	void *compareValue = [condition compileWithGenerator:  aGenerator];
 	void *startBB = [aGenerator currentBasicBlock];
 	void *continueBB = [aGenerator startBasicBlock: @"if_continue"];
 	// Emit the 'then' clause
-	void *thenBB = [aGenerator startBasicBlock: @"if_then"];
-	BOOL addBranch = YES;
-	FOREACH(thenStatements, thenStatement, LKAST*)
-	{
-		[thenStatement compileWithGenerator:  aGenerator];
-		if ([thenStatement isBranch])
-		{
-			addBranch = NO;
-			break;
-		}
-	}
-	if (addBranch)
-	{
-		[aGenerator goToBasicBlock:continueBB];
-	}
-	// Emit 'else' clause
-	void *elseBB = [aGenerator startBasicBlock:@"if_else"];
-	addBranch = YES;
-	FOREACH(elseStatements, elseStatement, LKAST*)
-	{
-		[elseStatement compileWithGenerator:  aGenerator];
-		if ([elseStatement isBranch])
-		{
-			addBranch = NO;
-			break;
-		}
-	}
-	if (addBranch)
-	{
-		[aGenerator goToBasicBlock:continueBB];
-	}
+	void *thenBB = 
+		emitBlock(aGenerator, thenStatements, continueBB, @"if_then");
+	void *elseBB = 
+		emitBlock(aGenerator, elseStatements, continueBB, @"if_else");
 	// Emit branch
 	[aGenerator moveInsertPointToBasicBlock: startBB];
 	[aGenerator branchOnCondition: compareValue true: thenBB false: elseBB];
