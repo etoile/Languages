@@ -71,6 +71,32 @@ static void *emitBlock(id<LKCodeGenerator> aGenerator,
 	[self visitArray:thenStatements withVisitor:aVisitor];
 	[self visitArray:elseStatements withVisitor:aVisitor];
 }
+- (NSString*) description
+{
+	NSMutableString *str = [NSMutableString string];
+	[str appendFormat:@"(%@)", condition];
+	if (thenStatements)
+	{
+		[str appendString:@" ifTrue: [\n"];
+		FOREACH(thenStatements, thenStatement, LKAST*)
+		{
+			[str appendString:[thenStatement description]];
+			[str appendString:@".\n"];
+		}
+		[str appendString:@"]"];
+	}
+	if (elseStatements)
+	{
+		[str appendString:@" ifFalse: [\n"];
+		FOREACH(elseStatements, elseStatement, LKAST*)
+		{
+			[str appendString:[elseStatement description]];
+			[str appendString:@".\n"];
+		}
+		[str appendString:@"]"];
+	}
+	return str;
+}
 - (void) check
 {
 	[condition setParent:self];
