@@ -22,6 +22,42 @@ void __objc_update_dispatch_table_for_class(Class);
  * selector.
  */
 BOOL __objc_responds_to(Class, SEL);
+/**
+ *  Runtime library constant for uninitialized dispatch table.
+ */
+extern struct sarray *__objc_uninstalled_dtable;
+/**
+ * Mutex used to protect the ObjC runtime library data structures.
+ */
+extern objc_mutex_t __objc_runtime_mutex;
+
+static Method class_getInstanceMethodNonrecursive(Class aClass, SEL aSelector)
+{
+	const char *name = sel_get_name(aSelector);
+	const char *types = sel_get_type(aSelector);
+
+	for (struct objc_method_list *methods = aClass->methods;
+		methods != NULL ; methods = methods->method_next)
+	{
+		for (int i=0 ; i<methods->method_count ; i++)
+		{
+			Method_t method = &methods->method_list[i];
+			if (strcmp(sel_get_name(method->method_name), name) == 0)
+			{
+				if (NULL == types || 
+					strcmp(types, sel_get_type(method->method_name)) == 0)
+				{
+					return method;
+				}
+				// Return NULL if the method exists with this name but has the 
+				// wrong types
+				return NULL;
+			}
+		}
+	}
+	return NULL;
+}
+
 
 static void objc_updateDtableForClassContainingMethod(Method m)
 {
@@ -172,34 +208,6 @@ id class_createInstance(Class cls, size_t extraBytes)
 	obj->isa = cls;
 	return obj;
 }
-
-static Method class_getInstanceMethodNonrecursive(Class aClass, SEL aSelector)
-{
-	const char *name = sel_get_name(aSelector);
-	const char *types = sel_get_type(aSelector);
-
-	for (struct objc_method_list *methods = aClass->methods;
-		methods != NULL ; methods = methods->method_next)
-	{
-		for (int i=0 ; i<methods->method_count ; i++)
-		{
-			Method_t method = &methods->method_list[i];
-			if (strcmp(sel_get_name(method->method_name), name) == 0)
-			{
-				if (NULL == types || 
-					strcmp(types, sel_get_type(method->method_name)) == 0)
-				{
-					return method;
-				}
-				// Return NULL if the method exists with this name but has the 
-				// wrong types
-				return NULL;
-			}
-		}
-	}
-	return NULL;
-}
-
 
 Method class_getInstanceMethod(Class aClass, SEL aSelector)
 {
@@ -380,12 +388,6 @@ IMP method_setImplementation(Method method, IMP imp)
 	return old;
 }
 
-Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
-{
-	//TODO
-	return NULL;
-}
-
 id objc_getClass(const char *name)
 {
 	return (id)objc_lookup_class(name);
@@ -436,4 +438,52 @@ id objc_lookUpClass(const char *name)
 {
 	// TODO: Check these are the right way around.
 	return (id)objc_get_class(name);
+}
+
+
+Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
+{
+	// Check the class doesn't already exist.
+	if (nil != objc_lookUpClass(name)) { return Nil; }
+
+	Class newClass = calloc(1, sizeof(struct objc_class) + extraBytes);
+
+	if (Nil == newClass) { return Nil; }
+
+	// Create the metaclass
+	Class metaClass = calloc(1, sizeof(struct objc_class));
+
+	// Initialize the metaclass
+	metaClass->class_pointer = newClass->class_pointer->class_pointer;
+	metaClass->super_class = newClass->class_pointer;
+	metaClass->info = _CLS_META;
+	metaClass->dtable = __objc_uninstalled_dtable;
+
+	// Set up the new class
+	newClass->class_pointer = metaClass;
+	newClass->super_class = superclass;
+	newClass->name = name;
+	newClass->info = _CLS_CLASS;
+	newClass->dtable = __objc_uninstalled_dtable;
+
+	return newClass;
+}
+
+void objc_registerClassPair(Class cls)
+{
+	Class metaClass = cls->class_pointer;
+	// Initialize the dispatch table for the class and metaclass.
+	__objc_update_dispatch_table_for_class(metaClass);
+	__objc_update_dispatch_table_for_class(cls);
+	CLS_SETINITIALIZED(metaClass);
+	CLS_SETINITIALIZED(cls);
+	// Add pointer from super class
+	objc_mutex_lock(__objc_runtime_mutex);
+	cls->sibling_class = cls->super_class->subclass_list;
+	cls->super_class->subclass_list = cls;
+	metaClass->sibling_class = metaClass->super_class->subclass_list;
+	metaClass->super_class->subclass_list = metaClass;
+	objc_mutex_unlock(__objc_runtime_mutex);
+
+
 }

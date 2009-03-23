@@ -143,5 +143,8 @@ id objc_getRequiredClass(const char *name);
 
 id objc_lookUpClass(const char *name);
 
+Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes);
+
+
 #define objc_msgSend(theReceiver, theSelector, ...) objc_msg_lookup(theReceiver, theSelector)(theReceiver, theSelector, ## __VA_LIST__);
 

@@ -1,6 +1,6 @@
 #include "runtime.h"
 
-@interface 
+
 
 int main(void)
 {
