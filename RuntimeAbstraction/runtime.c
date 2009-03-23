@@ -3,8 +3,12 @@
 #define id object_ptr_gnu
 #define IMP objc_imp_gnu
 #define Method objc_method_gnu
+
+#define object_copy	gnu_object_copy
+#define object_dispose	gnu_object_dispose
 #include <objc/objc.h>
 #include <objc/objc-api.h>
+#include <objc/encoding.h>
 #undef Method 
 #undef IMP
 #undef id
@@ -31,6 +35,10 @@ extern struct sarray *__objc_uninstalled_dtable;
  */
 extern objc_mutex_t __objc_runtime_mutex;
 
+/** 
+ * Looks up the instance method in a specific class, without recursing into
+ * superclasses.
+ */
 static Method class_getInstanceMethodNonrecursive(Class aClass, SEL aSelector)
 {
 	const char *name = sel_get_name(aSelector);
@@ -45,7 +53,7 @@ static Method class_getInstanceMethodNonrecursive(Class aClass, SEL aSelector)
 			if (strcmp(sel_get_name(method->method_name), name) == 0)
 			{
 				if (NULL == types || 
-					strcmp(types, sel_get_type(method->method_name)) == 0)
+					strcmp(types, method->method_types) == 0)
 				{
 					return method;
 				}
@@ -57,7 +65,6 @@ static Method class_getInstanceMethodNonrecursive(Class aClass, SEL aSelector)
 	}
 	return NULL;
 }
-
 
 static void objc_updateDtableForClassContainingMethod(Method m)
 {
@@ -202,6 +209,36 @@ Method * class_copyMethodList(Class cls, unsigned int *outCount)
 	return list;
 }
 
+Protocol ** class_copyProtocolList(Class cls, unsigned int *outCount)
+{
+	struct objc_protocol_list *protocolList = cls->protocols;
+	int listSize = 0;
+	for (struct objc_protocol_list *list = protocolList ; 
+		list != NULL ; 
+		list = list->next)
+	{
+		listSize += list->count;
+	}
+	if (listSize == 0)
+	{
+		*outCount = 0;
+		return NULL;
+	}
+	
+	Protocol **protocols = calloc(listSize, sizeof(Protocol*) + 1);
+	int index = 0;
+	for (struct objc_protocol_list *list = protocolList ; 
+		list != NULL ; 
+		list = list->next)
+	{
+		memcpy(&protocols[index], list->list, list->count * sizeof(Protocol*));
+		index += list->count;
+	}
+	protocols[listSize] = NULL;
+	*outCount  = listSize + 1;
+	return protocols;
+}
+
 id class_createInstance(Class cls, size_t extraBytes)
 {
 	id obj = objc_malloc(cls->instance_size + extraBytes);
@@ -256,9 +293,11 @@ Ivar class_getInstanceVariable(Class cls, const char* name)
 	return NULL;
 }
 
+// The format of the char* is undocumented.  This function is only ever used in
+// conjunction with class_setIvarLayout().
 const char *class_getIvarLayout(Class cls)
 {
-	return NULL;
+	return (char*)cls->ivars;
 }
 
 IMP class_getMethodImplementation(Class cls, SEL name)
@@ -320,7 +359,11 @@ BOOL class_respondsToSelector(Class cls, SEL sel)
 
 void class_setIvarLayout(Class cls, const char *layout)
 {
-	assert(0 && "Not implemented");
+	struct objc_ivar_list *list = (struct objc_ivar_list*)layout;
+	size_t listsize = sizeof(struct objc_ivar_list) + 
+			sizeof(struct objc_ivar) * (list->ivar_count - 1);
+	cls->ivars = malloc(listsize);
+	memcpy(cls->ivars, list, listsize);
 }
 
 __attribute__((deprecated))
@@ -356,6 +399,50 @@ const char * ivar_getTypeEncoding(Ivar ivar)
 	return ivar->ivar_type;
 }
 
+static size_t lengthOfTypeEncoding(const char *types)
+{
+	const char *end = objc_skip_argspec(types);
+	end--;
+	while (isdigit(*end)) { end--; }
+	size_t length = end - types + 1;
+	return length;
+}
+static char *copyTypeEncoding(const char *types)
+{
+	size_t length = lengthOfTypeEncoding(types);
+	char *copy = malloc(length + 1);
+	memcpy(copy, types, length);
+	copy[length] = '\0';
+	return copy;
+}
+static const char * findParameterStart(const char *types, unsigned int index)
+{
+	for (unsigned int i=0 ; i<index ; i++)
+	{
+		types = objc_skip_argspec(types);
+		if ('\0' == *types)
+		{
+			return NULL;
+		}
+	}
+	return types;
+}
+
+char * method_copyArgumentType(Method method, unsigned int index)
+{
+	const char *types = findParameterStart(method->method_types, index);
+	if (NULL == types)
+	{
+		return NULL;
+	}
+	return copyTypeEncoding(types);
+}
+
+char * method_copyReturnType(Method method)
+{
+	return copyTypeEncoding(method->method_types);
+}
+
 void method_exchangeImplementations(Method m1, Method m2)
 {
 	IMP tmp = (IMP)m1->method_imp;
@@ -363,6 +450,28 @@ void method_exchangeImplementations(Method m1, Method m2)
 	m2->method_imp = (objc_imp_gnu)tmp;
 	objc_updateDtableForClassContainingMethod(m1);
 	objc_updateDtableForClassContainingMethod(m2);
+}
+void method_getArgumentType(Method method, 
+                            unsigned int index,
+                            char *dst,
+                            size_t dst_len)
+{
+	const char *types = findParameterStart(method->method_types, index);
+	if (NULL == types)
+	{
+		strncpy(dst, "", dst_len);
+		return;
+	}
+	size_t length = lengthOfTypeEncoding(types);
+	if (length < dst_len)
+	{
+		memcpy(dst, types, length);
+		dst[length] = '\0';
+	}
+	else
+	{
+		memcpy(dst, types, dst_len);
+	}
 }
 
 IMP method_getImplementation(Method method)
@@ -373,6 +482,34 @@ IMP method_getImplementation(Method method)
 SEL method_getName(Method method)
 {
 	return method->method_name;
+}
+
+unsigned method_getNumberOfArguments(Method method)
+{
+	const char *types = method->method_types;
+	unsigned int count = 0;
+	while('\0' == *types)
+	{
+		types = objc_skip_argspec(types);
+		count++;
+	}
+	return count - 1;
+}
+
+void method_getReturnType(Method method, char *dst, size_t dst_len)
+{
+	//TODO: Coped and pasted code.  Factor it out.
+	const char *types = method->method_types;
+	size_t length = lengthOfTypeEncoding(types);
+	if (length < dst_len)
+	{
+		memcpy(dst, types, length);
+		dst[length] = '\0';
+	}
+	else
+	{
+		memcpy(dst, types, dst_len);
+	}
 }
 
 const char * method_getTypeEncoding(Method method)
@@ -487,3 +624,23 @@ void objc_registerClassPair(Class cls)
 
 
 }
+
+static SEL newSel = NULL;
+static id objectNew(id cls)
+{
+	if (NULL == newSel)
+	{
+		newSel = sel_get_uid("new");
+	}
+	IMP newIMP = (IMP)objc_msg_lookup((void*)cls, newSel);
+	return newIMP((id)cls, newSel);
+}
+
+Protocol *objc_getProtocol(const char *name)
+{
+	// Protocols are not centrally registered in the GNU runtime.
+	Protocol *protocol = (Protocol*)(objectNew(objc_getClass("Protocol")));
+	protocol->protocol_name = (char*)name;
+	return protocol;
+}
+
