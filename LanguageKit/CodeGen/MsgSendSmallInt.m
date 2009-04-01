@@ -165,7 +165,6 @@ void *SmallIntMsgplus_(void *obj, void *other)
 	OTHER_OBJECT(plus);
 	// Clear the low bit on obj
 	intptr_t val = ((intptr_t)other) & ~ 1;
-	NSLog(@"%d + %d = %d", (int)obj, val, ((intptr_t)obj + val));
 	// Add the two values together.  This will cause the overflow handler to be
 	// invoked in case of overflow, otherwise it will contain the correct
 	// result.
