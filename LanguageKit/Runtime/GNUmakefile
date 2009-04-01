@@ -23,6 +23,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	BlockClosure.m\
 	NSValue+structs.m\
 	LanguageKitExceptions.m\
+	OverflowHandler.m\
 	Symbol.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \

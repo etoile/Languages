@@ -17,7 +17,7 @@
 @interface NSString {}
 + (id) stringWithFormat:(NSString*)a, ...;
 @end
-NSLog(NSString*, ...);
+void NSLog(NSString*, ...);
 
 typedef struct
 {
@@ -151,6 +151,7 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 #define OTHER_OBJECT(op) \
 	if ((((intptr_t)other) & 1) == 0)\
 	{\
+		intptr_t val = (intptr_t)obj >> 1;\
 		return [[BigInt bigIntWithLongLong:(long long)val] op:other];\
 	}
 #define RETURN_INT(x)     if((x << 1 >> 1) != x)\
@@ -158,39 +159,40 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 		return [BigInt bigIntWithLongLong:(long long)x];\
 	}\
 	return (void*)((x << 1) | 1);
-				
-// FIXME: These only work currently on SmallInt args
-MSG1(plus_)
-	OTHER_OBJECT(plus)
-	intptr_t res = val + otherval;
-	//fprintf(stderr, "Adding %d to %d\n", (int)val, (int)otherval);
-	if((val<=res)==((((uintptr_t)otherval)>>((sizeof(uintptr_t)*8) - 1))))
-	{
-		//fprintf(stderr, "Add overflowed - promoting.\n");
-		BOX_AND_RETRY(plus);
-	}
-	RETURN_INT(res);
-}
 
-MSG1(sub_)
-	OTHER_OBJECT(sub)
-	intptr_t res = val - otherval;
-	// Check for overflow
-	if ((val & ~otherval & ~res) | (~val & otherval & res) < 0)
-	{
-		BOX_AND_RETRY(sub);
-	}
-	RETURN_INT(res);
+void *SmallIntMsgplus_(void *obj, void *other)
+{
+	OTHER_OBJECT(plus);
+	// Clear the low bit on obj
+	intptr_t val = ((intptr_t)other) & ~ 1;
+	NSLog(@"%d + %d = %d", (int)obj, val, ((intptr_t)obj + val));
+	// Add the two values together.  This will cause the overflow handler to be
+	// invoked in case of overflow, otherwise it will contain the correct
+	// result.
+	return (void*)((intptr_t)obj + val);
 }
-MSG1(mul_)
+void *SmallIntMsgsub_(void *obj, void *other)
+{
+	OTHER_OBJECT(sub);
+	// Clear the low bit and invert the sign bit on other 
+	intptr_t val = -(((intptr_t)other) & ~1);
+	// Add the two values together.  This will cause the overflow handler to be
+	// invoked in case of overflow, otherwise it will contain the correct
+	// result.
+	return (void*)((intptr_t)obj + val);
+}
+void *SmallIntMsgmul_(void *obj, void *other)
+{
 	OTHER_OBJECT(mul)
-	// FIXME: Far too conservative - replace with something more efficient.
-	if (val != (short)val || otherval != (short) otherval)
-	{
-		return BOX_AND_RETRY(mul);
-	}
-	val *= otherval;
-	RETURN_INT(val);
+	// Clear the low bit on obj
+	intptr_t val = ((intptr_t)obj) & ~ 1;
+	// Turn other into a C integer
+	intptr_t otherval = ((intptr_t)other) >> 1;
+	// val * otherval will be the correct SmallInt value with the low bit
+	// cleared.  This sets the low bit in this case.  To avoid an extra test in
+	// case of overflow, we cheat a bit here and set the low bit spuriously
+	// when returning a big integer.  This then clears that bit.  
+	return (void*)((val * otherval) ^ 1);
 }
 MSG1(div_)
 	OTHER_OBJECT(div)
