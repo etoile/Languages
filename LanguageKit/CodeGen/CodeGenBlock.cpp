@@ -84,9 +84,13 @@ void CodeGenBlock::SetBlockReturn(Value* RetVal)
 	CodeGenLexicalScope::SetReturn(RetVal);
 }
 
-
 Value *CodeGenBlock::EndBlock(void)
 {
+	BasicBlock *block = Builder.GetInsertBlock();
+	if (NULL != block && NULL == block->getTerminator())
+	{
+		Builder.CreateBr(CleanupBB);
+	}
 	EndScope();
 	parentScope->EndChildBlock(this);
 	return Block;
