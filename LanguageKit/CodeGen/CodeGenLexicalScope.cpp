@@ -273,7 +273,7 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes,
-	bool isSRet) 
+	bool isSRet)
 {
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
@@ -446,10 +446,15 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// Create the real return handler
 	BasicBlock *realRetBB = llvm::BasicBlock::Create("return", CurrentFunction);
 	IRBuilder<> ReturnBuilder = IRBuilder<>(realRetBB);
-	if (CurrentFunction->getFunctionType()->getReturnType() !=
-			llvm::Type::VoidTy) 
+	const Type *functionRetTy =
+		CurrentFunction->getFunctionType()->getReturnType();
+	if (functionRetTy != llvm::Type::VoidTy) 
 	{
 		Value * R = ReturnBuilder.CreateLoad(RetVal);
+		if (functionRetTy != RetTy)
+		{
+			R = ReturnBuilder.CreateBitCast(R, functionRetTy);
+		}
 		ReturnBuilder.CreateRet(R);
 	}
 	else
@@ -631,14 +636,22 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 	UnboxArgs(B, F, argv, args, argc, selTypes);
 
 	bool isSRet = false;
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet);
+	const Type *realReturnType = NULL;
+	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet,
+			realReturnType);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-	return Runtime->GenerateMessageSendSuper(*B, MethodTy->getReturnType(),
-		isSRet, Sender, CGM->getSuperClassName().c_str(), SelfPtr, cmd, args,
-		argc, CGM->inClassMethod, CleanupBB);
+	llvm::Value *msg = Runtime->GenerateMessageSendSuper(*B,
+		MethodTy->getReturnType(), isSRet, Sender,
+		CGM->getSuperClassName().c_str(), SelfPtr, cmd, args, argc,
+		CGM->inClassMethod, CleanupBB);
+	if (MethodTy->getReturnType() == realReturnType)
+	{
+		msg = Builder.CreateBitCast(msg, realReturnType);
+	}
+	return msg;
 }
 
 // Preform a real message send.  Reveicer must be a real object, not a
@@ -654,13 +667,21 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 	Value *SelfPtr = NULL;//LoadSelf();
 
 	bool isSRet = false;
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet);
+	const Type *realReturnType = NULL;
+	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet,
+			realReturnType);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
-	return Runtime->GenerateMessageSend(*B, MethodTy->getReturnType(), isSRet,
-		SelfPtr, receiver, cmd, argv, argc, ExceptionBB);
+	llvm::Value *msg = Runtime->GenerateMessageSend(*B,
+		MethodTy->getReturnType(), isSRet, SelfPtr, receiver, cmd, argv, argc,
+		ExceptionBB);
+	if (MethodTy->getReturnType() == realReturnType)
+	{
+		msg = Builder.CreateBitCast(msg, realReturnType);
+	}
+	return msg;
 }
 
 Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,

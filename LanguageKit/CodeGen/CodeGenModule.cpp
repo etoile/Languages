@@ -184,7 +184,9 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
 {
 	// Generate the method function
 	bool isSRet;
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(MethodTypes, isSRet);
+	const Type *realReturnType = NULL;
+	FunctionType *MethodTy = LLVMFunctionTypeFromString(MethodTypes, isSRet,
+		realReturnType);
 	unsigned argc = MethodTy->getNumParams() - 2;
 	const Type *argTypes[argc];
 	FunctionType::param_iterator arg = MethodTy->param_begin();
@@ -199,7 +201,7 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
 		CGM->getCategoryName(), MethodName, MethodTy->getReturnType(),
 		CGM->getCurrentClassTy(), argTypes, argc, isClass, isSRet);
 
-	InitialiseFunction(Args, Locals, locals, MethodTypes);
+	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet);
 }
 
 void CodeGenModule::BeginInstanceMethod(const char *MethodName,

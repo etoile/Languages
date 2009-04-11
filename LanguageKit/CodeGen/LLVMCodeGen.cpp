@@ -186,7 +186,8 @@ static inline bool shouldReturnValueOnStack(const Type *sTy)
 	return false;
 }
 
-FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet)
+FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet,
+		const Type *&realRetTy)
 {
 	std::vector<const Type*> ArgTypes;
 	if (NULL == typestr)
@@ -199,6 +200,15 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet)
 	// v12@0:4@8 - void f(id, SEL, id)
 	const Type * ReturnTy = LLVMTypeFromString(typestr);
 	isSRet = shouldReturnValueOnStack(ReturnTy);
+	
+	realRetTy = ReturnTy;
+	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ReturnTy)
+		&&                              
+		ReturnTy == StructType::get(Type::FloatTy, Type::FloatTy, NULL))
+	{   
+		isSRet = false;
+		ReturnTy = Type::Int64Ty;
+	}
 	NEXT(typestr);
 	while(*typestr)
 	{

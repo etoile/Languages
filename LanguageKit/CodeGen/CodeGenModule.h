@@ -191,10 +191,11 @@ void SkipTypeQualifiers(const char **typestr);
 const Type *LLVMTypeFromString(const char * typestr);
 /**
  * Returns an LLVM function type from a string.  Sets isSRet if the function
- * contains a structure which should be returned on the stack.
+ * contains a structure which should be returned on the stack.  
  */
 llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr,
-                                               bool &isSRet);
+                                               bool &isSRet,
+											   const Type *&realRetTy);
 
 
 
