@@ -42,36 +42,45 @@ const char *MsgSendSmallIntFilename;
 Constant *Zeros[2];
 
 
-const Type *LLVMTypeFromString(const char * typestr)
+static const Type *LLVMTypeFromString2(const char ** typestr)
 {
 	// FIXME: Other function type qualifiers
-	SkipTypeQualifiers(&typestr);
-	switch(*typestr)
+	SkipTypeQualifiers(typestr);
+	switch(**typestr)
 	{
 		case 'c':
 		case 'C':
+			(*typestr)++;
 			return IntegerType::get(sizeof(char) * 8);
 		case 's':
 		case 'S':
+			(*typestr)++;
 			return IntegerType::get(sizeof(short) * 8);
 		case 'i':
 		case 'I':
+			(*typestr)++;
 			return IntegerType::get(sizeof(int) * 8);
 		case 'l':
 		case 'L':
+			(*typestr)++;
 			return IntegerType::get(sizeof(long) * 8);
 		case 'q':
 		case 'Q':
+			(*typestr)++;
 			return IntegerType::get(sizeof(long long) * 8);
 		case 'f':
+			(*typestr)++;
 			return Type::FloatTy;
 		case 'd':
+			(*typestr)++;
 			return Type::DoubleTy;
 		case 'B':
+			(*typestr)++;
 			return IntegerType::get(sizeof(bool) * 8);
 		case '^':
 		{
-			const Type *pointeeType = LLVMTypeFromString(typestr+1);
+			(*typestr)++;
+			const Type *pointeeType = LLVMTypeFromString2(typestr);
 			if (pointeeType == Type::VoidTy)
 			{
 				pointeeType = Type::Int8Ty;
@@ -83,26 +92,34 @@ const Type *LLVMTypeFromString(const char * typestr)
 		case '@':
 		case '#':
 		case '*':
+			(*typestr)++;
 			return PointerType::getUnqual(Type::Int8Ty);
 		case 'v':
+			(*typestr)++;
 			return Type::VoidTy;
 		case '{':
 		{
-			while (*typestr != '=') { typestr++; }
-			typestr++;
+			while (**typestr != '=') { 
+				(*typestr)++; }
+			(*typestr)++;
 			std::vector<const Type*> types;
-			while (*typestr != '}')
+			while (**typestr != '}')
 			{
 				// FIXME: Doesn't work with nested structs
-				types.push_back(LLVMTypeFromString(typestr));
-				typestr++;
+				types.push_back(LLVMTypeFromString2(typestr));
 			}
+			(*typestr)++;
 			return StructType::get(types);
 		}
 		default:
 		//FIXME: Structure and array types
 			return NULL;
 	}
+}
+
+const Type *LLVMTypeFromString(const char * typestr)
+{
+	return LLVMTypeFromString2(&typestr);
 }
 
 #define NEXT(typestr) \
