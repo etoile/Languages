@@ -853,24 +853,26 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 
 	std::vector<llvm::Constant*> Elements;
 	// Generate statics list:
-	llvm::ArrayType *StaticsArrayTy = llvm::ArrayType::get(PtrToInt8Ty,
-		ConstantStrings.size() + 1);
-	ConstantStrings.push_back(NULLPtr);
-	Elements.push_back(MakeConstantString("NSConstantString",
-		".objc_static_class_name"));
-	Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
-	llvm::StructType *StaticsListTy = 
-		llvm::StructType::get(PtrToInt8Ty, StaticsArrayTy, (void*)0);
-	llvm::Type *StaticsListPtrTy = llvm::PointerType::getUnqual(StaticsListTy);
-	llvm::Constant *Statics = 
-		MakeGlobal(StaticsListTy, Elements, ".objc_statics");
-	llvm::ArrayType *StaticsListArrayTy =
-		llvm::ArrayType::get(StaticsListPtrTy, 2);
-	Elements.clear();
-	Elements.push_back(Statics);
-	Elements.push_back(llvm::Constant::getNullValue(StaticsListPtrTy));
-	Statics = MakeGlobal(StaticsListArrayTy, Elements, ".objc_statics_ptr");
-	Statics = llvm::ConstantExpr::getBitCast(Statics, PtrTy);
+	llvm::Constant *Statics = NULLPtr;
+	if (0 != ConstantStrings.size()) {
+		llvm::ArrayType *StaticsArrayTy = llvm::ArrayType::get(PtrToInt8Ty,
+			ConstantStrings.size() + 1);
+		ConstantStrings.push_back(NULLPtr);
+		Elements.push_back(MakeConstantString("NSConstantString",
+			".objc_static_class_name"));
+		Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
+		llvm::StructType *StaticsListTy = 
+			llvm::StructType::get(PtrToInt8Ty, StaticsArrayTy, (void*)0);
+		llvm::Type *StaticsListPtrTy = llvm::PointerType::getUnqual(StaticsListTy);
+		Statics = MakeGlobal(StaticsListTy, Elements, ".objc_statics");
+		llvm::ArrayType *StaticsListArrayTy =
+			llvm::ArrayType::get(StaticsListPtrTy, 2);
+		Elements.clear();
+		Elements.push_back(Statics);
+		Elements.push_back(llvm::Constant::getNullValue(StaticsListPtrTy));
+		Statics = MakeGlobal(StaticsListArrayTy, Elements, ".objc_statics_ptr");
+		Statics = llvm::ConstantExpr::getBitCast(Statics, PtrTy);
+	}
 	// Array of classes, categories, and constant objects
 	llvm::ArrayType *ClassListTy = llvm::ArrayType::get(PtrToInt8Ty,
 		Classes.size() + Categories.size() + 2);

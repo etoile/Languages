@@ -918,7 +918,7 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 			Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
 		Value *old = Builder.CreateLoad(addr);
 		Runtime->GenerateMessageSend(Builder, Type::VoidTy, false, NULL, old,
-			Runtime->GetSelector(Builder, "release", NULL), 0, 0);
+			Runtime->GetSelector(Builder, "autorelease", NULL), 0, 0);
 	}
 	Builder.CreateStore(box, addr, true);
 }
