@@ -132,11 +132,15 @@ BOOL class_addMethod(Class cls, SEL name, IMP imp, const char *types)
 	methods->method_next = cls->methods;
 	cls->methods = methods;
 
-	methods->method_list[1].method_name = sel_get_typed_uid(methodName, types);
-	methods->method_list[1].method_types = strdup(types);
-	methods->method_list[1].method_imp = (objc_imp_gnu)imp;
+	methods->method_count = 1;
+	methods->method_list[0].method_name = sel_get_typed_uid(methodName, types);
+	methods->method_list[0].method_types = strdup(types);
+	methods->method_list[0].method_imp = (objc_imp_gnu)imp;
 
-	__objc_update_dispatch_table_for_class(cls);
+	if (CLS_ISRESOLV(cls))
+	{
+		__objc_update_dispatch_table_for_class(cls);
+	}
 
 	return YES;
 }
@@ -527,7 +531,7 @@ IMP method_setImplementation(Method method, IMP imp)
 
 id objc_getClass(const char *name)
 {
-	return (id)objc_lookup_class(name);
+	return (id)objc_get_class(name);
 }
 
 int objc_getClassList(Class *buffer, int bufferLen)
@@ -574,7 +578,7 @@ id objc_getRequiredClass(const char *name)
 id objc_lookUpClass(const char *name)
 {
 	// TODO: Check these are the right way around.
-	return (id)objc_get_class(name);
+	return (id)objc_lookup_class(name);
 }
 
 
@@ -591,19 +595,28 @@ Class objc_allocateClassPair(Class superclass, const char *name, size_t extraByt
 	Class metaClass = calloc(1, sizeof(struct objc_class));
 
 	// Initialize the metaclass
-	metaClass->class_pointer = newClass->class_pointer->class_pointer;
-	metaClass->super_class = newClass->class_pointer;
+	metaClass->class_pointer = superclass->class_pointer;
+	metaClass->super_class = superclass->class_pointer->super_class;
 	metaClass->info = _CLS_META;
 	metaClass->dtable = __objc_uninstalled_dtable;
 
 	// Set up the new class
 	newClass->class_pointer = metaClass;
 	newClass->super_class = superclass;
-	newClass->name = name;
+	newClass->name = strdup(name);
 	newClass->info = _CLS_CLASS;
 	newClass->dtable = __objc_uninstalled_dtable;
 
 	return newClass;
+}
+
+void *object_getIndexedIvars(id obj)
+{
+	if (class_isMetaClass(obj->isa))
+	{
+		return ((char*)obj) + sizeof(struct objc_class);
+	}
+	return ((char*)obj) + obj->isa->instance_size;
 }
 
 void objc_registerClassPair(Class cls)
@@ -621,8 +634,6 @@ void objc_registerClassPair(Class cls)
 	metaClass->sibling_class = metaClass->super_class->subclass_list;
 	metaClass->super_class->subclass_list = metaClass;
 	objc_mutex_unlock(__objc_runtime_mutex);
-
-
 }
 
 static SEL newSel = NULL;

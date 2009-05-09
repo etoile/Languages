@@ -172,9 +172,13 @@ id objc_lookUpClass(const char *name);
 
 Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes);
 
+void objc_registerClassPair(Class cls);
+
+void *object_getIndexedIvars(id obj);
+
 id object_copy(id obj, size_t size);
 
 id object_dispose(id obj);
 
-#define objc_msgSend(theReceiver, theSelector, ...) objc_msg_lookup(theReceiver, theSelector)(theReceiver, theSelector, ## __VA_LIST__);
+#define objc_msgSend(theReceiver, theSelector, ...) objc_msg_lookup(theReceiver, theSelector)(theReceiver, theSelector, ## __VA_ARGS__)
 
