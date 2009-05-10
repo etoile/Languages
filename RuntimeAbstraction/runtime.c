@@ -1,4 +1,10 @@
 #include "runtime.h"
+
+#undef __objc_INCLUDE_GNU
+#undef __thread_INCLUDE_GNU
+#undef __objc_api_INCLUDE_GNU
+#undef __encoding_INCLUDE_GNU
+
 #define objc_object objc_object_gnu
 #define id object_ptr_gnu
 #define IMP objc_imp_gnu

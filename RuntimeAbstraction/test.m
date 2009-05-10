@@ -1,23 +1,26 @@
 #import <Foundation/Foundation.h>
-//#include "runtime.h"
+#include "runtime.h"
+
+id obj;
 
 void foo(void)
 {
-	@throw ([NSObject new]);
+	@synchronized(obj)
+	{
+		printf("foo\n");
+		@throw ([NSObject new]);
+	}
 }
 int main(void)
 {
-	id obj = [NSObject new];
+	obj = [NSObject new];
 	@try {
-		//@synchronized(obj)
-		{
-			printf("foo\n");
 			foo();
-		}
 	}
-	@catch(id a) {
+	@catch(NSObject *a) {
 		printf("Caught!\n");
 	}
+	@finally { printf("Not broken!"); }
 	[obj dealloc];
 	return 0;
 }

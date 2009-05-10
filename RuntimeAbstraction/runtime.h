@@ -9,18 +9,37 @@
 #	define OBJC_GNU_RUNTIME_UNSUPPORTED(x)
 #endif
 
+// Undo GNUstep substitutions
+#ifdef class_setVersion 
+#undef class_setVersion
+#endif
+#ifdef class_getClassMethod
+#undef class_getClassMethod
+#endif
+#ifdef objc_getClass
+#undef objc_getClass
+#endif
+#ifdef objc_lookUpClass
+#undef objc_lookUpClass
+#endif
+
 typedef struct objc_ivar* Ivar;
 
 typedef const struct objc_selector *SEL;
 
 typedef struct objc_class *Class;
 
+#ifndef __objc_INCLUDE_GNU
 typedef struct objc_object
 {
 	Class isa;
 } *id;
 
 typedef id (*IMP)(id, SEL, ...);
+#else
+// Method in the GNU runtime is a struct, Method_t is the pointer
+#define Method Method_t
+#endif // __objc_INCLUDE_GNU
 
 #ifdef STRICT_APPLE_COMPATIBILITY
 typedef signed char BOOL;
@@ -176,9 +195,9 @@ void objc_registerClassPair(Class cls);
 
 void *object_getIndexedIvars(id obj);
 
-id object_copy(id obj, size_t size);
+// FIXME: The GNU runtime has a version of this which omits the size parameter
+//id object_copy(id obj, size_t size);
 
 id object_dispose(id obj);
 
 #define objc_msgSend(theReceiver, theSelector, ...) objc_msg_lookup(theReceiver, theSelector)(theReceiver, theSelector, ## __VA_ARGS__)
-
