@@ -100,6 +100,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	CreateClassPointerGlobal("Symbol", ".smalltalk_symbol_class");
 	CreateClassPointerGlobal("NSValue", ".smalltalk_nsvalue_class");
 	CreateClassPointerGlobal("NSNumber", ".smalltalk_nsnumber_class");
+	CreateClassPointerGlobal("BigInt", ".smalltalk_bigint_class");
 }
 
 void CodeGenModule::BeginClass(const char *Class,
@@ -285,8 +286,9 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 	intptr_t ptrVal = (val << 1);
 	if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val))
 	{
-		Value *BigIntClass = Runtime->LookupClass(InitialiseBuilder,
-			MakeConstantString("BigInt"));
+		Value *BigIntClass = InitialiseBuilder.CreateLoad(
+				TheModule->getGlobalVariable(".smalltalk_bigint_class",
+					true));
 		Value *V = MakeConstantString(value);
 		// Create the BigInt
 		Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
@@ -322,12 +324,12 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 
 	std::vector<llvm::Constant*> S;
 	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
-	S.push_back(LiteralInitFunction);
+	S.push_back(init);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 	// Add the constant initialisation function
 	S.clear();
 	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
-	S.push_back(init);
+	S.push_back(LiteralInitFunction);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 
 	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
@@ -401,9 +403,9 @@ void CodeGenModule::compile(void)
 	}
 	LOG("Compiling...\n");
 	EE->runStaticConstructorsDestructors(TheModule, false);
-	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
 	void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
 	LOG("Loading %x...\n", (unsigned)(unsigned long)f);
 	f();
+	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
 	LOG("Loaded.\n");
 }
