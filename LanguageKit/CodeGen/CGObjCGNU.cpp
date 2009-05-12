@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "ABI.h"
 #include "CGObjCRuntime.h"
 #include "llvm/Module.h"
 #include "llvm/Support/Compiler.h"
@@ -15,6 +16,7 @@
 #include "llvm/Target/TargetData.h"
 #include <map>
 #include <string>
+#include <algorithm>
 
 using namespace llvm;
 using namespace std;
@@ -168,18 +170,39 @@ public:
 } // end anonymous namespace
 
 
-
 static std::string SymbolNameForClass(const std::string &ClassName) 
 {
-	return ".objc_class_" + ClassName;
+	return "__objc_class_" + ClassName;
+}
+// PPC gas doesn't like symbols containing quotes or colons
+#if defined(__linux__) && defined(__PPC__)
+static std::string SymbolNameForSelector(const std::string &MethodName)
+{
+  string MethodNameColonStripped = MethodName;
+	std::replace(MethodNameColonStripped.begin(), MethodNameColonStripped.end(), ':', '_');
+	return MethodNameColonStripped;
 }
 
 static std::string SymbolNameForMethod(const std::string &ClassName, const
 	std::string &CategoryName, const std::string &MethodName, bool isClassMethod)
 {
-	return "._objc_method_" + ClassName +"("+CategoryName+")"+
-		(isClassMethod ? "+" : "-") + MethodName;
+	return "__objc_method_" + ClassName +"_category_"+CategoryName+"_"+
+		(isClassMethod ? "classmethod_" : "instancemethod_") + SymbolNameForSelector(MethodName);
 }
+#else
+static std::string SymbolNameForSelector(const std::string &MethodName)
+{
+	return MethodName;
+}
+
+static std::string SymbolNameForMethod(const std::string &ClassName, const
+	std::string &CategoryName, const std::string &MethodName, bool isClassMethod)
+{
+	return "__objc_method_" + ClassName +"("+CategoryName+")"+
+		(isClassMethod ? "+" : "-") + SymbolNameForSelector(MethodName);
+}
+#endif
+
 
 CGObjCGNU::CGObjCGNU(llvm::Module &M,
                       const llvm::Type *LLVMIntType,
@@ -249,7 +272,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
 		// If it isn't, cache it.
 		llvm::GlobalAlias *Sel = new llvm::GlobalAlias(
 				llvm::PointerType::getUnqual(SelectorTy),
-				llvm::GlobalValue::InternalLinkage, SelName,
+				llvm::GlobalValue::InternalLinkage, SymbolNameForSelector(SelName),
 				NULL, &TheModule);
 		UntypedSelectors[SelName] = Sel;
 		return Builder.CreateLoad(Sel);
@@ -268,8 +291,8 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
 	// If it isn't, cache it.
 	llvm::GlobalAlias *Sel = new llvm::GlobalAlias(
 			llvm::PointerType::getUnqual(SelectorTy),
-			llvm::GlobalValue::InternalLinkage, SelName,
-			NULL, &TheModule);
+			llvm::GlobalValue::InternalLinkage, SymbolNameForSelector(SelName),
+				NULL, &TheModule);
 	TypedSelectors[Selector] = Sel;
 	return Builder.CreateLoad(Sel);
 }
@@ -368,7 +391,28 @@ static llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
 	}
 	callArgs.push_back(Receiver);
 	callArgs.push_back(Selector);
-	callArgs.insert(callArgs.end(), ArgV, ArgV+ArgC);
+	if (PASS_STRUCTS_AS_POINTER)
+	{
+		llvm::Value* callArg;
+		for (unsigned int i = 0; i < ArgC; i++) {
+			callArg = ArgV[i];
+			if (isa<StructType>(callArg->getType()))
+			{
+				llvm::AllocaInst *StructPointer =
+					Builder.CreateAlloca(callArg->getType());
+				Builder.CreateStore(callArg, StructPointer);
+				callArgs.push_back(StructPointer);
+			}
+			else
+			{
+				callArgs.push_back(callArg);
+			}
+		}
+	}
+	else
+	{
+		callArgs.insert(callArgs.end(), ArgV, ArgV+ArgC);
+	}
 	llvm::Value *ret = 0;
 	if (0 != CleanupBlock)
 	{
