@@ -104,7 +104,6 @@
 
 	const char *cvarNames[[cvars count] + 1];
 	const char *cvarTypes[[cvars count] + 1];
-	int cvarOffsets[[cvars count] + 1];
 	for (int i=0; i<[cvars count]; i++)
 	{
 		cvarNames[i] = [[cvars objectAtIndex: i] UTF8String];
@@ -129,7 +128,10 @@
 	{
 		const char* deallocty = sel_get_type(sel_get_any_typed_uid("dealloc"));
 
-		[aGenerator beginInstanceMethod:"dealloc" withTypes:deallocty locals:0];
+		[aGenerator beginInstanceMethod: "dealloc"
+		                      withTypes: deallocty
+		                         locals: NULL
+		                          count: 0];
 		void *selfptr = [aGenerator loadSelf];
 		const char* releasety = sel_get_type(sel_get_any_typed_uid("release"));
 		for (unsigned i=0 ; i<[ivars count] ; i++)

@@ -75,16 +75,18 @@ typedef int bool;
 
 - (void) beginClassMethod:(const char*) aName
                 withTypes:(const char*)types
-                   locals:(unsigned)locals
+                   locals: (const char**)locals
+                    count:(unsigned)localsCount
 {
-	BeginClassMethod(Builder, aName, types, locals);
+	BeginClassMethod(Builder, aName, types, localsCount, locals);
 }
 
-- (void) beginInstanceMethod:(const char*) aName
-                   withTypes:(const char*)types
-                      locals:(unsigned)locals
+- (void) beginInstanceMethod: (const char*) aName
+                   withTypes: (const char*)types
+                      locals: (const char**)locals
+                       count: (unsigned)localsCount
 {
-	BeginInstanceMethod(Builder, aName, types, locals);
+	BeginInstanceMethod(Builder, aName, types, localsCount, locals);
 }
 
 - (void*) sendMessage:(const char*)aMessage

@@ -196,7 +196,6 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval);
 	}
 	return last;
 }
-
 - (int32_t) argumentCount
 {
 	return args;

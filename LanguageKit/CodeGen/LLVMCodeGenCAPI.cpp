@@ -96,17 +96,19 @@ void SetReturn(ModuleBuilder B, LLVMValue retval)
 void BeginClassMethod(ModuleBuilder B,
                       const char *methodname,
                       const char *methodTypes,
-                      unsigned locals)
+                      unsigned locals,
+                      const char **localNames)
 {
-	B->BeginClassMethod(methodname, methodTypes, locals);
+	B->BeginClassMethod(methodname, methodTypes, locals, localNames);
 }
 
 void BeginInstanceMethod(ModuleBuilder B,
                          const char *methodname,
                          const char *methodTypes,
-                         unsigned locals)
+                         unsigned locals,
+                         const char **localNames)
 {
-	B->BeginInstanceMethod(methodname, methodTypes, locals);
+	B->BeginInstanceMethod(methodname, methodTypes, locals, localNames);
 }
 
 void EndMethod(ModuleBuilder B)

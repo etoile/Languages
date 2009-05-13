@@ -3,6 +3,7 @@
 
 
 @class LKModule;
+@class LKInterpreterContext;
 /**
  * Root class for AST nodes.  Every node in the abstract syntax tree inherits
  * from this.  It stores the parent, allowing navigation up the tree, and a
@@ -99,6 +100,14 @@
  */
 - (void) visitArray:(NSMutableArray*)anArray
         withVisitor:(id<LKASTVisitor>)aVisitor;
+@end
+
+@interface LKAST (Interpreter)
+/**
+ * Interprets the AST node with the specified context object.  Returns the
+ * result.
+ */
+- (id)interpretInContext: (LKInterpreterContext*)context;
 @end
 
 #define SAFECAST(type, obj) ([obj isKindOfClass:[type class]] ? (type*)obj : ([NSException raise:@"InvalidCast" format:@"Can not cast %@ to %s", obj, #type], (type*)nil))

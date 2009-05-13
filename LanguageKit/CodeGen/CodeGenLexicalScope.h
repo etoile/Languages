@@ -41,7 +41,8 @@ protected:
    */
   void InitialiseFunction( SmallVectorImpl<Value*> &Args,
      SmallVectorImpl<Value*> &Locals, unsigned locals, 
-	 const char *MethodTypes="@", bool isSRet=false);
+	 const char *MethodTypes="@", bool isSRet=false,
+	 const char **symbols=0);
   /**
    * Maps a selector to a SmallInt function name.
    */
@@ -224,7 +225,7 @@ public:
 class CodeGenMethod : public CodeGenLexicalScope {
 public:
   CodeGenMethod(CodeGenModule *Mod, const char *MethodName, const char
-      *MethodTypes, int locals, bool isClass=false);
+      *MethodTypes, int locals, bool isClass, const char **localNames);
 };
 /**
  * Offset of the variables in the context from the object start.

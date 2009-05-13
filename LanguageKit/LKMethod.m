@@ -64,7 +64,7 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
+	//LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	[str appendString:[signature description]];
 	[str appendString:@"[\n"];
 	[str appendString: [self methodBody]];
@@ -125,10 +125,17 @@
                  forSelectorNamed:(const char*)sel
 			            withTypes:(const char*)types
 {
-	[aGenerator beginInstanceMethod:sel
-				          withTypes:types
-					         locals:
-							 [[(LKMethodSymbolTable*)symbols locals] count]];
+	NSArray *localNames = [(LKMethodSymbolTable*)symbols locals];
+	unsigned count = [localNames count];
+	const char *locals[count];
+	for (unsigned i=0 ; i<count ; i++)
+	{
+		locals[i] = [[localNames objectAtIndex: i] UTF8String];
+	}
+	[aGenerator beginInstanceMethod: sel
+	                      withTypes: types
+	                         locals: locals
+	                          count: count];
 }
 @end
 @implementation LKClassMethod
@@ -136,9 +143,16 @@
                  forSelectorNamed:(const char*)sel
 			            withTypes:(const char*)types
 {
-	[aGenerator beginClassMethod:sel
-				       withTypes:types
-					      locals:
-							 [[(LKMethodSymbolTable*)symbols locals] count]];
+	NSArray *localNames = [(LKMethodSymbolTable*)symbols locals];
+	unsigned count = [localNames count];
+	const char *locals[count];
+	for (unsigned i=0 ; i<count ; i++)
+	{
+		locals[i] = [[localNames objectAtIndex: i] UTF8String];
+	}
+	[aGenerator beginClassMethod: sel
+	                   withTypes: types
+	                      locals: locals
+	                       count: count];
 }
 @end

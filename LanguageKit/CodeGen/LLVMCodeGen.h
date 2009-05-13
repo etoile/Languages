@@ -95,12 +95,12 @@ void SetReturn(ModuleBuilder B, LLVMValue retval);
  * Begin a class method.
  */
 void BeginClassMethod(ModuleBuilder B, const char *methodname, const char
-		*methodTypes, unsigned args);
+		*methodTypes, unsigned args, const char **localNames);
 /**
  * Begin an instance method.
  */
 void BeginInstanceMethod(ModuleBuilder B, const char *methodname, const char
-		*methodTypes, unsigned args);
+		*methodTypes, unsigned args, const char **localNames);
 /**
  * End the current method.
  */

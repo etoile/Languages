@@ -273,7 +273,7 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes,
-	bool isSRet)
+	bool isSRet, const char **symbols)
 {
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
@@ -348,6 +348,33 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		Builder.CreateLoad(
 			CGM->getModule()->getGlobalVariable(".smalltalk_context_stack_class", true)),
 		Builder.CreateStructGEP(Context, 0, "context_isa"));
+
+	// Set the symbol table
+	if (0 != symbols && locals > 0)
+	{
+		std::vector<llvm::Constant*> symbolTableInitialiser;
+		llvm::Constant *Zero = llvm::ConstantInt::get(IntTy, 0);
+		for (unsigned i=0 ; i<locals ; i++)
+		{
+			llvm::Constant *symbol = CGM->MakeConstantString(symbols[i]);
+			symbol = llvm::ConstantExpr::getGetElementPtr(symbol, (llvm::Constant*const*)&Zero, 1);
+			symbolTableInitialiser.push_back(symbol);
+		}
+		llvm::ArrayType *tableTy = llvm::ArrayType::get(PtrTy, locals);
+		llvm::Constant *initialiser = 
+			llvm::ConstantArray::get(tableTy, symbolTableInitialiser);
+		llvm::Value *symbolTable = new llvm::GlobalVariable(tableTy, true,
+				llvm::GlobalValue::InternalLinkage, initialiser);
+		Builder.CreateStore(
+			Builder.CreateBitCast(symbolTable, PtrTy),
+			Builder.CreateStructGEP(Context, 3, "context_symbols"));
+	}
+	else
+	{
+		Builder.CreateStore(
+			llvm::ConstantPointerNull::get(cast<llvm::PointerType>(PtrTy)),
+			Builder.CreateStructGEP(Context, 3, "context_symbols"));
+	}
 
 	//// Set up the arguments
 

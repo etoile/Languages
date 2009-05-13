@@ -67,10 +67,10 @@ typedef	enum
  * Symbol table for a method.
  */
 @interface LKMethodSymbolTable : LKSymbolTable {
-  /** Local variables declared in the current scope. */
+	/** Local variables declared in the current scope. */
 	NSMutableArray * localVariables;
-  /** Arguments in the current scope. */
-  NSMutableArray * arguments;
+	/** Arguments in the current scope. */
+	NSMutableArray * arguments;
 }
 /**
  * Initialise the symbol table with local variables and arguments.

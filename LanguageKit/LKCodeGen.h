@@ -42,20 +42,22 @@
 - (void) endCategory;
 /**
  * Begin a class method with the specified type encoding and number of local
- * variables.  Local variables and arguments are indexed by number, the code
- * generator is not aware of any symbol table information.
+ * variables.  Local variables and arguments are indexed by number, the symbol
+ * table information is just for debugging.
  */
-- (void) beginClassMethod:(const char*)aName
+- (void) beginClassMethod:(const char*) aName
                 withTypes:(const char*)types
-                   locals:(unsigned int)locals;
+                   locals: (const char**)locals
+                    count:(unsigned)localsCount;
 /**
  * Begin an instance method with the specified type encoding and number of local
- * variables.  Local variables and arguments are indexed by number, the code
- * generator is not aware of any symbol table information.
+ * variables.  Local variables and arguments are indexed by number, the symbol
+ * table information is just for debugging.
  */
-- (void) beginInstanceMethod:(const char*) aName
-                   withTypes:(const char*)types
-                      locals:(unsigned int)locals;
+- (void) beginInstanceMethod: (const char*) aName
+                   withTypes: (const char*)types
+                      locals: (const char**)locals
+                       count: (unsigned)localsCount;
 /**
  * Sends a message to a receiver which may be a SmallInt (a boxed Smalltalk
  * integer contained within an object pointer).

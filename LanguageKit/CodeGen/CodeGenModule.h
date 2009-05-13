@@ -109,13 +109,13 @@ public:
    * Start a class method.
    */
   void BeginClassMethod(const char *MethodName, const char *MethodTypes, int
-		  locals);
+		  locals, const char **localNames);
 
   /**
    * Start a method.
    */
   void BeginInstanceMethod(const char *MethodName, const char *MethodTypes, int
-		  locals);
+		  locals, const char **localNames);
 
   /**
    * End the current method.

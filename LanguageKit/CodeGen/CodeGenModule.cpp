@@ -180,7 +180,8 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
                              const char *MethodName,
                              const char *MethodTypes,
                              int locals,
-                             bool isClass)
+                             bool isClass,
+                             const char **localNames)
                              : CodeGenLexicalScope(Mod) 
 {
 	// Generate the method function
@@ -202,12 +203,13 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
 		CGM->getCategoryName(), MethodName, MethodTy->getReturnType(),
 		CGM->getCurrentClassTy(), argTypes, argc, isClass, isSRet);
 
-	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet);
+	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet, localNames);
 }
 
 void CodeGenModule::BeginInstanceMethod(const char *MethodName,
                                         const char *MethodTypes,
-                                        int locals)
+                                        int locals,
+                                        const char **localNames)
 {
 	// Log the method name and types so that we can use it to set up the class
 	// structure.
@@ -216,13 +218,14 @@ void CodeGenModule::BeginInstanceMethod(const char *MethodName,
 	inClassMethod = false;
 	assert(ScopeStack.empty()
 		&& "Creating a method inside something is not sensible");
-	ScopeStack.push_back(
-		new CodeGenMethod(this, MethodName, MethodTypes, locals));
+	ScopeStack.push_back(new CodeGenMethod(this, MethodName, MethodTypes,
+				locals, false, localNames));
 }
 
 void CodeGenModule::BeginClassMethod(const char *MethodName,
                                      const char *MethodTypes,
-                                     int locals)
+                                     int locals,
+									 const char **localNames)
 {
 	// Log the method name and types so that we can use it to set up the class
 	// structure.
@@ -230,8 +233,8 @@ void CodeGenModule::BeginClassMethod(const char *MethodName,
 	ClassMethodTypes.push_back(MethodTypes);
 	assert(ScopeStack.empty() 
 		&& "Creating a method inside something is not sensible");
-	ScopeStack.push_back(
-		new CodeGenMethod(this, MethodName, MethodTypes, locals, true));
+	ScopeStack.push_back(new CodeGenMethod(this, MethodName, MethodTypes,
+				locals, true, localNames));
 	inClassMethod = true;
 }
 

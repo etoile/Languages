@@ -2,7 +2,7 @@
 #import "LKDeclRef.h"
 #import "LKModule.h"
 
-static NSMutableDictionary *SelectorConflicts = nil;
+//static NSMutableDictionary *SelectorConflicts = nil;
 
 
 @implementation NSString (Print)
