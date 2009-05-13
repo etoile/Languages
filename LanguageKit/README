@@ -1,0 +1,13 @@
+LanguageKit
+===========
+
+LanguageKit provides the abstract syntax tree and compilation framework for Étoilé Pragmatic Smalltalk and EScript.  
+
+LLVM
+----
+
+The CodeGen subframework uses LLVM for code generation.  At present, there is a known bug in LLVM that causes it to fail on Linux/x86.  If you find all Smalltalk programs crashing then please apply the patch found here to your LLVM tree and recompile:
+
+http://llvm.org/bugs/attachment.cgi?id=2744
+
+
