@@ -20,6 +20,56 @@
 @end
 
 @implementation BlockContext
+- (BlockContext*)parent
+{
+	return parent;
+}
+- (BOOL)setValue: (id)aValue forSymbol: (NSString*)aSymbol
+{
+	if ([aSymbol isEqualToString: @"self"])
+	{
+		objects[0] = aValue;
+	}
+	if (NULL == symbolTable) { return NO; }
+	const char *sym = [aSymbol UTF8String];
+	for (unsigned int i=0 ; i<=count-1 ; i++)
+	{
+		if (strcmp(sym, symbolTable[i]) == 0)
+		{
+			objects[i+1] = aValue;
+			return YES;
+		}
+	}
+	return NO;
+}
+- (id)valueForSymbol: (NSString*)aSymbol
+{
+	if ([aSymbol isEqualToString: @"self"])
+	{
+		return objects[0];
+	}
+	if (NULL == symbolTable) { return nil; }
+	const char *sym = [aSymbol UTF8String];
+	for (unsigned int i=0 ; i<count-1 ; i++)
+	{
+		if (strcmp(sym, symbolTable[i]) == 0)
+		{
+			return objects[i+1];
+		}
+	}
+	return nil;
+}
+- (NSArray*)symbols
+{
+	NSMutableArray *array = [NSMutableArray array];
+	[array addObject: @"self"];
+	if (NULL == symbolTable) { return array; }
+	for (unsigned int i=0 ; i<count-1 ; i++)
+	{
+		[array addObject: [NSString stringWithUTF8String: symbolTable[i]]];
+	}
+	return array;
+}
 - (void) retainWithPointer:(BlockContext**)pointer
 {
 	[self retain];
