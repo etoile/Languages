@@ -79,7 +79,7 @@ static Class StackBlockClosureClass;
 	char *foundContext = (char*)&a;
 	// Set the SegV handler.
 	struct sigaction new;
-	new.__sigaction_u.__sa_sigaction = segv;
+	new.sa_sigaction = segv;
 	new.sa_flags = SA_SIGINFO;
 	sigemptyset (&new.sa_mask);
 	struct sigaction old;
