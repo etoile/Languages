@@ -1,4 +1,9 @@
+#define __XSI_VISIBLE 600
 #import "BlockClosure.h"
+#include <signal.h>
+#include <ucontext.h>
+
+
 
 @interface LKStackTraceArray : NSArray {
 @public
@@ -23,10 +28,18 @@
 }
 @end
 
+static __thread volatile char fellOffStack;
+static __thread ucontext_t sigretcontext;
+
+static void segv(int sig, struct __siginfo *info, void *addr)
+{
+	fellOffStack = 1;
+	setcontext(&sigretcontext);
+}
+
 static int getStackDirection(int *a)
 {
 	int b;
-	printf("%d\n", a - &b);
 	return a - &b > 0 ? 1 : -1;
 }
 
@@ -60,16 +73,27 @@ static Class StackBlockClosureClass;
 	int direction = getStackDirection(&a);
 
 	id *buffer = calloc(8, sizeof(id));
-	int count = 0;
-	int buffersize = 8;
+	volatile int count = 0;
+	volatile int buffersize = 8;
 
-	char *foundcontext = (char*)&a;
-	while(foundcontext < LanguageKitStackTopAddress)
+	char *foundContext = (char*)&a;
+	// Set the SegV handler.
+	struct sigaction new;
+	new.__sigaction_u.__sa_sigaction = segv;
+	new.sa_flags = SA_SIGINFO;
+	sigemptyset (&new.sa_mask);
+	struct sigaction old;
+	sigaction(SIGSEGV, &new, &old);
+	fellOffStack = 0;
+	// Save the context.  We'll return here after the segfault
+	getcontext(&sigretcontext);
+	// This flag is set to 1 if a SegV occurs
+	while(!fellOffStack)
 	{
-		if (((id)foundcontext)->class_pointer == StackContextClass
-			|| ((id)foundcontext)->class_pointer == RetainedStackContextClass)
+		if ((((id)foundContext)->class_pointer == StackContextClass
+			|| ((id)foundContext)->class_pointer == RetainedStackContextClass))
 		{
-			if (((id)(foundcontext - offset))->class_pointer == StackBlockClosureClass)
+			if (((id)(foundContext - offset))->class_pointer == StackBlockClosureClass)
 			{
 				// Ignore the BlockClosure object for now. 
 			}
@@ -80,12 +104,14 @@ static Class StackBlockClosureClass;
 					buffersize *= 2;
 					buffer = realloc(buffer, buffersize);
 				}
-				buffer[count++] = (id)foundcontext;
+				buffer[count++] = (id)foundContext;
 			}
 		}
-		// Stack grows down.
-		foundcontext += direction;
+		// Walk up the stack until we fall off
+		foundContext += direction;
 	}
+	// Reset the SegV handler.
+	sigaction(SIGSEGV, &old, NULL);
 	LKStackTraceArray *array = [[[LKStackTraceArray alloc] init] autorelease];
 	array->count = count;
 	array->buffer = buffer;
