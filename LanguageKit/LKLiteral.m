@@ -62,6 +62,10 @@ static NSDictionary *ObjCConstants;
 	                         withString:@"\n" 
 	                            options:0
 	                              range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"\\t"
+	                         withString:@"\t" 
+	                            options:0
+	                              range:NSMakeRange(0, [escaped length])];
 
 	void *ret = [aGenerator stringConstant:escaped];
 	[escaped release];
