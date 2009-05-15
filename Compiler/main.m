@@ -80,6 +80,7 @@ static BOOL jitScript(NSString *script, NSString *extension)
 		applyTransforms(ast);
 		[ast compileWithGenerator: defaultJIT()];
 	NS_HANDLER
+		NSLog(@"%@", localException);
 		return NO;
 	NS_ENDHANDLER
 	return YES;
@@ -94,6 +95,7 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 		applyTransforms(ast);
 		[ast compileWithGenerator: defaultStaticCompilterWithFile(outFile)];
 	NS_HANDLER
+		NSLog(@"%@", localException);
 		return NO;
 	NS_ENDHANDLER
 	return YES;
@@ -171,6 +173,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	NSString *Program = [NSString stringWithContentsOfFile:ProgramFile];
+	if (nil == Program)
+	{
+		NSLog(@"Failed to open file %@", ProgramFile);
+		return 1;
+	}
 	NSString *extension = [ProgramFile pathExtension];
 	// Static compile
 	if ([[opts objectForKey:@"c"] boolValue])
