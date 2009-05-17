@@ -23,6 +23,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	NSArray+map.m\
 	NSObject+log.m\
 	NSString+casting.m\
+	NSString+comma.m\
 	NSValue+structs.m
 
 -include GNUmakefile.preamble

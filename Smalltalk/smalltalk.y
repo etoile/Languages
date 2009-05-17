@@ -11,7 +11,7 @@ domain parser generator, to produce an Objective-C parser.
 %token_prefix TOKEN_
 %token_type {id}
 %extra_argument {SmalltalkParser *p}
-%left PLUS MINUS STAR SLASH EQ LT GT.
+%left PLUS MINUS STAR SLASH EQ LT GT COMMA.
 %left WORD.
 
 file ::= module(M).
@@ -294,6 +294,10 @@ binary_selector(S) ::= LT EQ.
 binary_selector(S) ::= GT EQ.
 {
 	S = @"isGreaterThanOrEqualTo:";
+}
+binary_selector(S) ::= COMMA.
+{
+	S = @"comma:"; // concatenates strings or arrays (see Support/NSString+comma.m)
 }
 
 expression(E) ::= cascade_expression(C).
