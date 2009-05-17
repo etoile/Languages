@@ -7,9 +7,12 @@ LKAST extend
 
 	ASTType [ ^ nil. ]
 
-	code
-	[
-		^ self description.
+	sourceCode
+	[ | desc |
+
+		desc := self description.
+		desc == nil ifTrue: [ desc := '' ].
+		^ desc.
 	]
 
 	isOrdered 
@@ -63,7 +66,7 @@ LKCategoryDef extend
 
 	childNodes
 	[
-		^ methods.
+		^ self methods.
 	]
 
 ]
@@ -72,13 +75,21 @@ LKMethod extend
 [
 	displayName [ ^ self methodName. ]
 
-	methodName [ ^ signature selector. ]
+	methodName [ ^ self signature selector. ]
 
 	ASTType [ ^ 'Method'. ]
 
-	childNodes [ ^ statements. ]
+	childNodes [ ^ self statements. ]
 ]
 
+LKModule extend
+[
+	displayName [ ^ self primitiveDescription. ]
+
+	ASTType [ ^ 'Module'. ]
+
+	childNodes [ ^ (self allClasses) arrayByAddingObjectsFromArray: (self allCategories). ]
+]
 
 NSObject subclass: SmalltalkTool
 [
@@ -90,53 +101,79 @@ NSObject subclass: SmalltalkTool
 		ETApplication sharedApplication run.
 	]
 
+	"Returns an array of AST nodes usuallay LKModules"
+	parseCode
+	[ | parser scriptSource ast op result |
+
+		op := NSOpenPanel openPanel.
+		op setAllowsMultipleSelection: true.
+		result := op runModalForTypes: { 'st'. }.
+
+		ast := NSMutableArray new.
+		op filenames foreach: [ :scriptPath | 
+			parser := (LKCompiler compilerClassForFileExtension: 'st') parserClass new.
+        		scriptSource := NSString stringWithContentsOfFile: scriptPath.
+			ast addObject: (parser parseString: scriptSource). ].
+		^ast.
+	]
+
+	rootNode
+	[ | astArray |
+	
+		astArray := self parseCode.
+		(astArray count == 1) ifTrue: [ ^ astArray firstObject. ] ifFalse: [ ^ astArray. ].
+	]
+
 	applicationDidFinishLaunching: notif 
-	[
-		browserItem := ETContainer alloc init layoutItem.
-		browserItem container setDelegate: self.
-		browserItem container setSource: browserItem.
-		browserItem setRepresentedObject: (LKAST code).
+	[ | itemFactory |
+		
+		itemFactory := ETLayoutItem class.
+		browserItem := itemFactory itemGroupWithContainer.
+		browserItem setDelegate: self.
+		browserItem setSource: browserItem.
+		browserItem setRepresentedObject: (self parseCode).
 		browserItem setLayout: (ETOutlineLayout layout).
 		browserItem layout setDisplayedProperties: (self displayedPropertiesInBrowser).
 		browserItem layout setDisplayName: 'Type' forProperty: 'ASTType'.
 		browserItem setWidth: 700.
 		browserItem setHeight: 200.
 
-		codeEditorItem := ETLayoutItem textView.
-		codeEditorItem view setDelegate: self.
+		codeEditorItem := itemFactory textView.
+		codeEditorItem view retain.
 		codeEditorItem setWidth: 700.
 		codeEditorItem setHeight: 400.
 
-		objectMixerItem := ETContainer alloc init layoutItem.
+		objectMixerItem := itemFactory itemGroupWithContainer.
 		objectMixerItem setName: 'Object Mixer (Smalltalk & cie)'.
 		objectMixerItem setLayout: (ETStackLayout layout).
 		objectMixerItem setWidth: 700.
 		objectMixerItem setHeight: 600.
-		objectMixerItem container setEnablesHitTest: 1.
+		objectMixerItem supervisorView setEnablesHitTest: 1.
 
 		objectMixerItem addItem: browserItem.
 		objectMixerItem addItem: codeEditorItem.
-
-		ETLayoutItem windowGroup addItem: objectMixerItem.
-
-		browserItem container release.
-		codeEditorItem container release.
-		objectMixerItem container release.
-
+		itemFactory windowGroup addItem: objectMixerItem.
+		"browserItem reloadAndUpdateLayout."
+		objectMixerItem explore: nil.
 		objectMixerItem inspect: nil.
 	]
 
 	displayedPropertiesInBrowser [ ^ { 'displayName'. 'ASTType' }. ]
 
-	containerSelectionDidChange: notif
+	editorView [ ^ codeEditorItem view documentView. ] "FIXME: Fix -[ETLayoutItem+Factory textView] to really return a text view"
+
+	itemGroupSelectionDidChange: notif
 	[
 		| codeOfSelectedASTNodes |
 
 		notif log.
 		codeOfSelectedASTNodes := NSMutableString alloc initWithCapacity: 10000.
-		browserItem selectedItemsInLayout foreach: [ :item |
-			codeOfSelectedASTNodes appendString: (item representedObject code). ].
-		codeEditorItem view setString: codeOfSelectedASTNodes.
+		browserItem selectedItemsInLayout foreach: [ :item | 
+			codeOfSelectedASTNodes appendString: (item representedObject sourceCode). ].
+		self editorView log. 
+self editorView setString: codeOfSelectedASTNodes.
+		codeOfSelectedASTNodes log.
 		codeOfSelectedASTNodes release.
 	]
 ]
+
