@@ -4,27 +4,23 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # Application
 #
 VERSION = 0.1
-TOOL_NAME = test
+FRAMEWORK_NAME = ObjectiveC2
 
 #
 # Resource files
 #
-test_LANGUAGES = English
+ObjectiveC2_LANGUAGES = English
 
-test_OBJC_FILES = \
+ObjectiveC2_OBJC_FILES = \
 				sync.m\
-				test.m
+				properties.m
 
-test_C_FILES = \
+ObjectiveC2_C_FILES = \
 				runtime.c
 
 ADDITIONAL_CFLAGS = -std=c99 -fexceptions 
 ADDITIONAL_OBJCFLAGS = -fobjc-exceptions -fexceptions
 
-#ADDITIONAL_LDFLAGS += -lgnustep-gui -lEtoileFoundation -lSmalltalkSupport#-lScriptKit
+ObjectiveC2_OBJCFLAGS += -std=c99
 
-#CC=~/llvm/tools/clang/utils/ccc
-
-test_OBJCFLAGS += -std=c99
-
-include $(GNUSTEP_MAKEFILES)/tool.make
+include $(GNUSTEP_MAKEFILES)/framework.make

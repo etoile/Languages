@@ -587,6 +587,73 @@ id objc_lookUpClass(const char *name)
 	return (id)objc_lookup_class(name);
 }
 
+static void freeMethodLists(Class aClass)
+{
+	struct objc_method_list *methods = aClass->methods;
+	while(methods != NULL)
+	{
+		for (int i=0 ; i<methods->method_count ; i++)
+		{
+			free((void*)methods->method_list[i].method_types);
+		}
+		struct objc_method_list *current = methods;
+	   	methods = methods->method_next;
+		free(current);
+	}
+}
+
+static void freeIvarLists(Class aClass)
+{
+	struct objc_ivar_list *ivarlist = aClass->ivars;
+	if (NULL == ivarlist) { return; }
+
+	for (int i=0 ; i<ivarlist->ivar_count ; i++)
+	{
+		Ivar ivar = &ivarlist->ivar_list[i];
+		free((void*)ivar->ivar_type);
+		free((void*)ivar->ivar_name);
+	}
+	free(ivarlist);
+}
+
+/*
+ * Removes a class from the subclass list found on its super class.
+ * Must be called with the objc runtime mutex locked.
+ */
+static inline void safe_remove_from_subclass_list(Class cls)
+{
+	Class sub = cls->super_class->subclass_list;
+	if (sub == cls)
+	{
+		cls->super_class->subclass_list = cls->sibling_class;
+	}
+	else
+	{
+		while (sub != NULL)
+		{
+			if (sub->sibling_class == cls)
+			{
+				sub->sibling_class = cls->sibling_class;
+				break;
+			}
+			sub = sub->sibling_class;
+		}
+	}
+}
+
+static void objc_deallocClass(Class self, SEL _cmd)
+{
+	Class meta = ((id)self)->isa;
+	freeMethodLists(self);
+	freeMethodLists(meta);
+	freeIvarLists(self);
+	objc_mutex_lock(__objc_runtime_mutex);
+	safe_remove_from_subclass_list(meta);
+	safe_remove_from_subclass_list(self);
+	objc_mutex_unlock(__objc_runtime_mutex);
+	free(meta);
+	free(self);
+}
 
 Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 {
@@ -612,6 +679,10 @@ Class objc_allocateClassPair(Class superclass, const char *name, size_t extraByt
 	newClass->name = strdup(name);
 	newClass->info = _CLS_CLASS;
 	newClass->dtable = __objc_uninstalled_dtable;
+
+	SEL dealloc = sel_get_any_typed_uid("dealloc");
+	class_addMethod(metaClass, dealloc, (IMP)objc_deallocClass, 
+		sel_get_type(dealloc));
 
 	return newClass;
 }
@@ -642,9 +713,9 @@ void objc_registerClassPair(Class cls)
 	objc_mutex_unlock(__objc_runtime_mutex);
 }
 
-static SEL newSel = NULL;
 static id objectNew(id cls)
 {
+	static SEL newSel = NULL;
 	if (NULL == newSel)
 	{
 		newSel = sel_get_uid("new");
@@ -660,4 +731,3 @@ Protocol *objc_getProtocol(const char *name)
 	protocol->protocol_name = (char*)name;
 	return protocol;
 }
-

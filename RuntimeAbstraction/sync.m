@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+@interface Fake
++ (void)dealloc;
+@end
+
 static pthread_mutex_t at_sync_init_lock = PTHREAD_MUTEX_INITIALIZER;
 static unsigned long long lockClassId;
 
@@ -58,26 +62,22 @@ static inline Class initLockObject(id obj)
 	return lockClass;
 }
 
-// FIXME: This currently leaks a lot of stuff.
 static void deallocLockClass(id obj, SEL _cmd)
 {
-	printf("Freeing lock class\n");
-	Class lockClass = obj->isa;
-	Class realClass = class_getSuperclass(obj->isa);
+	Class lockClass = findLockClass(obj);
+	Class realClass = class_getSuperclass(lockClass);
 	// Free the lock
 	pthread_mutex_t *lock = object_getIndexedIvars(lockClass);
 	pthread_mutex_destroy(lock);
-	// Free the metaclass, then the class
-	free(((id)lockClass)->isa);
-	free(lockClass);
+	// Free the class
+	[lockClass dealloc];
 	// Reset the class then call the real -dealloc
 	obj->isa = realClass;
-	objc_msgSend(obj, @selector(dealloc));
+	[obj dealloc];
 }
 
 void objc_sync_enter(id obj)
 {
-	printf("Locking on %x\n", (int)obj);
 	Class lockClass = findLockClass(obj);
 	if (Nil == lockClass)
 	{
@@ -95,7 +95,6 @@ void objc_sync_enter(id obj)
 }
 void objc_sync_exit(id obj)
 {
-	printf("Unlocking on %x\n", (int)obj);
 	Class lockClass = findLockClass(obj);
 	pthread_mutex_t *lock = object_getIndexedIvars(lockClass);
 	pthread_mutex_unlock(lock);
