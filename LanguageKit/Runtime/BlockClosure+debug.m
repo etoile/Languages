@@ -31,7 +31,7 @@
 static __thread volatile char fellOffStack;
 static __thread ucontext_t sigretcontext;
 
-static void segv(int sig, struct __siginfo *info, void *addr)
+static void segv(int sig, siginfo_t *info, void *addr)
 {
 	fellOffStack = 1;
 	setcontext(&sigretcontext);
