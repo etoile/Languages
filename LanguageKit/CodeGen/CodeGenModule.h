@@ -1,6 +1,7 @@
 #ifndef __CODE_GEN_MODULE__INCLUDED__
 #define __CODE_GEN_MODULE__INCLUDED__
 #include "CGObjCRuntime.h"
+#include <stdio.h>
 
 namespace llvm {
   class BasicBlock;
