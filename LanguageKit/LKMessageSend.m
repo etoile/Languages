@@ -74,7 +74,7 @@
 }
 - (void) check
 {
-	[target setParent:self];
+	[(LKAST*)target setParent:self];
 	[target check];
 	// This will generate a warning on polymorphic selectors.
 	type = [[self module] typeForMethod:selector];

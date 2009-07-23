@@ -104,7 +104,6 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 	FOREACH(sourceFiles, source, NSString*)
 	{
 		source = [aBundle pathForResource: source ofType: nil];
-				[source lastPathComponent]]);
 		NSString *outFile = 
 			[tempDirectory stringByAppendingPathComponent: 
 				[source lastPathComponent]];
