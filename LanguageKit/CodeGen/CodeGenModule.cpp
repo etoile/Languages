@@ -7,9 +7,11 @@
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/GlobalVariable.h>
 #include <llvm/Module.h>
+#include <llvm/LLVMContext.h>
 #include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
@@ -40,18 +42,18 @@ Constant *CodeGenModule::MakeConstantString(const std::string &Str,
                                             const std::string &Name,
                                             unsigned GEPs)
 {
-	Constant * ConstStr = ConstantArray::get(Str);
-	ConstStr = new GlobalVariable(ConstStr->getType(), true,
-		GlobalValue::InternalLinkage, ConstStr, Name, TheModule);
+	Constant * ConstStr = Context.getConstantArray(Str);
+	ConstStr = new GlobalVariable(*TheModule, ConstStr->getType(), true,
+		GlobalValue::InternalLinkage, ConstStr, Name);
 	return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
 }
 
 void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *globalName)
 {
 	// Create the global
-	Value *global = new GlobalVariable(IdTy, false,
+	Value *global = new GlobalVariable(*TheModule, IdTy, false,
 			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			globalName, TheModule);
+			globalName);
 
 	// Initialise it in the module load function
 	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
@@ -59,7 +61,9 @@ void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *
 					MakeConstantString(className)), IdTy), global);
 }
 
-CodeGenModule::CodeGenModule(const char *ModuleName, bool jit) 
+// FIXME: Provide some way of crating new contexts.
+CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit) 
+	: Context(C), InitialiseBuilder(Context)
 {
 	// When we JIT code, we put the Small Int message functions inside the
 	// module, to allow them to be inlined by module passes.  When static
@@ -68,7 +72,8 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 	if (jit)
 	{
 		TheModule = 
-			ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename));
+			ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename), 
+					Context);
 		SmallIntModule = TheModule;
 	}
 	else
@@ -76,9 +81,10 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 		if (NULL == SmallIntMessages)
 		{
 			SmallIntMessages = ParseBitcodeFile(
-					MemoryBuffer::getFile(MsgSendSmallIntFilename));
+					MemoryBuffer::getFile(MsgSendSmallIntFilename), 
+					Context);
 		}
-		TheModule = new Module(ModuleName);
+		TheModule = new Module(ModuleName, Context);
 		SmallIntModule = SmallIntMessages;
 		TheModule->setDataLayout(SmallIntModule->getDataLayout());
 	}
@@ -91,7 +97,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, bool jit)
 		llvm::BasicBlock::Create("entry", LiteralInitFunction);
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 
-	Runtime = CreateObjCRuntime(*TheModule, IntTy,
+	Runtime = CreateObjCRuntime(*TheModule, Context, IntTy,
 			IntegerType::get(sizeof(long) * 8));
 	// Store the class to be used for block closures in a global
 	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
@@ -301,15 +307,15 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 		S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
 			S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));
 		// Define a global variable and store it there.
-		GlobalVariable *GS = new GlobalVariable(IdTy, false,
+		GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
 				GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-				value, getModule());
+				value);
 	   	InitialiseBuilder.CreateStore(S, GS);
 		// Load the global.
 		return Builder.CreateLoad(GS);
 	}
 	ptrVal |= 1;
-	Constant *Val = ConstantInt::get(IntPtrTy, ptrVal);
+	Constant *Val = Context.getConstantInt(IntPtrTy, ptrVal);
 	Val = ConstantExpr::getIntToPtr(Val, IdTy);
 	Val->setName("SmallIntConstant");
 	return Val;
@@ -326,18 +332,19 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	std::vector<llvm::Constant*> Ctors;
 
 	std::vector<llvm::Constant*> S;
-	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(Context.getConstantInt(llvm::Type::Int32Ty, 0xffff, false));
 	S.push_back(init);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 	// Add the constant initialisation function
 	S.clear();
-	S.push_back(llvm::ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(Context.getConstantInt(llvm::Type::Int32Ty, 0xffff, false));
 	S.push_back(LiteralInitFunction);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 
 	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
-	new llvm::GlobalVariable(AT, false, llvm::GlobalValue::AppendingLinkage,
-			llvm::ConstantArray::get(AT, Ctors), "llvm.global_ctors", TheModule);
+	new llvm::GlobalVariable(*TheModule, AT, false,
+			llvm::GlobalValue::AppendingLinkage, Context.getConstantArray(AT,
+			Ctors), "llvm.global_ctors");
 
 	PassManager pm;
 	pm.add(createVerifierPass());
@@ -387,7 +394,8 @@ void CodeGenModule::compile(void)
 	pm.add(createPredicateSimplifierPass());
 	pm.add(createCondPropagationPass());
 	pm.add(createInstructionCombiningPass());
-	pm.add(createTailDuplicationPass());
+	//FIXME: Seems broken in current LLVM - reenable when it's fixed
+	//pm.add(createTailDuplicationPass());
 	pm.add(createStripDeadPrototypesPass());
 //	pm.add(createUnboxPass());
 	pm.add(createAggressiveDCEPass());

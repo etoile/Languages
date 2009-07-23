@@ -29,6 +29,7 @@ private:
   friend class CodeGenBlock;
   friend class CodeGenLexicalScope;
 
+  LLVMContext &Context;
   Module *TheModule;
   Module *SmallIntModule;
   Function *LiteralInitFunction;
@@ -82,7 +83,7 @@ public:
    * Initialise for the specified module.  The second argument specifies
    * whether the module should be used for static or JIT compilation.
    */
-	CodeGenModule(const char *ModuleName, bool jit=true);
+	CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit=true);
 
   /**
    * Start generating code for a class.

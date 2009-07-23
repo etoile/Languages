@@ -2,6 +2,7 @@
 #define __CODE_GEN_LEXICAL_SCOPE__INCLUDED__
 
 #include "llvm/Support/IRBuilder.h"
+#include "CodeGenModule.h"
 #include <string>
 
 namespace llvm {
@@ -92,7 +93,8 @@ public:
 	 * Ends the current lexical scope.
 	 */
 	void EndScope(void);
-  CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod), containsBlocks(false) {}
+  CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod),
+	Builder(Mod->Context), containsBlocks(false) {}
   IRBuilder<> *getBuilder() { return &Builder; }
   Value *getContext() { return Context; }
   /**

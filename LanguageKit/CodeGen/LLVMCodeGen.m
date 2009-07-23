@@ -3,12 +3,12 @@ typedef int bool;
 #import "../LKSymbolTable.h"
 #include <objc/objc-api.h>
 
+const char *path;
 @implementation LLVMCodeGen 
 + (void) initialize
 {
 	if (self == [LLVMCodeGen class])
 	{
-		const char *path;
 		NSFileManager *f = [NSFileManager defaultManager];
 		if ([f fileExistsAtPath:@"MsgSendSmallInt.bc"])
 		{

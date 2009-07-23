@@ -39,6 +39,7 @@ LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core debugger eng
 
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
+
 LD = g++
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc
@@ -48,5 +49,5 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 
 MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
-	@clang-cc -ftrapv -emit-llvm-bc -fexceptions MsgSendSmallInt.m
+	@clang-cc -c -ftrapv -emit-llvm-bc -fexceptions MsgSendSmallInt.m
 

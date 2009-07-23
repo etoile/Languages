@@ -59,7 +59,8 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 	storeInStruct(MethodBuilder, Block,
 		MethodBuilder->CreateBitCast(CurrentFunction, IMPTy), 1);
 	// Store the number of arguments
-	storeInStruct(MethodBuilder, Block, ConstantInt::get(Type::Int32Ty, args), 2);
+	storeInStruct(MethodBuilder, Block, 
+			Mod->Context.getConstantInt(Type::Int32Ty, args), 2);
 	// Set the context
 	storeInStruct(MethodBuilder, Block, enclosingScope->getContext(), 3);
 

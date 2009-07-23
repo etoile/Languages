@@ -41,7 +41,9 @@ public:
                                            llvm::Value *Selector,
                                            llvm::Value** ArgV=0,
                                            unsigned ArgC=0,
-                                           llvm::BasicBlock *CleanupBlock=0)=0;
+                                           llvm::BasicBlock *CleanupBlock=0,
+                                           const char *ReceiverClass=0,
+										   bool isClassMessage=false)=0;
   /// Generate the function required to register all Objective-C components in
   /// this compilation unit with the runtime library.
   virtual llvm::Function *ModuleInitFunction() =0;
@@ -136,6 +138,7 @@ public:
 //TODO: This should include some way of selecting which runtime to target.
 CGObjCRuntime *CreateObjCRuntime(
     llvm::Module &M,
+	llvm::LLVMContext &C,
     const llvm::Type *LLVMIntType,
     const llvm::Type *LLVMLongType);
 #endif

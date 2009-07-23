@@ -2,6 +2,9 @@
 #include "CodeGenLexicalScope.h"
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/Target/TargetSelect.h>
+#include <llvm/ExecutionEngine/JIT.h>
+
 // C interface:
 extern "C"
 {
@@ -9,29 +12,47 @@ extern "C"
 
 void LLVMinitialise(const char *bcFilePath)
 {
+	// These two functions don't do anything.  They must be called, however, to
+	// make sure that the linker doesn't optimise the JIT away.
+	InitializeNativeTarget();
+	LLVMLinkInJIT();
+
 	MsgSendSmallIntFilename = strdup(bcFilePath);
 	IdTy = PointerType::getUnqual(Type::Int8Ty);
 	IntTy = IntegerType::get(sizeof(int) * 8);
 	IntPtrTy = IntegerType::get(sizeof(void*) * 8);
-	Zeros[0] = Zeros[1] = llvm::ConstantInt::get(llvm::Type::Int32Ty, 0);
+	Zeros[0] = Zeros[1] = 
+		llvm::getGlobalContext().getConstantInt(llvm::Type::Int32Ty, 0);
 	//FIXME: 
 	SelTy = IntPtrTy;
 	std::vector<const Type*> IMPArgs;
 	IMPArgs.push_back(IdTy);
 	IMPArgs.push_back(SelTy);
 	IMPTy = PointerType::getUnqual(FunctionType::get(IdTy, IMPArgs, true));
+	/*
+	IdTy = context->getPointerTypeUnqual(Type::Int8Ty);
+	IntTy = context->getIntegerType(sizeof(int) * 8);
+	IntPtrTy = context->getIntegerType(sizeof(void*) * 8);
+	Zeros[0] = Zeros[1] = context->getConstantInt(llvm::Type::Int32Ty, 0);
+	//FIXME: 
+	SelTy = IntPtrTy;
+	std::vector<const Type*> IMPArgs;
+	IMPArgs.push_back(IdTy);
+	IMPArgs.push_back(SelTy);
+	IMPTy = context->getPointerTypeUnqual(FunctionType::get(IdTy, IMPArgs, true));
+	*/
 }
 
 ModuleBuilder newStaticModuleBuilder(const char *ModuleName) 
 {
 	if (NULL == ModuleName) { ModuleName = "Anonymous"; }
-	return new CodeGenModule(ModuleName, false);
+	return new CodeGenModule(ModuleName, llvm::getGlobalContext(), false);
 }
 
 ModuleBuilder newModuleBuilder(const char *ModuleName)
 {
 	if (NULL == ModuleName) ModuleName = "Anonymous";
-	return new CodeGenModule(ModuleName);
+	return new CodeGenModule(ModuleName, llvm::getGlobalContext());
 }
 
 void freeModuleBuilder(ModuleBuilder aModule)
