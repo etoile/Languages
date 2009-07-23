@@ -159,3 +159,7 @@ typedef enum
  */
 + (Class) parserClass;
 @end
+
+@interface LKCompiler (JTL)
++ (void) justTooLateCompileBundle: (NSBundle*)aBundle;
+@end

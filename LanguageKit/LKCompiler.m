@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LKAST.h"
 #import "LKCategory.h"
@@ -7,6 +8,70 @@
 
 static NSMutableDictionary *compilersByExtension;
 static NSMutableDictionary *compilersByLanguage;
+
+/**
+ * Returns the modification date of a file.
+ */
+static NSDate *modificationDateForFile(NSString *file)
+{
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSDictionary *attrib = [fm fileAttributesAtPath: file
+	                                   traverseLink: YES];
+	return [attrib objectForKey: NSFileModificationDate];
+}
+/**
+ * Returns the most recent modification date of a set of files.
+ */
+static NSDate *mostRecentModificationDate(NSArray *files)
+{
+	NSDate *mostRecentDate = [NSDate distantPast];
+	FOREACH(files, file, NSString*)
+	{
+		NSDate *date = modificationDateForFile(file);
+		mostRecentDate = [mostRecentDate laterDate: date];
+	}
+	return mostRecentDate;
+}
+
+/**
+ * Open the cached (statically-compiled) version of a file if it is not too old.
+ */
+static BOOL loadLibraryForBundle(NSString *so,
+                                 NSBundle *bundle,
+                                 NSDate *modified)
+{
+	NSLog(@"Trying cache %@", so);
+	if (nil == so)
+	{
+		return NO;
+	}
+	NSDate *soDate = modificationDateForFile(so);
+	// If the bundle has been modified after the cached version...
+	if (nil == soDate || [modified compare: soDate] == NSOrderedDescending)
+	{
+		NSLog(@"Cache out of date");
+		return NO;
+	}
+	NSLog(@"Attempting to load .so");
+	// Return YES if dlopen succeeds.
+	return NULL != dlopen([so UTF8String], RTLD_GLOBAL);
+}
+static BOOL loadAnyLibraryForBundle(NSBundle *bundle, NSDate *modified)
+{
+	NSString *so = [bundle pathForResource: @"languagekit-cache"
+	                                ofType: @"so"];
+	if (loadLibraryForBundle(so, bundle, modified))
+	{
+		return YES;
+	}
+	NSArray *dirs = NSSearchPathForDirectoriesInDomains( NSLibraryDirectory,
+			NSUserDomainMask, YES);
+	NSString *userCache = [dirs objectAtIndex: 0];
+	userCache = [[userCache stringByAppendingPathComponent: @"LKCaches"]
+			stringByAppendingPathComponent: [bundle bundlePath]];
+	userCache = [userCache stringByAppendingPathComponent: @"languagekit-cache.so"];
+	return loadLibraryForBundle(userCache, bundle, modified);
+}
 
 int DEBUG_DUMP_MODULES = 0;
 @implementation LKCompiler
@@ -205,11 +270,20 @@ int DEBUG_DUMP_MODULES = 0;
 	{
 		success &= [self loadFrameworkNamed: framework];
 	}
+	NSDate *recentModificationDate = mostRecentModificationDate(frameworks);
 	// TODO: Specify a set of AST transforms to apply.
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
-	FOREACH(sourceFiles, source, NSString*)
+	recentModificationDate = 
+		[recentModificationDate laterDate: mostRecentModificationDate(frameworks)];
+	if (!(success == loadAnyLibraryForBundle(bundle, recentModificationDate)))
 	{
-		success &= [self loadScriptNamed: source fromBundle: bundle];
+		FOREACH(sourceFiles, source, NSString*)
+		{
+			success &= [self loadScriptNamed: source fromBundle: bundle];
+		}
+		[NSThread detachNewThreadSelector: @selector(justTooLateCompileBundle:)
+		                         toTarget: self
+		                       withObject: bundle];
 	}
 	if (!success)
 	{
@@ -351,4 +425,6 @@ int DEBUG_DUMP_MODULES = 0;
 	[self subclassResponsibility:_cmd];
 	return Nil;
 }
+// Replaced in category if a bundle supports JTL compilation, otherwise does nothing
++ (void) justTooLateCompileBundle: (NSBundle*)aBundle {}
 @end

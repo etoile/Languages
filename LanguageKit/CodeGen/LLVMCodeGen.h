@@ -204,5 +204,6 @@ extern int DEBUG_DUMP_MODULES;
 @interface LLVMCodeGen : NSObject <LKCodeGenerator> {
 	ModuleBuilder Builder;
 }
++ (NSString*) smallIntBitcodeFile;
 @end
 #endif

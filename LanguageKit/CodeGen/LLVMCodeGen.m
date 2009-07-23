@@ -3,25 +3,34 @@ typedef int bool;
 #import "../LKSymbolTable.h"
 #include <objc/objc-api.h>
 
-const char *path;
+static NSString *SmallIntFile;
+static const char *path;
 @implementation LLVMCodeGen 
 + (void) initialize
 {
 	if (self == [LLVMCodeGen class])
 	{
 		NSFileManager *f = [NSFileManager defaultManager];
-		if ([f fileExistsAtPath:@"MsgSendSmallInt.bc"])
+		if ([f fileExistsAtPath: @"MsgSendSmallInt.bc"])
 		{
-			path = "MsgSendSmallInt.bc";
+			SmallIntFile = @"MsgSendSmallInt.bc";
 		}
 		else 
 		{
-			path = [[[NSBundle bundleForClass:self] 
-				pathForResource:@"MsgSendSmallInt" ofType:@"bc"] UTF8String];
+			SmallIntFile = [[[NSBundle bundleForClass:self] 
+				pathForResource: @"MsgSendSmallInt" ofType: @"bc"] retain];
 		}
-		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc.  This must be in either the current working directory or in the Resources directory of the Smalltalk language bundle installed on your system.");
+			path = [SmallIntFile UTF8String];
+		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc."
+		         "This must be in either the current working directory or in"
+		         " the Resources directory of the Smalltalk language bundle "
+		         "installed on your system.");
 		LLVMinitialise(path);
 	}
+}
++ (NSString*) smallIntBitcodeFile
+{
+	return SmallIntFile;
 }
 - (void) startModule
 {
@@ -263,7 +272,8 @@ lexicalScopeAtDepth:(unsigned) scope
 }
 - (void) startModule
 {
-	Builder = newStaticModuleBuilder(NULL);
+	Builder = newStaticModuleBuilder(
+			[[outFile lastPathComponent] UTF8String]);
 }
 @end
 id <LKCodeGenerator> defaultJIT(void)

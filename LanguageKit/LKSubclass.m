@@ -48,8 +48,14 @@
 	}
 	if (Nil != NSClassFromString(classname))
 	{
+		// FIXME: This was an exception because it broke the JIT, but throwing
+		// the exception broke the JTL so it's now a log.  When we have a
+		// proper error / warning delegate then this should be resumable
+		NSLog(@"Creating class which already exists.  This may break horribly later.");
+		/*
 		[NSException raise:@"SemanticError"
 					format:@"Can not create new class %@ - a class of this name already exists.", classname];
+		*/
 	}
 	//Construct symbol table.
 	FOREACH(ivars, ivar, NSString*)

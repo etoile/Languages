@@ -20,6 +20,7 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 	UnboxPass.cpp
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
+	LKCompiler+JTL.m\
 	LLVMCodeGen.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
