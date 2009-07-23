@@ -56,6 +56,9 @@ static BOOL loadLibraryForBundle(NSString *so,
 	// Return YES if dlopen succeeds.
 	return NULL != dlopen([so UTF8String], RTLD_GLOBAL);
 }
+/**
+ * Load any available cached version of the library.
+ */
 static BOOL loadAnyLibraryForBundle(NSBundle *bundle, NSDate *modified)
 {
 	NSString *so = [bundle pathForResource: @"languagekit-cache"
