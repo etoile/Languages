@@ -43,6 +43,7 @@ void _Unwind_Resume (struct _Unwind_Exception *exception_object);
 
 struct _Unwind_Context;
 uintptr_t _Unwind_GetIP(struct _Unwind_Context *context);
+void _Unwind_SetIP(struct _Unwind_Context *context, uintptr_t);
 uintptr_t _Unwind_GetLanguageSpecificData(struct _Unwind_Context *context);
 uintptr_t _Unwind_GetRegionStart(struct _Unwind_Context *context);
 
@@ -133,8 +134,6 @@ static size_t landingPadForInvoke(struct _Unwind_Context *context)
 
 	if (*tables != 0x03) return -1;
 	expect(&tables, 0x03);
-	// End of the callsites table.
-	unsigned char *tableStart = tables;
 	unsigned char *actions = tables + read_uleb128(&tables);
 	while(tables <= actions)
 	{
@@ -195,8 +194,7 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
 		retval = [(id)retval retain];
 	}
 	LanguageKitException.retval = retval;
-	_Unwind_Reason_Code fail = 
-		_Unwind_RaiseException(&LanguageKitException.exception);
+	_Unwind_RaiseException(&LanguageKitException.exception);
 }
 
 /**
