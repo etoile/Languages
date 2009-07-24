@@ -76,7 +76,10 @@ static BOOL jitScript(NSString *script, NSString *extension)
 {
 	NS_DURING
 		LKAST *ast = parseScript(script, extension);
-		[ast check];
+		if (![ast check])
+		{
+			NS_VALUERETURN(NO, BOOL);
+		}
 		applyTransforms(ast);
 		[ast compileWithGenerator: defaultJIT()];
 	NS_HANDLER
@@ -91,7 +94,10 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 {
 	NS_DURING
 		LKAST *ast = parseScript(script, extension);
-		[ast check];
+		if (![ast check])
+		{
+			NS_VALUERETURN(NO, BOOL);
+		}
 		applyTransforms(ast);
 		[ast compileWithGenerator: defaultStaticCompilterWithFile(outFile)];
 	NS_HANDLER
@@ -101,8 +107,11 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 	return YES;
 }
 
+extern int *LanguageKitStackTopAddress;
 int main(int argc, char **argv)
 {
+	int a;
+	LanguageKitStackTopAddress = &a;
 	[NSAutoreleasePool new];
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];

@@ -130,20 +130,22 @@ NSString *LKCompilerDidCompileNewClassesNotification =
 	}
 	return types;
 }
-- (void) check
+- (BOOL)check
 {
 	// We might want to get some from other sources in future and merge these.
 	ASSIGN(typeOverrides, [pragmas objectForKey:@"types"]);
+	BOOL success = YES;
 	FOREACH(classes, class, LKAST*)
 	{
 		[class setParent:self];
-		[class check];
+		success &= [class check];
 	}
 	FOREACH(categories, category, LKAST*)
 	{
 		[category setParent:self];
-		[category check];
+		success &= [category check];
 	}
+	return success;
 }
 - (NSString*) description
 {

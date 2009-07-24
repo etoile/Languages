@@ -1,5 +1,6 @@
 #import "LKSymbolTable.h"
 #import "LKCodeGen.h"
+#import "LKCompiler.h"
 
 
 @class LKModule;
@@ -63,7 +64,12 @@
 /**
  * Performs semantic analysis on this node and all of its children.
  */
-- (void) check;
+- (BOOL)check;
+/**
+ * Performs semantic analysis on this node and all of its children, reporting
+ * errors and warnings to the object specified by the argument.
+ */
+- (BOOL)checkWithErrorReporter: (id<LKCompilerDelegate>)errorReporter;
 /**
  * Compile this AST node with the specified code generator.
  */

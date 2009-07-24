@@ -16,7 +16,7 @@
 	return value;
 }
 // No checking needed for literals - they are always semantically valid
-- (void) check {}
+- (BOOL) check { return YES; }
 - (void)dealloc
 {
 	[value release];

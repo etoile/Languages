@@ -11,10 +11,10 @@
 	ASSIGN(ret, anExpression);
 	return self;
 }
-- (void) check
+- (BOOL)check
 {
 	[ret setParent:self];
-	[ret check];
+	return [ret check];
 }
 - (NSString*) description
 {

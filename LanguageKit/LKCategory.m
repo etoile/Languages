@@ -32,7 +32,7 @@
 	                 onClassNamed:aName
 	                      methods:aMethodList];
 }
-- (void) check
+- (BOOL)check
 {
 	Class class = NSClassFromString(classname);
 	//Construct symbol table.
@@ -45,11 +45,13 @@
 		ASSIGN(symbols,
 			   [LKObjectSymbolTable symbolTableForNewClassNamed:classname]);
 	}
+	BOOL success = YES;
 	FOREACH(methods, method, LKAST*)
 	{
 		[method setParent:self];
-		[method check];
+		success &= [method check];
 	}
+	return success;
 }
 - (NSString*) description
 {

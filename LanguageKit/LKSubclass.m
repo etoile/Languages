@@ -1,4 +1,6 @@
 #import "LKSubclass.h"
+#import "LKCompiler.h"
+#import "LKCompilerErrors.h"
 
 @implementation LKSubclass
 - (id) initWithName:(NSString*)aName
@@ -27,9 +29,10 @@
 	                             ivars: anIvarList
 	                           methods: aMethodList] autorelease];
 }
-- (void) check
+- (BOOL)check
 {
 	Class SuperClass = NSClassFromString(superclass);
+	BOOL success = YES;
 	//Construct symbol table.
 	if (Nil == SuperClass)
 	{
@@ -37,9 +40,17 @@
 			[LKObjectSymbolTable symbolTableForNewClassNamed:superclass]);
 		if (symbols == nil)
 		{
-			[NSException raise:@"SemanticError"
-						format:@"Unable to find superclass %@ for %@", 
-				superclass, classname];
+			NSDictionary *errorDetails = D([NSString stringWithFormat:
+				@"Unable to find superclass %@ for %@",  superclass, classname],
+				kLKHumanReadableDesciption,
+				superclass, kLKMissingSuperclassName,
+				self, kLKASTNode);
+			if ([LKCompiler reportError: LKUndefinedSuperclassError
+			                    details: errorDetails])
+			{
+				return [self check];
+			}
+			return NO;
 		}
 	}
 	else
@@ -48,14 +59,12 @@
 	}
 	if (Nil != NSClassFromString(classname))
 	{
-		// FIXME: This was an exception because it broke the JIT, but throwing
-		// the exception broke the JTL so it's now a log.  When we have a
-		// proper error / warning delegate then this should be resumable
-		NSLog(@"Creating class which already exists.  This may break horribly later.");
-		/*
-		[NSException raise:@"SemanticError"
-					format:@"Can not create new class %@ - a class of this name already exists.", classname];
-		*/
+		NSDictionary *errorDetails = D([NSString stringWithFormat:
+			@"Attempting to create class which already exists: %@", classname],
+			kLKHumanReadableDesciption,
+			self, kLKASTNode);
+		success &= [LKCompiler reportWarning: LKRedefinedClassWarning
+		                             details: errorDetails];
 	}
 	//Construct symbol table.
 	FOREACH(ivars, ivar, NSString*)
@@ -70,13 +79,15 @@
 	FOREACH(methods, method, LKAST*)
 	{
 		[method setParent:self];
-		[method check];
+		success &= [method check];
 	}
+	return success;
 }
 - (NSString*) description
 {
-	NSMutableString *str = [NSMutableString stringWithFormat:@"%@ subclass: %@ [ \n",
-   		superclass, classname];
+	NSMutableString *str = 
+		[NSMutableString stringWithFormat:@"%@ subclass: %@ [ \n",
+			superclass, classname];
 	if ([ivars count])
 	{
 		[str appendString:@"| "];

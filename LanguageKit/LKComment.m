@@ -29,7 +29,7 @@
 	return YES;
 }
 // Comments are always semantically valid - no checking needed.
-- (void) check {}
+- (BOOL) check { return YES; }
 - (void) dealloc
 {
 	[comment release];

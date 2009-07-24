@@ -19,12 +19,11 @@
 {
 	return [NSString stringWithFormat:@"%@ = %@", lhs, rhs];
 }
-- (void) check
+- (BOOL)check
 {
 	[lhs setParent:self];
 	[rhs setParent:self];
-	[lhs check];
-	[rhs check];
+	return [lhs check] && [rhs check];
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {

@@ -1,4 +1,5 @@
 #import "LKAST.h"
+#import "LKCompiler.h"
 
 @class LKSubclass;
 @class LKCategory;

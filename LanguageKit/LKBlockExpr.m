@@ -23,13 +23,15 @@
 {
 	ASSIGN(statements, anArray);
 }
-- (void) check
+- (BOOL)check
 {
+	BOOL success = YES;
 	FOREACH(statements, s, LKAST*)
 	{
 		[s setParent:self];
-		[s check];
+		success &= [s check];
 	}
+	return success;
 }
 - (NSString*) description
 {

@@ -67,10 +67,22 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 {
 	return isBracket;
 }
-- (void) check
+- (BOOL) check
 {
 	// Subclasses should implement this.
 	[self doesNotRecognizeSelector:_cmd];
+	// Not reached.
+	return NO;
+}
+- (BOOL)checkWithErrorReporter: (id<LKCompilerDelegate>)errorReporter
+{
+	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
+	id old = [[dict objectForKey: @"LKCompilerContext"] retain];
+	[dict setObject: errorReporter forKey: @"LKCompilerContext"];
+	BOOL success = [self check];
+	[dict setObject: old forKey: @"LKCompilerContext"];
+	[old release];
+	return success;
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {

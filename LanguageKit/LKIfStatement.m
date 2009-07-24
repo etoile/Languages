@@ -97,19 +97,20 @@ static void *emitBlock(id<LKCodeGenerator> aGenerator,
 	}
 	return str;
 }
-- (void) check
+- (BOOL)check
 {
 	[condition setParent:self];
-	[condition check];
+	BOOL success = [condition check];
 	FOREACH(thenStatements, thenStatement, LKAST*)
 	{
 		[thenStatement setParent:self];
-		[thenStatement check];
+		success &= [thenStatement check];
 	}
 	FOREACH(elseStatements, elseStatement, LKAST*)
 	{
 		[elseStatement setParent:self];
-		[elseStatement check];
+		success &= [elseStatement check];
 	}
+	return success;
 }
 @end

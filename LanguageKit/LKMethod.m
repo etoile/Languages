@@ -34,13 +34,15 @@
 {
 	ASSIGN(signature, aSignature);
 }
-- (void) check
+- (BOOL)check
 {
+	BOOL success = YES;
 	FOREACH(statements, statement, LKAST*)
 	{
 		[statement setParent:self];
-		[statement check];
+		success &= [statement check];
 	}
+	return success;
 }
 - (NSString*) methodBody
 {

@@ -22,7 +22,7 @@
 	[super setParent:aParent];
 	[symbols addSymbol:variableName];
 }
-- (void) check {}
+- (BOOL) check { return YES; }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	return NULL;

@@ -72,17 +72,18 @@
 {
 	return target;
 }
-- (void) check
+- (BOOL)check
 {
 	[(LKAST*)target setParent:self];
-	[target check];
+	BOOL success = (target == nil) || [target check];
 	// This will generate a warning on polymorphic selectors.
 	type = [[self module] typeForMethod:selector];
 	FOREACH(arguments, arg, LKAST*)
 	{
 		[arg setParent:self];
-		[arg check];
+		success &= [arg check];
 	}
+	return success;
 }
 
 - (NSString*) description
@@ -234,15 +235,16 @@
 {
 	[messages addObject:aMessage];
 }
-- (void) check
+- (BOOL) check
 {
 	[receiver setParent:self];
-	[receiver check];
+	BOOL success = [receiver check];
 	FOREACH(messages, message, LKMessageSend*)
 	{
 		[message setParent:self];
-		[message check];
+		success &= [message check];
 	}
+	return success;
 }
 - (void) dealloc
 {

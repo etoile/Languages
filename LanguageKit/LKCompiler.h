@@ -27,11 +27,57 @@ typedef enum
 - (LKMethod*) parseMethod:(NSString*)source;
 @end
 
+@class LKCompiler;
+
+@protocol LKCompilerDelegate<NSObject>
+/**
+ * Indicates that the specified compiler has encountered a recoverable problem.
+ * The delegate should return YES if the compiler should attempt to continue.
+ * Extra information about this warning may be found in the info dictionary.
+ * All warnings must contain a human readable description identified by the key
+ * kLKHumanReadableDesciption, specific warnings may contain other information.
+ * See the LKCompilerErrors.h file for more information.
+ */
+- (BOOL)compiler: (LKCompiler*)aCompiler
+generatedWarning: (NSString*)aWarning
+         details: (NSDictionary*)info;
+/**
+ * Indicates that the specified compiler has encountered an unrecoverable
+ * problem.  Extra information about this error  may be found in the info
+ * dictionary.  All errors must contain a human readable description
+ * identified by the key kLKHumanReadableDesciption, specific errors may
+ * contain other information.  See the LKCompilerErrors.h file for more
+ * information.
+ *
+ * In normal circumstances, errors are unrecoverable.  A delegate may perform
+ * some manipulation on the AST to eliminate the error, however.  In this case,
+ * the delegate should return YES, causing the semantic analysis to be retried.
+ */
+- (BOOL)compiler: (LKCompiler*)aCompiler
+  generatedError: (NSString*)aWarning
+         details: (NSDictionary*)info;
+@end
+
 /**
  * Abstract class implementing a dynamic language compiler.  Concrete
  * subclasses provide implementations for specific languages.
  */
-@interface LKCompiler : NSObject {}
+@interface LKCompiler : NSObject 
+{
+	id<LKCompilerDelegate> delegate;
+}
+/**
+ * Sets the default delegate that will be used by new compiler instances.  If
+ * this is not called then a default delegate will be installed that just logs
+ * errors and warnings to the console.
+ */
++ (void)setDefaultDelegate: (id<LKCompilerDelegate>)aDelegate;
+/**
+ * Sets the delegate for this compiler.  The delegate is responsible for
+ * handling errors and warnings that occur during the semantic analysis of the
+ * program.
+ */
+- (void)setDelegate: (id<LKCompilerDelegate>)aDelegate;
 /**
  * Returns a new autoreleased compiler for this language.
  */
@@ -158,6 +204,16 @@ typedef enum
  * Returns the parser used by this language.
  */
 + (Class) parserClass;
+/**
+ * Reports the given warning and returns YES if recovery should proceed.
+ */
++ (BOOL)reportWarning: (NSString*)aWarning
+              details: (NSDictionary*)info;
+/**
+ * Reports the given error and returns YES if recovery should proceed.
+ */
++ (BOOL)reportError: (NSString*)aWarning
+            details: (NSDictionary*)info;
 @end
 
 @interface LKCompiler (JTL)

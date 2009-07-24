@@ -1,5 +1,7 @@
 #import "LKDeclRef.h"
 #import "LKSymbolTable.h"
+#import "LKCompiler.h"
+#import "LKCompilerErrors.h"
 
 
 @implementation LKDeclRef
@@ -13,29 +15,48 @@
 {
 	return [[[self alloc] initWithSymbol: sym] autorelease];
 }
-- (void) check
+- (BOOL)check
 {
 	if([symbol characterAtIndex:0] != '#')
 	{
 		switch ([symbols scopeOfSymbol:symbol])
 		{
 			case LKSymbolScopeInvalid:
-				[NSException raise:@"InvalidSymbol"
-							format:@"Unrecognised symbol %@", symbol];
+			{
+				NSDictionary *errorDetails = D(
+					[NSString stringWithFormat: @"Unrecognised symbol: %@",
+						symbol], kLKHumanReadableDesciption,
+					self, kLKASTNode);
+				if ([LKCompiler reportError: LKUndefinedSymbolError
+				                    details: errorDetails])
+				{
+					return [self check];
+				}
+				return NO;
+			}
 			case LKSymbolScopeExternal:
 			{
 				LKExternalSymbolScope s = 
 					[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol:symbol];
 				if (nil == s.scope)
 				{
-					[NSException raise:@"InvalidSymbol"
-								format:@"Unrecognised symbol %@", symbol];
+					NSDictionary *errorDetails = D(
+						[NSString stringWithFormat: @"Unrecognised symbol: %@",
+							symbol], kLKHumanReadableDesciption,
+						self, kLKASTNode);
+					if ([LKCompiler reportError: LKUndefinedSymbolError
+					                    details: errorDetails])
+					{
+						return [self check];
+					}
+					return NO;
 				}
 			}
 			default:
 				break;
 		}
 	}
+	return YES;
 }
 - (NSString*) description
 {

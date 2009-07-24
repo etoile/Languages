@@ -3,11 +3,33 @@
 #import "LKAST.h"
 #import "LKCategory.h"
 #import "LKCompiler.h"
+#import "LKCompilerErrors.h"
 #import "LKMethod.h"
 #import "LKModule.h"
 
 static NSMutableDictionary *compilersByExtension;
 static NSMutableDictionary *compilersByLanguage;
+
+static id<LKCompilerDelegate> DefaultDelegate;
+
+@interface LKDefaultCompilerDelegate : NSObject<LKCompilerDelegate>
+@end
+@implementation LKDefaultCompilerDelegate
+- (BOOL)compiler: (LKCompiler*)aCompiler
+generatedWarning: (NSString*)aWarning
+         details: (NSDictionary*)info
+{
+	NSLog(@"WARNING: %@", [info objectForKey: kLKHumanReadableDesciption]);
+	return YES;
+}
+- (BOOL)compiler: (LKCompiler*)aCompiler
+  generatedError: (NSString*)aWarning
+         details: (NSDictionary*)info
+{
+	NSLog(@"ERROR: %@", [info objectForKey: kLKHumanReadableDesciption]);
+	return NO;
+}
+@end
 
 /**
  * Returns the modification date of a file.
@@ -113,10 +135,10 @@ int DEBUG_DUMP_MODULES = 0;
 }
 + (void) initialize 
 {
-	if (self != [LKCompiler class])
-	{
-		return;
-	}
+	if (self != [LKCompiler class]) { return; }
+
+	DefaultDelegate = [LKDefaultCompilerDelegate new];
+
 	[self loadBundles];
 
 	compilersByExtension = [NSMutableDictionary new];
@@ -140,6 +162,12 @@ int DEBUG_DUMP_MODULES = 0;
 	}
 	return [super alloc];
 }
+- (id)init
+{
+	SUPERINIT;
+	delegate = DefaultDelegate;
+	return self;
+}
 + (LKCompiler*) compiler
 {
 	return AUTORELEASE([[self alloc] init]);
@@ -155,7 +183,6 @@ int DEBUG_DUMP_MODULES = 0;
 	LKModule *ast;
 	NS_DURING
 		ast = [p parseString: source];
-		[ast check];
 	NS_HANDLER
 		NSDictionary *e = [localException userInfo];
 		if ([[localException name] isEqualToString:@"ParseError"])
@@ -165,13 +192,13 @@ int DEBUG_DUMP_MODULES = 0;
 										   [e objectForKey:@"character"],
 										   [e objectForKey:@"line"]);
 		}
-		else
-		{
-			NSLog(@"Semantic error: %@", [localException reason]);
-		}
 		return NO;
-	NS_ENDHANDLER	
-	if (nil == ast)
+	NS_ENDHANDLER
+	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
+	[dict setObject: self forKey: @"LKCompilerContext"];
+	BOOL success = [ast check];
+	[dict setObject: nil forKey: @"LKCompilerContext"];
+	if (!success)
 	{
 		return NO;
 	}
@@ -201,7 +228,6 @@ int DEBUG_DUMP_MODULES = 0;
 		                                  methods: [NSArray arrayWithObject:ast]];
 		module = [LKModule module];
 		[module addCategory: (LKCategory*)ast];
-		[module check];
 	NS_HANDLER
 		NSDictionary *e = [localException userInfo];
 		if ([[localException name] isEqualToString:@"ParseError"])
@@ -217,7 +243,11 @@ int DEBUG_DUMP_MODULES = 0;
 		}
 		return NO;
 	NS_ENDHANDLER	
-	if (nil == ast)
+	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
+	[dict setObject: self forKey: @"LKCompilerContext"];
+	BOOL success = [module check];
+	[dict setObject: nil forKey: @"LKCompilerContext"];
+	if (!success) 
 	{
 		return NO;
 	}
@@ -370,6 +400,18 @@ static NSString *loadFramework(NSString *framework)
 {
 	return [self loadScriptNamed: name fromBundle: [NSBundle mainBundle]];
 }
++ (void)setDefaultDelegate: (id<LKCompilerDelegate>)aDelegate
+{
+	DefaultDelegate = [aDelegate retain];
+}
+- (void)setDelegate: (id<LKCompilerDelegate>)aDelegate
+{
+	delegate = aDelegate;
+}
+- (id<LKCompilerDelegate>)delegate
+{
+	return delegate;
+}
 
 + (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle
 {
@@ -428,6 +470,36 @@ static NSString *loadFramework(NSString *framework)
 + (Class) compilerClassForFileExtension:(NSString*) anExtension
 {
 	return [compilersByExtension objectForKey:anExtension];
+}
++ (BOOL)reportWarning: (NSString*)aWarning
+              details: (NSDictionary*)info
+{
+	LKCompiler *compiler =
+		[[[NSThread currentThread] threadDictionary] 
+			objectForKey: @"LKCompilerContext"];
+	id<LKCompilerDelegate> errorDelegate = [compiler delegate];
+	if (nil == errorDelegate)
+	{
+		errorDelegate = DefaultDelegate;
+	}
+	return [errorDelegate compiler: compiler
+	              generatedWarning: aWarning
+	                       details: info];
+}
++ (BOOL)reportError: (NSString*)aWarning
+            details: (NSDictionary*)info
+{
+	LKCompiler *compiler =
+		[[[NSThread currentThread] threadDictionary] 
+			objectForKey: @"LKCompilerContext"];
+	id<LKCompilerDelegate> errorDelegate = [compiler delegate];
+	if (nil == errorDelegate)
+	{
+		errorDelegate = DefaultDelegate;
+	}
+	return [errorDelegate compiler: compiler
+	                generatedError: aWarning
+	                       details: info];
 }
 + (Class) parserClass
 {

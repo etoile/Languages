@@ -23,6 +23,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKComment.m\
 	LKComparison.m\
 	LKCompiler.m\
+	LKCompilerErrors.m\
 	LKDeclRef.m\
 	LKIfStatement.m\
 	LKLiteral.m\
@@ -47,6 +48,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKComment.h\
 	LKComparison.h\
 	LKCompiler.h\
+	LKCompilerErrors.h\
 	LKDeclRef.h\
 	LKIfStatement.h\
 	LKLiteral.h\

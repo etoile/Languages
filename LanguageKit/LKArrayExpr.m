@@ -12,13 +12,15 @@
 	elements = [anArray mutableCopy];
 	return self;
 }
-- (void) check
+- (BOOL)check
 {
+	BOOL success = YES;
 	FOREACH(elements, element, LKAST*)
 	{
 		[element setParent:self];
-		[element check];
+		success &= [element check];
 	}
+	return success;
 }
 - (NSString*) description
 {

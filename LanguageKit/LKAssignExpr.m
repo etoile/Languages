@@ -34,12 +34,11 @@ static char *ReleaseTypes;
 	ASSIGN(expr, expression);
 	return self;
 }
-- (void) check
+- (BOOL)check
 {
 	[expr setParent:self];
 	[target setParent:self];
-	[target check];
-	[expr check];
+	return [target check] && [expr check];
 }
 - (NSString*) description
 {

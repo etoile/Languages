@@ -1,7 +1,7 @@
 #import "LKSymbolRef.h"
 
 @implementation LKSymbolRef 
-- (void) check {}
+- (BOOL) check { return YES; }
 - (NSString*) description
 {
 	return [NSString stringWithFormat:@"#%@", symbol];
