@@ -19,7 +19,18 @@ EMIT_STRING(kLKASTNode)
  * The name of the missing superclass.  Used for LKUndefinedSuperclass.
  */
 EMIT_STRING(kLKMissingSuperclassName)
-
+/**
+ * Line number of a parser error.
+ */
+EMIT_STRING(kLKLineNumber)
+/**
+ * Text of the line containing an error.
+ */
+EMIT_STRING(kLKSourceLine)
+/**
+ * The character which generated the error.
+ */
+EMIT_STRING(kLKCharacterNumber)
 
 /**
  * A reference was made to an invalid symbol.
@@ -38,5 +49,10 @@ EMIT_STRING(LKUndefinedSuperclassError)
  * perfectly acceptable.
  */
 EMIT_STRING(LKRedefinedClassWarning)
+/**
+ * Parsing failed.  The info dictionary will contain kLKCharacterNumber,
+ * kLKSourceLine, and kLKLineNumber to identify the location of the error.
+ */
+EMIT_STRING(LKParserError)
 
 #undef EMIT_STRING

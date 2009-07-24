@@ -176,7 +176,22 @@ int DEBUG_DUMP_MODULES = 0;
 {
 	DEBUG_DUMP_MODULES = (int) aFlag;
 }
-
+static void emitParseError(NSException *localException)
+{
+	NSDictionary *e = [localException userInfo];
+	id lineNumber = [e objectForKey:@"lineNumber"];
+	id character = [e objectForKey:@"character"];
+	id line = [e objectForKey:@"line"];
+	NSDictionary *parseErrorInfo = D(
+			lineNumber, kLKLineNumber,
+			character, kLKCharacterNumber,
+			line, kLKSourceLine,
+			[NSString stringWithFormat: @"Parse error on line %@.  "
+				"Unexpected token at character %@ while parsing:\n%@", 
+				lineNumber, character, line]);
+	[LKCompiler reportError: LKParserError
+	                details: parseErrorInfo];
+}
 - (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
 {
 	id p = AUTORELEASE([[[[self class] parserClass] alloc] init]);
@@ -184,14 +199,7 @@ int DEBUG_DUMP_MODULES = 0;
 	NS_DURING
 		ast = [p parseString: source];
 	NS_HANDLER
-		NSDictionary *e = [localException userInfo];
-		if ([[localException name] isEqualToString:@"ParseError"])
-		{
-			NSLog(@"Parse error on line %@.  Unexpected token at character %@ while parsing:\n%@",
-										   [e objectForKey:@"lineNumber"],
-										   [e objectForKey:@"character"],
-										   [e objectForKey:@"line"]);
-		}
+		emitParseError(localException);
 		return NO;
 	NS_ENDHANDLER
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
@@ -229,20 +237,9 @@ int DEBUG_DUMP_MODULES = 0;
 		module = [LKModule module];
 		[module addCategory: (LKCategory*)ast];
 	NS_HANDLER
-		NSDictionary *e = [localException userInfo];
-		if ([[localException name] isEqualToString:@"ParseError"])
-		{
-			NSLog(@"Parse error on line %@.  Unexpected token at character %@ while parsing:\n%@",
-										   [e objectForKey:@"lineNumber"],
-										   [e objectForKey:@"character"],
-										   [e objectForKey:@"line"]);
-		}
-		else
-		{
-			NSLog(@"Semantic error: %@", [localException reason]);
-		}
+		emitParseError(localException);
 		return NO;
-	NS_ENDHANDLER	
+	NS_ENDHANDLER
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
 	BOOL success = [module check];
