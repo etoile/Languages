@@ -238,7 +238,7 @@ int DEBUG_DUMP_MODULES = 0;
 	             withGenerator: defaultJIT()];
 }
 
-+ (BOOL) loadFrameworkNamed:(NSString*)framework
+static NSString *loadFramework(NSString *framework)
 {
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
@@ -254,11 +254,16 @@ int DEBUG_DUMP_MODULES = 0;
 			NSBundle *bundle = [NSBundle bundleWithPath:f];
 			if ([bundle load]) 
 			{
-				return YES;
+				return [bundle bundlePath];
 			}
 		}
 	}
-	return NO;
+	return nil;
+}
+
++ (BOOL) loadFrameworkNamed:(NSString*)framework
+{
+	return nil != loadFramework(framework);
 }
 
 + (Class) loadLanguageKitBundle:(NSBundle*)bundle
@@ -268,17 +273,18 @@ int DEBUG_DUMP_MODULES = 0;
 	NSString *path = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
 	NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile:path];
 	NSArray *frameworks = [plist objectForKey:@"Frameworks"];
+	NSMutableArray *frameworkPaths = [NSMutableArray array];
 	BOOL success = YES;
 	FOREACH(frameworks, framework, NSString*)
 	{
-		success &= [self loadFrameworkNamed: framework];
+		NSString *path = nil;
+		success &= (nil == (path = loadFramework(framework)));
+		[frameworkPaths addObject: path];
 	}
-	NSDate *recentModificationDate = mostRecentModificationDate(frameworks);
+	NSDate *recentModificationDate = mostRecentModificationDate(frameworkPaths);
 	// TODO: Specify a set of AST transforms to apply.
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
-	recentModificationDate = 
-		[recentModificationDate laterDate: mostRecentModificationDate(frameworks)];
-	if (!(success == loadAnyLibraryForBundle(bundle, recentModificationDate)))
+	if (!(success = loadAnyLibraryForBundle(bundle, recentModificationDate)))
 	{
 		FOREACH(sourceFiles, source, NSString*)
 		{
