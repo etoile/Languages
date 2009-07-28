@@ -169,9 +169,9 @@
 	}
 	// If an object is created with new then send it an autorelease message
 	// immediately after construction.  This ensures that any new object always
-	// has a retain count of 1 and an autorelease count of 1 unless explicitly
-	// created using alloc init to bypass this.
-	if ([selector isEqualToString:@"new"])
+	// has a retain count of 1 and an autorelease count of 1.
+	if ([selector isEqualToString:@"new"] 
+		|| [selector isEqualToString:@"alloc"])
 	{
 		sel = "autorelease";
 		const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
