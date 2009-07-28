@@ -173,7 +173,6 @@ NSObject subclass: SmalltalkTool
 		self editorView log. 
 self editorView setString: codeOfSelectedASTNodes.
 		codeOfSelectedASTNodes log.
-		codeOfSelectedASTNodes release.
 	]
 ]
 
