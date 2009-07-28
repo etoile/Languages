@@ -315,7 +315,7 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 		return Builder.CreateLoad(GS);
 	}
 	ptrVal |= 1;
-	Constant *Val = Context.getConstantInt(IntPtrTy, ptrVal);
+	Constant *Val = ConstantInt::get(IntPtrTy, ptrVal);
 	Val = ConstantExpr::getIntToPtr(Val, IdTy);
 	Val->setName("SmallIntConstant");
 	return Val;
@@ -332,12 +332,12 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	std::vector<llvm::Constant*> Ctors;
 
 	std::vector<llvm::Constant*> S;
-	S.push_back(Context.getConstantInt(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
 	S.push_back(init);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 	// Add the constant initialisation function
 	S.clear();
-	S.push_back(Context.getConstantInt(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
 	S.push_back(LiteralInitFunction);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 

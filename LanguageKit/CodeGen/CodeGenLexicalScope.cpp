@@ -295,7 +295,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	Value *exceptionPtr = 
 		Builder.CreateAlloca(Int8PtrTy, 0, "exception_pointer");
 
-	Builder.CreateStore(CGM->Context.getConstantInt(Type::Int1Ty, 0), inException);
+	Builder.CreateStore(ConstantInt::get(Type::Int1Ty, 0), inException);
 	Builder.CreateStore(CGM->Context.getNullValue(Int8PtrTy), exceptionPtr);
 
 	Type *PtrTy = PointerType::getUnqual(IntegerType::Int8Ty);
@@ -353,7 +353,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	if (0 != symbols && locals > 0)
 	{
 		std::vector<llvm::Constant*> symbolTableInitialiser;
-		llvm::Constant *Zero = CGM->Context.getConstantInt(IntTy, 0);
+		llvm::Constant *Zero = ConstantInt::get(IntTy, 0);
 		for (unsigned i=0 ; i<locals ; i++)
 		{
 			llvm::Constant *symbol = CGM->MakeConstantString(symbols[i]);
@@ -381,7 +381,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	// Set the number of arguments
 	Builder.CreateStore(
-		CGM->Context.getConstantInt(IntTy, contextSize + 1),
+		ConstantInt::get(IntTy, contextSize + 1),
 		Builder.CreateStructGEP(Context, 2, "context_argc"));
 	
 
@@ -561,7 +561,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		TheModule->getOrInsertFunction("llvm.eh.selector.i32",
 			ehSelectorFunctionTy), exception, ehPersonality,
 		ConstantPointerNull::get(Int8PtrTy));
-	ExceptionBuilder.CreateStore(CGM->Context.getConstantInt(Type::Int1Ty, 1), inException);
+	ExceptionBuilder.CreateStore(ConstantInt::get(Type::Int1Ty, 1), inException);
 	ExceptionBuilder.CreateBr(CleanupBB);
 	ExceptionBuilder.ClearInsertionPoint();
 
@@ -906,7 +906,7 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
 	// FIXME: Non-id loads
 	assert(*type == '@' || *type == '#');
 	Value *addr = Builder.CreatePtrToInt(object, IntTy);
-	addr = Builder.CreateAdd(addr, CGM->Context.getConstantInt(IntTy, offset));
+	addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
 	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
 	return Builder.CreateLoad(addr, true, "ivar");
 }
@@ -933,7 +933,7 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 	// Turn the value into something valid for storing in this ivar
 	Value *box = Unbox(&Builder, CurrentFunction, value, type);
 	// Calculate the offset of the ivar
-	Value *addr = Builder.CreateGEP(object, CGM->Context.getConstantInt(IntTy, offset));
+	Value *addr = Builder.CreateGEP(object, ConstantInt::get(IntTy, offset));
 	addr = Builder.CreateBitCast(addr, PointerType::getUnqual(box->getType()),
 		"ivar");
 	// Do the ASSIGN() thing if it's an object.
@@ -961,8 +961,8 @@ Value *CodeGenLexicalScope::ComparePointers(Value *lhs, Value *rhs)
 	rhs = Builder.CreatePtrToInt(rhs, IntPtrTy);
 	Value *result = Builder.CreateICmpEQ(rhs, lhs, "pointer_compare_result");
 	result = Builder.CreateZExt(result, IntPtrTy);
-	result = Builder.CreateShl(result, CGM->Context.getConstantInt(IntPtrTy, 1));
-	result = Builder.CreateOr(result, CGM->Context.getConstantInt(IntPtrTy, 1));
+	result = Builder.CreateShl(result, ConstantInt::get(IntPtrTy, 1));
+	result = Builder.CreateOr(result, ConstantInt::get(IntPtrTy, 1));
 	return Builder.CreateIntToPtr(result, IdTy);
 }
 
@@ -1064,7 +1064,7 @@ void CodeGenLexicalScope::BranchOnCondition(Value *condition,
 	// Make the condition an int
 	Value *lhs = Builder.CreatePtrToInt(condition, IntPtrTy);
 	// SmallInt value NO (0 << 1 & 1)
-	Value *rhs = CGM->Context.getConstantInt(IntPtrTy, 1);
+	Value *rhs = ConstantInt::get(IntPtrTy, 1);
 	// If condition != NO
 	Value *result = Builder.CreateICmpNE(rhs, lhs, "pointer_compare_result");
 	Builder.CreateCondBr(result, TrueBB, FalseBB);

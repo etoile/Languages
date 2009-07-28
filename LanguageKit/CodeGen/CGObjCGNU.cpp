@@ -225,7 +225,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
                       IntTy(LLVMIntType),
                       LongTy(LLVMLongType)
 {
-	Zeros[0] = Context.getConstantInt(llvm::Type::Int32Ty, 0);
+	Zeros[0] = ConstantInt::get(llvm::Type::Int32Ty, 0);
 	Zeros[1] = Zeros[0];
 	NULLPtr = llvm::ConstantPointerNull::get(
 		llvm::PointerType::getUnqual(llvm::Type::Int8Ty));
@@ -400,7 +400,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
 	std::vector<llvm::Constant*> Ivars;
 	Ivars.push_back(NULLPtr);
 	Ivars.push_back(MakeConstantString(Str));
-	Ivars.push_back(Context.getConstantInt(IntTy, length));
+	Ivars.push_back(ConstantInt::get(IntTy, length));
 	llvm::Constant *ObjCStr = MakeGlobal(
 		llvm::StructType::get(PtrToInt8Ty, PtrToInt8Ty, IntTy, (void*)0),
 		Ivars, ".objc_str");
@@ -714,7 +714,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 	Methods.clear();
 	Methods.push_back(llvm::ConstantPointerNull::get(
 		llvm::PointerType::getUnqual(ObjCMethodListTy)));
-	Methods.push_back(Context.getConstantInt(llvm::Type::Int32Ty,
+	Methods.push_back(ConstantInt::get(llvm::Type::Int32Ty,
 		MethodTypes.size()));
 	Methods.push_back(MethodArray);
 	
@@ -741,7 +741,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		Elements.clear();
 		Elements.push_back(MakeConstantString(IvarNames[i]));
 		Elements.push_back(MakeConstantString(IvarTypes[i]));
-		Elements.push_back(Context.getConstantInt(IntTy, IvarOffsets[i]));
+		Elements.push_back(ConstantInt::get(IntTy, IvarOffsets[i]));
 		Ivars.push_back(llvm::ConstantStruct::get(ObjCIvarTy, Elements));
 	}
 
@@ -751,7 +751,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 
 	
 	Elements.clear();
-	Elements.push_back(Context.getConstantInt(
+	Elements.push_back(ConstantInt::get(
 		 llvm::cast<llvm::IntegerType>(IntTy), (int)IvarNames.size()));
 	Elements.push_back(Context.getConstantArray(ObjCIvarArrayTy, Ivars));
 	// Structure containing array and array count
@@ -794,7 +794,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 		PtrTy,              // protocols
 		PtrTy,              // gc_object_type
 		(void*)0);
-	llvm::Constant *Zero = Context.getConstantInt(LongTy, 0);
+	llvm::Constant *Zero = ConstantInt::get(LongTy, 0);
 	llvm::Constant *NullP =
 		llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(PtrTy));
 	// Fill in the structure
@@ -807,7 +807,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	}
 	Elements.push_back(MakeConstantString(Name));
 	Elements.push_back(Zero);
-	Elements.push_back(Context.getConstantInt(LongTy, info));
+	Elements.push_back(ConstantInt::get(LongTy, info));
 	Elements.push_back(InstanceSize);
 	Elements.push_back(IVars);
 	Elements.push_back(Methods);
@@ -845,7 +845,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 	llvm::StructType *ObjCMethodDescListTy = llvm::StructType::get(
 			IntTy, ObjCMethodArrayTy, (void*)0);
 	Methods.clear();
-	Methods.push_back(Context.getConstantInt(IntTy, MethodNames.size()));
+	Methods.push_back(ConstantInt::get(IntTy, MethodNames.size()));
 	Methods.push_back(Array);
 	return MakeGlobal(ObjCMethodDescListTy, Methods, ".objc_method_list");
 }
@@ -873,7 +873,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 		Elements);
 	Elements.clear();
 	Elements.push_back(NULLPtr);
-	Elements.push_back(Context.getConstantInt(
+	Elements.push_back(ConstantInt::get(
 		llvm::cast<llvm::IntegerType>(LongTy), Protocols.size()));
 	Elements.push_back(ProtocolArray);
 	return MakeGlobal(ProtocolListTy, Elements, ".objc_protocol_list");
@@ -911,7 +911,7 @@ void CGObjCGNU::GenerateProtocol(
 	// The isa pointer must be set to a magic number so the runtime knows it's
 	// the correct layout.
 	Elements.push_back(llvm::ConstantExpr::getIntToPtr(
-		Context.getConstantInt(llvm::Type::Int32Ty, ProtocolVersion), IdTy));
+		ConstantInt::get(llvm::Type::Int32Ty, ProtocolVersion), IdTy));
 	Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
 	Elements.push_back(ProtocolList);
 	Elements.push_back(InstanceMethodList);
@@ -987,12 +987,12 @@ void CGObjCGNU::GenerateClass(
 		IvarOffsets);
 	//Generate metaclass for class methods
 	llvm::Constant *MetaClassStruct = GenerateClassStructure(NULLPtr,
-		SuperClass, 0x2L, ClassName, 0, Context.getConstantInt(LongTy, 0),
+		SuperClass, 0x2L, ClassName, 0, ConstantInt::get(LongTy, 0),
 		GenerateIvarList(empty, empty, empty2), ClassMethodList, NULLPtr);
 	// Generate the class structure
 	llvm::Constant *ClassStruct = GenerateClassStructure(MetaClassStruct,
 		SuperClass, 0x1L, ClassName, 0,
-		Context.getConstantInt(LongTy, instanceSize), IvarList,
+		ConstantInt::get(LongTy, instanceSize), IvarList,
 		MethodList, GenerateProtocolList(Protocols));
 	// Add class structure to list to be added to the symtab later
 	ClassStruct = llvm::ConstantExpr::getBitCast(ClassStruct, PtrToInt8Ty);
@@ -1075,7 +1075,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	Selectors.push_back(llvm::ConstantStruct::get(SelStructTy, Elements));
 	Elements.clear();
 	// Number of static selectors
-	Elements.push_back(Context.getConstantInt(LongTy, Selectors.size() ));
+	Elements.push_back(ConstantInt::get(LongTy, Selectors.size() ));
 	llvm::Constant *SelectorList = MakeGlobal(
 		llvm::ArrayType::get(SelStructTy, Selectors.size()), Selectors,
 		".objc_selector_list");
@@ -1088,7 +1088,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	     iter != iterEnd; ++iter)
 	{
 		llvm::Constant *Idxs[] = {Zeros[0],
-		Context.getConstantInt(llvm::Type::Int32Ty, index++), Zeros[0]};
+		ConstantInt::get(llvm::Type::Int32Ty, index++), Zeros[0]};
 
 		llvm::GlobalVariable *SelPtr = new llvm::GlobalVariable(TheModule,
 				SelectorTy, true, llvm::GlobalValue::InternalLinkage,
@@ -1103,7 +1103,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	     iter != iterEnd; iter++)
 	{
 		llvm::Constant *Idxs[] = {Zeros[0],
-		Context.getConstantInt(llvm::Type::Int32Ty, index++), Zeros[0]};
+		ConstantInt::get(llvm::Type::Int32Ty, index++), Zeros[0]};
 
 		llvm::GlobalVariable *SelPtr = new llvm::GlobalVariable(TheModule,
 				SelectorTy, true, llvm::GlobalValue::InternalLinkage,
@@ -1113,10 +1113,10 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		(*iter).second->setAliasee(SelPtr);
 	}
 	// Number of classes defined.
-	Elements.push_back(Context.getConstantInt(llvm::Type::Int16Ty, 
+	Elements.push_back(ConstantInt::get(llvm::Type::Int16Ty, 
 		Classes.size()));
 	// Number of categories defined
-	Elements.push_back(Context.getConstantInt(llvm::Type::Int16Ty, 
+	Elements.push_back(ConstantInt::get(llvm::Type::Int16Ty, 
 		Categories.size()));
 	// Create an array of classes, then categories, then static object instances
 	Classes.insert(Classes.end(), Categories.begin(), Categories.end());
@@ -1134,10 +1134,10 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		PtrToInt8Ty, llvm::PointerType::getUnqual(SymTabTy), (void*)0);
 	Elements.clear();
 	// Runtime version used for compatibility checking.
-	Elements.push_back(Context.getConstantInt(LongTy, RuntimeVersion));
+	Elements.push_back(ConstantInt::get(LongTy, RuntimeVersion));
 	llvm::TargetData td = 
 		llvm::TargetData::TargetData(&TheModule);
-	Elements.push_back(Context.getConstantInt(LongTy, 
+	Elements.push_back(ConstantInt::get(LongTy, 
 				td.getTypeSizeInBits(ModuleTy)/8));
 	//FIXME: Should be the path to the file where this module was declared
 	Elements.push_back(NULLPtr);
