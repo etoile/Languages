@@ -80,14 +80,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 	id old = [[dict objectForKey: @"LKCompilerContext"] retain];
 	[dict setObject: errorReporter forKey: @"LKCompilerContext"];
 	BOOL success = [self check];
-	if (nil == old)
-	{
-		[dict removeObjectForKey: @"LKCompilerContext"];
-	}
-	else
-	{
-		[dict setObject: old forKey: @"LKCompilerContext"];
-	}
+	[dict setValue: old forKey: @"LKCompilerContext"];
 
 	[old release];
 	return success;
