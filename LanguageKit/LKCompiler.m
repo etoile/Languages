@@ -205,7 +205,7 @@ static void emitParseError(NSException *localException)
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
 	BOOL success = [ast check];
-	[dict setObject: nil forKey: @"LKCompilerContext"];
+	[dict removeObjectForKey: @"LKCompilerContext"];
 	if (!success)
 	{
 		return NO;
@@ -243,7 +243,7 @@ static void emitParseError(NSException *localException)
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
 	BOOL success = [module check];
-	[dict setObject: nil forKey: @"LKCompilerContext"];
+	[dict removeObjectForKey: @"LKCompilerContext"];
 	if (!success) 
 	{
 		return NO;
