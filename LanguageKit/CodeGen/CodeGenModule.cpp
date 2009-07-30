@@ -42,7 +42,7 @@ Constant *CodeGenModule::MakeConstantString(const std::string &Str,
                                             const std::string &Name,
                                             unsigned GEPs)
 {
-	Constant * ConstStr = Context.getConstantArray(Str);
+	Constant * ConstStr = llvm::ConstantArray::get(Str);
 	ConstStr = new GlobalVariable(*TheModule, ConstStr->getType(), true,
 		GlobalValue::InternalLinkage, ConstStr, Name);
 	return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
@@ -343,7 +343,7 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 
 	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
 	new llvm::GlobalVariable(*TheModule, AT, false,
-			llvm::GlobalValue::AppendingLinkage, Context.getConstantArray(AT,
+			llvm::GlobalValue::AppendingLinkage, llvm::ConstantArray::get(AT,
 			Ctors), "llvm.global_ctors");
 
 	PassManager pm;

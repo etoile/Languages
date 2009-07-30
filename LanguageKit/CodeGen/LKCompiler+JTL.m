@@ -1,9 +1,9 @@
 typedef int bool;
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LLVMCodeGen.h"
-#import "../LKCompiler.h"
-#import "../LKAST.h"
-#import "../LKModule.h"
+#import <LanguageKit/LKCompiler.h>
+#import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKModule.h>
 
 //Don't use @class because clang will complain if we send messages to a
 //forward-declared class.

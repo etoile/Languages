@@ -362,7 +362,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		}
 		llvm::ArrayType *tableTy = llvm::ArrayType::get(PtrTy, locals);
 		llvm::Constant *initialiser = 
-			CGM->Context.getConstantArray(tableTy, symbolTableInitialiser);
+			llvm::ConstantArray::get(tableTy, symbolTableInitialiser);
 		llvm::Value *symbolTable = new llvm::GlobalVariable(*TheModule,
 				tableTy, true, llvm::GlobalValue::InternalLinkage,
 				initialiser, "symbol_table");

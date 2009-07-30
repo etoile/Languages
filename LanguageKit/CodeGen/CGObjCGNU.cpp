@@ -350,7 +350,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
 llvm::Constant *CGObjCGNU::MakeConstantString(const std::string &Str,
                                               const std::string &Name) 
 {
-	llvm::Constant * ConstStr = Context.getConstantArray(Str);
+	llvm::Constant * ConstStr = llvm::ConstantArray::get(Str);
 	ConstStr = new llvm::GlobalVariable(TheModule, ConstStr->getType(), true,
 		llvm::GlobalValue::InternalLinkage, ConstStr, Name);
 	return llvm::ConstantExpr::getGetElementPtr(ConstStr, Zeros, 2);
@@ -369,7 +369,7 @@ llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::ArrayType *Ty,
                                       std::vector<llvm::Constant*> &V,
                                       const std::string &Name) 
 {
-	llvm::Constant *C = Context.getConstantArray(Ty, V);
+	llvm::Constant *C = llvm::ConstantArray::get(Ty, V);
 	return new llvm::GlobalVariable(TheModule, Ty, false,
 		llvm::GlobalValue::InternalLinkage, C, Name);
 }
@@ -694,7 +694,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 	// Array of method structures
 	llvm::ArrayType *ObjCMethodArrayTy = llvm::ArrayType::get(ObjCMethodTy,
 			MethodNames.size());
-	llvm::Constant *MethodArray = Context.getConstantArray(ObjCMethodArrayTy,
+	llvm::Constant *MethodArray = llvm::ConstantArray::get(ObjCMethodArrayTy,
 			Methods);
 
 	// Structure containing list pointer, array and array count
@@ -753,7 +753,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 	Elements.clear();
 	Elements.push_back(ConstantInt::get(
 		 llvm::cast<llvm::IntegerType>(IntTy), (int)IvarNames.size()));
-	Elements.push_back(Context.getConstantArray(ObjCIvarArrayTy, Ivars));
+	Elements.push_back(llvm::ConstantArray::get(ObjCIvarArrayTy, Ivars));
 	// Structure containing array and array count
 	llvm::StructType *ObjCIvarListTy = llvm::StructType::get(IntTy,
 		ObjCIvarArrayTy,
@@ -841,7 +841,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 	}
 	llvm::ArrayType *ObjCMethodArrayTy = llvm::ArrayType::get(ObjCMethodDescTy,
 			MethodNames.size());
-	llvm::Constant *Array = Context.getConstantArray(ObjCMethodArrayTy, Methods);
+	llvm::Constant *Array = llvm::ConstantArray::get(ObjCMethodArrayTy, Methods);
 	llvm::StructType *ObjCMethodDescListTy = llvm::StructType::get(
 			IntTy, ObjCMethodArrayTy, (void*)0);
 	Methods.clear();
@@ -869,7 +869,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 				ExistingProtocols[*iter], PtrToInt8Ty);
 		Elements.push_back(Ptr);
 	}
-	llvm::Constant * ProtocolArray = Context.getConstantArray(ProtocolArrayTy,
+	llvm::Constant * ProtocolArray = llvm::ConstantArray::get(ProtocolArrayTy,
 		Elements);
 	Elements.clear();
 	Elements.push_back(NULLPtr);
@@ -972,7 +972,7 @@ void CGObjCGNU::GenerateClass(
 		SuperClass = llvm::ConstantPointerNull::get(
 			llvm::cast<llvm::PointerType>(PtrToInt8Ty));
 	}
-	llvm::Constant * Name = Context.getConstantArray(ClassName);
+	llvm::Constant * Name = llvm::ConstantArray::get(ClassName);
 	Name = new llvm::GlobalVariable(TheModule, Name->getType(), true,
 		llvm::GlobalValue::InternalLinkage, Name, ".class_name");
 	// Empty vector used to construct empty method lists
@@ -1023,7 +1023,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		ConstantStrings.push_back(NULLPtr);
 		Elements.push_back(MakeConstantString("NSConstantString",
 			".objc_static_class_name"));
-		Elements.push_back(Context.getConstantArray(StaticsArrayTy, ConstantStrings));
+		Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
 		llvm::StructType *StaticsListTy = 
 			llvm::StructType::get(PtrToInt8Ty, StaticsArrayTy, (void*)0);
 		llvm::Type *StaticsListPtrTy = llvm::PointerType::getUnqual(StaticsListTy);
@@ -1123,7 +1123,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	//  NULL-terminated list of static object instances (mainly constant strings)
 	Classes.push_back(Statics);
 	Classes.push_back(NULLPtr);
-	llvm::Constant *ClassList = Context.getConstantArray(ClassListTy, Classes);
+	llvm::Constant *ClassList = llvm::ConstantArray::get(ClassListTy, Classes);
 	Elements.push_back(ClassList);
 	// Construct the symbol table 
 	llvm::Constant *SymTab= MakeGlobal(SymTabTy, Elements);
