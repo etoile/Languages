@@ -296,7 +296,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		Builder.CreateAlloca(Int8PtrTy, 0, "exception_pointer");
 
 	Builder.CreateStore(ConstantInt::get(Type::Int1Ty, 0), inException);
-	Builder.CreateStore(CGM->Context.getNullValue(Int8PtrTy), exceptionPtr);
+	Builder.CreateStore(ConstantPointerNull::get(Int8PtrTy), exceptionPtr);
 
 	Type *PtrTy = PointerType::getUnqual(IntegerType::Int8Ty);
 	// Create the context type
@@ -466,7 +466,8 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		}
 		else
 		{
-			Builder.CreateStore(CGM->Context.getNullValue(RetTy), RetVal);
+			Builder.CreateStore(
+				ConstantPointerNull::get(cast<PointerType>(RetTy)), RetVal);
 		}
 	}
 	/// Handle returns
@@ -585,7 +586,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	}
 	else
 	{
-		RetPtr = CGM->Context.getNullValue(PtrTy);
+		RetPtr = ConstantPointerNull::get(cast<PointerType>(PtrTy));
 	}
 
 	Function *EHFunction = cast<Function>(

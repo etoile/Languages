@@ -1026,13 +1026,14 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
 		llvm::StructType *StaticsListTy = 
 			llvm::StructType::get(PtrToInt8Ty, StaticsArrayTy, (void*)0);
-		llvm::Type *StaticsListPtrTy = llvm::PointerType::getUnqual(StaticsListTy);
+		llvm::PointerType *StaticsListPtrTy = 
+			llvm::PointerType::getUnqual(StaticsListTy);
 		Statics = MakeGlobal(StaticsListTy, Elements, ".objc_statics");
 		llvm::ArrayType *StaticsListArrayTy =
 			llvm::ArrayType::get(StaticsListPtrTy, 2);
 		Elements.clear();
 		Elements.push_back(Statics);
-		Elements.push_back(Context.getNullValue(StaticsListPtrTy));
+		Elements.push_back(llvm::ConstantPointerNull::get(StaticsListPtrTy));
 		Statics = MakeGlobal(StaticsListArrayTy, Elements, ".objc_statics_ptr");
 		Statics = llvm::ConstantExpr::getBitCast(Statics, PtrTy);
 	}
