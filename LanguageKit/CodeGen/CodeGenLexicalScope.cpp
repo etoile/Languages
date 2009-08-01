@@ -466,8 +466,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		}
 		else
 		{
-			Builder.CreateStore(
-				ConstantPointerNull::get(cast<PointerType>(RetTy)), RetVal);
+			Builder.CreateStore(Constant::getNullValue(RetTy), RetVal);
 		}
 	}
 	/// Handle returns
