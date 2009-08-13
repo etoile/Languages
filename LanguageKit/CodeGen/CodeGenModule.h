@@ -170,6 +170,17 @@ public:
    * LLVM 'assembly language' instead of bitcode.
    */
 	void writeBitcodeToFile(char* filename, bool isAsm=false);
+   /**
+   * Returns an LLVM type from a type string.
+   */
+   const Type *LLVMTypeFromString(const char * typestr);
+   /**
+   * Returns an LLVM function type from a string.  Sets isSRet if the function
+   * contains a structure which should be returned on the stack.  
+   */
+   llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr,
+   												bool &isSRet,
+   												const Type *&realRetTy);
 };
 // Debugging macros:
 extern "C" {
@@ -187,17 +198,6 @@ extern "C" {
  * that are not needed by LanguageKit (e.g. oneway).
  */
 void SkipTypeQualifiers(const char **typestr);
-/**
- * Returns an LLVM type from a type string.
- */
-const Type *LLVMTypeFromString(const char * typestr);
-/**
- * Returns an LLVM function type from a string.  Sets isSRet if the function
- * contains a structure which should be returned on the stack.  
- */
-llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr,
-                                               bool &isSRet,
-											   const Type *&realRetTy);
 
 
 

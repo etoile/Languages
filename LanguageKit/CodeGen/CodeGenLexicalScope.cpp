@@ -324,7 +324,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	{
 		contextTypes.push_back(IdTy);
 	}
-	StructType *contextType = StructType::get(contextTypes);
+	StructType *contextType = StructType::get(CGM->Context, contextTypes);
 
 	int contextOffset = CONTEXT_VARIABLE_OFFSET;
 
@@ -333,7 +333,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	std::vector<const Type*> frameTypes;
 	frameTypes.push_back(PtrTy);
 	frameTypes.push_back(contextType);
-	StructType *frameType = StructType::get(frameTypes);
+	StructType *frameType = StructType::get(CGM->Context, frameTypes);
 
 	// Create the frame 
 	Value *frame = Builder.CreateAlloca(frameType, 0, "frame");
@@ -447,7 +447,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	}
 
 	// Create a basic block for returns, reached only from the cleanup block
-	const Type *RetTy = LLVMTypeFromString(ReturnType);
+	const Type *RetTy = CGM->LLVMTypeFromString(ReturnType);
 	RetVal = 0;
 	if (RetTy != Type::VoidTy)
 	{
@@ -665,7 +665,7 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 
 	bool isSRet = false;
 	const Type *realReturnType = NULL;
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet,
+	FunctionType *MethodTy = CGM->LLVMFunctionTypeFromString(selTypes, isSRet,
 			realReturnType);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
@@ -696,7 +696,7 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 
 	bool isSRet = false;
 	const Type *realReturnType = NULL;
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(selTypes, isSRet,
+	FunctionType *MethodTy = CGM->LLVMFunctionTypeFromString(selTypes, isSRet,
 			realReturnType);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();

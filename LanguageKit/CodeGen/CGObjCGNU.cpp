@@ -234,6 +234,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 		llvm::PointerType::getUnqual(llvm::Type::Int8Ty);
 	// Get the selector Type.
 	SelStructTy = llvm::StructType::get(
+		  Context,
 		  PtrToInt8Ty,
 		  PtrToInt8Ty,
 		  (void*)0);
@@ -244,7 +245,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	// Object type
 	llvm::PATypeHolder OpaqueObjTy = llvm::OpaqueType::get();
 	llvm::Type *OpaqueIdTy = llvm::PointerType::getUnqual(OpaqueObjTy);
-	IdTy = llvm::StructType::get(OpaqueIdTy, (void*)0);
+	IdTy = llvm::StructType::get(Context, OpaqueIdTy, (void*)0);
 	llvm::cast<llvm::OpaqueType>(OpaqueObjTy.get())->refineAbstractTypeTo(IdTy);
 	IdTy = llvm::cast<llvm::StructType>(OpaqueObjTy.get());
 	IdTy = llvm::PointerType::getUnqual(IdTy);
@@ -402,8 +403,8 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
 	Ivars.push_back(MakeConstantString(Str));
 	Ivars.push_back(ConstantInt::get(IntTy, length));
 	llvm::Constant *ObjCStr = MakeGlobal(
-		llvm::StructType::get(PtrToInt8Ty, PtrToInt8Ty, IntTy, (void*)0),
-		Ivars, ".objc_str");
+		llvm::StructType::get(Context, PtrToInt8Ty, PtrToInt8Ty, IntTy,
+		(void*)0), Ivars, ".objc_str");
 	ConstantStrings.push_back(
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
 	return ObjCStr;
@@ -565,8 +566,8 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 		llvm::FunctionType::get(llvm::Type::VoidTy, impArgTypes, true) :
 		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	// Construct the structure used to look up the IMP
-	llvm::StructType *ObjCSuperTy = llvm::StructType::get(Receiver->getType(),
-		IdTy, (void*)0);
+	llvm::StructType *ObjCSuperTy = llvm::StructType::get(Context,
+		Receiver->getType(), IdTy, (void*)0);
 	llvm::Value *ObjCSuper = Builder.CreateAlloca(ObjCSuperTy);
 	Builder.CreateStore(Receiver, Builder.CreateStructGEP(ObjCSuper, 0));
 	Builder.CreateStore(ReceiverClass, Builder.CreateStructGEP(ObjCSuper, 1));
@@ -671,6 +672,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 {
 	// Get the method structure type.  
 	llvm::StructType *ObjCMethodTy = llvm::StructType::get(
+		Context,
 		PtrToInt8Ty, // Really a selector, but the runtime creates it us.
 		PtrToInt8Ty, // Method types
 		llvm::PointerType::getUnqual(IMPTy), //Method pointer
@@ -702,6 +704,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 	llvm::PATypeHolder OpaqueNextTy = llvm::OpaqueType::get();
 	llvm::Type *NextPtrTy = llvm::PointerType::getUnqual(OpaqueNextTy);
 	llvm::StructType *ObjCMethodListTy = llvm::StructType::get(
+		Context,
 		NextPtrTy, 
 		IntTy, 
 		ObjCMethodArrayTy,
@@ -730,6 +733,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 {
 	// Get the method structure type.  
 	llvm::StructType *ObjCIvarTy = llvm::StructType::get(
+		Context,
 		PtrToInt8Ty,
 		PtrToInt8Ty,
 		IntTy,
@@ -755,7 +759,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		 llvm::cast<llvm::IntegerType>(IntTy), (int)IvarNames.size()));
 	Elements.push_back(llvm::ConstantArray::get(ObjCIvarArrayTy, Ivars));
 	// Structure containing array and array count
-	llvm::StructType *ObjCIvarListTy = llvm::StructType::get(IntTy,
+	llvm::StructType *ObjCIvarListTy = llvm::StructType::get(Context, IntTy,
 		ObjCIvarArrayTy,
 		(void*)0);
 
@@ -779,6 +783,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	// Note:  Several of these are char*s when they should be ids.  This is
 	// because the runtime performs this translation on load.
 	llvm::StructType *ClassTy = llvm::StructType::get(
+		Context,
 		PtrToInt8Ty,        // class_pointer
 		PtrToInt8Ty,        // super_class
 		PtrToInt8Ty,        // name
@@ -826,6 +831,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 {
 	// Get the method structure type.	
 	llvm::StructType *ObjCMethodDescTy = llvm::StructType::get(
+		Context,
 		PtrToInt8Ty, // Really a selector, but the runtime does the casting for us.
 		PtrToInt8Ty,
 		(void*)0);
@@ -843,7 +849,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 			MethodNames.size());
 	llvm::Constant *Array = llvm::ConstantArray::get(ObjCMethodArrayTy, Methods);
 	llvm::StructType *ObjCMethodDescListTy = llvm::StructType::get(
-			IntTy, ObjCMethodArrayTy, (void*)0);
+			Context, IntTy, ObjCMethodArrayTy, (void*)0);
 	Methods.clear();
 	Methods.push_back(ConstantInt::get(IntTy, MethodNames.size()));
 	Methods.push_back(Array);
@@ -857,6 +863,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 	llvm::ArrayType *ProtocolArrayTy = llvm::ArrayType::get(PtrToInt8Ty,
 		Protocols.size());
 	llvm::StructType *ProtocolListTy = llvm::StructType::get(
+		Context,
 		PtrTy, //Should be a recurisve pointer, but it's always NULL here.
 		LongTy,//FIXME: Should be size_t
 		ProtocolArrayTy,
@@ -901,6 +908,7 @@ void CGObjCGNU::GenerateProtocol(
 	// Protocols are objects containing lists of the methods implemented and
 	// protocols adopted.
 	llvm::StructType *ProtocolTy = llvm::StructType::get(
+		Context,
 		IdTy,
 		PtrToInt8Ty,
 		ProtocolList->getType(),
@@ -945,7 +953,7 @@ void CGObjCGNU::GenerateCategory(
 	Elements.push_back(llvm::ConstantExpr::getBitCast(
 		  GenerateProtocolList(Protocols), PtrTy));
 	Categories.push_back(llvm::ConstantExpr::getBitCast(
-		  MakeGlobal(llvm::StructType::get(PtrToInt8Ty, PtrToInt8Ty, PtrTy,
+		  MakeGlobal(llvm::StructType::get(Context, PtrToInt8Ty, PtrToInt8Ty, PtrTy,
 			  PtrTy, PtrTy, (void*)0), Elements), PtrTy));
 }
 void CGObjCGNU::GenerateClass(
@@ -1025,7 +1033,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			".objc_static_class_name"));
 		Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
 		llvm::StructType *StaticsListTy = 
-			llvm::StructType::get(PtrToInt8Ty, StaticsArrayTy, (void*)0);
+			llvm::StructType::get(Context, PtrToInt8Ty, StaticsArrayTy, (void*)0);
 		llvm::PointerType *StaticsListPtrTy = 
 			llvm::PointerType::getUnqual(StaticsListTy);
 		Statics = MakeGlobal(StaticsListTy, Elements, ".objc_statics");
@@ -1041,6 +1049,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	llvm::ArrayType *ClassListTy = llvm::ArrayType::get(PtrToInt8Ty,
 		Classes.size() + Categories.size() + 2);
 	llvm::StructType *SymTabTy = llvm::StructType::get(
+		Context,
 		LongTy,
 		SelectorTy,
 		llvm::Type::Int16Ty,
@@ -1131,7 +1140,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 
 	// The symbol table is contained in a module which has some version-checking
 	// constants
-	llvm::StructType * ModuleTy = llvm::StructType::get(LongTy, LongTy,
+	llvm::StructType * ModuleTy = llvm::StructType::get(Context, LongTy, LongTy,
 		PtrToInt8Ty, llvm::PointerType::getUnqual(SymTabTy), (void*)0);
 	Elements.clear();
 	// Runtime version used for compatibility checking.

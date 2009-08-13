@@ -29,7 +29,7 @@
 namespace llvm 
 {
 	// Flag used to indicate whether exception handling stuff should be emitted.
-	extern bool ExceptionHandling;
+	extern bool DwarfExceptionHandling;
 }
 
 // A copy of the Small Int message module, used when static compiling.
@@ -193,7 +193,7 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
 	// Generate the method function
 	bool isSRet;
 	const Type *realReturnType = NULL;
-	FunctionType *MethodTy = LLVMFunctionTypeFromString(MethodTypes, isSRet,
+	FunctionType *MethodTy = CGM->LLVMFunctionTypeFromString(MethodTypes, isSRet,
 		realReturnType);
 	unsigned argc = MethodTy->getNumParams() - 2;
 	const Type *argTypes[argc];
@@ -326,8 +326,8 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
-	llvm::StructType* CtorStructTy = llvm::StructType::get(llvm::Type::Int32Ty,
-		init->getType(), NULL);
+	llvm::StructType* CtorStructTy = llvm::StructType::get(Context,
+		llvm::Type::Int32Ty, init->getType(), NULL);
 
 	std::vector<llvm::Constant*> Ctors;
 
@@ -404,7 +404,7 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
-		ExceptionHandling = true;
+		DwarfExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
 	}

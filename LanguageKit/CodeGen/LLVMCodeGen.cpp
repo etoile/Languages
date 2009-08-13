@@ -42,7 +42,7 @@ const char *MsgSendSmallIntFilename;
 Constant *Zeros[2];
 
 
-static const Type *LLVMTypeFromString2(const char ** typestr)
+static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** typestr)
 {
 	// FIXME: Other function type qualifiers
 	SkipTypeQualifiers(typestr);
@@ -80,7 +80,7 @@ static const Type *LLVMTypeFromString2(const char ** typestr)
 		case '^':
 		{
 			(*typestr)++;
-			const Type *pointeeType = LLVMTypeFromString2(typestr);
+			const Type *pointeeType = LLVMTypeFromString2(Context, typestr);
 			if (pointeeType == Type::VoidTy)
 			{
 				pointeeType = Type::Int8Ty;
@@ -106,10 +106,10 @@ static const Type *LLVMTypeFromString2(const char ** typestr)
 			while (**typestr != '}')
 			{
 				// FIXME: Doesn't work with nested structs
-				types.push_back(LLVMTypeFromString2(typestr));
+				types.push_back(LLVMTypeFromString2(Context, typestr));
 			}
 			(*typestr)++;
-			return StructType::get(types);
+			return StructType::get(Context, types);
 		}
 		default:
 		//FIXME: Structure and array types
@@ -117,9 +117,9 @@ static const Type *LLVMTypeFromString2(const char ** typestr)
 	}
 }
 
-const Type *LLVMTypeFromString(const char * typestr)
+const Type *CodeGenModule::LLVMTypeFromString(const char * typestr)
 {
-	return LLVMTypeFromString2(&typestr);
+	return LLVMTypeFromString2(Context, &typestr);
 }
 
 #define NEXT(typestr) \
@@ -186,7 +186,7 @@ static inline bool shouldReturnValueOnStack(const Type *sTy)
 	return false;
 }
 
-FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet,
+FunctionType *CodeGenModule::LLVMFunctionTypeFromString(const char *typestr, bool &isSRet,
 		const Type *&realRetTy)
 {
 	std::vector<const Type*> ArgTypes;
@@ -204,7 +204,7 @@ FunctionType *LLVMFunctionTypeFromString(const char *typestr, bool &isSRet,
 	realRetTy = ReturnTy;
 	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ReturnTy)
 		&&                              
-		ReturnTy == StructType::get(Type::FloatTy, Type::FloatTy, NULL))
+		ReturnTy == StructType::get(Context, Type::FloatTy, Type::FloatTy, NULL))
 	{   
 		isSRet = false;
 		ReturnTy = Type::Int64Ty;
