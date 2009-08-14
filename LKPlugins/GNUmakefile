@@ -18,6 +18,7 @@ export  commentsToLogs ?= yes
 ifeq ($(commentsToLogs), yes)
 	SUBPROJECTS += CommentsToLogs
 	SUBPROJECTS += LowerIfTrue
+	SUBPROJECTS += LowerIfResponds
 endif
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
