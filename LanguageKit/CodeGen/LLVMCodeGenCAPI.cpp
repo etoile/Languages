@@ -18,11 +18,11 @@ void LLVMinitialise(const char *bcFilePath)
 	LLVMLinkInJIT();
 
 	MsgSendSmallIntFilename = strdup(bcFilePath);
-	IdTy = PointerType::getUnqual(Type::Int8Ty);
-	IntTy = IntegerType::get(sizeof(int) * 8);
-	IntPtrTy = IntegerType::get(sizeof(void*) * 8);
+	IdTy = PointerType::getUnqual(Type::getInt8Ty(llvm::getGlobalContext()));
+	IntTy = IntegerType::get(llvm::getGlobalContext(), sizeof(int) * 8);
+	IntPtrTy = IntegerType::get(llvm::getGlobalContext(), sizeof(void*) * 8);
 	Zeros[0] = Zeros[1] = 
-		ConstantInt::get(llvm::Type::Int32Ty, 0);
+		ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), 0);
 	//FIXME: 
 	SelTy = IntPtrTy;
 	std::vector<const Type*> IMPArgs;

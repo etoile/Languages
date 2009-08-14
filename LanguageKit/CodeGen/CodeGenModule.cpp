@@ -42,7 +42,7 @@ Constant *CodeGenModule::MakeConstantString(const std::string &Str,
                                             const std::string &Name,
                                             unsigned GEPs)
 {
-	Constant * ConstStr = llvm::ConstantArray::get(Str);
+	Constant * ConstStr = llvm::ConstantArray::get(Context, Str);
 	ConstStr = new GlobalVariable(*TheModule, ConstStr->getType(), true,
 		GlobalValue::InternalLinkage, ConstStr, Name);
 	return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
@@ -90,15 +90,15 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit)
 	}
 	std::vector<const llvm::Type*> VoidArgs;
 	LiteralInitFunction = llvm::Function::Create(
-		llvm::FunctionType::get(llvm::Type::VoidTy, VoidArgs, false),
+		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), VoidArgs, false),
 		llvm::GlobalValue::ExternalLinkage, string("__languagekit_constants_") +
 		ModuleName, TheModule);
 	BasicBlock *EntryBB = 
-		llvm::BasicBlock::Create("entry", LiteralInitFunction);
+		llvm::BasicBlock::Create(Context, "entry", LiteralInitFunction);
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 
 	Runtime = CreateObjCRuntime(*TheModule, Context, IntTy,
-			IntegerType::get(sizeof(long) * 8));
+			IntegerType::get(Context, sizeof(long) * 8));
 	// Store the class to be used for block closures in a global
 	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
 	CreateClassPointerGlobal("StackContext", ".smalltalk_context_stack_class");
@@ -327,17 +327,17 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
 	llvm::StructType* CtorStructTy = llvm::StructType::get(Context,
-		llvm::Type::Int32Ty, init->getType(), NULL);
+		llvm::Type::getInt32Ty(Context), init->getType(), NULL);
 
 	std::vector<llvm::Constant*> Ctors;
 
 	std::vector<llvm::Constant*> S;
-	S.push_back(ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(ConstantInt::get(llvm::Type::getInt32Ty(Context), 0xffff, false));
 	S.push_back(init);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 	// Add the constant initialisation function
 	S.clear();
-	S.push_back(ConstantInt::get(llvm::Type::Int32Ty, 0xffff, false));
+	S.push_back(ConstantInt::get(llvm::Type::getInt32Ty(Context), 0xffff, false));
 	S.push_back(LiteralInitFunction);
 	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
 

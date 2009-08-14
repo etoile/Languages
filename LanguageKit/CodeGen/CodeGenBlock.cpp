@@ -23,7 +23,7 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 		Mod->Context,
 		IdTy,                          // 0 - isa.
 		IMPTy,                         // 1 - Function pointer.
-		Type::Int32Ty,                 // 2 - Number of args.
+		Type::getInt32Ty(Mod->Context),// 2 - Number of args.
 		enclosingContext->getType(),   // 3 - Context.
 		(void*)0);
 	std::vector<const Type*> argTy;
@@ -61,7 +61,7 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 		MethodBuilder->CreateBitCast(CurrentFunction, IMPTy), 1);
 	// Store the number of arguments
 	storeInStruct(MethodBuilder, Block, 
-			ConstantInt::get(Type::Int32Ty, args), 2);
+			ConstantInt::get(Type::getInt32Ty(Mod->Context), args), 2);
 	// Set the context
 	storeInStruct(MethodBuilder, Block, enclosingScope->getContext(), 3);
 
@@ -77,7 +77,7 @@ void CodeGenBlock::SetParentScope(void)
 void CodeGenBlock::SetReturn(Value* RetVal)
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();
-	Runtime->GenerateMessageSend(Builder, Type::VoidTy, false, NULL, ScopeSelf,
+	Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, ScopeSelf,
 		Runtime->GetSelector(Builder, "nonLocalReturn:", 0), &RetVal, 1, ExceptionBB);
 }
 

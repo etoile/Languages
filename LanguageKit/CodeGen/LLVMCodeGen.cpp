@@ -51,39 +51,39 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 		case 'c':
 		case 'C':
 			(*typestr)++;
-			return IntegerType::get(sizeof(char) * 8);
+			return IntegerType::get(Context, sizeof(char) * 8);
 		case 's':
 		case 'S':
 			(*typestr)++;
-			return IntegerType::get(sizeof(short) * 8);
+			return IntegerType::get(Context, sizeof(short) * 8);
 		case 'i':
 		case 'I':
 			(*typestr)++;
-			return IntegerType::get(sizeof(int) * 8);
+			return IntegerType::get(Context, sizeof(int) * 8);
 		case 'l':
 		case 'L':
 			(*typestr)++;
-			return IntegerType::get(sizeof(long) * 8);
+			return IntegerType::get(Context, sizeof(long) * 8);
 		case 'q':
 		case 'Q':
 			(*typestr)++;
-			return IntegerType::get(sizeof(long long) * 8);
+			return IntegerType::get(Context, sizeof(long long) * 8);
 		case 'f':
 			(*typestr)++;
-			return Type::FloatTy;
+			return Type::getFloatTy(Context);
 		case 'd':
 			(*typestr)++;
-			return Type::DoubleTy;
+			return Type::getDoubleTy(Context);
 		case 'B':
 			(*typestr)++;
-			return IntegerType::get(sizeof(bool) * 8);
+			return IntegerType::get(Context, sizeof(bool) * 8);
 		case '^':
 		{
 			(*typestr)++;
 			const Type *pointeeType = LLVMTypeFromString2(Context, typestr);
-			if (pointeeType == Type::VoidTy)
+			if (pointeeType == Type::getVoidTy(Context))
 			{
-				pointeeType = Type::Int8Ty;
+				pointeeType = Type::getInt8Ty(Context);
 			}
 			return PointerType::getUnqual(pointeeType);
 		}
@@ -93,10 +93,10 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 		case '#':
 		case '*':
 			(*typestr)++;
-			return PointerType::getUnqual(Type::Int8Ty);
+			return PointerType::getUnqual(Type::getInt8Ty(Context));
 		case 'v':
 			(*typestr)++;
-			return Type::VoidTy;
+			return Type::getVoidTy(Context);
 		case '{':
 		{
 			while (**typestr != '=') { 
@@ -204,10 +204,10 @@ FunctionType *CodeGenModule::LLVMFunctionTypeFromString(const char *typestr, boo
 	realRetTy = ReturnTy;
 	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ReturnTy)
 		&&                              
-		ReturnTy == StructType::get(Context, Type::FloatTy, Type::FloatTy, NULL))
+		ReturnTy == StructType::get(Context, Type::getFloatTy(Context), Type::getFloatTy(Context), NULL))
 	{   
 		isSRet = false;
-		ReturnTy = Type::Int64Ty;
+		ReturnTy = Type::getInt64Ty(Context);
 	}
 	NEXT(typestr);
 	while(*typestr)
