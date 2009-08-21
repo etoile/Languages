@@ -1,4 +1,6 @@
 #include <dlfcn.h>
+#include <unistd.h>
+
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LKAST.h"
 #import "LKCategory.h"
@@ -322,6 +324,7 @@ static NSString *loadFramework(NSString *framework)
 		if (fork() == 0)
 		{
 			[self justTooLateCompileBundle: bundle];
+			exit(0);
 		}
 	}
 	if (!success)
