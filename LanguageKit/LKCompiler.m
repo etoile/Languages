@@ -314,6 +314,7 @@ static NSString *loadFramework(NSString *framework)
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
 	if (!(success = loadAnyLibraryForBundle(bundle, recentModificationDate)))
 	{
+		success = YES;
 		FOREACH(sourceFiles, source, NSString*)
 		{
 			success &= [self loadScriptNamed: source fromBundle: bundle];
