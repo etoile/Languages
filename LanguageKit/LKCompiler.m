@@ -304,8 +304,9 @@ static NSString *loadFramework(NSString *framework)
 	BOOL success = YES;
 	FOREACH(frameworks, framework, NSString*)
 	{
-		NSString *path = nil;
-		success &= (nil == (path = loadFramework(framework)));
+		NSString *path = loadFramework(framework);
+		BOOL isLoaded = (nil != path);
+		success &= isLoaded;
 		[frameworkPaths addObject: path];
 	}
 	NSDate *recentModificationDate = mostRecentModificationDate(frameworkPaths);
