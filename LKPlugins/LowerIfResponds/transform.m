@@ -23,6 +23,13 @@
 	}
 
 	receiver = [msgSend target];
+	// Don't run the transform on message send intermediates, or we get some
+	// double-evaluation.  This ideally needs fixing in LK to allow
+	// intermediates to be reused.
+	if ([receiver isKindOfClass: [LKMessageSend class]])
+	{
+		return aNode;
+	}
 
 	LKMessageSend *condition = 
 		[LKMessageSend messageWithSelectorName: @"respondsToSelector:"];
