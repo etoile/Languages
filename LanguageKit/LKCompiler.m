@@ -319,9 +319,10 @@ static NSString *loadFramework(NSString *framework)
 		{
 			success &= [self loadScriptNamed: source fromBundle: bundle];
 		}
-		[NSThread detachNewThreadSelector: @selector(justTooLateCompileBundle:)
-		                         toTarget: self
-		                       withObject: bundle];
+		if (fork() == 0)
+		{
+			[self justTooLateCompileBundle: bundle];
+		}
 	}
 	if (!success)
 	{
