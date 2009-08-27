@@ -1,5 +1,6 @@
 #include <dlfcn.h>
 #include <unistd.h>
+#include <sys/resource.h>
 
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LKAST.h"
@@ -321,8 +322,11 @@ static NSString *loadFramework(NSString *framework)
 		{
 			success &= [self loadScriptNamed: source fromBundle: bundle];
 		}
+		// Spawn a new process to do the background JTL compile.
 		if (fork() == 0)
 		{
+			// Make the child process really, really, low priority.
+			setpriority(PRIO_PROCESS, 0, 20);
 			[self justTooLateCompileBundle: bundle];
 			exit(0);
 		}

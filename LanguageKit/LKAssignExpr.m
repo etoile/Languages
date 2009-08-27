@@ -29,7 +29,7 @@ static char *ReleaseTypes;
 }
 - (id) initWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(target, aTarget);
 	ASSIGN(expr, expression);
 	return self;

@@ -7,7 +7,7 @@
                                 then:(NSArray*)thenClause
                                 else:(NSArray*)elseClause
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(condition, aCondition);
 	thenStatements = [thenClause mutableCopy];
 	elseStatements = [elseClause mutableCopy];

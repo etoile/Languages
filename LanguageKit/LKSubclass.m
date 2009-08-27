@@ -9,7 +9,7 @@
               ivars:(NSArray*)anIvarList
             methods:(NSArray*)aMethodList
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(classname, aName);
 	ASSIGN(superclass, aClass);
 	ASSIGN(ivars, anIvarList);

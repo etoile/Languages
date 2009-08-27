@@ -3,7 +3,7 @@
 @implementation LKLiteral
 - (id) initWithString:(NSString*)aString
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(value, aString);
 	return self;
 }

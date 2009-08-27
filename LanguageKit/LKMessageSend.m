@@ -22,7 +22,7 @@
 }
 - (id) initWithSelectorName:(NSString*)aSelector
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(selector, aSelector);
 	return self;
 }

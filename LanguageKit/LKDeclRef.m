@@ -7,7 +7,7 @@
 @implementation LKDeclRef
 - (id) initWithSymbol:(NSString*)sym
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(symbol, sym);
 	return self;
 }

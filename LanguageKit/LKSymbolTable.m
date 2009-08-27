@@ -39,7 +39,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
                                 next:(int) next 
                               inZone:(NSZone*)aZone
 {
-	SELFINIT;
+	SUPERINIT;
 	instanceVariables = NSCopyMapTableWithZone(map, aZone);
 	nextOffset = next;
 	return self;

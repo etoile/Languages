@@ -8,7 +8,7 @@
 }
 - (id) initWithElements:(NSArray*)anArray
 {
-	SELFINIT;
+	SUPERINIT;
 	elements = [anArray mutableCopy];
 	return self;
 }

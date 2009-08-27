@@ -4,7 +4,7 @@
 - (LKCompare*) initWithLeftExpression: (LKAST*)expr1
                       rightExpression: (LKAST*)expr2;
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(lhs, expr1);
 	ASSIGN(rhs, expr2);
 	return self;

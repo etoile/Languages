@@ -3,7 +3,7 @@
 @implementation LKComment
 - (LKComment*) initWithString:(NSString*)aString
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(comment, aString);
 	return self;
 }

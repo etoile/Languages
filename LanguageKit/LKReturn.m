@@ -7,7 +7,7 @@
 }
 - (id) initWithExpr:(LKAST*)anExpression
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(ret, anExpression);
 	return self;
 }

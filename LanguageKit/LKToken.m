@@ -6,7 +6,7 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 @implementation LKToken
 - (LKToken*) initWithRange:(NSRange)aRange inSource:(NSString*)aString
 {
-	SELFINIT;
+	SUPERINIT;
 	charAtIndex = (CIMP)[aString methodForSelector:@selector(characterAtIndex:)];
 	ASSIGN(source, aString);
 	range = aRange;

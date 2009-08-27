@@ -5,7 +5,7 @@
 @implementation LKVariableDecl
 - (LKVariableDecl*) initWithName: (LKToken*) declName
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(variableName, declName);
 	return self;
 }

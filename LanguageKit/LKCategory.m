@@ -5,7 +5,7 @@
               class:(NSString*)aClass
             methods:(NSArray*)aMethodList
 {
-	SELFINIT;
+	SUPERINIT;
 	ASSIGN(classname, aClass);
 	ASSIGN(categoryName, aName);
 	ASSIGN(methods, aMethodList);
