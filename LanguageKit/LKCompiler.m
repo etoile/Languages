@@ -300,21 +300,36 @@ static NSString *loadFramework(NSString *framework)
 {
 	//TODO: Static compile and cache the result in a .so, and load this on
 	// subsequent runs
-	NSString *path = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
-	NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile:path];
+	NSString *plistPath = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
+	NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile:plistPath];
 	NSArray *frameworks = [plist objectForKey:@"Frameworks"];
-	NSMutableArray *frameworkPaths = [NSMutableArray array];
+	NSMutableArray *pathsToCheckDateOf = [NSMutableArray array];
+	[pathsToCheckDateOf addObject: plistPath];
 	BOOL success = YES;
 	FOREACH(frameworks, framework, NSString*)
 	{
 		NSString *path = loadFramework(framework);
 		BOOL isLoaded = (nil != path);
 		success &= isLoaded;
-		[frameworkPaths addObject: path];
+		if (isLoaded)
+		{
+			[pathsToCheckDateOf addObject: path];
+		}
 	}
-	NSDate *recentModificationDate = mostRecentModificationDate(frameworkPaths);
-	// TODO: Specify a set of AST transforms to apply.
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
+	FOREACH(sourceFiles, source, NSString*)
+	{
+		NSString *path = [bundle pathForResource: [source stringByDeletingPathExtension]
+		                                  ofType: [source pathExtension]];
+		BOOL isSourceFound = (nil != path);
+		success &= isSourceFound;
+		if (isSourceFound)
+		{
+			[pathsToCheckDateOf addObject: path];
+		}
+	}
+	NSDate *recentModificationDate = mostRecentModificationDate(pathsToCheckDateOf);
+	// TODO: Specify a set of AST transforms to apply.
 	if (!(success = loadAnyLibraryForBundle(bundle, recentModificationDate)))
 	{
 		success = YES;
