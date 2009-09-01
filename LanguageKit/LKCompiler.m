@@ -191,7 +191,7 @@ static void emitParseError(NSException *localException)
 			line, kLKSourceLine,
 			[NSString stringWithFormat: @"Parse error on line %@.  "
 				"Unexpected token at character %@ while parsing:\n%@", 
-				lineNumber, character, line]);
+				lineNumber, character, line], kLKHumanReadableDesciption);
 	[LKCompiler reportError: LKParserError
 	                details: parseErrorInfo];
 }
