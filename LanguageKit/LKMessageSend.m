@@ -217,7 +217,7 @@
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	id target = [receiver compileWithGenerator: aGenerator];
-	id result;
+	id result = nil;
 	FOREACH(messages, message, LKMessageSend*)
 	{
 		result = [message compileWithGenerator: aGenerator forTarget:target];
