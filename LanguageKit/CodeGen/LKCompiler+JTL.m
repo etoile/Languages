@@ -91,7 +91,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 @implementation LKCompiler (LLVM_JTL)
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle
 {
-	STACK NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	STACK_SCOPED NSAutoreleasePool *pool = [NSAutoreleasePool new];
 	[NSThread setThreadPriority: 0];
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSString *tempDirectory = [fm tempDirectory];
