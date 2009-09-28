@@ -1,8 +1,16 @@
+" -[URLProtectionSpace port] returns an int, -[NSURL port] return an object "
+
+"<< types = '{ port = i8@0:4; }' >>"
+"<< types = '{ port = @8@0:4; }' >>"
+
 NSObject subclass: SmalltalkTool [
 	 run [
-		| nsnumber int |
-		int := NSURLProtectionSpace new port. "Returns an int, should be boxed to SmallInt"
-		nsnumber := NSURL new port.	"Returns NSNumber (object)"
-		ETTranscript show: (int class == nsnumber class).	"Should not crash"
+		| urlProtectionSpace url |
+		urlProtectionSpace := NSURLProtectionSpace alloc initWithHost:'' port:42 protocol:'' realm:'' authenticationMethod:''.
+		url := NSURL alloc initWithString: 'http://www.etoileos.com:12345'.
+
+		ETTranscript show: urlProtectionSpace port;
+			cr;
+			show: url port. 
 	 ]
 ]
