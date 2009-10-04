@@ -42,7 +42,7 @@ LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
 
 LD = g++
 
-${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc
+${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc MsgSendSmallInt64.bc
 
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make

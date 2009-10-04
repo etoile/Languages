@@ -10,15 +10,29 @@ static const char *path;
 {
 	if (self == [LLVMCodeGen class])
 	{
-		NSFileManager *f = [NSFileManager defaultManager];
-		if ([f fileExistsAtPath: @"MsgSendSmallInt.bc"])
+		NSString *SmallIntFileName; 
+
+		// Check whether the 64 or 32bit version of the small integer bitcode
+		// is required:
+		if (sizeof(void*) == 8)
 		{
-			SmallIntFile = @"MsgSendSmallInt.bc";
+			SmallIntFileName = @"MsgSendSmallInt64";
+		}
+		else
+		{
+			SmallIntFileName = @"MsgSendSmallInt";
+		}
+		NSString *SmallIntFullName = [SmallIntFileName stringByAppendingString: @".bc"];
+
+		NSFileManager *f = [NSFileManager defaultManager];
+		if ([f fileExistsAtPath: SmallIntFullName])
+		{
+			SmallIntFile = SmallIntFullName;
 		}
 		else 
 		{
 			SmallIntFile = [[[NSBundle bundleForClass:self] 
-				pathForResource: @"MsgSendSmallInt" ofType: @"bc"] retain];
+				pathForResource: SmallIntFileName ofType: @"bc"] retain];
 		}
 			path = [SmallIntFile UTF8String];
 		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc."
