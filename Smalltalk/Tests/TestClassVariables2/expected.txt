@@ -1,0 +1,2 @@
+Class initialisation
+Object initialisation (42)
