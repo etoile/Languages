@@ -11,6 +11,6 @@ NSObject subclass: SmalltalkTool [
 
 		ETTranscript show: urlProtectionSpace port;
 			cr;
-			show: url port. 
+			show: url port; cr. 
 	 ]
 ]
