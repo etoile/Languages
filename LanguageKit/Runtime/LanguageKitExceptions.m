@@ -58,7 +58,7 @@ static const _Unwind_Action _UA_FORCE_UNWIND = 8;
  * Thread-local LanguageKit exception object.  Could be allocated with
  * malloc/free, but not really worth it.
  */
-__thread struct 
+typedef struct 
 {
 	/** The unwinding lib's exception object. */
 	struct _Unwind_Exception exception;
@@ -66,7 +66,7 @@ __thread struct
 	void *context;
 	/** The value to be returned.  */
 	void *retval;
-} LanguageKitException;
+} LKException;
 
 /** 
  * Read an unsigned, little-endian, base-128, DWARF value.  Updates *data to
@@ -176,14 +176,27 @@ _Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
 	return _URC_CONTINUE_UNWIND;
 }
 
+static void LKCleanupException(_Unwind_Reason_Code reason, void *exc)
+{
+	LKException *exception = exc;
+	// Autorelease the object in the current pool to make sure it doesn't leak
+	if ((((uintptr_t)exception->retval) & 1) == 0)
+	{
+		[(id)exception->retval autorelease];
+	}
+	free(exc);
+}
+
 /**
  * Create an exception object that will be unwound to the frame containing
  * context, return retval.
  */
 void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
 {
-	LanguageKitException.exception.exception_class = *(uint64*)"ETOILEST";
-	LanguageKitException.context = context;
+	LKException *exception = calloc(1, sizeof(LKException));
+	exception->exception.exception_class = *(uint64*)"ETOILEST";
+	exception->context = context;
+	exception->exception.exception_cleanup = LKCleanupException;
 	// TODO: We could probably have the return value space allocated in the
 	// top-level method frame, and then it could be written there directly from
 	// the block.
@@ -193,8 +206,8 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
 	{
 		retval = [(id)retval retain];
 	}
-	LanguageKitException.retval = retval;
-	_Unwind_RaiseException(&LanguageKitException.exception);
+	exception->retval = retval;
+	_Unwind_RaiseException(&exception->exception);
 }
 
 /**
@@ -208,16 +221,17 @@ char __LanguageKitTestNonLocalReturn(void *context,
 								   void **retval)
 {
 	// Test if this is a smalltalk exception at all
-	if (exception == &LanguageKitException.exception)
+	if (exception->exception_class == *(uint64*)"ETOILEST")
 	{
+		LKException *LanguageKitException = (LKException*)exception;
 		// Test if this frame is the correct one.
-		if (LanguageKitException.context == context)
+		if (LanguageKitException->context == context)
 		{
-			*retval = LanguageKitException.retval;
+			*retval = LanguageKitException->retval;
 			return 1;
 		}
 		// Rethrow it if it isn't.
-		_Unwind_RaiseException(&LanguageKitException.exception);
+		_Unwind_RaiseException(exception);
 	}
 	// This does not return, it jumps back to the unwind library, which jumps
 	// to the LanguageKit personality function, and proceeds to unwind the stack.
