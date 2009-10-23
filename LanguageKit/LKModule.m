@@ -1,8 +1,29 @@
 #import "LKModule.h"
+#import <EtoileFoundation/runtime.h>
 
+/**
+ * Maps method names to type encodings, gathered by iterating through all
+ * methods in all classes. Needed only on the Mac runtime, which
+ * doesn't have a function for looking up the types given a selector.
+ */
+static NSMutableDictionary *Types = nil;
 static NSMutableDictionary *SelectorConflicts = nil;
 NSString *LKCompilerDidCompileNewClassesNotification = 
 	@"LKCompilerDidCompileNewClassesNotification";
+
+
+#if defined(GNU_RUNTIME)
+static const char *TypesForMethodName(NSString *methodName)
+{
+	return sel_get_type(sel_get_any_typed_uid([methodName UTF8String]));
+}
+#else
+static const char *TypesForMethodName(NSString *methodName)
+{
+	return [[Types objectForKey:methodName] UTF8String];
+}
+#endif
+
 
 @implementation LKModule 
 + (void) initialize
@@ -12,42 +33,52 @@ NSString *LKCompilerDidCompileNewClassesNotification =
 		return;
 	}
 	// Look up potential selector conflicts.
-	void *state = NULL;
-	Class class;
-	NSMutableDictionary *types = [NSMutableDictionary new];
+	Types = [NSMutableDictionary new];
 	SelectorConflicts = [NSMutableDictionary new];
-	while (Nil != (class = objc_next_class(&state)))
+	
+	unsigned int numClasses = objc_getClassList(NULL, 0);
+	Class *classes = NULL;
+	if (numClasses > 0 )
 	{
-		struct objc_method_list *methods = class->methods;
-		while (methods != NULL)
+		classes = malloc(sizeof(Class) * numClasses);
+		numClasses = objc_getClassList(classes, numClasses);
+	}
+	
+	for (unsigned int classIndex=0; classIndex<numClasses; classIndex++)
+	{
+		unsigned int methodCount;
+		Method *methods = class_copyMethodList(classes[classIndex], &methodCount);
+		for (unsigned int i=0 ; i<methodCount ; i++)
 		{
-			for (unsigned int i=0 ; i<methods->method_count ; i++)
-			{
-				Method *m = &methods->method_list[i];
+			Method m = methods[i];
 
-				NSString *name =
-				   	[NSString stringWithCString:sel_get_name(m->method_name)];
-				NSString *type = [NSString stringWithCString:m->method_types];
-				NSString *oldType = [types objectForKey:name];
-				if (oldType == nil)
+			NSString *name =
+				[NSString stringWithCString: sel_getName(method_getName(m))];
+			NSString *type =
+				[NSString stringWithCString: method_getTypeEncoding(m)];
+			NSString *oldType = [Types objectForKey:name];
+			if (oldType == nil)
+			{
+				[Types setObject:type forKey:name];
+			}
+			else
+			{
+				if (![type isEqualToString:oldType])
 				{
-					[types setObject:type forKey:name];
-				}
-				else
-				{
-					if (![type isEqualToString:oldType])
-					{
-						[SelectorConflicts setObject:oldType forKey:name];
-					}
+					[SelectorConflicts setObject:oldType forKey:name];
 				}
 			}
-			methods = methods->method_next;
 		}
 	}
+	
+	if (numClasses > 0 && NULL != classes)
+	{
+		free(classes);
+	}
+	
 	// Little hack to make the default sensible for count.  Should really be
 	// loaded from a plist.
 	[SelectorConflicts setObject:@"I8@0:4" forKey:@"count"];
-	[types release];
 }
 + (id) module
 {
@@ -106,8 +137,11 @@ NSString *LKCompilerDidCompileNewClassesNotification =
 				methodName, type);
 		return [type UTF8String];
 	}
-	// Otherwise, grab the type from the runtime
-	const char *types = sel_get_type(sel_get_any_typed_uid([methodName UTF8String]));
+	// Otherwise, grab the type from the runtime (for the GNU runtime)
+	// or from the mapping set up in +initialize (for the Mac runtime)
+	
+	const char *types = TypesForMethodName(methodName);
+	
 	if (NULL == types) 
 	{
 		int argCount = 0;

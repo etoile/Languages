@@ -1,5 +1,10 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 
+// HACK: Foundation.h on OS X defines true and false, which conflicts with the
+// method branchOnCondition:true:false: in this class
+#undef true
+#undef false
+
 /**
  * Code generator protocol.  Each AST node calls methods in a class conforming
  * to this protocol.  Methods which return a value return a pointer to a

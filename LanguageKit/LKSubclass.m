@@ -1,6 +1,7 @@
 #import "LKSubclass.h"
 #import "LKCompiler.h"
 #import "LKCompilerErrors.h"
+#import "LKModule.h"
 
 @implementation LKSubclass
 - (id) initWithName:(NSString*)aName
@@ -143,14 +144,14 @@
 	// Create dealloc method
 	if ([ivars count] > 0)
 	{
-		const char* deallocty = sel_get_type(sel_get_any_typed_uid("dealloc"));
+		const char* deallocty = [[self module] typeForMethod: @"dealloc"];
 
 		[aGenerator beginInstanceMethod: "dealloc"
 		                      withTypes: deallocty
 		                         locals: NULL
 		                          count: 0];
 		void *selfptr = [aGenerator loadSelf];
-		const char* releasety = sel_get_type(sel_get_any_typed_uid("release"));
+		const char* releasety = [[self module] typeForMethod: @"release"];
 		for (unsigned i=0 ; i<[ivars count] ; i++)
 		{
 			void *ivar = [aGenerator loadValueOfType:@"@"

@@ -3,6 +3,7 @@
 #include <time.h>
 #include <sys/resource.h>
 #import <LanguageKit/LanguageKit.h>
+#import <LanguageKit/LKInterpreter.h>
 
 @implementation NSObject (DumpObject)
 - (void) dumpObject
@@ -72,7 +73,7 @@ static void  applyTransforms(LKAST* anAST)
 	}
 }
 
-static BOOL jitScript(NSString *script, NSString *extension)
+static BOOL jitScript(NSString *script, NSString *extension, BOOL interpret)
 {
 	NS_DURING
 		LKAST *ast = parseScript(script, extension);
@@ -81,7 +82,22 @@ static BOOL jitScript(NSString *script, NSString *extension)
 			NS_VALUERETURN(NO, BOOL);
 		}
 		applyTransforms(ast);
-		[ast compileWithGenerator: defaultJIT()];
+		if (NO == interpret)
+		{
+			id codeGenerator = defaultJIT();
+			if (nil != codeGenerator)
+			{
+				[ast compileWithGenerator: codeGenerator];
+			}
+			else
+			{
+				[ast interpretInContext: nil];
+			}
+		}
+		else
+		{
+			[ast interpretInContext: nil];
+		}
 	NS_HANDLER
 		NSLog(@"%@", localException);
 		return NO;
@@ -107,16 +123,14 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 	return YES;
 }
 
-extern int *LanguageKitStackTopAddress;
 int main(int argc, char **argv)
 {
 	int a;
-	LanguageKitStackTopAddress = &a;
 	[NSAutoreleasePool new];
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];
 
-	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:i", argc, argv);
 	NSString *bundle = [opts objectForKey:@"b"];
 	if (nil != bundle)
 	{
@@ -198,7 +212,8 @@ int main(int argc, char **argv)
 	}
 	// JIT compile and run
 	clock_t c1 = clock();
-	if (!jitScript(Program, extension))
+	BOOL onlyInterpret = [[opts objectForKey:@"i"] boolValue];
+	if (!jitScript(Program, extension, onlyInterpret))
 	{
 		NSLog(@"Failed to compile input.");
 		return 2;

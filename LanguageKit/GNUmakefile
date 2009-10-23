@@ -25,6 +25,9 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKCompiler.m\
 	LKCompilerErrors.m\
 	LKDeclRef.m\
+	LKInterpretedBlockClosure.m\
+	LKInterpreter.m\
+	LKInterpreterRuntime.m\
 	LKIfStatement.m\
 	LKLiteral.m\
 	LKMessageSend.m\
@@ -35,6 +38,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKSymbolRef.m\
 	LKSymbolTable.m\
 	LKToken.m\
+	LKTypeHelpers.m\
 	LKVariableDecl.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
@@ -50,6 +54,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKCompiler.h\
 	LKCompilerErrors.h\
 	LKDeclRef.h\
+	LKInterpreter.h\
 	LKIfStatement.h\
 	LKLiteral.h\
 	LKMessageSend.h\
@@ -60,6 +65,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKSymbolRef.h\
 	LKSymbolTable.h\
 	LKToken.h\
+	LKTypeHelpers.h\
 	LKVariableDecl.h\
 	LanguageKit.h
 

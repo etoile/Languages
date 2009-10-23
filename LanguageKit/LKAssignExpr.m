@@ -1,27 +1,10 @@
 #import "LKAssignExpr.h"
 #import "LKDeclRef.h"
 
-static char *RetainTypes;
-static char *ReleaseTypes;
-@interface NSMethodSignature (TypeEncodings)
-- (const char*) _methodTypes;
-@end
-@implementation NSMethodSignature (TypeEncodings)
-- (const char*) _methodTypes
-{
-	return _methodTypes;
-}
-@end
 @implementation LKAssignExpr
 + (void) initialize
 {
 	if (self != [LKAssignExpr class]) { return; }
-	RetainTypes = 
-		strdup([[NSObject instanceMethodSignatureForSelector:@selector(retain)]
-		        _methodTypes]);
-	ReleaseTypes = 
-		strdup([[NSObject instanceMethodSignatureForSelector:@selector(release)]
-		        _methodTypes]);
 }
 + (id) assignWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression
 {

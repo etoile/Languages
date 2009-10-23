@@ -1,6 +1,8 @@
 #import <Foundation/NSObject.h>
 @class NSBundle;
 @class NSString;
+@class NSArray;
+@class NSDictionary;
 @class LKModule;
 @class LKMethod;
 @protocol LKCodeGenerator;

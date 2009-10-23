@@ -9,6 +9,9 @@
    */
 	mpz_t v;
 }
++ (BigInt*) bigIntWithCString:(const char*) aString;
 + (BigInt*) bigIntWithLongLong:(long long)aVal;
++ (BigInt*) bigIntWithLong:(long)aVal;
++ (BigInt*) bigIntWithUnsignedLong:(unsigned long)aVal;
 + (BigInt*) bigIntWithMP:(mpz_t)aVal;
 @end

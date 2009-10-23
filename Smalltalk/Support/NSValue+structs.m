@@ -1,4 +1,4 @@
-#import <Foundation/NSValue.h>
+#import <Foundation/Foundation.h>
 
 @implementation NSValue (structures)
 + (id) rangeWithLocation:(int)loc length:(int)len

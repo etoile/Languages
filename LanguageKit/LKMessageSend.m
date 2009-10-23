@@ -89,7 +89,14 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	[str appendString:[target description]];
+	if (target)
+	{
+		[str appendString:[target description]];
+	}
+	else
+	{
+		[str appendString:@"(nil)"];
+	}
 	[str appendString:@" "];
 	NSArray *sel = [selector componentsSeparatedByString:@":"];
 	if ([sel count] == 1)
@@ -174,7 +181,7 @@
 		|| [selector isEqualToString:@"alloc"])
 	{
 		sel = "autorelease";
-		const char *seltypes = sel_get_type(sel_get_any_typed_uid(sel));
+		const char *seltypes = [[self module] typeForMethod: @"autorelease"];
 		[aGenerator sendMessage:sel
 		                  types:seltypes
 		               toObject:result

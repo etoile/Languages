@@ -1,5 +1,5 @@
-#include "BigInt.h"
-#include "BlockClosure.h"
+#import "BigInt.h"
+#import "BlockClosure.h"
 
 static mpz_t ZERO;
 
@@ -8,7 +8,7 @@ static mpz_t ZERO;
 {
 	mpz_init_set_si(ZERO, 0);
 }
-+ (BigInt*) bigIntWithCString:(char*) aString
++ (BigInt*) bigIntWithCString:(const char*) aString
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
 	mpz_init_set_str(b->v, aString, 10);
@@ -34,6 +34,19 @@ static mpz_t ZERO;
 	}
 	return b;
 }
++ (BigInt*) bigIntWithLong:(long)aVal
+{
+	BigInt *b = [[[BigInt alloc] init] autorelease];
+	mpz_init_set_si(b->v, aVal);
+	return b;
+}
++ (BigInt*) bigIntWithUnsignedLong:(unsigned long)aVal
+{
+	BigInt *b = [[[BigInt alloc] init] autorelease];
+	mpz_init_set_ui(b->v, aVal);
+	return b;
+}
+
 + (BigInt*) bigIntWithMP:(mpz_t)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
@@ -163,7 +176,7 @@ op2(div, tdiv_q)
 			int i = mpz_get_si(v);
 			int max = mpz_get_si(((BigInt*)other)->v);
 			int inc = mpz_get_si(((BigInt*)incr)->v);
-			for (;i<max;i+=inc)
+			for (;i<=max;i+=inc)
 			{
 				result = [(BlockClosure*)aBlock value: 
 					   [BigInt bigIntWithLongLong: (long long) i]];
@@ -240,6 +253,11 @@ op2(div, tdiv_q)
 	free(cstr);
 	return str;
 }
+- (NSString*) stringValue
+{
+	return [self description];
+}
+
 - (void) dealloc
 {
 	mpz_clear(v);
