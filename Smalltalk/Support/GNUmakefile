@@ -22,6 +22,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	BlockClosure.m\
 	NSArray+map.m\
 	NSObject+log.m\
+	NSObject+yourself.m\
 	NSString+casting.m\
 	NSString+comma.m\
 	NSValue+structs.m

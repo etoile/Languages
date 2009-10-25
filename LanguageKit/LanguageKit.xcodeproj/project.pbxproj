@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		66041ACE1094FE0400513AFD /* NSObject+yourself.m in Sources */ = {isa = PBXBuildFile; fileRef = 66041ACD1094FE0400513AFD /* NSObject+yourself.m */; };
 		66298AC61049FA4F000F18C5 /* smalltalk.y in Sources */ = {isa = PBXBuildFile; fileRef = 6697B0D11048DA2200456911 /* smalltalk.y */; };
 		663A0DF4108D61F800B921B0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 663A0DF3108D61F800B921B0 /* Foundation.framework */; };
 		663A0E76108D621200B921B0 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 663A0DF3108D61F800B921B0 /* Foundation.framework */; };
@@ -141,7 +142,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 6697AF801048CE7100456911 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 6697AFC91048CF9200456911 /* LanguageKitRuntime */;
+			remoteGlobalIDString = 6697AFC91048CF9200456911;
 			remoteInfo = LanguageKitRuntime;
 		};
 		6697AFE41048CFF500456911 /* PBXContainerItemProxy */ = {
@@ -238,6 +239,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		66041ACD1094FE0400513AFD /* NSObject+yourself.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSObject+yourself.m"; path = "../Smalltalk/Support/NSObject+yourself.m"; sourceTree = SOURCE_ROOT; };
 		663A0DF3108D61F800B921B0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		663A0E8E108D623C00B921B0 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		663A0FC5108FF90300B921B0 /* LKTypeHelpers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LKTypeHelpers.m; sourceTree = "<group>"; };
@@ -543,6 +545,7 @@
 				6697AFFE1048D16A00456911 /* NSArray+map.h */,
 				6697AFFF1048D16A00456911 /* NSArray+map.m */,
 				6697B0001048D16A00456911 /* NSObject+log.m */,
+				66041ACD1094FE0400513AFD /* NSObject+yourself.m */,
 				6697B0011048D16A00456911 /* NSString+casting.m */,
 				6697B0021048D16A00456911 /* NSString+comma.m */,
 				6697B0031048D16A00456911 /* NSValue+structs.m */,
@@ -918,6 +921,7 @@
 				6697B0091048D16A00456911 /* NSString+casting.m in Sources */,
 				6697B00A1048D16A00456911 /* NSString+comma.m in Sources */,
 				6697B00B1048D16A00456911 /* NSValue+structs.m in Sources */,
+				66041ACE1094FE0400513AFD /* NSObject+yourself.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
