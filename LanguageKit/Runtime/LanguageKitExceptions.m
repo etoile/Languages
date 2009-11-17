@@ -221,7 +221,7 @@ char __LanguageKitTestNonLocalReturn(void *context,
 								   void **retval)
 {
 	// Test if this is a smalltalk exception at all
-	if (exception->exception_class == *(uint64*)"ETOILEST")
+	if (NULL != exception && exception->exception_class == *(uint64*)"ETOILEST")
 	{
 		LKException *LanguageKitException = (LKException*)exception;
 		// Test if this frame is the correct one.
@@ -230,8 +230,12 @@ char __LanguageKitTestNonLocalReturn(void *context,
 			*retval = LanguageKitException->retval;
 			return 1;
 		}
-		// Rethrow it if it isn't.
-		_Unwind_RaiseException(exception);
+		// Rethrow it if it isn't.  Note that you need to make a copy because
+		// libgcc contains some braindead optimisations that crash if you throw
+		// an exception you've just caught.
+		LKException *rethrow = calloc(1, sizeof(LKException));
+		memcpy(rethrow, exception, sizeof(LKException));
+		_Unwind_RaiseException(&rethrow->exception);
 	}
 	// This does not return, it jumps back to the unwind library, which jumps
 	// to the LanguageKit personality function, and proceeds to unwind the stack.
