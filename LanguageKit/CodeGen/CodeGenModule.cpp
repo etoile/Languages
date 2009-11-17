@@ -396,12 +396,12 @@ void CodeGenModule::compile(void)
 	pm.add(createFunctionInliningPass());
 	pm.add(createIPConstantPropagationPass());
 	pm.add(createSimplifyLibCallsPass());
-	pm.add(createCondPropagationPass());
+	//pm.add(createPredicateSimplifierPass());
+	//pm.add(createCondPropagationPass());
 	pm.add(createInstructionCombiningPass());
 	//FIXME: Seems broken in current LLVM - reenable when it's fixed
 	//pm.add(createTailDuplicationPass());
 	pm.add(createStripDeadPrototypesPass());
-//	pm.add(createUnboxPass());
 	pm.add(createAggressiveDCEPass());
 	pm.add(createCFGSimplificationPass());
 	pm.run(*TheModule);
