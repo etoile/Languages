@@ -351,16 +351,16 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	pm.add(new TargetData(TheModule));
 	pm.run(*TheModule);
 	DUMP(TheModule);
-	/*
 	std::filebuf fb;
 	fb.open (filename, std::ios::out);
 	std::ostream os(&fb);
-	*/
+	/*
 	//LLVM TRUNK COMPATIBILITY: DO NOT MERGE TO STABLE UNTIL AFTER 0.4.2
 	std::string err;
 	llvm::raw_fd_ostream os(filename, err);
 	WriteBitcodeToFile(TheModule, os);
 	//fb.close();
+	*/
 }
 
 void CodeGenModule::StoreClassVar(const char *cVarName, Value *value)
