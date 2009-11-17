@@ -496,6 +496,17 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	return [[LKClassVariables valueForKey: [self classname]] valueForKey: cvar];
 }
 
+static uint8_t logBase2(uint8_t x)
+{
+	uint8_t result = 0;
+	while (x > 1)
+	{
+		result++;
+		x = x >> 1;
+	}
+	return result;
+}
+
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	// Make sure the superclass is interpreted first
@@ -531,7 +542,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 
 	FOREACH(ivars, ivar, NSString*)
 	{
-		class_addIvar(cls, [ivar UTF8String], sizeof(id), __alignof__(id), "@");
+		class_addIvar(cls, [ivar UTF8String], sizeof(id), logBase2(__alignof__(id)), "@");
 	}
 
 	FOREACH(methods, method, LKMethod*)
