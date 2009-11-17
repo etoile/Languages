@@ -4,7 +4,7 @@ typedef int bool;
 #include <objc/objc-api.h>
 
 static NSString *SmallIntFile;
-static const char *path;
+
 @implementation LLVMCodeGen 
 + (void) initialize
 {
@@ -34,7 +34,7 @@ static const char *path;
 			SmallIntFile = [[[NSBundle bundleForClass:self] 
 				pathForResource: SmallIntFileName ofType: @"bc"] retain];
 		}
-			path = [SmallIntFile UTF8String];
+			const char *path = [SmallIntFile UTF8String];
 		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc."
 		         "This must be in either the current working directory or in"
 		         " the Resources directory of the Smalltalk language bundle "

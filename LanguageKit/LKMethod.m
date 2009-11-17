@@ -66,7 +66,7 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	//LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
+
 	[str appendString:[signature description]];
 	[str appendString:@"[\n"];
 	[str appendString: [self methodBody]];
@@ -128,9 +128,9 @@
 			            withTypes:(const char*)types
 {
 	NSArray *localNames = [(LKMethodSymbolTable*)symbols locals];
-	unsigned count = [localNames count];
+	unsigned int count = [localNames count];
 	const char *locals[count];
-	for (unsigned i=0 ; i<count ; i++)
+	for (unsigned int i=0 ; i<count ; i++)
 	{
 		locals[i] = [[localNames objectAtIndex: i] UTF8String];
 	}
@@ -146,9 +146,9 @@
 			            withTypes:(const char*)types
 {
 	NSArray *localNames = [(LKMethodSymbolTable*)symbols locals];
-	unsigned count = [localNames count];
+	unsigned int count = [localNames count];
 	const char *locals[count];
-	for (unsigned i=0 ; i<count ; i++)
+	for (unsigned int i=0 ; i<count ; i++)
 	{
 		locals[i] = [[localNames objectAtIndex: i] UTF8String];
 	}

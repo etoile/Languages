@@ -23,7 +23,6 @@ void LLVMinitialise(const char *bcFilePath)
 	IntPtrTy = IntegerType::get(llvm::getGlobalContext(), sizeof(void*) * 8);
 	Zeros[0] = Zeros[1] = 
 		ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), 0);
-	//FIXME: 
 	SelTy = IntPtrTy;
 	std::vector<const Type*> IMPArgs;
 	IMPArgs.push_back(IdTy);

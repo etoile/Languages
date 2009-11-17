@@ -53,7 +53,7 @@
 - (void) beginClassMethod:(const char*) aName
                 withTypes:(const char*)types
                    locals: (const char**)locals
-                    count:(unsigned)localsCount;
+                    count:(unsigned int)localsCount;
 /**
  * Begin an instance method with the specified type encoding and number of local
  * variables.  Local variables and arguments are indexed by number, the symbol
@@ -62,7 +62,7 @@
 - (void) beginInstanceMethod: (const char*) aName
                    withTypes: (const char*)types
                       locals: (const char**)locals
-                       count: (unsigned)localsCount;
+                       count: (unsigned int)localsCount;
 /**
  * Sends a message to a receiver which may be a SmallInt (a boxed Smalltalk
  * integer contained within an object pointer).

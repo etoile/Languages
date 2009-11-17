@@ -99,8 +99,10 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 			return Type::getVoidTy(Context);
 		case '{':
 		{
-			while (**typestr != '=') { 
-				(*typestr)++; }
+			while (**typestr != '=') 
+			{ 
+				(*typestr)++; 
+			}
 			(*typestr)++;
 			std::vector<const Type*> types;
 			while (**typestr != '}')

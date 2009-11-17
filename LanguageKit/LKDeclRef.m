@@ -17,15 +17,33 @@
 }
 - (BOOL)check
 {
-	if([symbol characterAtIndex:0] != '#')
+	if ([symbol characterAtIndex: 0] == '#') { return YES; }
+
+
+	switch ([symbols scopeOfSymbol:symbol])
 	{
-		switch ([symbols scopeOfSymbol:symbol])
+		case LKSymbolScopeInvalid:
 		{
-			case LKSymbolScopeInvalid:
+			NSDictionary *errorDetails = D(
+				[NSString stringWithFormat: @"Unrecognised symbol: %@",
+					symbol], kLKHumanReadableDescription,
+				self, kLKASTNode);
+			if ([LKCompiler reportError: LKUndefinedSymbolError
+			                    details: errorDetails])
+			{
+				return [self check];
+			}
+			return NO;
+		}
+		case LKSymbolScopeExternal:
+		{
+			LKExternalSymbolScope s = 
+				[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol:symbol];
+			if (nil == s.scope)
 			{
 				NSDictionary *errorDetails = D(
 					[NSString stringWithFormat: @"Unrecognised symbol: %@",
-						symbol], kLKHumanReadableDesciption,
+						symbol], kLKHumanReadableDescription,
 					self, kLKASTNode);
 				if ([LKCompiler reportError: LKUndefinedSymbolError
 				                    details: errorDetails])
@@ -34,28 +52,11 @@
 				}
 				return NO;
 			}
-			case LKSymbolScopeExternal:
-			{
-				LKExternalSymbolScope s = 
-					[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol:symbol];
-				if (nil == s.scope)
-				{
-					NSDictionary *errorDetails = D(
-						[NSString stringWithFormat: @"Unrecognised symbol: %@",
-							symbol], kLKHumanReadableDesciption,
-						self, kLKASTNode);
-					if ([LKCompiler reportError: LKUndefinedSymbolError
-					                    details: errorDetails])
-					{
-						return [self check];
-					}
-					return NO;
-				}
-			}
-			default:
-				break;
 		}
+		default:
+			break;
 	}
+
 	return YES;
 }
 - (NSString*) description

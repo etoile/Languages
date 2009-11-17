@@ -30,7 +30,9 @@
 	{
 		objects[0] = aValue;
 	}
+
 	if (NULL == symbolTable) { return NO; }
+
 	const char *sym = [aSymbol UTF8String];
 	for (unsigned int i=0 ; i<=count-1 ; i++)
 	{
@@ -48,7 +50,9 @@
 	{
 		return objects[0];
 	}
+
 	if (NULL == symbolTable) { return nil; }
+
 	const char *sym = [aSymbol UTF8String];
 	for (unsigned int i=0 ; i<count-1 ; i++)
 	{
@@ -63,7 +67,9 @@
 {
 	NSMutableArray *array = [NSMutableArray array];
 	[array addObject: @"self"];
+
 	if (NULL == symbolTable) { return array; }
+
 	for (unsigned int i=0 ; i<count-1 ; i++)
 	{
 		[array addObject: [NSString stringWithUTF8String: symbolTable[i]]];

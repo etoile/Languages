@@ -47,7 +47,7 @@ generatedWarning: (NSString*)aWarning
  * Indicates that the specified compiler has encountered an unrecoverable
  * problem.  Extra information about this error  may be found in the info
  * dictionary.  All errors must contain a human readable description
- * identified by the key kLKHumanReadableDesciption, specific errors may
+ * identified by the key kLKHumanReadableDescription, specific errors may
  * contain other information.  See the LKCompilerErrors.h file for more
  * information.
  *
@@ -56,7 +56,7 @@ generatedWarning: (NSString*)aWarning
  * the delegate should return YES, causing the semantic analysis to be retried.
  */
 - (BOOL)compiler: (LKCompiler*)aCompiler
-  generatedError: (NSString*)aWarning
+  generatedError: (NSString*)anError
          details: (NSDictionary*)info;
 @end
 

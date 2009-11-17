@@ -23,11 +23,32 @@
 	}
 }
 @end
+int fibonacci(int i)
+{
+	switch (i)
+	{
+		case 0:
+		case 1:
+			return 1;
+		default:
+			return fibonacci(i-1) + fibonacci(i-2);
+	}
+}
 
+double timeFibonacciC(void)
+{
+	clock_t c1 = clock();
+	for (unsigned i=0 ; i<100 ; i++)
+	{
+		fibonacci(30);
+	}
+	clock_t c2 = clock();
+	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
+}
 double timeFibonacci(id object)
 {
 	clock_t c1 = clock();
-	for (unsigned i=0 ; i<1 ; i++)
+	for (unsigned i=0 ; i<100 ; i++)
 	{
 		[object fibonacci:30];
 	}
@@ -68,9 +89,12 @@ int main(void)
 	ETLog(@"Smalltalk block execution took %f seconds.  ", sttime);
 	ETLog(@"Ratio: %f", sttime / octime);
 
+	double ctime = timeFibonacciC();
+	ETLog(@"C fibonacci execution took %f seconds.  ", ctime);
 	proto = [ObjCObject new];
 	octime = timeFibonacci(proto);
 	ETLog(@"ObjC fibonacci execution took %f seconds.  ", octime);
+	ETLog(@"Ratio: %f", octime / ctime);
 	sttime = timeFibonacci([NSClassFromString(@"SmalltalkFibonacci") new]);
 	ETLog(@"Smalltalk fibonacci execution took %f seconds.  ", sttime);
 	ETLog(@"Ratio: %f", sttime / octime);

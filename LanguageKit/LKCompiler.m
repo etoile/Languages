@@ -22,14 +22,14 @@ static id<LKCompilerDelegate> DefaultDelegate;
 generatedWarning: (NSString*)aWarning
          details: (NSDictionary*)info
 {
-	NSLog(@"WARNING: %@", [info objectForKey: kLKHumanReadableDesciption]);
+	NSLog(@"WARNING: %@", [info objectForKey: kLKHumanReadableDescription]);
 	return YES;
 }
 - (BOOL)compiler: (LKCompiler*)aCompiler
   generatedError: (NSString*)aWarning
          details: (NSDictionary*)info
 {
-	NSLog(@"ERROR: %@", [info objectForKey: kLKHumanReadableDesciption]);
+	NSLog(@"ERROR: %@", [info objectForKey: kLKHumanReadableDescription]);
 	return NO;
 }
 @end
@@ -61,16 +61,16 @@ static NSDate *mostRecentModificationDate(NSArray *files)
 /**
  * Open the cached (statically-compiled) version of a file if it is not too old.
  */
-static BOOL loadLibraryForBundle(NSString *so,
+static BOOL loadLibraryForBundle(NSString *soFile,
                                  NSBundle *bundle,
                                  NSDate *modified)
 {
-	NSLog(@"Trying cache %@", so);
-	if (nil == so)
+	NSLog(@"Trying cache %@", soFile);
+	if (nil == soFile)
 	{
 		return NO;
 	}
-	NSDate *soDate = modificationDateForFile(so);
+	NSDate *soDate = modificationDateForFile(soFile);
 	// If the bundle has been modified after the cached version...
 	if (nil == soDate || [modified compare: soDate] == NSOrderedDescending)
 	{
@@ -79,16 +79,16 @@ static BOOL loadLibraryForBundle(NSString *so,
 	}
 	NSLog(@"Attempting to load .so");
 	// Return YES if dlopen succeeds.
-	return NULL != dlopen([so UTF8String], RTLD_GLOBAL);
+	return NULL != dlopen([soFile UTF8String], RTLD_GLOBAL);
 }
 /**
  * Load any available cached version of the library.
  */
 static BOOL loadAnyLibraryForBundle(NSBundle *bundle, NSDate *modified)
 {
-	NSString *so = [bundle pathForResource: @"languagekit-cache"
-	                                ofType: @"so"];
-	if (loadLibraryForBundle(so, bundle, modified))
+	NSString *soFile = [bundle pathForResource: @"languagekit-cache"
+	                                    ofType: @"so"];
+	if (loadLibraryForBundle(soFile, bundle, modified))
 	{
 		return YES;
 	}
@@ -97,7 +97,8 @@ static BOOL loadAnyLibraryForBundle(NSBundle *bundle, NSDate *modified)
 	NSString *userCache = [dirs objectAtIndex: 0];
 	userCache = [[userCache stringByAppendingPathComponent: @"LKCaches"]
 			stringByAppendingPathComponent: [bundle bundlePath]];
-	userCache = [userCache stringByAppendingPathComponent: @"languagekit-cache.so"];
+	userCache = 
+		[userCache stringByAppendingPathComponent: @"languagekit-cache.so"];
 	return loadLibraryForBundle(userCache, bundle, modified);
 }
 
@@ -181,40 +182,40 @@ int DEBUG_DUMP_MODULES = 0;
 }
 static void emitParseError(NSException *localException)
 {
-	NSDictionary *e = [localException userInfo];
-	id lineNumber = [e objectForKey:@"lineNumber"];
-	id character = [e objectForKey:@"character"];
-	id line = [e objectForKey:@"line"];
+	NSDictionary *info = [localException userInfo];
+	id lineNumber = [info objectForKey: @"lineNumber"];
+	id character = [info objectForKey: @"character"];
+	id line = [info objectForKey: @"line"];
 	NSDictionary *parseErrorInfo = D(
 			lineNumber, kLKLineNumber,
 			character, kLKCharacterNumber,
 			line, kLKSourceLine,
 			[NSString stringWithFormat: @"Parse error on line %@.  "
 				"Unexpected token at character %@ while parsing:\n%@", 
-				lineNumber, character, line], kLKHumanReadableDesciption);
+				lineNumber, character, line], kLKHumanReadableDescription);
 	[LKCompiler reportError: LKParserError
 	                details: parseErrorInfo];
 }
 - (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
 {
-	id p = AUTORELEASE([[[[self class] parserClass] alloc] init]);
+	id parser = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKModule *ast;
 	NS_DURING
-		ast = [p parseString: source];
+		ast = [parser parseString: source];
 	NS_HANDLER
 		emitParseError(localException);
 		return NO;
 	NS_ENDHANDLER
+
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
 	BOOL success = [ast check];
 	[dict removeObjectForKey: @"LKCompilerContext"];
-	if (!success)
+	if (success)
 	{
-		return NO;
+		[ast compileWithGenerator: cg];
 	}
-	[ast compileWithGenerator: cg];
-	return YES;
+	return success;
 }
 - (BOOL) compileString:(NSString*)source output:(NSString*)bitcode;
 {
@@ -230,11 +231,11 @@ static void emitParseError(NSException *localException)
           onClassNamed: (NSString*)name
          withGenerator: (id<LKCodeGenerator>)cg
 {
-	id p = AUTORELEASE([[[[self class] parserClass] alloc] init]);
+	id parser = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKAST *ast;
 	LKModule *module;
 	NS_DURING
-		ast = [p parseMethod: source];
+		ast = [parser parseMethod: source];
 		ast = [LKCategoryDef categoryOnClassNamed: name
 		                                  methods: [NSArray arrayWithObject:ast]];
 		module = [LKModule module];
@@ -243,16 +244,16 @@ static void emitParseError(NSException *localException)
 		emitParseError(localException);
 		return NO;
 	NS_ENDHANDLER
+
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
 	BOOL success = [module check];
 	[dict removeObjectForKey: @"LKCompilerContext"];
-	if (!success) 
+	if (success) 
 	{
-		return NO;
+		[module compileWithGenerator: cg];
 	}
-	[module compileWithGenerator: cg];
-	return YES;
+	return success;
 }
 - (BOOL) compileMethod:(NSString*)source
           onClassNamed:(NSString*)name
@@ -330,7 +331,7 @@ static NSString *loadFramework(NSString *framework)
 	}
 	NSDate *recentModificationDate = mostRecentModificationDate(pathsToCheckDateOf);
 	// TODO: Specify a set of AST transforms to apply.
-	if (!(success = loadAnyLibraryForBundle(bundle, recentModificationDate)))
+	if (!(success &= loadAnyLibraryForBundle(bundle, recentModificationDate)))
 	{
 		success = YES;
 		FOREACH(sourceFiles, source, NSString*)
@@ -338,7 +339,7 @@ static NSString *loadFramework(NSString *framework)
 			success &= [self loadScriptNamed: source fromBundle: bundle];
 		}
 		// Spawn a new process to do the background JTL compile.
-		if (fork() == 0)
+		if (success && fork() == 0)
 		{
 			// Make the child process really, really, low priority.
 			setpriority(PRIO_PROCESS, 0, 20);
@@ -424,7 +425,7 @@ static NSString *loadFramework(NSString *framework)
 }
 + (void)setDefaultDelegate: (id<LKCompilerDelegate>)aDelegate
 {
-	DefaultDelegate = [aDelegate retain];
+	ASSIGN(DefaultDelegate, [aDelegate retain]);
 }
 - (void)setDelegate: (id<LKCompilerDelegate>)aDelegate
 {

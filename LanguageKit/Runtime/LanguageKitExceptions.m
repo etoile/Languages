@@ -92,7 +92,7 @@ static size_t read_uleb128(unsigned char** data)
 		bit += 7;
 		// Proceed to the next octet
 		(*data)++;
-	} while ((*(*data-1)) != digit);
+	} while ((*(*data - 1)) != digit);
 
 	return uleb;
 }

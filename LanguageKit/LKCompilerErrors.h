@@ -10,7 +10,7 @@
 /**
  * Key used for the human readable error or warning description.
  */
-EMIT_STRING(kLKHumanReadableDesciption)
+EMIT_STRING(kLKHumanReadableDescription)
 /**
  * Key used to indicate the AST node responsible for the warning.
  */

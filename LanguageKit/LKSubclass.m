@@ -43,7 +43,7 @@
 		{
 			NSDictionary *errorDetails = D([NSString stringWithFormat:
 				@"Unable to find superclass %@ for %@",  superclass, classname],
-				kLKHumanReadableDesciption,
+				kLKHumanReadableDescription,
 				superclass, kLKMissingSuperclassName,
 				self, kLKASTNode);
 			if ([LKCompiler reportError: LKUndefinedSuperclassError
@@ -62,7 +62,7 @@
 	{
 		NSDictionary *errorDetails = D([NSString stringWithFormat:
 			@"Attempting to create class which already exists: %@", classname],
-			kLKHumanReadableDesciption,
+			kLKHumanReadableDescription,
 			self, kLKASTNode);
 		success &= [LKCompiler reportWarning: LKRedefinedClassWarning
 		                             details: errorDetails];
