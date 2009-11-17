@@ -531,7 +531,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 
 	FOREACH(ivars, ivar, NSString*)
 	{
-		class_addIvar(cls, [ivar UTF8String], sizeof(id), log2(sizeof(id)), "@");
+		class_addIvar(cls, [ivar UTF8String], sizeof(id), __alignof__(id), "@");
 	}
 
 	FOREACH(methods, method, LKMethod*)
