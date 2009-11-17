@@ -259,7 +259,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	// Enable sender-aware dispatch if the relevant lookup function exists:
 	if (dlsym(RTLD_DEFAULT, "objc_msg_lookup_sender") != 0)
 	{
-		enable_sender_dispatch = true;
+		//enable_sender_dispatch = true;
 	}
 }
 
@@ -630,6 +630,10 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	llvm::Value *imp;
 	if (enable_sender_dispatch)
 	{
+		if (0 == Sender)
+		{
+			Sender = NULLPtr;
+		}
 		llvm::Constant *lookupFunction = 
 			TheModule.getOrInsertFunction("objc_msg_lookup_sender",
 										  llvm::PointerType::getUnqual(impType),
@@ -733,6 +737,10 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 	llvm::SmallVectorImpl<std::string>  &IvarTypes, const
 	llvm::SmallVectorImpl<int>  &IvarOffsets) 
 {
+	if (0 == IvarNames.size())
+	{
+		return NULLPtr;
+	}
 	// Get the method structure type.  
 	llvm::StructType *ObjCIvarTy = llvm::StructType::get(
 		Context,

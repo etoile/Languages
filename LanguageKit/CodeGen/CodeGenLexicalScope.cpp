@@ -2,6 +2,7 @@
 #include "CodeGenBlock.h"
 #include "CodeGenModule.h"
 #include <llvm/Module.h>
+#include "llvm/Intrinsics.h"
 
 
 static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
@@ -546,21 +547,19 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		BasicBlock::Create(CGM->Context, "non_local_return_handler", CurrentFunction);
 	IRBuilder<> ExceptionBuilder = IRBuilder<>(ExceptionBB);
 	Value *exception = ExceptionBuilder.CreateCall(
-		TheModule->getOrInsertFunction("llvm.eh.exception", Int8PtrTy, NULL));
+			llvm::Intrinsic::getDeclaration(TheModule,
+				llvm::Intrinsic::eh_exception, 0, 0));
 	ExceptionBuilder.CreateStore(exception, exceptionPtr);
-	std::vector<const Type*> ehSelectorTypes;
-	ehSelectorTypes.push_back(Int8PtrTy);
-	ehSelectorTypes.push_back(Int8PtrTy);
 	Value *ehPersonality =
 		ExceptionBuilder.CreateBitCast(TheModule->getOrInsertFunction(
 			"__LanguageKitEHPersonalityRoutine", Type::getVoidTy(CGM->Context), NULL),
 			Int8PtrTy);
-	FunctionType *ehSelectorFunctionTy = 
-		FunctionType::get(Type::getInt32Ty(CGM->Context), ehSelectorTypes, true);
+
 	ExceptionBuilder.CreateCall3(
-		TheModule->getOrInsertFunction("llvm.eh.selector.i32",
-			ehSelectorFunctionTy), exception, ehPersonality,
-		ConstantPointerNull::get(Int8PtrTy));
+		llvm::Intrinsic::getDeclaration(TheModule,
+			llvm::Intrinsic::eh_selector, 0, 0),
+		exception, ehPersonality, ConstantPointerNull::get(Int8PtrTy));
+
 	ExceptionBuilder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 1), inException);
 	ExceptionBuilder.CreateBr(CleanupBB);
 	ExceptionBuilder.ClearInsertionPoint();
