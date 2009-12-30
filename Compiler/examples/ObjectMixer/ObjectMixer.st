@@ -127,8 +127,8 @@ NSObject subclass: SmalltalkTool
 	applicationDidFinishLaunching: notif 
 	[ | itemFactory |
 		
-		itemFactory := ETLayoutItem class.
-		browserItem := itemFactory itemGroupWithContainer.
+		itemFactory := ETLayoutItemFactory factory.
+		browserItem := itemFactory itemGroup.
 		browserItem setDelegate: self.
 		browserItem setSource: browserItem.
 		browserItem setRepresentedObject: (self parseCode).
@@ -143,9 +143,9 @@ NSObject subclass: SmalltalkTool
 		codeEditorItem setWidth: 700.
 		codeEditorItem setHeight: 400.
 
-		objectMixerItem := itemFactory itemGroupWithContainer.
+		objectMixerItem := itemFactory itemGroup.
 		objectMixerItem setName: 'Object Mixer (Smalltalk & cie)'.
-		objectMixerItem setLayout: (ETStackLayout layout).
+		objectMixerItem setLayout: (ETColumnLayout layout).
 		objectMixerItem setWidth: 700.
 		objectMixerItem setHeight: 600.
 		objectMixerItem supervisorView setEnablesHitTest: 1.
