@@ -1,6 +1,7 @@
 #include "CodeGenModule.h"
 #include "CodeGenLexicalScope.h"
 #include <llvm/Constants.h>
+#include <llvm/LLVMContext.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Target/TargetSelect.h>
 #include <llvm/ExecutionEngine/JIT.h>
