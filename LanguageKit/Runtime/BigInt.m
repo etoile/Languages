@@ -1,11 +1,17 @@
+#define class_pointer isa
 #import "BigInt.h"
 #import "BlockClosure.h"
 
 static mpz_t ZERO;
+Class BigIntClass;
 
 @implementation BigInt
 + (void) initialize
 {
+	if ([BigInt class] == self)
+	{
+		BigIntClass = self;
+	}
 	mpz_init_set_si(ZERO, 0);
 }
 + (BigInt*) bigIntWithCString:(const char*) aString
@@ -54,11 +60,21 @@ static mpz_t ZERO;
 	return b;
 }
 #define op2(name, func) \
-- (BigInt*) name:(BigInt*)other\
+- (BigInt*) name:(id)other\
 {\
 	BigInt *b = [[[BigInt alloc] init] autorelease];\
 	mpz_init(b->v);\
-	mpz_## func (b->v, v, other->v);\
+	if (other->isa == BigIntClass || [other isKindOfClass: BigIntClass])\
+	{\
+		mpz_## func (b->v, v, ((BigInt*)other)->v);\
+	}\
+	else\
+	{\
+		mpz_t number;\
+		mpz_init_set_si(number, [other intValue]);\
+		mpz_## func (b->v, number, v);\
+		mpz_clear(number);\
+	}\
 	return b;\
 }
 
@@ -238,6 +254,9 @@ op2(div, tdiv_q)
 			result = [(BlockClosure*)aBlock value: [BigInt bigIntWithMP: i]];
 			mpz_add(i, i, inc);
 		}
+		mpz_clear(i);
+		mpz_clear(inc);
+		mpz_clear(max);
 	}
 	return result;
 }
