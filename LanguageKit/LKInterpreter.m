@@ -77,6 +77,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		[objects[i] release];
 	}
 	free(objects);
+	[symbols release];
 	[parent release];
 	[super dealloc];
 }
@@ -249,7 +250,8 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKDeclRef (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	switch([symbols scopeOfSymbol: symbol])
+	LKSymbolScope scope = [symbols scopeOfSymbol: symbol];
+	switch (scope)
 	{
 		case LKSymbolScopeLocal:			
 		case LKSymbolScopeArgument:
@@ -373,26 +375,9 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @end
 
 @implementation LKMethod (LKInterpreter)
-- (id)executeWithReciever: (id)receiver arguments: (id*)args count: (int)count
+- (id)executeInContext: (LKInterpreterContext*)context
 {
-	NSMutableArray *symbolnames = [NSMutableArray array];
-	if ([signature arguments])
-	{
-		[symbolnames addObjectsFromArray: [signature arguments]];
-	}
-	[symbolnames addObjectsFromArray: [(LKMethodSymbolTable*)symbols locals]];
-	
 	id result = nil;
-	LKInterpreterContext *context = [[LKInterpreterContext alloc]
-							initWithSelf: receiver
-							     symbols: symbolnames
-							      parent: nil];
-	for (unsigned int i=0; i<count; i++)
-	{
-		[context setValue: args[i]
-		        forSymbol: [[signature arguments] objectAtIndex: i]];
-	}
-	
 	NS_DURING
 		FOREACH(statements, element, LKAST*)
 		{
@@ -416,9 +401,33 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			[localException raise];
 		}
 	NS_ENDHANDLER
+	return result;
+}
+- (id)executeWithReciever: (id)receiver arguments: (id*)args count: (int)count
+{
+	NSMutableArray *symbolnames = [NSMutableArray array];
+	if ([signature arguments])
+	{
+		[symbolnames addObjectsFromArray: [signature arguments]];
+	}
+	[symbolnames addObjectsFromArray: [(LKMethodSymbolTable*)symbols locals]];
+	
+	LKInterpreterContext *context = [[LKInterpreterContext alloc]
+							initWithSelf: receiver
+							     symbols: symbolnames
+							      parent: nil];
+	for (unsigned int i=0; i<count; i++)
+	{
+		[context setValue: args[i]
+		        forSymbol: [[signature arguments] objectAtIndex: i]];
+	}
 
-	// FIXME: this should be in an @finally
+	id result = nil;
+	// FIXME: @try {
+	result = [self executeInContext: context];
+	// } @finally {
 	[context release];
+	// }
 
 	return result;
 }

@@ -33,6 +33,7 @@ LKMethod *LKASTForMethod(Class cls, NSString *selectorName);
 @end
 
 @interface LKMethod (LKInterpreter)
+- (id)executeInContext: (LKInterpreterContext*)context;
 - (id)executeWithReciever: (id)receiver arguments: (id*)args count: (int)count;
 @end
 
