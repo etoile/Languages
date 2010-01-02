@@ -8,6 +8,7 @@
 #import <LanguageKit/LKComment.h>
 #import <LanguageKit/LKComparison.h>
 #import <LanguageKit/LKCompiler.h>
+#import <LanguageKit/LKCompilerErrors.h>
 #import <LanguageKit/LKDeclRef.h>
 #import <LanguageKit/LKIfStatement.h>
 #import <LanguageKit/LKLiteral.h>
