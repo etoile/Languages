@@ -276,25 +276,50 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 					format: @"Tried to call %@ with %d arguments", selName, argc];
 	}
 	
-	Class receiverClass;
-	if (class_isMetaClass(object_getClass(receiver)))
-	{
-		receiverClass = object_getClass(NSClassFromString(className));
-	}
-	else
-	{
-		receiverClass = NSClassFromString(className);
-	}
-	
 	void *methodIMP;
-	if (*[sig methodReturnType] == '{')
+#ifdef GNU_RUNTIME
+	if (className)
 	{
-		methodIMP = class_getMethodImplementation_stret(receiverClass, sel);		
+		struct objc_super sup = { receiver, NSClassFromString(className) };
+		methodIMP = objc_msg_lookup_super(&sup, sel);
 	}
 	else
 	{
-		methodIMP = class_getMethodImplementation(receiverClass, sel);
+		methodIMP = objc_msg_lookup(receiver, sel);
 	}
+#else
+	if (className)
+	{
+		switch (*[sig methodReturnType])
+		{
+			case '{':
+				methodIMP = objc_msgSend_sret;
+				break;
+			case 'f':
+			case 'd':
+				methodIMP = objc_msgSend_fpret;
+				break;
+			default:
+				methodIMP = objc_msgSend;
+		}
+	}
+	else
+	{
+		switch (*[sig methodReturnType])
+		{
+			case '{':
+				methodIMP = objc_msgSendSuper_sret;
+				break;
+			case 'f':
+			case 'd':
+				methodIMP = objc_msgSendSuper_fpret;
+				break;
+			default:
+				methodIMP = objc_msgSendSuper;
+		}
+	}
+	// FIXME: Needs fpret for double / float returns.
+#endif
 	
 	// Prepare FFI types
 	const char *returnObjCType = [sig methodReturnType];
@@ -317,6 +342,14 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	char unboxedArgumentsBuffer[[sig numberOfArguments]][[sig frameLength]];
 	void *unboxedArguments[[sig numberOfArguments]];
 	unboxedArguments[0] = &receiver;
+#ifndef GNU_RUNTIME
+	struct objc_super sup = { receiver, NSClassFromString(className) };
+	struct objc_super *supp = &sup;
+	// This is a bit of a hack.  Really the FFI type should be different for
+	// message sends to super, but this should work because the are both
+	// pointers.
+	unboxedArguments[0] = &supp;
+#endif
 	unboxedArguments[1] = &sel;
 	for (unsigned int i = 0; i < argc; i++)
 	{

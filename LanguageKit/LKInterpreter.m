@@ -328,7 +328,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKMessageSend (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context forTarget: (id)receiver
 {
-	NSString *receiverClassName;
+	NSString *receiverClassName = nil;
 	if ([target isKindOfClass: [LKDeclRef class]] && 
 		[[target symbol] isEqualToString: @"super"])
 	{
@@ -338,10 +338,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			ast = [ast parent];
 		}
 		receiverClassName = [(LKSubclass*)ast superclassname];
-	}
-	else
-	{
-		receiverClassName = NSStringFromClass(object_getClass(receiver));
 	}
 	unsigned int argc = [arguments count];
 	id argv[argc];
