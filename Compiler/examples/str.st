@@ -1,11 +1,13 @@
 NSObject subclass: SmalltalkTool [
 	run [
-		(self foo) log.
-	]
-	foo [
-	| a |
-		a :=  'pop!'.
-		^ 'pip!'.
+		|str |
+		str := 'foo'.
+		str log.
+		str := str stringByAppendingString:'bar'.
+		str log.
+		str := 'foo' mutableCopy.
+		str log.
+		str appendString:'bar'.
+		str log.
 	]
 ]
-
