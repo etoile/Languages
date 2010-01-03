@@ -35,9 +35,10 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 			case 'r':
 			case 'n':
 			case 'N':
-			case 'O':
 			case 'o':
-			case 'v':
+			case 'O':
+			case 'R':
+			case 'V':
 				[simplified deleteCharactersInRange: r];
 				break;
 			default:
