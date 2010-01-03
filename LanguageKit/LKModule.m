@@ -24,6 +24,29 @@ static const char *TypesForMethodName(NSString *methodName)
 }
 #endif
 
+static NSString *typeEncodingRemovingQualifiers(NSString *str)
+{
+	NSMutableString *simplified = [[str mutableCopy] autorelease];
+	NSRange r = {0,1};
+	while(r.location < [simplified length])
+	{
+		switch ([simplified characterAtIndex: r.location])
+		{
+			case 'r':
+			case 'n':
+			case 'N':
+			case 'O':
+			case 'o':
+			case 'v':
+				[simplified deleteCharactersInRange: r];
+				break;
+			default:
+				r.location++;
+		}
+	}
+	return simplified;
+}
+
 
 @implementation LKModule 
 + (void) initialize
@@ -59,11 +82,11 @@ static const char *TypesForMethodName(NSString *methodName)
 			NSString *oldType = [Types objectForKey:name];
 			if (oldType == nil)
 			{
-				[Types setObject:type forKey:name];
+				[Types setObject: typeEncodingRemovingQualifiers(type) forKey:name];
 			}
 			else
 			{
-				if (![type isEqualToString:oldType])
+				if (![typeEncodingRemovingQualifiers(type) isEqualToString:oldType])
 				{
 					[SelectorConflicts setObject:oldType forKey:name];
 				}
