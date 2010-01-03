@@ -5,6 +5,9 @@
 #import "LKInterpreter.h"
 #import "LKTypeHelpers.h"
 #import <EtoileFoundation/runtime.h>
+#ifndef GNU_RUNTIME
+#include <objc/objc-runtime.h>
+#endif
 #include <ffi.h>
 
 static id BoxValue(void *value, const char *typestr);
@@ -293,14 +296,14 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 		switch (*[sig methodReturnType])
 		{
 			case '{':
-				methodIMP = objc_msgSend_sret;
+				methodIMP = objc_msgSendSuper_stret;
 				break;
 			case 'f':
 			case 'd':
-				methodIMP = objc_msgSend_fpret;
+				methodIMP = objc_msgSendSuper;
 				break;
 			default:
-				methodIMP = objc_msgSend;
+				methodIMP = objc_msgSendSuper;
 		}
 	}
 	else
@@ -308,14 +311,14 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 		switch (*[sig methodReturnType])
 		{
 			case '{':
-				methodIMP = objc_msgSendSuper_sret;
+				methodIMP = objc_msgSend_stret;
 				break;
 			case 'f':
 			case 'd':
-				methodIMP = objc_msgSendSuper_fpret;
+				methodIMP = objc_msgSend_fpret;
 				break;
 			default:
-				methodIMP = objc_msgSendSuper;
+				methodIMP = objc_msgSend;
 		}
 	}
 	// FIXME: Needs fpret for double / float returns.
@@ -343,12 +346,15 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	void *unboxedArguments[[sig numberOfArguments]];
 	unboxedArguments[0] = &receiver;
 #ifndef GNU_RUNTIME
-	struct objc_super sup = { receiver, NSClassFromString(className) };
-	struct objc_super *supp = &sup;
-	// This is a bit of a hack.  Really the FFI type should be different for
-	// message sends to super, but this should work because the are both
-	// pointers.
-	unboxedArguments[0] = &supp;
+	if (className)
+	{
+		struct objc_super sup = { receiver, NSClassFromString(className) };
+		struct objc_super *supp = &sup;
+		// This is a bit of a hack.  Really the FFI type should be different for
+		// message sends to super, but this should work because the are both
+		// pointers.
+		unboxedArguments[0] = &supp;
+	}
 #endif
 	unboxedArguments[1] = &sel;
 	for (unsigned int i = 0; i < argc; i++)
