@@ -83,6 +83,9 @@
 								  atOffset:[scope.scope offsetOfIVar:target->symbol]
 								fromObject:[aGenerator loadSelf]];
 					break;
+				case LKSymbolScopeClass:
+					[aGenerator storeValue:rval inClassVariable:target->symbol];
+					break;
 				default:
 					NSAssert(NO, 
 						@"External symbols must be local or arguments.");
