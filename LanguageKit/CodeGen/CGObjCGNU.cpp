@@ -391,9 +391,6 @@ llvm::Value *CGObjCGNU::GetWeakSymbol(const std::string &Name,
 }
 
 /// Generate an NSConstantString object.
-//TODO: In case there are any crazy people still using the GNU runtime without
-//an OpenStep implementation, this should let them select their own class for
-//constant strings.
 llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
 		const size_t length)
 {

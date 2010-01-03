@@ -28,14 +28,14 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 
 # uncomment this line when debugging if you have problems with over-aggressive
 # inlining throwing away useful debugging info.
-#${FRAMEWORK_NAME}_CPPFLAGS =  -fno-inline
+#${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM flags
-LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core debugger engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
+LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
 
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
