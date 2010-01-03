@@ -2,6 +2,6 @@
 NSObject subclass: SmalltalkTool [
 	run [
 		'Smalltalk tool executed with these arguments:' log.
-		NSProcessInfo processInfo arguments foreach: [ :x | x log ].
+		NSProcessInfo processInfo arguments mappedCollection log.
 	]
 ]
