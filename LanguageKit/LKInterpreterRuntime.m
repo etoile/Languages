@@ -298,10 +298,6 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 			case '{':
 				methodIMP = objc_msgSendSuper_stret;
 				break;
-			case 'f':
-			case 'd':
-				methodIMP = objc_msgSendSuper;
-				break;
 			default:
 				methodIMP = objc_msgSendSuper;
 		}
@@ -313,10 +309,18 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 			case '{':
 				methodIMP = objc_msgSend_stret;
 				break;
+#ifdef __i386__
 			case 'f':
 			case 'd':
+			case 'D':
 				methodIMP = objc_msgSend_fpret;
 				break;
+#endif
+#ifdef __x86_64__
+			case 'D':
+				methodIMP = objc_msgSend_fpret;
+				break;
+#endif
 			default:
 				methodIMP = objc_msgSend;
 		}
