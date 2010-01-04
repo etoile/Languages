@@ -66,7 +66,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	SUPERINIT;
 	ASSIGN(parent, aParent);
 	selfObject = aSelfObject;
-	symbols = [theSymbols copy];
+	symbols = [[NSMutableArray arrayWithArray: theSymbols] retain];
 	objects = calloc([symbols count], sizeof(id));
 	return self;
 }
@@ -92,6 +92,16 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		}
 	}
 	return [parent setValue: value forSymbol: symbol];
+}
+- (void) addSymbol: (NSString*)symbol
+{
+	[symbols addObject: symbol];
+	objects = realloc(objects, [symbols count] * sizeof(id));
+	objects[[symbols count] - 1] = nil;
+}
+- (BOOL) hasSymbol: (NSString*)symbol
+{
+	return [symbols containsObject: symbol] || [parent hasSymbol: symbol];
 }
 - (id) valueForSymbol: (NSString*)symbol
 {

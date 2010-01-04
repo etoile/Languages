@@ -12,13 +12,15 @@ LKMethod *LKASTForMethod(Class cls, NSString *selectorName);
 {
 	LKInterpreterContext *parent;
 	id selfObject;
-	NSArray *symbols;
+	NSMutableArray *symbols;
 	id *objects;
 }
 - (id) initWithSelf: (id)selfObject
             symbols: (NSArray*)symbols
              parent: (LKInterpreterContext*)aParent;
 - (BOOL) setValue: (id)value forSymbol: (NSString*)symbol;
+- (void) addSymbol: (NSString*)symbol;
+- (BOOL) hasSymbol: (NSString*)symbol;
 - (id) valueForSymbol: (NSString*)symbol;
 @end
 
