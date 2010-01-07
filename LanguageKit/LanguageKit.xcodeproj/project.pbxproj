@@ -99,6 +99,7 @@
 		66A1FC781049DBD400A19C65 /* LanguageKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6697AFB51048CF6C00456911 /* LanguageKit.framework */; };
 		66A1FC791049DBD700A19C65 /* SmalltalkSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6697AFD61048CFB100456911 /* SmalltalkSupport.framework */; };
 		66A1FC821049DC2000A19C65 /* libgmp.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6697B1AF1049BE0D00456911 /* libgmp.dylib */; };
+		66A2E59310F6A17900F5850C /* BoxedFloat.m in Sources */ = {isa = PBXBuildFile; fileRef = 66A2E59210F6A17900F5850C /* BoxedFloat.m */; };
 		66AC4526108ADD1000047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
 		66AC4530108ADD2800047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
 		66AC4533108ADD3200047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
@@ -344,6 +345,7 @@
 		6697B1AF1049BE0D00456911 /* libgmp.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; name = libgmp.dylib; path = /opt/local/lib/libgmp.dylib; sourceTree = "<absolute>"; };
 		66A1FAA51049C32700A19C65 /* MsgSendSmallInt.bc */ = {isa = PBXFileReference; lastKnownFileType = file; name = MsgSendSmallInt.bc; path = CodeGen/MsgSendSmallInt.bc; sourceTree = "<group>"; };
 		66A1FB011049C9D800A19C65 /* ObjCConstants.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = ObjCConstants.plist; sourceTree = "<group>"; };
+		66A2E59210F6A17900F5850C /* BoxedFloat.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = BoxedFloat.m; path = Runtime/BoxedFloat.m; sourceTree = "<group>"; };
 		66AC44EE108ADCCD00047C26 /* EtoileFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = EtoileFoundation.xcodeproj; path = ../../Frameworks/EtoileFoundation/EtoileFoundation.xcodeproj; sourceTree = SOURCE_ROOT; };
 		66AC458B108ADF8B00047C26 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		66AC458C108ADF8B00047C26 /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
@@ -504,6 +506,7 @@
 				6697B08E1048D1D300456911 /* BlockClosure+debug.m */,
 				6697B08F1048D1D300456911 /* BlockClosure.h */,
 				6697B0901048D1D300456911 /* BlockClosure.m */,
+				66A2E59210F6A17900F5850C /* BoxedFloat.m */,
 				6697B0911048D1D300456911 /* NSValue+structs.m */,
 				6697B0921048D1D300456911 /* OverflowHandler.m */,
 				66CC0B0A1082628100FABEBF /* Symbol.h */,
@@ -908,6 +911,7 @@
 				6697B09A1048D1D300456911 /* NSValue+structs.m in Sources */,
 				6697B09B1048D1D300456911 /* OverflowHandler.m in Sources */,
 				6697B09C1048D1D300456911 /* Symbol.m in Sources */,
+				66A2E59310F6A17900F5850C /* BoxedFloat.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
