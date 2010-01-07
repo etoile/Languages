@@ -135,6 +135,10 @@ LLVMValue LoadArgumentAtIndex(ModuleBuilder B, unsigned index, unsigned depth);
  */
 LLVMValue IntConstant(ModuleBuilder B, const char *value);
 /**
+ * Constructs an LLVM constant for this floating point value.
+ */
+LLVMValue FloatConstant(ModuleBuilder B, const char *value);
+/**
  * Constructs an LLVM constant for this string.
  */
 LLVMValue StringConstant(ModuleBuilder B, const char *value);

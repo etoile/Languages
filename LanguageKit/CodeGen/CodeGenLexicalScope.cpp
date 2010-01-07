@@ -971,6 +971,10 @@ Value *CodeGenLexicalScope::IntConstant(const char *value)
 {
 	return CGM->IntConstant(Builder, value);
 }
+Value *CodeGenLexicalScope::FloatConstant(const char *value)
+{
+	return CGM->FloatConstant(Builder, value);
+}
 Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();

@@ -151,6 +151,10 @@ public:
 	* the size.  
 	*/
 	Value *IntConstant(IRBuilder<> &Builder, const char *value);
+	/**
+	 * Creates a floating point constant.
+	 */
+  Value *FloatConstant(IRBuilder<> &Builder, const char *value);
   /**
    * Create a string (object) constant.
    */

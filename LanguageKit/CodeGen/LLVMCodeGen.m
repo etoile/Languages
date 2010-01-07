@@ -224,6 +224,10 @@ lexicalScopeAtDepth:(unsigned) scope
 {
 	return IntConstant(Builder, [aString UTF8String]);
 }
+- (void*) floatConstant:(NSString*)aString
+{
+	return FloatConstant(Builder, [aString UTF8String]);
+}
 - (void*) stringConstant:(NSString*)aString
 {
 	return StringConstant(Builder, [aString UTF8String]);

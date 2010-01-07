@@ -321,6 +321,28 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 	Val->setName("SmallIntConstant");
 	return Val;
 }
+Value *CodeGenModule::FloatConstant(IRBuilder<> &Builder, const char *value)
+{
+	errno = 0;
+	Value *BoxedFloatClass = InitialiseBuilder.CreateLoad(
+			TheModule->getGlobalVariable(".smalltalk_bigint_class",
+				true));
+	Value *V = MakeConstantString(value);
+	// Create the BoxedFloat
+	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
+		false,  NULL, BoxedFloatClass, Runtime->GetSelector(InitialiseBuilder,
+			"boxedFloatWithCString:", NULL), &V, 1);
+	// Retain it
+	S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
+		S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));
+	// Define a global variable and store it there.
+	GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
+			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
+			value);
+	InitialiseBuilder.CreateStore(S, GS);
+	// Load the global.
+	return Builder.CreateLoad(GS);
+}
 
 void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 {

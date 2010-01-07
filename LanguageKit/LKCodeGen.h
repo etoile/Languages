@@ -176,7 +176,11 @@ lexicalScopeAtDepth:(unsigned int) scope;
  */
 - (void*) intConstant:(NSString*)aString;
 /**
- * ReturnAs a constant representing the passed string.
+ * Return a constant representing the passed string.
+ */
+- (void*) floatConstant:(NSString*)aString;
+/**
+ * Return a constant representing the passed string.
  */
 - (void*) stringConstant:(NSString*)aString;
 /**

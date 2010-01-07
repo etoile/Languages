@@ -175,6 +175,10 @@ public:
    */
   Value *SymbolConstant(const char *symbol);
   /**
+   * Create a floating point constant.
+   */
+  Value *FloatConstant(const char *value);
+  /**
    * Create an integer constant.
    */
   Value *IntConstant(const char *value);

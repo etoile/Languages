@@ -208,6 +208,11 @@ LLVMValue IntConstant(ModuleBuilder B, const char *value)
 {
 	return B->getCurrentScope()->IntConstant(value);
 }
+LLVMValue FloatConstant(ModuleBuilder B, const char *value)
+{
+	return B->getCurrentScope()->FloatConstant(value);
+}
+
 
 LLVMValue StringConstant(ModuleBuilder B, const char *value)
 {
