@@ -72,20 +72,22 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 		case 'f': case 'd':
 		{
 			// Box float/double
-			Value *NSNumberClass = B->CreateLoad(
-				CGM->getModule()->getGlobalVariable(".smalltalk_nsnumber_class",
+			// TODO: On 64-bit platforms hide floats inside pointers, leave
+			// doubles boxed
+			Value *BoxedFloatClass = B->CreateLoad(
+				CGM->getModule()->getGlobalVariable(".smalltalk_boxedfloat_class",
 					true));
 			const char *castSelName;
 			if (*typestr == 'f')
 			{
-				castSelName = "numberWithFloat:";
+				castSelName = "boxedFloatWithFloat:";
 			}
 			else
 			{
-				castSelName = "numberWithDouble:";
+				castSelName = "boxedFloatWithDouble:";
 			}
 			Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
-					NULL, NSNumberClass, Runtime->GetSelector(*B,
+					NULL, BoxedFloatClass, Runtime->GetSelector(*B,
 						castSelName, NULL), &V, 1);
 			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 			{

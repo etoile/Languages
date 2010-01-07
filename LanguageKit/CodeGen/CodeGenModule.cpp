@@ -107,6 +107,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit)
 	CreateClassPointerGlobal("NSValue", ".smalltalk_nsvalue_class");
 	CreateClassPointerGlobal("NSNumber", ".smalltalk_nsnumber_class");
 	CreateClassPointerGlobal("BigInt", ".smalltalk_bigint_class");
+	CreateClassPointerGlobal("BoxedFloat", ".smalltalk_boxedfloat_class");
 }
 
 void CodeGenModule::BeginClass(const char *Class,

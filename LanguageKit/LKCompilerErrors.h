@@ -31,6 +31,10 @@ EMIT_STRING(kLKSourceLine)
  * The character which generated the error.
  */
 EMIT_STRING(kLKCharacterNumber)
+/**
+ * The type encoding associated with an error or warning.
+ */
+EMIT_STRING(kLKTypeEncoding)
 
 /**
  * A reference was made to an invalid symbol.
@@ -49,6 +53,11 @@ EMIT_STRING(LKUndefinedSuperclassError)
  * perfectly acceptable.
  */
 EMIT_STRING(LKRedefinedClassWarning)
+/**
+ * A selector is being used that is polymorphic.  The kLKTypeEncoding key will
+ * provide the type encoding that was chosen.
+ */
+EMIT_STRING(LKPolymorphicSelectorWarning)
 /**
  * Parsing failed.  The info dictionary will contain kLKCharacterNumber,
  * kLKSourceLine, and kLKLineNumber to identify the location of the error.
