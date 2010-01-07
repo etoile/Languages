@@ -42,11 +42,18 @@ static NSDictionary *ObjCConstants;
 		[NSException raise:@"InvalidLiteral" 
 		            format:@"Invalid symbolic constant %@", aString];
 	}
-	return [self literalFromString:val];
+	return [LKNumberLiteral literalFromString:val];
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	return [aGenerator intConstant:value];
+}
+@end
+
+@implementation LKFloatLiteral
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
+{
+	return [aGenerator floatConstant: value];
 }
 @end
 

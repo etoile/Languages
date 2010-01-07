@@ -15,5 +15,10 @@
 + (id) literalFromSymbol:(NSString*)aString;
 @end
 
+/**
+ * Floating point literal value.
+ */
+@interface LKFloatLiteral : LKNumberLiteral @end
+
 @interface LKStringLiteral : LKLiteral {}
 @end
