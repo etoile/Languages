@@ -150,7 +150,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		interpretedElements[i] =
 			[(LKAST*)[elements objectAtIndex: i] interpretInContext: context];
 	}
-	return [NSArray arrayWithObjects: interpretedElements count: count];
+	return [NSMutableArray arrayWithObjects: interpretedElements count: count];
 }
 @end
 
@@ -259,7 +259,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKCompare (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	return [NSNumber numberWithBool: 
+	return [BigInt bigIntWithLong: 
 		[lhs interpretInContext: context] == [rhs interpretInContext: context]];
 }
 @end
@@ -401,7 +401,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKMethod (LKInterpreter)
 - (id)executeInContext: (LKInterpreterContext*)context
 {
-	id result = nil;
+	id result = [context selfObject];
 	NS_DURING
 		FOREACH(statements, element, LKAST*)
 		{

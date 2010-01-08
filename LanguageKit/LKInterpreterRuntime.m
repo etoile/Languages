@@ -1,5 +1,6 @@
 #import "LanguageKit.h"
 #import "Runtime/BigInt.h"
+#import "Runtime/BoxedFloat.h"
 #import "Runtime/Symbol.h"
 #import "LKInterpreterRuntime.h"
 #import "LKInterpreter.h"
@@ -134,9 +135,9 @@ static id BoxValue(void *value, const char *typestr)
 		case 'q': case 'Q': // FIXME: Incorrect for unsiged long long
 			return [BigInt bigIntWithLongLong: *(long long*)value];
 		case 'f': 
-			return [NSNumber numberWithFloat: *(float*)value];
+			return [BoxedFloat boxedFloatWithFloat: *(float*)value];
 		case 'd':
-			return [NSNumber numberWithDouble: *(double*)value];
+			return [BoxedFloat boxedFloatWithFloat: *(double*)value];
 		case ':': 
 			return [Symbol SymbolForSelector: *(SEL*)value];
 		case '{':
@@ -359,7 +360,7 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 		const char *objCType = [sig getArgumentTypeAtIndex: i + 2];
 		UnboxValue(args[i], unboxedArgumentsBuffer[i + 2], objCType);
 		unboxedArguments[i + 2] = unboxedArgumentsBuffer[i + 2];
-	}	
+	}
 	
 	char msgSendRet[[sig methodReturnLength]];
 	ffi_call(&cif, methodIMP, &msgSendRet, unboxedArguments);
