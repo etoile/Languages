@@ -100,6 +100,7 @@
 		66A1FC791049DBD700A19C65 /* SmalltalkSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6697AFD61048CFB100456911 /* SmalltalkSupport.framework */; };
 		66A1FC821049DC2000A19C65 /* libgmp.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6697B1AF1049BE0D00456911 /* libgmp.dylib */; };
 		66A2E59310F6A17900F5850C /* BoxedFloat.m in Sources */ = {isa = PBXBuildFile; fileRef = 66A2E59210F6A17900F5850C /* BoxedFloat.m */; };
+		66A2E61910F6D2FD00F5850C /* BoxedFloat.h in Headers */ = {isa = PBXBuildFile; fileRef = 66A2E61810F6D2FD00F5850C /* BoxedFloat.h */; };
 		66AC4526108ADD1000047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
 		66AC4530108ADD2800047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
 		66AC4533108ADD3200047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
@@ -346,6 +347,7 @@
 		66A1FAA51049C32700A19C65 /* MsgSendSmallInt.bc */ = {isa = PBXFileReference; lastKnownFileType = file; name = MsgSendSmallInt.bc; path = CodeGen/MsgSendSmallInt.bc; sourceTree = "<group>"; };
 		66A1FB011049C9D800A19C65 /* ObjCConstants.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = ObjCConstants.plist; sourceTree = "<group>"; };
 		66A2E59210F6A17900F5850C /* BoxedFloat.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = BoxedFloat.m; path = Runtime/BoxedFloat.m; sourceTree = "<group>"; };
+		66A2E61810F6D2FD00F5850C /* BoxedFloat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BoxedFloat.h; path = Runtime/BoxedFloat.h; sourceTree = "<group>"; };
 		66AC44EE108ADCCD00047C26 /* EtoileFoundation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = EtoileFoundation.xcodeproj; path = ../../Frameworks/EtoileFoundation/EtoileFoundation.xcodeproj; sourceTree = SOURCE_ROOT; };
 		66AC458B108ADF8B00047C26 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		66AC458C108ADF8B00047C26 /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
@@ -506,6 +508,7 @@
 				6697B08E1048D1D300456911 /* BlockClosure+debug.m */,
 				6697B08F1048D1D300456911 /* BlockClosure.h */,
 				6697B0901048D1D300456911 /* BlockClosure.m */,
+				66A2E61810F6D2FD00F5850C /* BoxedFloat.h */,
 				66A2E59210F6A17900F5850C /* BoxedFloat.m */,
 				6697B0911048D1D300456911 /* NSValue+structs.m */,
 				6697B0921048D1D300456911 /* OverflowHandler.m */,
@@ -658,6 +661,7 @@
 				6697B0951048D1D300456911 /* BigInt.h in Headers */,
 				6697B0981048D1D300456911 /* BlockClosure.h in Headers */,
 				66CC0B0B1082628100FABEBF /* Symbol.h in Headers */,
+				66A2E61910F6D2FD00F5850C /* BoxedFloat.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

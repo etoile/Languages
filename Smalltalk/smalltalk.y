@@ -357,6 +357,10 @@ simple_expression(E) ::= NUMBER(N).
 {
 	E = [LKNumberLiteral literalFromString:N];
 }
+simple_expression(E) ::= FLOATNUMBER(N).
+{
+	E = [LKFloatLiteral literalFromString:N];
+}
 simple_expression(E) ::= AT WORD(S).
 {
 	E = [LKNumberLiteral literalFromSymbol:S];

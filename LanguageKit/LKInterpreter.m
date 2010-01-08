@@ -1,5 +1,6 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "Runtime/BigInt.h"
+#import "Runtime/BoxedFloat.h"
 #import "Runtime/Symbol.h"
 #import "LanguageKit/LanguageKit.h"
 #import "LKInterpreter.h"
@@ -330,6 +331,15 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	return [BigInt bigIntWithCString: [value UTF8String]];
+}
+@end
+
+@interface LKFloatLiteral (LKInterpreter)
+@end
+@implementation LKFloatLiteral (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)context
+{
+	return [BoxedFloat boxedFloatWithCString: [value UTF8String]];
 }
 @end
 

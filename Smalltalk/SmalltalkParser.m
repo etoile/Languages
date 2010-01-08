@@ -115,7 +115,20 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 			j++;
 			i = MAX(i,j-1);
 		}
-		else CASE(isdigit, isdigit, {CALL_PARSER(NUMBER, WORD_TOKEN);})
+		else if(isdigit(c))
+		{
+			WHILE(isdigit);
+			if (c == '.' && isdigit(CHAR(j+1)))
+			{
+				c=CHAR(++j); // Skip the '.'
+				for( ; j<sLength-1 && isdigit(c) ; c=CHAR(++j)) {}
+				CALL_PARSER(FLOATNUMBER, WORD_TOKEN);
+			}
+			else {
+				CALL_PARSER(NUMBER, WORD_TOKEN);
+			}
+			i = MAX(i,j-1);
+		}
 		else
 		{
 			switch(c)

@@ -1,12 +1,5 @@
 #define class_pointer isa
-#import <Foundation/Foundation.h>
-
-@interface BoxedFloat : NSObject
-{
-	@public
-	double value;
-}
-@end
+#import "BoxedFloat.h"
 
 @implementation BoxedFloat
 + (BoxedFloat*) boxedFloatWithCString:(const char*) aString
