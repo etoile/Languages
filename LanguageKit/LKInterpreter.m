@@ -10,6 +10,8 @@
 #include <math.h>
 
 NSString *LKInterpreterException = @"LKInterpreterException";
+NSString *LKSmalltalkBlockNonLocalReturnException =
+	@"LKSmalltalkBlockNonLocalReturnException";
 
 static NSMutableDictionary *LKClassVariables;
 static NSMutableDictionary *LKMethodASTs;
@@ -48,7 +50,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKBlockReturnException
 + (void)raiseWithValue: (id)returnValue
 {
-	[[LKBlockReturnException exceptionWithName: @""
+	[[LKBlockReturnException exceptionWithName: LKSmalltalkBlockNonLocalReturnException
 	                                    reason: @""
 	                                  userInfo: D(returnValue, @"returnValue", nil)] raise];
 }
