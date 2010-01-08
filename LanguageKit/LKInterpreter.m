@@ -104,11 +104,19 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	return [symbols containsObject: symbol] || [parent hasSymbol: symbol];
 }
+- (id)selfObject
+{
+	if (nil != parent)
+	{
+		return [parent selfObject];
+	}
+	return selfObject;
+}
 - (id) valueForSymbol: (NSString*)symbol
 {
 	if ([symbol isEqualToString: @"self"])
 	{
-		return selfObject;
+		return [self selfObject];
 	}
 	for (unsigned int i=0; i<[symbols count]; i++)
 	{
@@ -578,7 +586,7 @@ static uint8_t logBase2(uint8_t x)
 		//FIXME: If overriding, check the superclass type explicitly
 		const char *type = [(LKModule*)[self parent] typeForMethod: methodName];
 		Class destClass = isClassMethod ? object_getClass(cls) : cls;
-		class_replaceMethod(destClass, sel, LKInterpreterIMPForType([NSString stringWithUTF8String: type]), type);
+		class_addMethod(destClass, sel, LKInterpreterIMPForType([NSString stringWithUTF8String: type]), type);
 		StoreASTForMethod(classname, isClassMethod, methodName, method);
 	}
 	
