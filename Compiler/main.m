@@ -25,7 +25,9 @@ static NSBundle *mainBundle = nil;
 @implementation NSBundleHack
 + (void) enableHack
 {
-	[self poseAsClass:[NSBundle class]];
+	Method mine = class_getClassMethod(self, @selector(mainBundle));
+	class_replaceMethod([super class], @selector(mainBundle), 
+			method_getImplementation(mine), method_getTypeEncoding(mine));
 }
 + (NSBundle*) mainBundle
 {
@@ -126,7 +128,6 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 
 int main(int argc, char **argv)
 {
-	int a;
 	[NSAutoreleasePool new];
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];
