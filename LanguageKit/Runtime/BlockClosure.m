@@ -256,6 +256,10 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval);
 {
 	return args;
 }
+- (int)intValue
+{
+	return [[self value] intValue];
+}
 - (void) dealloc
 {
 	[context release];

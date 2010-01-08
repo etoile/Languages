@@ -49,5 +49,5 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 
 MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
-	@clang-cc -c -ftrapv -emit-llvm-bc -fexceptions MsgSendSmallInt.m
+	@clang -c -ftrapv -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc
 

@@ -5,14 +5,19 @@
 static mpz_t ZERO;
 Class BigIntClass;
 
+static BigInt *BigIntYES;
+static BigInt *BigIntNO;
+
 @implementation BigInt
 + (void) initialize
 {
 	if ([BigInt class] == self)
 	{
 		BigIntClass = self;
+		mpz_init_set_si(ZERO, 0);
+		BigIntNO = [[BigInt bigIntWithLongLong: 0] retain];
+		BigIntYES = [[BigInt bigIntWithLongLong: 1] retain];
 	}
-	mpz_init_set_si(ZERO, 0);
 }
 + (BigInt*) bigIntWithCString:(const char*) aString
 {
@@ -85,6 +90,43 @@ op(sub)
 op(mul)
 op(mod)
 op2(div, tdiv_q)
+- (id)and: (id)a
+{
+	return mpz_get_si(v) && [a intValue] ? BigIntYES : BigIntNO;
+}
+- (id)or: (id)a;
+{
+	return mpz_get_si(v) || [a intValue] ? BigIntYES : BigIntNO;
+}
+op2(bitwiseAnd, and);
+op2(bitwiseOr, ior);
+- (id)not
+{
+	if (mpz_cmp(v, ZERO) != 0)
+	{
+		return BigIntNO;
+	}
+	return BigIntYES;
+}
+#define CTYPE(name, op) \
+- (BOOL)name\
+{\
+	if (mpz_fits_sint_p(v))\
+	{\
+		int  max = mpz_get_si(v);\
+		return op(max);\
+	}\
+	return NO;\
+}
+CTYPE(isAlphanumeric, isalnum)
+CTYPE(isUppercase, isupper)
+CTYPE(isLowercase, islower)
+CTYPE(isDigit, isdigit)
+CTYPE(isAlphabetic, isalpha)
+- (id)value
+{
+	return self;
+}
 - (BOOL) isLessThan:(id)other
 {
 	if ([other isKindOfClass:isa])

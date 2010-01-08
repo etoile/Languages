@@ -2,17 +2,29 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdint.h>
+#include <ctype.h>
 
 // Dummy interfaces to make warnings go away
 @interface BigInt {}
-+ (id) bigIntWithLongLong:(long long)a;
-- (id) plus:(id)a;
-- (id) sub:(id)a;
-- (id) div:(id)a;
-- (id) mul:(id)a;
-- (id) mod:(id)a;
-- (id) to:(id)a by:(id)b do:(id)c;
-- (id) to:(id)a do:(id)c;
++ (id)bigIntWithLongLong:(long long)a;
+- (id)plus:(id)a;
+- (id)sub:(id)a;
+- (id)div:(id)a;
+- (id)mul:(id)a;
+- (id)mod:(id)a;
+- (id)to:(id)a by:(id)b do:(id)c;
+- (id)to:(id)a do:(id)c;
+- (id)and: (id)a;
+- (id)or: (id)a;
+- (id)bitwiseAnd: (id)a;
+- (id)bitwiseOr: (id)a;
+- (id)not;
+- (BOOL)isAlphanumeric;
+- (BOOL)isUppercase;
+- (BOOL)isLowercase;
+- (BOOL)isDigit;
+- (BOOL)isAlphabetic;
+- (id)value;
 @end
 @interface NSString {}
 + (id) stringWithFormat:(NSString*)a, ...;
@@ -30,23 +42,24 @@ typedef struct
  * have a selector argument.  Ideally, they are small enough to inline.
  * Replace : with _ in the selector name.
  */
-#define MSG(name, ...) void *SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
+#define MSG(retTy, name, ...) retTy SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
 {\
 	intptr_t val = (intptr_t)obj;\
 	val >>= 1;
 /**
  * Small int message with no arguments.
  */
-#define MSG0(name) MSG(name)
+#define MSG0(name) MSG(void*, name)
 /**
  * Small int message with one argument.
  */
-#define MSG1(name) MSG(name, void *other)\
+#define MSG1(name) MSG(void*, name, void *other)\
 	intptr_t otherval = (intptr_t)other;\
 	otherval >>= 1;
 
 MSG0(log)
 	NSLog(@"%lld", (long long) ((intptr_t)obj >>1));
+	return obj;
 }
 
 MSG1(ifTrue_)
@@ -201,23 +214,63 @@ MSG1(mod_)
 	OTHER_OBJECT(mod)
 	RETURN_INT((val % otherval));
 }
+MSG1(bitwiseAnd_)
+	OTHER_OBJECT(bitwiseAnd)
+	RETURN_INT((val & otherval));
+}
+MSG1(bitwiseOr_)
+	OTHER_OBJECT(bitwiseOr)
+	RETURN_INT((val | otherval));
+}
 
-BOOL SmallIntMsgisLessThan_(void *obj, void *other)
-{
-	intptr_t val = (intptr_t)obj;\
-	val >>= 1;
+#define BOOLMSG0(name) MSG(BOOL, name)
+#define BOOLMSG1(name) MSG(BOOL, name, void *other)\
 	intptr_t otherval = (intptr_t)other;\
 	otherval >>= 1;
-	return val < otherval;
-}	
-BOOL SmallIntMsgisGreaterThan_(void *obj, void *other)
-{
-	intptr_t val = (intptr_t)obj;\
-	val >>= 1;
-	intptr_t otherval = (intptr_t)other;\
-	otherval >>= 1;
-	return val > otherval;
-}	
+
+MSG1(and_)
+	OTHER_OBJECT(and)
+	RETURN_INT(val && otherval);
+}
+MSG1(or)
+	OTHER_OBJECT(or)
+	RETURN_INT(val || otherval);
+}
+MSG0(not)
+	RETURN_INT(!val);
+}
+BOOLMSG0(isAlphanumeric)
+	return isalphanum(val);
+}
+BOOLMSG0(isUppercase)
+	return isupper(val);
+}
+BOOLMSG0(isLowercase)
+	return islower(val);
+}
+BOOLMSG0(isDigit)
+	return isdigit(val);
+}
+BOOLMSG0(isAlphabetic)
+	return isalpha(val);
+}
+MSG0(value)
+	return obj;
+}
+
+#define COMPARE(msg, op) \
+BOOL SmallIntMsg ## msg ## _(void *obj, void *other) \
+{ \
+	intptr_t val = (intptr_t)obj; \
+	val >>= 1; \
+	intptr_t otherval = (intptr_t)other; \
+	otherval >>= 1; \
+	return val op otherval; \
+}
+COMPARE(isLessThan, <)
+COMPARE(isGreaterThan, >)
+COMPARE(isLessThanOrEqualTo, <=)
+COMPARE(isGreaterThanOrEqualTo, >=)
 
 void *MakeSmallInt(long long val) {
 	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
