@@ -1,3 +1,4 @@
+#import <EtoileFoundation/runtime.h>
 #import "LKSymbolTable.h"
 
 static NSMutableDictionary *NewClasses;
@@ -65,28 +66,30 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	SELFINIT;
 	classVariables = [[NSMutableArray alloc] init];
 	instanceVariables = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 10);
-	nextOffset = aClass->instance_size;
+	nextOffset = class_getInstanceSize(aClass);
 	NSMutableDictionary *ivarTypes = [NSMutableDictionary new];
-	// FIXME: Move this into a runtime-specific category.
-	while (aClass != Nil && aClass != aClass->super_class)
+	
+	while (aClass != Nil && aClass != class_getSuperclass(aClass))
 	{
-		struct objc_ivar_list* ivarlist = aClass->ivars;
+		unsigned int ivarcount = 0;
+		Ivar* ivarlist = class_copyIvarList(aClass, &ivarcount);
 		if(ivarlist != NULL) 
 		{
-			for (int i = 0 ; i < ivarlist->ivar_count ; i++)
+			for (int i = 0 ; i < ivarcount ; i++)
 			{
-				int offset = ivarlist->ivar_list[i].ivar_offset;
+				int offset = ivar_getOffset(ivarlist[i]);
 				NSString * name = [NSString stringWithUTF8String:
-					(char*)ivarlist->ivar_list[i].ivar_name];
+					(char*)ivar_getName(ivarlist[i])];
 				NSMapInsert(instanceVariables, (void*)name,
 					   	(void*)(uintptr_t)offset);
 				NSString * type = [NSString stringWithUTF8String:
-					(char*)ivarlist->ivar_list[i].ivar_type];
+					(char*)ivar_getTypeEncoding(ivarlist[i])];
 				[ivarTypes setObject:type forKey:name];
 			}
+			free(ivarlist);
 		}
 		//Add ivars declared in the superaClass too.
-		aClass = aClass->super_class;
+		aClass = class_getSuperclass(aClass);
 	}
 	types = ivarTypes;
 	return self;

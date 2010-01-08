@@ -1,4 +1,5 @@
 #import <EtoileFoundation/EtoileFoundation.h>
+#import <EtoileFoundation/runtime.h>
 #import <AppKit/AppKit.h>
 #include <time.h>
 #include <sys/resource.h>
@@ -8,7 +9,7 @@
 @implementation NSObject (DumpObject)
 - (void) dumpObject
 {
-	int words = isa->instance_size / sizeof(int);
+	int words = class_getInstanceSize(isa) / sizeof(int);
 	unsigned *word = (unsigned*)self;
 	for (unsigned i = 0 ; i<words ; i++)
 	{
