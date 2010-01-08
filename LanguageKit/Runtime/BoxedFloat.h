@@ -9,3 +9,4 @@
 + (BoxedFloat*) boxedFloatWithDouble:(double)aVal;
 + (BoxedFloat*) boxedFloatWithFloat:(float)aVal;
 @end
+

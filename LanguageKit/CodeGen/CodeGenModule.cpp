@@ -325,7 +325,7 @@ Value *CodeGenModule::FloatConstant(IRBuilder<> &Builder, const char *value)
 {
 	errno = 0;
 	Value *BoxedFloatClass = InitialiseBuilder.CreateLoad(
-			TheModule->getGlobalVariable(".smalltalk_bigint_class",
+			TheModule->getGlobalVariable(".smalltalk_boxedfloat_class",
 				true));
 	Value *V = MakeConstantString(value);
 	// Create the BoxedFloat
