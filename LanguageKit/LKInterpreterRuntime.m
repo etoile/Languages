@@ -284,6 +284,10 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	if (className)
 	{
 		struct objc_super sup = { receiver, NSClassFromString(className) };
+		if (class_isMetaClass(receiver->class_pointer))
+		{
+			sup.class = object_getClass(sup.class);
+		}
 		methodIMP = objc_msg_lookup_super(&sup, sel);
 	}
 	else
@@ -349,17 +353,6 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	char unboxedArgumentsBuffer[[sig numberOfArguments]][[sig frameLength]];
 	void *unboxedArguments[[sig numberOfArguments]];
 	unboxedArguments[0] = &receiver;
-#ifndef GNU_RUNTIME
-	if (className)
-	{
-		struct objc_super sup = { receiver, NSClassFromString(className) };
-		struct objc_super *supp = &sup;
-		// This is a bit of a hack.  Really the FFI type should be different for
-		// message sends to super, but this should work because the are both
-		// pointers.
-		unboxedArguments[0] = &supp;
-	}
-#endif
 	unboxedArguments[1] = &sel;
 	for (unsigned int i = 0; i < argc; i++)
 	{
