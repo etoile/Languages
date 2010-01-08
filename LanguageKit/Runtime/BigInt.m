@@ -67,6 +67,11 @@ static BigInt *BigIntNO;
 #define op2(name, func) \
 - (BigInt*) name:(id)other\
 {\
+	if (nil == other)\
+	{\
+		[NSException raise: @"BigIntException"\
+		            format: @"nil argument to " #name];\
+	}\
 	BigInt *b = [[[BigInt alloc] init] autorelease];\
 	mpz_init(b->v);\
 	if (other->isa == BigIntClass || [other isKindOfClass: BigIntClass])\
