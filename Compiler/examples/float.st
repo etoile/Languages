@@ -4,6 +4,8 @@ NSObject subclass: SmalltalkTool
 	| a |
 		"You can explicitly create floats from most objects."
 		a := '1.23e3' floatValue.
+		"Or using float literals"
+		a := 65.23.
 		"Or you can do it implicitly"
 		a := a + '2.34'.
 		a := a + 12.
