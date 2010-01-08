@@ -114,7 +114,7 @@ op2(bitwiseOr, ior);
 	if (mpz_fits_sint_p(v))\
 	{\
 		int  max = mpz_get_si(v);\
-		return op(max);\
+		return 0 != op(max);\
 	}\
 	return NO;\
 }
