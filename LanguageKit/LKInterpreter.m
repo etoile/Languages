@@ -21,9 +21,9 @@ LKMethod *LKASTForMethod(Class cls, NSString *selectorName)
 	do
 	{
 		ast = [LKMethodASTs valueForKey:
-			[NSString stringWithFormat: @"%@%@%@", 
-				NSStringFromClass(cls), isClassMethod ? @"+" : @"-", selectorName]];
-		cls = [cls superclass];
+			[NSString stringWithFormat: @"%s%c%@", 
+				class_getName(cls), isClassMethod ? '+' : '-', selectorName]];
+		cls = class_getSuperclass(cls);
 	} while (ast == nil && cls != nil);
 	return ast;
 }
