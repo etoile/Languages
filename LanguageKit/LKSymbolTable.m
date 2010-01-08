@@ -1,5 +1,5 @@
-#import <EtoileFoundation/runtime.h>
 #import "LKSymbolTable.h"
+#import <EtoileFoundation/runtime.h>
 
 static NSMutableDictionary *NewClasses;
 
