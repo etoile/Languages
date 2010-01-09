@@ -29,7 +29,7 @@ id LKGetIvar(id receiver, NSString *name);
  * For object typed ivars, the existing value is released and the new value
  * is retained.
  */
-void LKSetIvar(id receiver, NSString *name, id value);
+BOOL LKSetIvar(id receiver, NSString *name, id value);
 
 /**
  * Creates and returns a "trampoline" Objective-C method implementation for a 

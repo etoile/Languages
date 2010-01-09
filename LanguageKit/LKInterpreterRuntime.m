@@ -377,9 +377,13 @@ id LKGetIvar(id receiver, NSString *name)
 	return result;
 }
 
-void LKSetIvar(id receiver, NSString *name, id value)
+BOOL LKSetIvar(id receiver, NSString *name, id value)
 {
 	Ivar ivar = class_getInstanceVariable([receiver class], [name UTF8String]);
+	if (NULL == ivar)
+	{
+		return NO;
+	}
 	void *ivarAddress = (char*)receiver + ivar_getOffset(ivar);
 	const char *encoding = ivar_getTypeEncoding(ivar);
 	if (encoding[0] == '@')
@@ -390,6 +394,7 @@ void LKSetIvar(id receiver, NSString *name, id value)
 	{
 		UnboxValue(value, ivarAddress, encoding);
 	}
+	return YES;
 }
 
 static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret, 

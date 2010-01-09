@@ -94,6 +94,10 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			return YES;
 		}
 	}
+	if (nil == parent)
+	{
+		return LKSetIvar(selfObject, symbol, value);
+	}
 	return [parent setValue: value forSymbol: symbol];
 }
 - (void) addSymbol: (NSString*)symbol
@@ -116,10 +120,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 }
 - (id) valueForSymbol: (NSString*)symbol
 {
-	if ([symbol isEqualToString: @"self"])
-	{
-		return [self selfObject];
-	}
 	for (unsigned int i=0; i<[symbols count]; i++)
 	{
 		if ([[symbols objectAtIndex: i] isEqualToString: symbol])
@@ -127,7 +127,11 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			return objects[i];
 		}
 	}
-	return [parent valueForSymbol: symbol];	
+	if (nil == parent)
+	{
+		return LKGetIvar(selfObject, symbol);
+	}
+	return [parent valueForSymbol: symbol];
 }
 @end
 
@@ -167,11 +171,9 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	{
 		case LKSymbolScopeLocal:
 		case LKSymbolScopeExternal:
+		case LKSymbolScopeObject:
 			[context setValue: rvalue
 			        forSymbol: [target symbol]];
-			break;
-		case LKSymbolScopeObject:
-			LKSetIvar([context valueForSymbol: @"self"], target->symbol, rvalue);
 			break;
 		case LKSymbolScopeClass:
 		{
@@ -277,11 +279,12 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		case LKSymbolScopeLocal:			
 		case LKSymbolScopeArgument:
 		case LKSymbolScopeExternal:
+		case LKSymbolScopeObject:
 			return [context valueForSymbol: symbol];
 		case LKSymbolScopeBuiltin:
 			if ([symbol isEqualToString: @"self"] || [symbol isEqualToString: @"super"])
 			{
-				return [context valueForSymbol: @"self"];
+				return [context selfObject];
 			}
 			else if ([symbol isEqualToString: @"nil"] || [symbol isEqualToString: @"Nil"])
 			{
@@ -289,10 +292,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			}
 		case LKSymbolScopeGlobal:
 			return NSClassFromString(symbol);
-
-		case LKSymbolScopeObject:
-			return LKGetIvar([context valueForSymbol: @"self"], symbol);
-
 		case LKSymbolScopeClass:
 		{
 			LKAST *p = [self parent];
