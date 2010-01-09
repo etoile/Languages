@@ -26,8 +26,8 @@ static NSBundle *mainBundle = nil;
 + (void) enableHack
 {
 	Method mine = class_getClassMethod(self, @selector(mainBundle));
-	class_replaceMethod([super class], @selector(mainBundle), 
-			method_getImplementation(mine), method_getTypeEncoding(mine));
+	class_replaceMethod(objc_getMetaClass("NSBundle"), @selector(mainBundle), 
+		method_getImplementation(mine), method_getTypeEncoding(mine));
 }
 + (NSBundle*) mainBundle
 {
