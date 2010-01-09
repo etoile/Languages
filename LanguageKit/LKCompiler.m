@@ -77,9 +77,15 @@ static BOOL loadLibraryForBundle(NSString *soFile,
 		NSLog(@"Cache out of date");
 		return NO;
 	}
-	NSLog(@"Attempting to load .so");
+	NSLog(@"Attempting to load recompiled cache...");
 	// Return YES if dlopen succeeds.
-	return NULL != dlopen([soFile UTF8String], RTLD_GLOBAL);
+	//return NULL != dlopen([soFile UTF8String], RTLD_GLOBAL);
+	void *so = dlopen([soFile UTF8String], RTLD_GLOBAL);
+	if (so == NULL)
+	{
+		NSLog(@"Failed to load cache.  dlopen() error: %s", dlerror());
+	}
+	return NULL != so;
 }
 /**
  * Load any available cached version of the library.
