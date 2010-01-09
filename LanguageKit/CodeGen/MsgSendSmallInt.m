@@ -240,7 +240,7 @@ MSG0(not)
 	RETURN_INT(!val);
 }
 BOOLMSG0(isAlphanumeric)
-	return isalphanum(val);
+	return isalpha(val) || isdigit(val);
 }
 BOOLMSG0(isUppercase)
 	return isupper(val);
