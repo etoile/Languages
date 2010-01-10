@@ -36,6 +36,10 @@
  */
 - (void) addCategory: (LKCategory*)aCategory;
 /**
+ * Returns YES if this selector is used with two or more types.
+ */
+- (BOOL)isSelectorPolymorphic: (NSString*)methodName;
+/**
  * Returns the type that should be used for a given selector.
  */
 - (const char*) typeForMethod:(NSString*)methodName;

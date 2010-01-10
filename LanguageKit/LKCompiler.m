@@ -16,12 +16,36 @@ static NSMutableDictionary *compilersByLanguage;
 static id<LKCompilerDelegate> DefaultDelegate;
 
 @interface LKDefaultCompilerDelegate : NSObject<LKCompilerDelegate>
+{
+	NSMutableSet *polymorphicSelectors;
+}
 @end
 @implementation LKDefaultCompilerDelegate
+- (id)init
+{
+	SUPERINIT;
+	polymorphicSelectors = [NSMutableSet new];
+	return self;
+}
+- (void)dealloc
+{
+	[polymorphicSelectors release];
+	[super dealloc];
+}
 - (BOOL)compiler: (LKCompiler*)aCompiler
 generatedWarning: (NSString*)aWarning
          details: (NSDictionary*)info
 {
+	if (aWarning == LKPolymorphicSelectorWarning)
+	{
+		NSString *selector = [(LKMessageSend*)[info objectForKey: kLKASTNode] selector];
+		// Only log polymorphic selector warnings once per selector.
+		if ([polymorphicSelectors containsObject: selector])
+		{
+			return YES;
+		}
+		[polymorphicSelectors addObject: selector];
+	}
 	NSLog(@"WARNING: %@", [info objectForKey: kLKHumanReadableDescription]);
 	return YES;
 }

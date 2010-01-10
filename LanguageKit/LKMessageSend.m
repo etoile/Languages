@@ -1,6 +1,7 @@
 #import "LKMessageSend.h"
 #import "LKDeclRef.h"
 #import "LKModule.h"
+#import "LKCompilerErrors.h"
 
 
 @implementation NSString (Print)
@@ -61,6 +62,7 @@
 {
   	return arguments;
 }
+// FIXME: Rename to methodName or similar.
 - (NSString*) selector
 {
 	return selector;
@@ -73,9 +75,25 @@
 - (BOOL)check
 {
 	[(LKAST*)target setParent:self];
+
 	BOOL success = (target == nil) || [target check];
-	// This will generate a warning on polymorphic selectors.
+
+	LKModule *module = [self module];
+
 	type = [[self module] typeForMethod:selector];
+	if ([module isSelectorPolymorphic: selector])
+	{
+		NSDictionary *errorDetails = D([NSString stringWithFormat:
+			@"Warning: Selector '%@' is polymorphic.  Assuming %s",
+				selector, type],
+			kLKHumanReadableDescription,
+			[NSString stringWithUTF8String: type],
+			kLKTypeEncoding,
+			self, kLKASTNode);
+		success &= [LKCompiler reportWarning: LKPolymorphicSelectorWarning
+		                             details: errorDetails];
+	}
+
 	FOREACH(arguments, arg, LKAST*)
 	{
 		[arg setParent:self];

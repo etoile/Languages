@@ -146,6 +146,12 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 {
 	[categories addObject:aCategory];
 }
+- (BOOL)isSelectorPolymorphic: (NSString*)methodName
+{
+	return ([typeOverrides objectForKey: methodName] == nil)
+		&&
+		(nil != [SelectorConflicts objectForKey:methodName]);
+}
 - (const char*) typeForMethod:(NSString*)methodName
 {
 	NSString *type = [typeOverrides objectForKey:methodName];
@@ -157,8 +163,6 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 	// If it's a conflicted type, pick the default and log a warning
 	if (nil != (type = [SelectorConflicts objectForKey:methodName]))
 	{
-		NSLog(@"Warning: Selector '%@' is polymorphic.  Assuming %@",
-				methodName, type);
 		return [type UTF8String];
 	}
 	// Otherwise, grab the type from the runtime (for the GNU runtime)
