@@ -109,7 +109,7 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 			do
 			{
 				c=CHAR(++j);
-				if (j<sLength-2 && c == '\'' && CHAR(j+1) == '\'')
+				while (j<sLength-2 && c == '\'' && CHAR(j+1) == '\'')
 				{
 					j += 2;
 					c=CHAR(j);
