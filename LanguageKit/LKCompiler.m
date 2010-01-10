@@ -371,6 +371,7 @@ static NSString *loadFramework(NSString *framework)
 		// Spawn a new process to do the background JTL compile.
 		if (success && fork() == 0)
 		{
+			[LKCompiler setDefaultDelegate: nil];
 			// Make the child process really, really, low priority.
 			setpriority(PRIO_PROCESS, 0, 20);
 			[self justTooLateCompileBundle: bundle];
