@@ -109,7 +109,12 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 			do
 			{
 				c=CHAR(++j);
-			} while (j<sLength-1 && '\'' != c);
+				if (j<sLength-2 && c == '\'' && CHAR(j+1) == '\'')
+				{
+					j += 2;
+					c=CHAR(j);
+				}
+			} while ((j<sLength-1 && '\'' != c));
 			i++;
 			CALL_PARSER(STRING, WORD_TOKEN);
 			j++;

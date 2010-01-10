@@ -65,6 +65,10 @@ static NSDictionary *ObjCConstants;
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	NSMutableString *escaped = [value mutableCopy];
+	[escaped replaceOccurrencesOfString:@"''"
+	                         withString:@"'" 
+	                            options:0
+	                              range:NSMakeRange(0, [escaped length])];
 	[escaped replaceOccurrencesOfString:@"\\n"
 	                         withString:@"\n" 
 	                            options:0
