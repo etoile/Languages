@@ -254,6 +254,9 @@ BOOLMSG0(isDigit)
 BOOLMSG0(isAlphabetic)
 	return isalpha(val);
 }
+BOOLMSG0(isWhitespace)
+	return isspace(val);
+}
 MSG0(value)
 	return obj;
 }

@@ -128,6 +128,7 @@ CTYPE(isUppercase, isupper)
 CTYPE(isLowercase, islower)
 CTYPE(isDigit, isdigit)
 CTYPE(isAlphabetic, isalpha)
+CTYPE(isWhitespace, isspace)
 - (id)value
 {
 	return self;
