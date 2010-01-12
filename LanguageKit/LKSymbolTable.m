@@ -41,6 +41,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
                               inZone:(NSZone*)aZone
 {
 	SUPERINIT;
+	classVariables = [[NSMutableArray alloc] init];
 	instanceVariables = NSCopyMapTableWithZone(map, aZone);
 	nextOffset = next;
 	return self;
@@ -48,6 +49,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 - (void)dealloc
 {
 	NSFreeMapTable(instanceVariables);
+	[classVariables release];
 	[super dealloc];
 }
 - (id) copyWithZone:(NSZone*)aZone
