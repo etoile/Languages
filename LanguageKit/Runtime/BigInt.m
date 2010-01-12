@@ -133,49 +133,25 @@ CTYPE(isWhitespace, isspace)
 {
 	return self;
 }
-- (BOOL) isLessThan:(id)other
-{
-	if ([other isKindOfClass:isa])
-	{
-		BigInt *o = other;
-		return mpz_cmp(v, o->v) < 0;
-	}
-	if ([other respondsToSelector:@selector(intValue)])
-	{
-		return mpz_cmp_si(v, [other intValue]) < 0;
-	}
-	return NO;
+#define CMP(sel, op) \
+- (BOOL) sel:(id)other \
+{\
+	if ([other isKindOfClass:isa])\
+	{\
+		BigInt *o = other;\
+		return mpz_cmp(v, o->v) op 0;\
+	}\
+	if ([other respondsToSelector:@selector(intValue)])\
+	{\
+		return mpz_cmp_si(v, [other intValue]) op 0;\
+	}\
+	return NO;\
 }
-- (BOOL) isGreaterThan:(id)other
-{
-	if ([other isKindOfClass:isa])
-	{
-		BigInt *o = other;
-		return mpz_cmp(v, o->v) > 0;
-	}
-	if ([other respondsToSelector:@selector(intValue)])
-	{
-		return mpz_cmp_si(v, [other intValue]) > 0;
-	}
-	return NO;
-}
-- (BOOL) isEqual:(id)other
-{
-	if ([other isKindOfClass:isa])
-	{
-		BigInt *o = other;
-		return mpz_cmp(v, o->v) == 0;
-	}
-	else if ([other respondsToSelector:@selector(longValue)])
-	{
-		long o = [other longValue];
-		if (mpz_fits_slong_p(v))
-		{
-			return mpz_get_si(v) == o;
-		}
-	}
-	return NO;
-}
+CMP(isLessThan, <)
+CMP(isGreaterThan, >)
+CMP(isLessThanOrEqualTo, <=)
+CMP(isGreaterThanOrEqualTo, >=)
+CMP(isEqual, ==)
 - (id) ifTrue:(id)t
 {
 	if (mpz_cmp(v, ZERO) != 0)
