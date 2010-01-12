@@ -59,30 +59,36 @@ protected:
    */
   Value *Unbox(IRBuilder<> *B, Function *F, Value *val, const char *Type);
 
-  /**
-   * Construct C primitives from Smalltalk objects in an argument list.
-   */
-  void UnboxArgs(IRBuilder<> *B, Function *F,  Value ** argv, Value **args,
-      unsigned argc, const char *selTypes);
+	/**
+	* Construct C primitives from Smalltalk objects in an argument list.
+	*/
+	void UnboxArgs(IRBuilder<> *B, Function *F,
+			llvm::SmallVectorImpl<llvm::Value*> &argv,
+			llvm::SmallVectorImpl<llvm::Value*> &args, const char *selTypes);
 
-  /**
-   * Send a message to the superclass.
-   */
-  Value *MessageSendSuper(IRBuilder<> *B, Function *F, const char
-		*selName, const char *selTypes, Value **argv, unsigned argc);
-  /**
-   * Preform a real message send.  Reveicer must be a real object, not a
-   * SmallInt.
-   */
-  Value *MessageSendId(IRBuilder<> *B, Value *receiver, const char *selName,
-      const char *selTypes, Value **argv, unsigned argc);
+	/**
+	* Send a message to the superclass.
+	*/
+	Value *MessageSendSuper(IRBuilder<> *B, Function *F, const char *selName,
+			const char *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
+	/**
+	* Preform a real message send.  Reveicer must be a real object, not a
+	* SmallInt.
+	*/
+	Value *MessageSendId(IRBuilder<> *B, Value *receiver, const char *selName,
+		const char *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
   /**
    * Send a message to something that may be a SmallInt or an Objective-C
    * object.
    */
   Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
-      *selName, const char *selTypes, Value **argv=0, Value **boxedArgs=0,
-      unsigned argc=0);
+      *selName, const char *selTypes, SmallVectorImpl<Value*> &boxedArgs);
+  /**
+   * Send a message with no arguments to something that is either a SmallInt or
+   * an Objective-C object.
+   */
+  Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
+      *selName, const char *selTypes);
   /**
    * Debugging function - emits a printf statement with the string and the
    * extra argument.
@@ -105,20 +111,20 @@ public:
   /**
    * Send a message to the superclass.
    */
-  Value *MessageSendSuper(const char *selName, const char *selTypes, Value
-		  **argv, unsigned argc);
+  Value *MessageSendSuper(const char *selName, const char *selTypes, 
+		  SmallVectorImpl<Value*> &argv);
 
   /**
    * Send a message to an Objective-C object.
    */
   Value *MessageSendId(Value *receiver, const char *selName, const char
-      *selTypes, Value **argv, unsigned argc);
+      *selTypes, SmallVectorImpl<Value*> &argv);
 
   /**
    * Send a message to a Smalltalk object.
    */
   Value *MessageSend(Value *receiver, const char *selName, const char
-      *selTypes, Value **argv, unsigned argc);
+      *selTypes, SmallVectorImpl<Value*> &boxedArgs);
 
   /**
    * Set the return value for this method / block.

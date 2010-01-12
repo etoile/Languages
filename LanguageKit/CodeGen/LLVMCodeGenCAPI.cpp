@@ -6,6 +6,8 @@
 #include <llvm/Target/TargetSelect.h>
 #include <llvm/ExecutionEngine/JIT.h>
 
+using namespace llvm;
+
 // C interface:
 extern "C"
 {
@@ -19,11 +21,11 @@ void LLVMinitialise(const char *bcFilePath)
 	LLVMLinkInJIT();
 
 	MsgSendSmallIntFilename = strdup(bcFilePath);
-	IdTy = PointerType::getUnqual(Type::getInt8Ty(llvm::getGlobalContext()));
-	IntTy = IntegerType::get(llvm::getGlobalContext(), sizeof(int) * 8);
-	IntPtrTy = IntegerType::get(llvm::getGlobalContext(), sizeof(void*) * 8);
+	IdTy = PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()));
+	IntTy = IntegerType::get(getGlobalContext(), sizeof(int) * 8);
+	IntPtrTy = IntegerType::get(getGlobalContext(), sizeof(void*) * 8);
 	Zeros[0] = Zeros[1] = 
-		ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()), 0);
+		ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 0);
 	SelTy = IntPtrTy;
 	std::vector<const Type*> IMPArgs;
 	IMPArgs.push_back(IdTy);
@@ -33,7 +35,7 @@ void LLVMinitialise(const char *bcFilePath)
 	IdTy = context->getPointerTypeUnqual(Type::Int8Ty);
 	IntTy = context->getIntegerType(sizeof(int) * 8);
 	IntPtrTy = context->getIntegerType(sizeof(void*) * 8);
-	Zeros[0] = Zeros[1] = context->getConstantInt(llvm::Type::Int32Ty, 0);
+	Zeros[0] = Zeros[1] = context->getConstantInt(Type::Int32Ty, 0);
 	//FIXME: 
 	SelTy = IntPtrTy;
 	std::vector<const Type*> IMPArgs;
@@ -46,13 +48,13 @@ void LLVMinitialise(const char *bcFilePath)
 ModuleBuilder newStaticModuleBuilder(const char *ModuleName) 
 {
 	if (NULL == ModuleName) { ModuleName = "Anonymous"; }
-	return new CodeGenModule(ModuleName, llvm::getGlobalContext(), false);
+	return new CodeGenModule(ModuleName, getGlobalContext(), false);
 }
 
 ModuleBuilder newModuleBuilder(const char *ModuleName)
 {
 	if (NULL == ModuleName) ModuleName = "Anonymous";
-	return new CodeGenModule(ModuleName, llvm::getGlobalContext());
+	return new CodeGenModule(ModuleName, getGlobalContext());
 }
 
 void freeModuleBuilder(ModuleBuilder aModule)
@@ -96,7 +98,9 @@ LLVMValue MessageSend(ModuleBuilder B,
                       LLVMValue *argv,
                       unsigned argc)
 {
-	return B->getCurrentScope()->MessageSend(receiver, selname, seltype, argv, argc);
+	SmallVector<Value*, 8> args;
+	args.append(argv, argv+argc);
+	return B->getCurrentScope()->MessageSend(receiver, selname, seltype, args);
 }
 
 LLVMValue MessageSendId(ModuleBuilder B,
@@ -106,7 +110,9 @@ LLVMValue MessageSendId(ModuleBuilder B,
                         LLVMValue *argv,
                         unsigned argc)
 {
-	return B->getCurrentScope()->MessageSendId(receiver, selname, seltype, argv, argc);
+	SmallVector<Value*, 8> args;
+	args.append(argv, argv+argc);
+	return B->getCurrentScope()->MessageSendId(receiver, selname, seltype, args);
 }
 
 void SetReturn(ModuleBuilder B, LLVMValue retval)
@@ -240,7 +246,9 @@ LLVMValue MessageSendSuper(ModuleBuilder B,
                            LLVMValue *argv,
                            unsigned argc)
 {
-	return B->getCurrentScope()->MessageSendSuper(selName, selTypes, argv, argc);
+	SmallVector<Value*, 8> args;
+	args.append(argv, argv+argc);
+	return B->getCurrentScope()->MessageSendSuper(selName, selTypes, args);
 }
 
 void SetBlockReturn(ModuleBuilder B, LLVMValue value)

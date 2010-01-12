@@ -19,6 +19,10 @@
 - (id)bitwiseAnd: (id)a;
 - (id)bitwiseOr: (id)a;
 - (id)not;
+- (BOOL)isLessThan: (id)a;
+- (BOOL)isGreaterThan: (id)a;
+- (BOOL)isLessThanOrEqualTo: (id)a;
+- (BOOL)isGreaterThanOrEqualTo: (id)a;
 - (BOOL)isAlphanumeric;
 - (BOOL)isUppercase;
 - (BOOL)isLowercase;
@@ -264,6 +268,7 @@ MSG0(value)
 #define COMPARE(msg, op) \
 BOOL SmallIntMsg ## msg ## _(void *obj, void *other) \
 { \
+	OTHER_OBJECT(msg) \
 	intptr_t val = (intptr_t)obj; \
 	val >>= 1; \
 	intptr_t otherval = (intptr_t)other; \

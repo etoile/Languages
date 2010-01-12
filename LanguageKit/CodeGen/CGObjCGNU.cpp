@@ -103,8 +103,7 @@ public:
 	                                         llvm::Value *Sender,
 	                                         llvm::Value *Receiver,
 	                                         llvm::Value *Selector,
-	                                         llvm::Value** ArgV,
-	                                         unsigned ArgC,
+	                                         llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                              llvm::BasicBlock *CleanupBlock,
 											 const char *ReceiverClass,
 											 bool isClassMessage);
@@ -115,8 +114,7 @@ public:
 	                                              const char *SuperClassName,
 	                                              llvm::Value *Receiver,
 	                                              llvm::Value *Selector,
-	                                              llvm::Value** ArgV,
-	                                              unsigned ArgC,
+	                                              llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                              bool isClassMessage,
                                                   llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder,
@@ -133,8 +131,7 @@ public:
 	                                       const std::string &MethodName,
 	                                       const llvm::Type *ReturnTy,
 	                                       const llvm::Type *SelfTy,
-	                                       const llvm::Type **ArgTy,
-	                                       unsigned ArgC,
+	                                       const SmallVectorImpl<const llvm::Type*> &ArgTy,
 	                                       bool isClassMethod,
 	                                       bool isSRet,
 	                                       bool isVarArg);
@@ -413,8 +410,7 @@ static llvm::Value *callIMP(LLVMContext &Context,
                             bool isSRet,
                             llvm::Value *Receiver,
                             llvm::Value *Selector,
-                            llvm::Value** ArgV,
-                            unsigned ArgC,
+                            llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                             llvm::BasicBlock *CleanupBlock)
 {
 	// Call the method
@@ -430,7 +426,7 @@ static llvm::Value *callIMP(LLVMContext &Context,
 	if (PASS_STRUCTS_AS_POINTER)
 	{
 		llvm::Value* callArg;
-		for (unsigned int i = 0; i < ArgC; i++) {
+		for (unsigned int i = 0; i < ArgV.size() ; i++) {
 			callArg = ArgV[i];
 			if (isa<StructType>(callArg->getType()))
 			{
@@ -447,7 +443,7 @@ static llvm::Value *callIMP(LLVMContext &Context,
 	}
 	else
 	{
-		callArgs.insert(callArgs.end(), ArgV, ArgV+ArgC);
+		callArgs.insert(callArgs.end(), ArgV.begin(), ArgV.end());
 	}
 	llvm::Value *ret = 0;
 	if (0 != CleanupBlock)
@@ -485,14 +481,13 @@ static llvm::Value *callIMPOrGuess(LLVMContext &Context,
                                    bool isSRet,
                                    llvm::Value *Receiver,
                                    llvm::Value *Selector,
-                                   llvm::Value** ArgV,
-                                   unsigned ArgC,
+                                   llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                    llvm::BasicBlock *CleanupBlock)
 {
 	if (0 == guess || 0 == enable_speculative_inlining)
 	{
 		return callIMP(Context, Builder, imp, ReturnTy, isSRet, Receiver, Selector,
-				ArgV, ArgC, CleanupBlock);
+				ArgV, CleanupBlock);
 	}
 	llvm::Function *function = Builder.GetInsertBlock()->getParent();
 	llvm::BasicBlock *rejoinBB = llvm::BasicBlock::Create(Context, "rejoin", function);
@@ -505,13 +500,13 @@ static llvm::Value *callIMPOrGuess(LLVMContext &Context,
 	// Emit the call to the guess:
 	Builder.SetInsertPoint(guessBB);
 	llvm::Value *guessResult = callIMP(Context, Builder, guess, ReturnTy, isSRet,
-			Receiver, Selector, ArgV, ArgC, CleanupBlock);
+			Receiver, Selector, ArgV, CleanupBlock);
 	Builder.CreateBr(rejoinBB);
 
 	// Emit the call to the imp:
 	Builder.SetInsertPoint(impBB);
 	llvm::Value *impResult = callIMP(Context, Builder, imp, ReturnTy, isSRet,
-			Receiver, Selector, ArgV, ArgC, CleanupBlock);
+			Receiver, Selector, ArgV, CleanupBlock);
 	Builder.CreateBr(rejoinBB);
 
 	// Join the two code paths together
@@ -536,8 +531,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             const char *SuperClassName,
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
-                                            llvm::Value** ArgV,
-                                            unsigned ArgC,
+                                            llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 											bool isClassMessage,
                                             llvm::BasicBlock *CleanupBlock)
 {
@@ -592,7 +586,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 					isClassMessage), impType);
 	}
 	return callIMPOrGuess(Context, Builder, imp, guess, ReturnTy, isSRet, Receiver,
-			Selector, ArgV, ArgC, CleanupBlock);
+			Selector, ArgV, CleanupBlock);
 }
 
 /// Generate code for a message send expression.
@@ -602,8 +596,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Sender,
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
-                                            llvm::Value** ArgV,
-                                            unsigned ArgC,
+                                            llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                             llvm::BasicBlock *CleanupBlock,
 											const char *ReceiverClass,
 											bool isClassMessage)
@@ -661,7 +654,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	}
 	// Call the method.
 	return callIMPOrGuess(Context, Builder, imp, guess, ReturnTy, isSRet, Receiver,
-			Selector, ArgV, ArgC, CleanupBlock);
+			Selector, ArgV, CleanupBlock);
 }
 
 /// Generates a MethodList.  Used in construction of a objc_class and 
@@ -1186,8 +1179,7 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 	const std::string &MethodName,
 	const llvm::Type *ReturnTy,
 	const llvm::Type *SelfTy,
-	const llvm::Type **ArgTy,
-	unsigned ArgC,
+	const SmallVectorImpl<const llvm::Type*> &ArgTy,
 	bool isClassMethod,
 	bool isSRet,
 	bool isVarArg)
@@ -1195,7 +1187,7 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 	std::vector<const llvm::Type*> Args;
 	Args.push_back(SelfTy);
 	Args.push_back(SelectorTy);
-	Args.insert(Args.end(), ArgTy, ArgTy+ArgC);
+	Args.insert(Args.end(), ArgTy.begin(), ArgTy.end());
 
 	llvm::FunctionType *MethodTy = llvm::FunctionType::get(ReturnTy,
 		Args,

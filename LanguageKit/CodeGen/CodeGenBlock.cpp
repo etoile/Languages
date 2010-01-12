@@ -77,8 +77,9 @@ void CodeGenBlock::SetParentScope(void)
 void CodeGenBlock::SetReturn(Value* RetVal)
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();
+	SmallVector<Value*, 1> args = SmallVector<Value*, 1>(1, RetVal);
 	Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, ScopeSelf,
-		Runtime->GetSelector(Builder, "nonLocalReturn:", 0), &RetVal, 1, ExceptionBB);
+		Runtime->GetSelector(Builder, "nonLocalReturn:", 0), args, ExceptionBB);
 }
 
 void CodeGenBlock::SetBlockReturn(Value* RetVal) 

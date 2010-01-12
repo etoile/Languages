@@ -2,16 +2,22 @@
  * C interface to the LLVM generator component.
  */
 
+// Opaque type pointers are classes in C++ but must be structs in C
+#ifdef __cplusplus
+#	define ANON_CLASS class
+#else
+#	define ANON_CLASS struct
+#endif
 /***
  * ModuleBuilder is an opaque pointer type wrapping a C++ object which
  * interfaces with the LLVM components for generating the intermediate
  * representation code.
  */
-typedef struct CodeGenModule* ModuleBuilder;
+typedef ANON_CLASS CodeGenModule* ModuleBuilder;
 /**
  * Value of an LLVM register.
  */
-typedef struct Value* LLVMValue;
+typedef ANON_CLASS Value* LLVMValue;
 
 /**
  * Create a new LLVM module builder.

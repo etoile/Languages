@@ -39,11 +39,33 @@ public:
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
                                            llvm::Value *Selector,
-                                           llvm::Value** ArgV=0,
-                                           unsigned ArgC=0,
+	                                       llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                            llvm::BasicBlock *CleanupBlock=0,
                                            const char *ReceiverClass=0,
 										   bool isClassMessage=false)=0;
+	llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
+	                                const llvm::Type *ReturnTy,
+	                                bool isSRet,
+	                                llvm::Value *Sender,
+	                                llvm::Value *Receiver,
+	                                llvm::Value *Selector)
+	{
+		llvm::SmallVector<llvm::Value*,0> noArgs;
+		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
+				Selector, noArgs);
+	}
+	llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
+	                                const llvm::Type *ReturnTy,
+	                                bool isSRet,
+	                                llvm::Value *Sender,
+	                                llvm::Value *Receiver,
+	                                llvm::Value *Selector,
+	                                llvm::Value *Value)
+	{
+		llvm::SmallVector<llvm::Value*,1> arg = llvm::SmallVector<llvm::Value*,1>(1, Value);
+		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
+				Selector, arg);
+	}
   /// Generate the function required to register all Objective-C components in
   /// this compilation unit with the runtime library.
   virtual llvm::Function *ModuleInitFunction() =0;
@@ -89,8 +111,7 @@ public:
                                                 const char *SuperClassName,
                                                 llvm::Value *Receiver,
                                                 llvm::Value *Sel,
-                                                llvm::Value** ArgV,
-                                                unsigned ArgC,
+                                                llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 												bool isClassMessage,
 											    llvm::BasicBlock *CleanupBlock=0)=0;
   /// Generate the named protocol.  Protocols contain method metadata but no 
@@ -108,8 +129,7 @@ public:
                                          const std::string &MethodName,
                                          const llvm::Type *ReturnTy,
                                          const llvm::Type *SelfTy,
-                                         const llvm::Type **ArgTy,
-                                         unsigned ArgC,
+                                         const llvm::SmallVectorImpl<const llvm::Type*> &ArgTy,
                                          bool isClassMethod=false,
 	                                     bool isSRet=false,
                                          bool isVarArg=false) = 0;

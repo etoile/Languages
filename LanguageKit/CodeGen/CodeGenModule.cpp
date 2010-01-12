@@ -197,18 +197,18 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
 	FunctionType *MethodTy = CGM->LLVMFunctionTypeFromString(MethodTypes, isSRet,
 		realReturnType);
 	unsigned argc = MethodTy->getNumParams() - 2;
-	const Type *argTypes[argc];
+	llvm::SmallVector<const Type *, 8> argTypes;
 	FunctionType::param_iterator arg = MethodTy->param_begin();
 	++arg; ++arg;
 	for (unsigned i=0 ; i<argc ; ++i)
 	{
-		argTypes[i] = MethodTy->getParamType(i+2);
+		argTypes.push_back(MethodTy->getParamType(i+2));
 	}
 
 
 	CurrentFunction = CGM->getRuntime()->MethodPreamble(CGM->getClassName(),
 		CGM->getCategoryName(), MethodName, MethodTy->getReturnType(),
-		CGM->getCurrentClassTy(), argTypes, argc, isClass, isSRet);
+		CGM->getCurrentClassTy(), argTypes, isClass, isSRet);
 
 	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet, localNames);
 }
@@ -299,11 +299,11 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 		Value *BigIntClass = InitialiseBuilder.CreateLoad(
 				TheModule->getGlobalVariable(".smalltalk_bigint_class",
 					true));
-		Value *V = MakeConstantString(value);
+		Value* V = MakeConstantString(value);
 		// Create the BigInt
 		Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
 			false,  NULL, BigIntClass, Runtime->GetSelector(InitialiseBuilder,
-				"bigIntWithCString:", NULL), &V, 1);
+				"bigIntWithCString:", NULL), V);
 		// Retain it
 		S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
 			S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));
@@ -331,7 +331,7 @@ Value *CodeGenModule::FloatConstant(IRBuilder<> &Builder, const char *value)
 	// Create the BoxedFloat
 	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
 		false,  NULL, BoxedFloatClass, Runtime->GetSelector(InitialiseBuilder,
-			"boxedFloatWithCString:", NULL), &V, 1);
+			"boxedFloatWithCString:", NULL), V);
 	// Retain it
 	S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
 		S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));

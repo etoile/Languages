@@ -88,7 +88,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			}
 			Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
 					NULL, BoxedFloatClass, Runtime->GetSelector(*B,
-						castSelName, NULL), &V, 1);
+						castSelName, NULL), V);
 			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 			{
 				call->setOnlyReadsMemory();
@@ -102,7 +102,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 					".smalltalk_symbol_class", true));
 			return Runtime->GenerateMessageSend(*B, IdTy, false, NULL,
 					SymbolCalss, Runtime->GetSelector(*B, "SymbolForSelector:",
-						NULL), &V, 1);
+						NULL), V);
 		}
 		case '{':
 		{
@@ -135,7 +135,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			{
 				Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
 						NULL, NSValueClass, Runtime->GetSelector(*B,
-							castSelName, NULL), &V, 1);
+							castSelName, NULL), V);
 				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 				{
 						call->setOnlyReadsMemory();
@@ -155,11 +155,13 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			const char *end = typestr;
 			while (!isdigit(*end)) { end++; }
 			string typestring = string(typestr, end - typestr);
-			Value *args[] = {V, CGM->MakeConstantString(typestring.c_str())};
+			SmallVector<Value*,2> args;
+			args.push_back(V);
+			args.push_back(CGM->MakeConstantString(typestring.c_str()));
 			return Runtime->GenerateMessageSend(*B, IdTy, false, LoadSelf(),
 					NSValueClass, Runtime->GetSelector(*B,
 						"valueWithBytesOrNil:objCType:", NULL),
-				args, 2);
+					args);
 		}
 		// Map void returns to nil
 		case 'v':
@@ -538,7 +540,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	PromoteBuilder.SetInsertPoint(PromotionBB);
 	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::getVoidTy(CGM->Context), false,
 		Context, Context, CGM->getRuntime()->GetSelector(PromoteBuilder,
-		"promote", NULL), 0, 0);
+		"promote", NULL));
 
 	//// Handle an exception
 
@@ -630,15 +632,14 @@ void CodeGenLexicalScope::EndScope(void)
 
 void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
                                     Function *F,
-                                    Value ** argv,
-                                    Value **args,
-                                    unsigned argc,
+                                    llvm::SmallVectorImpl<llvm::Value*> &argv,
+                                    llvm::SmallVectorImpl<llvm::Value*> &args,
                                     const char *selTypes) 
 {
 	if (NULL == selTypes) 
 	{
 		// All types are id, so do nothing
-		memcpy(args, argv, sizeof(Value*) * argc);
+		args = argv;
 	} 
 	else 
 	{
@@ -646,23 +647,24 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
 		//Skip return, self, cmd
 		NEXT(selTypes);
 		NEXT(selTypes);
-		for (unsigned i=0 ; i<argc ; ++i) 
+		for (unsigned i=0 ; i<argv.size() ; ++i) 
 		{
 			NEXT(selTypes);
 			SkipTypeQualifiers(&selTypes);
-			args[i] = Unbox(B, F, argv[i], selTypes);
+			args.push_back(Unbox(B, F, argv[i], selTypes));
 		}
 	}
 }
 
 Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
-		char *selName, const char *selTypes, Value **argv, unsigned argc) 
+		char *selName, const char *selTypes,
+		llvm::SmallVectorImpl<llvm::Value*> &argv) 
 {
 	Value *Sender = LoadSelf();
 	Value *SelfPtr = Sender;
 
-	Value *args[argc];
-	UnboxArgs(B, F, argv, args, argc, selTypes);
+	llvm::SmallVector<Value*, 8> args;
+	UnboxArgs(B, F, argv, args, selTypes);
 
 	bool isSRet = false;
 	const Type *realReturnType = NULL;
@@ -674,7 +676,7 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	llvm::Value *msg = Runtime->GenerateMessageSendSuper(*B,
 		MethodTy->getReturnType(), isSRet, Sender,
-		CGM->getSuperClassName().c_str(), SelfPtr, cmd, args, argc,
+		CGM->getSuperClassName().c_str(), SelfPtr, cmd, args,
 		CGM->inClassMethod, CleanupBB);
 	if (MethodTy->getReturnType() == realReturnType)
 	{
@@ -689,8 +691,7 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
                                           Value *receiver,
                                           const char *selName,
                                           const char *selTypes,
-                                          Value **argv,
-                                          unsigned argc)
+                                          llvm::SmallVectorImpl<llvm::Value*> &argv)
 {
 	//FIXME: Find out why this crashes.
 	Value *SelfPtr = NULL;//LoadSelf();
@@ -704,7 +705,7 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 
 	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	llvm::Value *msg = Runtime->GenerateMessageSend(*B,
-		MethodTy->getReturnType(), isSRet, SelfPtr, receiver, cmd, argv, argc,
+		MethodTy->getReturnType(), isSRet, SelfPtr, receiver, cmd, argv,
 		ExceptionBB);
 	if (MethodTy->getReturnType() == realReturnType)
 	{
@@ -713,14 +714,18 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 	return msg;
 }
 
+Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B, Function *F, Value
+		*receiver, const char *selName, const char *selTypes)
+{
+	SmallVector<Value*,0> noArgs;
+	return MessageSend(B, F, receiver, selName, selTypes, noArgs);
+}
 Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
                                         Function *F,
                                         Value *receiver,
                                         const char *selName,
                                         const char *selTypes,
-                                        Value **argv,
-                                        Value **boxedArgs,
-                                        unsigned argc)
+                                        SmallVectorImpl<Value*> &boxedArgs)
 {
 	//LOG("Sending message to %s", selName);
 	//LOG(" (%s)\n", selTypes);
@@ -756,7 +761,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 			BasicBlock::Create(CGM->Context, "small_int_bitcast_result", CurrentFunction);
 		SmallVector<Value*, 8> Args;
 		Args.push_back(receiver);
-		Args.insert(Args.end(), boxedArgs, boxedArgs+argc);
+		Args.append(boxedArgs.begin(), boxedArgs.end());
 		for (unsigned i=0 ; i<Args.size() ;i++)
 		{
 			const Type *ParamTy =
@@ -778,16 +783,18 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 		Result = SmallIntBuilder.CreateBitCast(receiver, IdTy);
 		Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
 			"boxed_small_int");
+		SmallVector<Value*, 8> unboxedArgs;
+		UnboxArgs(&SmallIntBuilder, F, boxedArgs, unboxedArgs, selTypes);
 		Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes,
-			argv, argc);
+				unboxedArgs);
 		smallIntContinueBB = SmallIntBuilder.GetInsertBlock();
 	}
 	SmallInt = 0;
 
-	Value *args[argc];
-	UnboxArgs(&RealObjectBuilder, F, argv, args, argc, selTypes);
+	SmallVector<Value*, 8> unboxedArgs;
+	UnboxArgs(&RealObjectBuilder, F, boxedArgs, unboxedArgs, selTypes);
 	Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
-		selTypes, args, argc);
+		selTypes, unboxedArgs);
 	// This will create some branches - get the new basic block.
 	RealObject = RealObjectBuilder.GetInsertBlock();
 
@@ -944,10 +951,10 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 	// Some objects may return a different object when retained.	Store that
 	// instead.
 		box = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, box,
-			Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
+			Runtime->GetSelector(Builder, "retain", NULL));
 		Value *old = Builder.CreateLoad(addr);
 		Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, old,
-			Runtime->GetSelector(Builder, "autorelease", NULL), 0, 0);
+			Runtime->GetSelector(Builder, "autorelease", NULL));
 	}
 	Builder.CreateStore(box, addr, true);
 }
@@ -984,7 +991,7 @@ Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 	Value *V = CGM->MakeConstantString(symbol);
 	Value *S = Runtime->GenerateMessageSend(*initBuilder, IdTy, false,  NULL,
 		SymbolClass, Runtime->GetSelector(*initBuilder, "SymbolForCString:",
-			NULL), &V, 1);
+			NULL), V);
 	GlobalVariable *GS = new GlobalVariable(*CGM->getModule(), IdTy, false,
 			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
 			symbol);
@@ -995,33 +1002,30 @@ Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 Value *CodeGenLexicalScope::MessageSendId(Value *receiver,
                                           const char *selName,
                                           const char *selTypes,
-                                          Value **argv,
-                                          unsigned argc)
+                                          SmallVectorImpl<Value*> &argv)
 {
-	Value *args[argc];
-	UnboxArgs(&Builder, CurrentFunction, argv, args, argc, selTypes);
+	SmallVector<Value*, 8> args;
+	UnboxArgs(&Builder, CurrentFunction, argv, args, selTypes);
 	LOG("Generating object message send %s\n", selName);
 	return BoxValue(&Builder, MessageSendId(&Builder, receiver, selName,
-		selTypes, args, argc), selTypes);
+		selTypes, args), selTypes);
 }
 
 Value *CodeGenLexicalScope::MessageSendSuper(const char *selName,
                                              const char *selTypes,
-                                             Value **argv,
-                                             unsigned argc)
+                                             SmallVectorImpl<Value*> &argv)
 {
 	return BoxValue(&Builder, MessageSendSuper(&Builder, CurrentFunction, selName,
-		selTypes, argv, argc), selTypes);
+		selTypes, argv), selTypes);
 }
 Value *CodeGenLexicalScope::MessageSend(Value *receiver,
                                         const char *selName,
                                         const char *selTypes,
-                                        Value **argv,
-                                        unsigned argc)
+                                        SmallVectorImpl<Value*> &argv)
 {
 	LOG("Generating %s (%s)\n", selName, selTypes);
 	return BoxValue(&Builder, MessageSend(&Builder, CurrentFunction, receiver,
-		selName, selTypes, argv, argv, argc), selTypes);
+		selName, selTypes, argv), selTypes);
 }
 Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 		cVarName)
@@ -1033,10 +1037,10 @@ void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	object = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, object,
-		Runtime->GetSelector(Builder, "retain", NULL), 0, 0);
+		Runtime->GetSelector(Builder, "retain", NULL));
 	Value *old = LoadClassVariable(className, cVarName);
 	Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, old,
-		Runtime->GetSelector(Builder, "release", NULL), 0, 0);
+		Runtime->GetSelector(Builder, "release", NULL));
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
 
