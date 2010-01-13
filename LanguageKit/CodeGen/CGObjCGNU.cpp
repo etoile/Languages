@@ -326,7 +326,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
 	if (SelTypes == 0) 
 	{
 		llvm::Constant *SelFunction = 
-			TheModule.getOrInsertFunction("sel_get_uid", 
+			TheModule.getOrInsertFunction("sel_register_name", 
 				SelectorTy, 
 				PtrToInt8Ty, 
 				(void*)0);
@@ -335,7 +335,7 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
 	else 
 	{
 		llvm::Constant *SelFunction = 
-			TheModule.getOrInsertFunction("sel_get_typed_uid",
+			TheModule.getOrInsertFunction("sel_register_typed_name",
 					SelectorTy,
 					PtrToInt8Ty,
 					PtrToInt8Ty,

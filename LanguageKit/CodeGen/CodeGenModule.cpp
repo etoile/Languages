@@ -61,7 +61,6 @@ void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *
 					MakeConstantString(className)), IdTy), global);
 }
 
-// FIXME: Provide some way of crating new contexts.
 CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit) 
 	: Context(C), InitialiseBuilder(Context)
 {
@@ -289,6 +288,41 @@ Value *CodeGenModule::StringConstant(const char *value)
 	return Runtime->GenerateConstantString(value, strlen(value));
 }
 
+Value *CodeGenModule::GenericConstant(IRBuilder<> &Builder, 
+		const std::string className, const std::string constructor, 
+		const char *arg)
+{
+	GlobalVariable *ClassPtr = TheModule->getGlobalVariable(className, true);
+	Value *Class = InitialiseBuilder.CreateLoad(ClassPtr);
+
+	Value *CreateSelector = Runtime->GetSelector(InitialiseBuilder,
+			MakeConstantString(constructor), 0);
+	// TODO: Cache this
+	Value *RetainSelector = Runtime->GetSelector(InitialiseBuilder,
+			MakeConstantString("retain"), 0);
+
+	Value *V = MakeConstantString(arg);
+
+	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
+		false,  NULL, Class, CreateSelector, V);
+	// Retain it
+	S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
+		S, RetainSelector);
+	// Define a global variable and store it there.
+	GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
+			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
+			arg);
+	InitialiseBuilder.CreateStore(S, GS);
+	// Load the global.
+	return Builder.CreateLoad(GS);
+}
+
+Value *CodeGenModule::SymbolConstant(IRBuilder<> &Builder, const char *symbol)
+{
+	return GenericConstant(Builder, ".smalltalk_symbol_class",
+			"SymbolForCString:", symbol);
+}
+
 Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 {
 	errno = 0;
@@ -296,24 +330,8 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 	intptr_t ptrVal = (val << 1);
 	if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val))
 	{
-		Value *BigIntClass = InitialiseBuilder.CreateLoad(
-				TheModule->getGlobalVariable(".smalltalk_bigint_class",
-					true));
-		Value* V = MakeConstantString(value);
-		// Create the BigInt
-		Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
-			false,  NULL, BigIntClass, Runtime->GetSelector(InitialiseBuilder,
-				"bigIntWithCString:", NULL), V);
-		// Retain it
-		S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
-			S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));
-		// Define a global variable and store it there.
-		GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
-				GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-				value);
-	   	InitialiseBuilder.CreateStore(S, GS);
-		// Load the global.
-		return Builder.CreateLoad(GS);
+		return GenericConstant(Builder, ".smalltalk_bigint_class",
+				"bigIntWithCString:", value);
 	}
 	ptrVal |= 1;
 	Constant *Val = ConstantInt::get(IntPtrTy, ptrVal);
@@ -323,25 +341,8 @@ Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
 }
 Value *CodeGenModule::FloatConstant(IRBuilder<> &Builder, const char *value)
 {
-	errno = 0;
-	Value *BoxedFloatClass = InitialiseBuilder.CreateLoad(
-			TheModule->getGlobalVariable(".smalltalk_boxedfloat_class",
-				true));
-	Value *V = MakeConstantString(value);
-	// Create the BoxedFloat
-	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
-		false,  NULL, BoxedFloatClass, Runtime->GetSelector(InitialiseBuilder,
-			"boxedFloatWithCString:", NULL), V);
-	// Retain it
-	S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
-		S, Runtime->GetSelector(InitialiseBuilder, "retain", NULL));
-	// Define a global variable and store it there.
-	GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
-			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			value);
-	InitialiseBuilder.CreateStore(S, GS);
-	// Load the global.
-	return Builder.CreateLoad(GS);
+	return GenericConstant(Builder, ".smalltalk_boxedfloat_class",
+			"boxedFloatWithCString:", value);
 }
 
 void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
@@ -437,7 +438,7 @@ void CodeGenModule::compile(void)
 	EE->runStaticConstructorsDestructors(TheModule, false);
 	void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
 	LOG("Loading %x...\n", (unsigned)(unsigned long)f);
-	f();
 	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
+	f();
 	LOG("Loaded.\n");
 }

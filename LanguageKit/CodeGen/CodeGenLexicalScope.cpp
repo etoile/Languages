@@ -984,19 +984,7 @@ Value *CodeGenLexicalScope::FloatConstant(const char *value)
 }
 Value *CodeGenLexicalScope::SymbolConstant(const char *symbol)
 {
-	CGObjCRuntime *Runtime = CGM->getRuntime();
-	IRBuilder<> * initBuilder = CGM->getInitBuilder();
-	Value *SymbolClass = Runtime->LookupClass(*initBuilder,
-		CGM->MakeConstantString("Symbol"));
-	Value *V = CGM->MakeConstantString(symbol);
-	Value *S = Runtime->GenerateMessageSend(*initBuilder, IdTy, false,  NULL,
-		SymbolClass, Runtime->GetSelector(*initBuilder, "SymbolForCString:",
-			NULL), V);
-	GlobalVariable *GS = new GlobalVariable(*CGM->getModule(), IdTy, false,
-			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			symbol);
-	initBuilder->CreateStore(S, GS);
-	return Builder.CreateLoad(GS);
+	return CGM->SymbolConstant(Builder, symbol);
 }
 
 Value *CodeGenLexicalScope::MessageSendId(Value *receiver,

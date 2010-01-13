@@ -61,6 +61,12 @@ private:
   Constant *MakeConstantString(const std::string &Str, const
           std::string &Name="", unsigned GEPs=2);
 
+  /**
+   * Creates a generic constant.  This will be defined in the module load
+   * function by sending a message to the specified class.
+   */
+	Value *GenericConstant(IRBuilder<> &Builder, const std::string className,
+			const std::string constructor, const char *argument);
 	/**
 	 * Creates a global value containing a pointer to a class.
 	 */
@@ -154,7 +160,11 @@ public:
 	/**
 	 * Creates a floating point constant.
 	 */
-  Value *FloatConstant(IRBuilder<> &Builder, const char *value);
+	Value *FloatConstant(IRBuilder<> &Builder, const char *value);
+	/**
+	 * Create a symbol (selector) constant.
+	 */
+	Value *SymbolConstant(IRBuilder<> &Builder, const char *symbol);
   /**
    * Create a string (object) constant.
    */
