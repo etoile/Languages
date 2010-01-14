@@ -1,6 +1,8 @@
 #ifndef __CODE_GEN_MODULE__INCLUDED__
 #define __CODE_GEN_MODULE__INCLUDED__
 #include "CGObjCRuntime.h"
+#include <llvm/Analysis/DebugInfo.h>
+#include "llvm/ADT/StringMap.h"
 #include <stdio.h>
 
 namespace llvm {
@@ -31,6 +33,11 @@ private:
 
   LLVMContext &Context;
   Module *TheModule;
+
+  DIFactory *Debug;
+  DICompileUnit ModuleScopeDescriptor;
+  llvm::StringMap<DIType> DebugTypeEncodings;
+
   Module *SmallIntModule;
   Function *LiteralInitFunction;
   IRBuilder<>InitialiseBuilder;
@@ -78,8 +85,15 @@ public:
   const string& getClassName() { return ClassName; }
   const string& getSuperClassName() { return SuperClassName; }
   Module *getModule() { return TheModule; }
+  DIFactory *getDebugFactory() { return Debug; }
   CGObjCRuntime *getRuntime() { return Runtime; }
   string getCategoryName() { return CategoryName; }
+  DICompileUnit getModuleDescriptor() { return ModuleScopeDescriptor; }
+
+  /**
+   * Returns the debug info node for an Objective-C type encoding.
+   */
+  DIType DebugTypeForEncoding(const std::string &encoding);
 
   /**
    * Returns the code generator for the current scope

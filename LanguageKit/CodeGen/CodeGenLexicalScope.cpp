@@ -278,11 +278,25 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
 
 void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	SmallVectorImpl<Value*> &Locals, unsigned locals, const char *MethodTypes,
-	bool isSRet, const char **symbols)
+	bool isSRet, const char **symbols, const std::string &humanName)
 {
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
 	Module *TheModule = CGM->getModule();
+	
+	DIFactory *DebugFactory = CGM->getDebugFactory();
+	DIDescriptor context = CGM->getModuleDescriptor();
+	if (CodeGenLexicalScope *parent = getParentScope())
+	{
+		context = parent->getScopeDescriptor();
+	}
+
+	// FIXME: Line number info.
+	// FIXME: Type info.
+	DebugFactory->CreateSubprogram(context, humanName, humanName,
+			CurrentFunction->getName(), CGM->getModuleDescriptor(),
+			0, DIType(), true, true);
+
 	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::getInt8Ty(CGM->Context));
 	ReturnType = MethodTypes;
 	llvm::Function::arg_iterator AI = CurrentFunction->arg_begin();

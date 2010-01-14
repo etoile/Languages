@@ -224,7 +224,8 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	[aGenerator startModule];
+	// FIXME: Get the file name from somewhere.
+	[aGenerator startModule: @"Anonymous"];
 	FOREACH(classes, class, LKAST*)
 	{
 		[class compileWithGenerator: aGenerator];

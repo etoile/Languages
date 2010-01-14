@@ -16,7 +16,7 @@
  * Begin generating a module.  A module is a set of classes and categories
  * which are compiled and optimised at once.
  */
-- (void) startModule;
+- (void) startModule: (NSString*)fileName;
 /**
  * Finish generating a module.
  */

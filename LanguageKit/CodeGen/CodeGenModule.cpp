@@ -98,6 +98,14 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit)
 
 	Runtime = CreateObjCRuntime(*TheModule, Context, IntTy,
 			IntegerType::get(Context, sizeof(long) * 8));
+
+	// FIXME: Leak
+	Debug = new DIFactory(*TheModule);
+	// Create some metadata for this module.  Pretend that everything LK
+	// compiles is Objective-C.
+	Debug->CreateCompileUnit(llvm::dwarf::DW_LANG_ObjC, ModuleName, "path",
+			"LanguageKit");
+
 	// Store the class to be used for block closures in a global
 	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
 	CreateClassPointerGlobal("StackContext", ".smalltalk_context_stack_class");
@@ -209,7 +217,8 @@ CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
 		CGM->getCategoryName(), MethodName, MethodTy->getReturnType(),
 		CGM->getCurrentClassTy(), argTypes, isClass, isSRet);
 
-	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet, localNames);
+	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet, localNames,
+			MethodName);
 }
 
 void CodeGenModule::BeginInstanceMethod(const char *MethodName,
@@ -441,4 +450,59 @@ void CodeGenModule::compile(void)
 	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
 	f();
 	LOG("Loaded.\n");
+}
+
+DIType CodeGenModule::DebugTypeForEncoding(const std::string &encoding)
+{
+	// Get the previously-created version, if it exists
+	StringMap<DIType>::const_iterator it = DebugTypeEncodings.find(encoding);
+	if (it != DebugTypeEncodings.end())
+	{
+		return it->second;
+	}
+	uint64_t size;
+	uint64_t align;
+	unsigned dwarfEncoding;
+	// FIXME: This is rubbish at the moment, fix it to work with nontrivial types.
+	switch(encoding[0])
+	{
+		case '{':
+		case '[':
+		default:
+			return DIType();
+#define CASE(c, type, dwarf)\
+		case c:\
+			align = __alignof(type);\
+			size = sizeof(type);\
+			dwarfEncoding = dwarf;\
+			break;
+		CASE('c', char, llvm::dwarf::DW_ATE_signed_char)
+		CASE('C', char, llvm::dwarf::DW_ATE_unsigned_char)
+		CASE('s', short, llvm::dwarf::DW_ATE_unsigned)
+		CASE('S', short, llvm::dwarf::DW_ATE_signed)
+		CASE('i', int, llvm::dwarf::DW_ATE_unsigned)
+		CASE('I', int, llvm::dwarf::DW_ATE_signed)
+		CASE('l', long, llvm::dwarf::DW_ATE_unsigned)
+		CASE('L', long, llvm::dwarf::DW_ATE_signed)
+		CASE('q', long long, llvm::dwarf::DW_ATE_unsigned)
+		CASE('Q', long long, llvm::dwarf::DW_ATE_signed)
+		CASE('f', float, llvm::dwarf::DW_ATE_float)
+		CASE('d', float, llvm::dwarf::DW_ATE_float)
+		CASE('B', bool, llvm::dwarf::DW_ATE_boolean)
+		case '@':
+		{
+			// FIXME: Make id point to something, not just be opaque?
+			DIType PointerTypeInfo =
+				Debug->CreateDerivedType(llvm::dwarf::DW_TAG_pointer_type,
+						ModuleScopeDescriptor, "id", ModuleScopeDescriptor, 0,
+						sizeof(void*), __alignof(void*), 0, 0, DIType());
+			DebugTypeEncodings[encoding] = PointerTypeInfo;
+			return PointerTypeInfo;
+		}
+	}
+	// FIXME: Type Names
+	DIType TypeInfo = Debug->CreateBasicType(ModuleScopeDescriptor, "",
+			ModuleScopeDescriptor, 0, size, align, 0, 0, dwarfEncoding);
+	DebugTypeEncodings[encoding] = TypeInfo;
+	return TypeInfo;
 }

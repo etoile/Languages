@@ -46,9 +46,9 @@ static NSString *SmallIntFile;
 {
 	return SmallIntFile;
 }
-- (void) startModule
+- (void) startModule: (NSString*)fileName;
 {
-	Builder = newModuleBuilder(NULL);
+	Builder = newModuleBuilder([fileName UTF8String]);
 }
 
 - (void) endModule
@@ -288,7 +288,7 @@ lexicalScopeAtDepth:(unsigned) scope
 {
 	EmitBitcode(Builder, (char*)[outFile UTF8String], NO);
 }
-- (void) startModule
+- (void) startModule: (NSString*)fileName
 {
 	Builder = newStaticModuleBuilder(
 			[[outFile lastPathComponent] UTF8String]);

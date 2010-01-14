@@ -20,6 +20,7 @@ class CodeGenLexicalScope {
 protected:
 	CodeGenModule *CGM;
 	Value *Context;
+	DIDescriptor ScopeDescriptor;
 	SmallVector<Value*, 8> Locals;
 	SmallVector<Value*, 8> Args;
 	Value * RetVal;
@@ -43,7 +44,7 @@ protected:
   void InitialiseFunction( SmallVectorImpl<Value*> &Args,
      SmallVectorImpl<Value*> &Locals, unsigned locals, 
 	 const char *MethodTypes="@", bool isSRet=false,
-	 const char **symbols=0);
+	 const char **symbols=0, const std::string &humanName="AnonymousBlock");
   /**
    * Maps a selector to a SmallInt function name.
    */
@@ -103,6 +104,7 @@ public:
 	Builder(Mod->Context), containsBlocks(false) {}
   IRBuilder<> *getBuilder() { return &Builder; }
   Value *getContext() { return Context; }
+  DIDescriptor getScopeDescriptor() { return ScopeDescriptor; }
   /**
    * Load an argument at the specified index.
    */
