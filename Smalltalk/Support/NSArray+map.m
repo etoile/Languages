@@ -41,6 +41,19 @@
 	}
 	return [NSArray arrayWithObjects:new count:i];
 }
+- (id) detect:(id)aClosure
+{
+	id new[[self count]];
+	int i = 0;
+	FOREACHI(self, obj)
+	{
+		if ([[aClosure value:obj] boolValue])
+		{
+			return obj;
+		}
+	}
+	return nil;
+}
 - (id) inject:(id)aValue into:aClosure
 {
 	id collect = aValue;
