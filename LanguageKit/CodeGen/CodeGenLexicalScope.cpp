@@ -291,11 +291,17 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		context = parent->getScopeDescriptor();
 	}
 
+	DICompileUnit ModuleScopeDescriptor  = CGM->getModuleDescriptor();
+	DIArray MethodArgDebugTypes = CGM->DebugTypeArrayForEncoding(MethodTypes);
+	DIType MethodDebugType =
+		DebugFactory->CreateCompositeType(llvm::dwarf::DW_TAG_subroutine_type,
+				ModuleScopeDescriptor, "", ModuleScopeDescriptor, 0, 0, 0, 0, 0, DIType(),
+				MethodArgDebugTypes);
+
 	// FIXME: Line number info.
-	// FIXME: Type info.
-	DebugFactory->CreateSubprogram(context, humanName, humanName,
-			CurrentFunction->getName(), CGM->getModuleDescriptor(),
-			0, DIType(), true, true);
+	DIDescriptor ScopeDebugContext = DebugFactory->CreateSubprogram(context,
+			humanName, humanName, CurrentFunction->getName(), ModuleScopeDescriptor, 0,
+			MethodDebugType, true, true);
 
 	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::getInt8Ty(CGM->Context));
 	ReturnType = MethodTypes;
@@ -414,19 +420,36 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	NEXT(MethodTypes);
 	NEXT(MethodTypes);
 
-	for(Function::arg_iterator end = CurrentFunction->arg_end() ; 
+	int argumentIndex = 0;
+	for (Function::arg_iterator end = CurrentFunction->arg_end() ; 
 		AI != end ; ++AI) 
 	{
+		// FIXME: Pass the names of arguments in from the front end.
+		// FIXME: Sensible line information
+		// FIXME: This can't be the correct way of casting a DIDescriptor to a
+		// DIType...
+		DIVariable DebugArg =
+			DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_arg_variable,
+					ScopeDebugContext, "Argument", ModuleScopeDescriptor, 0,
+					DIType(MethodArgDebugTypes.getElement(argumentIndex++).getNode()));
 		Value * arg = Builder.CreateStructGEP(Context, contextOffset++, "arg");
 		Args.push_back(arg);
+		DebugArgs.push_back(DebugArg);
+		//DebugFactory->InsertDeclare(arg, DebugArg, Builder.GetInsertBlock());
 		Builder.CreateStore(BoxValue(&Builder, AI, MethodTypes), arg);
 		NEXT(MethodTypes);
 	}
 	// Create the locals and initialise them to nil
 	for (unsigned i = 0 ; i < locals ; i++) 
 	{
+		DIVariable DebugLocal =
+			DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_auto_variable,
+					ScopeDebugContext, symbols[i], ModuleScopeDescriptor, 0,
+					CGM->DebugTypeForEncoding("@"));
 		Value * local = 
-		Builder.CreateStructGEP(Context, contextOffset++, "local");
+			Builder.CreateStructGEP(Context, contextOffset++, "local");
+		DebugLocals.push_back(DebugLocal);
+		//DebugFactory->InsertDeclare(local, DebugLocal, Builder.GetInsertBlock());
 		Locals.push_back(local);
 		// Initialise the local to nil
 		Builder.CreateStore(ConstantPointerNull::get(IdTy),

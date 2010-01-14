@@ -23,6 +23,8 @@ protected:
 	DIDescriptor ScopeDescriptor;
 	SmallVector<Value*, 8> Locals;
 	SmallVector<Value*, 8> Args;
+	SmallVector<DIVariable, 8> DebugLocals;
+	SmallVector<DIVariable, 8> DebugArgs;
 	Value * RetVal;
 	BasicBlock * CleanupBB;
 	BasicBlock * ExceptionBB;

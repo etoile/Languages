@@ -32,14 +32,16 @@ namespace llvm
 	extern bool DwarfExceptionHandling;
 }
 
+using std::string;
+
 // A copy of the Small Int message module, used when static compiling.
 static Module *SmallIntMessages = NULL;
 
 // Remove unrequired box-then-unbox pass.
 FunctionPass *createUnboxPass(void);
 
-Constant *CodeGenModule::MakeConstantString(const std::string &Str,
-                                            const std::string &Name,
+Constant *CodeGenModule::MakeConstantString(const string &Str,
+                                            const string &Name,
                                             unsigned GEPs)
 {
 	Constant * ConstStr = llvm::ConstantArray::get(Context, Str);
@@ -298,7 +300,7 @@ Value *CodeGenModule::StringConstant(const char *value)
 }
 
 Value *CodeGenModule::GenericConstant(IRBuilder<> &Builder, 
-		const std::string className, const std::string constructor, 
+		const string className, const string constructor, 
 		const char *arg)
 {
 	GlobalVariable *ClassPtr = TheModule->getGlobalVariable(className, true);
@@ -385,7 +387,7 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	pm.run(*TheModule);
 	DUMP(TheModule);
 
-	std::string err;
+	string err;
 	llvm::raw_fd_ostream os(filename, err);
 	WriteBitcodeToFile(TheModule, os);
 }
@@ -401,7 +403,7 @@ Value *CodeGenModule::LoadClassVar(const char *cVarName)
 
 static ExecutionEngine *EE = NULL;
 
-static void *findSymbol(const std::string &str)
+static void *findSymbol(const string &str)
 {
 	return dlsym(RTLD_DEFAULT, str.c_str());
 }
@@ -452,7 +454,10 @@ void CodeGenModule::compile(void)
 	LOG("Loaded.\n");
 }
 
-DIType CodeGenModule::DebugTypeForEncoding(const std::string &encoding)
+// FIXME: This method is, basically, entirely nonsense.  It's a quick hack to
+// get SOMETHING working, but it needs a lot of work before it will provide
+// actually meaningful information.
+DIType CodeGenModule::DebugTypeForEncoding(const string &encoding)
 {
 	// Get the previously-created version, if it exists
 	StringMap<DIType>::const_iterator it = DebugTypeEncodings.find(encoding);
@@ -469,6 +474,11 @@ DIType CodeGenModule::DebugTypeForEncoding(const std::string &encoding)
 		case '{':
 		case '[':
 		default:
+			align = __alignof(void*);
+			size = sizeof(void*);
+			dwarfEncoding = llvm::dwarf::DW_ATE_unsigned;
+			break;
+			fprintf(stderr, "WRGON! %c\n", encoding[0]);
 			return DIType();
 #define CASE(c, type, dwarf)\
 		case c:\
@@ -489,8 +499,14 @@ DIType CodeGenModule::DebugTypeForEncoding(const std::string &encoding)
 		CASE('f', float, llvm::dwarf::DW_ATE_float)
 		CASE('d', float, llvm::dwarf::DW_ATE_float)
 		CASE('B', bool, llvm::dwarf::DW_ATE_boolean)
+		// FIXME: SELs are pointers, but they shouldn't be ids.
+		case ':':
 		case '@':
 		{
+			align = __alignof(void*);
+			size = sizeof(void*);
+			dwarfEncoding = llvm::dwarf::DW_ATE_unsigned;
+			break;
 			// FIXME: Make id point to something, not just be opaque?
 			DIType PointerTypeInfo =
 				Debug->CreateDerivedType(llvm::dwarf::DW_TAG_pointer_type,
@@ -505,4 +521,62 @@ DIType CodeGenModule::DebugTypeForEncoding(const std::string &encoding)
 			ModuleScopeDescriptor, 0, size, align, 0, 0, dwarfEncoding);
 	DebugTypeEncodings[encoding] = TypeInfo;
 	return TypeInfo;
+}
+
+DIArray CodeGenModule::DebugTypeArrayForEncoding(const string &encoding)
+{
+	llvm::SmallVector<DIDescriptor, 8> types;
+	for (string::const_iterator b=encoding.begin(), e=encoding.end() ; b<e ; b++)
+	{
+		string::const_iterator typeEnd;
+		switch (*b)
+		{
+			default:
+				continue;
+			// All primitive values are one character
+			case 'B': case 'c': case 'C': case 's': case 'S': case 'i': 
+			case 'I': case 'l': case 'L': case 'q': case 'Q': case 'f':
+			case 'd': case 'v': case ':': case '@': case '#':
+			{
+				typeEnd = b;
+				break;
+			}
+			case '[':
+			{
+				typeEnd = b + 1;
+				for (int depth=1 ; depth > 0 ; typeEnd++)
+				{
+					if ('[' == *typeEnd)
+					{
+						depth++;
+					}
+					if (']' == *typeEnd)
+					{
+						depth--;
+					}
+				}
+				break;
+			}
+			case '{':
+			{
+				typeEnd = b + 1;
+				for (int depth=1 ; depth > 0 ; typeEnd++)
+				{
+					if ('{' == *typeEnd)
+					{
+						depth++;
+					}
+					if ('}' == *typeEnd)
+					{
+						depth--;
+					}
+				}
+				break;
+			}
+		}
+		const string subEncoding = string(b, typeEnd);
+		b = typeEnd;
+		types.push_back(DebugTypeForEncoding(subEncoding));
+	}
+	return Debug->GetOrCreateArray(types.data(), types.size());
 }

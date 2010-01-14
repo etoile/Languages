@@ -80,34 +80,39 @@ private:
 	void CreateClassPointerGlobal(const char *className, const char *globalName);
 
 public:
-  const Type *getCurrentClassTy() { return CurrentClassTy; }
-  IRBuilder<> *getInitBuilder() { return &InitialiseBuilder; }
-  const string& getClassName() { return ClassName; }
-  const string& getSuperClassName() { return SuperClassName; }
-  Module *getModule() { return TheModule; }
-  DIFactory *getDebugFactory() { return Debug; }
-  CGObjCRuntime *getRuntime() { return Runtime; }
-  string getCategoryName() { return CategoryName; }
-  DICompileUnit getModuleDescriptor() { return ModuleScopeDescriptor; }
+	const Type *getCurrentClassTy() { return CurrentClassTy; }
+	IRBuilder<> *getInitBuilder() { return &InitialiseBuilder; }
+	const string& getClassName() { return ClassName; }
+	const string& getSuperClassName() { return SuperClassName; }
+	Module *getModule() { return TheModule; }
+	DIFactory *getDebugFactory() { return Debug; }
+	CGObjCRuntime *getRuntime() { return Runtime; }
+	string getCategoryName() { return CategoryName; }
+	DICompileUnit getModuleDescriptor() { return ModuleScopeDescriptor; }
 
-  /**
-   * Returns the debug info node for an Objective-C type encoding.
-   */
-  DIType DebugTypeForEncoding(const std::string &encoding);
+	/**
+	 * Returns the debug info node for an Objective-C type encoding.
+	 */
+	DIType DebugTypeForEncoding(const std::string &encoding);
+	/**
+	 * Returns an array of debug types representing the type encodings in a
+	 * string.
+	 */
+	DIArray DebugTypeArrayForEncoding(const string &encoding);
 
-  /**
-   * Returns the code generator for the current scope
-   */
-  CodeGenLexicalScope *getCurrentScope() { return ScopeStack.back(); }
-  /**
-   * Initialise for the specified module.  The second argument specifies
-   * whether the module should be used for static or JIT compilation.
-   */
+	/**
+	 * Returns the code generator for the current scope
+	 */
+	CodeGenLexicalScope *getCurrentScope() { return ScopeStack.back(); }
+	/**
+	 * Initialise for the specified module.  The second argument specifies
+	 * whether the module should be used for static or JIT compilation.
+	 */
 	CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit=true);
 
-  /**
-   * Start generating code for a class.
-   */
+	/**
+	 * Start generating code for a class.
+	 */
 	void BeginClass(const char *Class, const char *Super, const
 		char ** cVarNames, const char ** cVarTypes, const char ** iVarNames,
 		const char ** iVarTypes, int *iVarOffsets, int SuperclassSize);
