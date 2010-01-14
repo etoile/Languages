@@ -49,5 +49,4 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 
 MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
-	@clang -c -ftrapv -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc -fconstant-string-class=NSConstantString
-
+	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc -fconstant-string-class=NSConstantString
