@@ -183,8 +183,6 @@ static std::string SymbolNameForClass(const std::string &ClassName)
 {
 	return "__objc_class_" + ClassName;
 }
-// PPC gas doesn't like symbols containing quotes or colons
-#if defined(__linux__) && defined(__PPC__)
 static std::string SymbolNameForSelector(const std::string &MethodName)
 {
   string MethodNameColonStripped = MethodName;
@@ -195,22 +193,9 @@ static std::string SymbolNameForSelector(const std::string &MethodName)
 static std::string SymbolNameForMethod(const std::string &ClassName, const
 	std::string &CategoryName, const std::string &MethodName, bool isClassMethod)
 {
-	return "__objc_method_" + ClassName +"_category_"+CategoryName+"_"+
-		(isClassMethod ? "classmethod_" : "instancemethod_") + SymbolNameForSelector(MethodName);
+	return std::string(isClassMethod ? "_c_" : "_i_") + ClassName + "_" +
+		CategoryName + "_" + SymbolNameForSelector(MethodName);
 }
-#else
-static std::string SymbolNameForSelector(const std::string &MethodName)
-{
-	return MethodName;
-}
-
-static std::string SymbolNameForMethod(const std::string &ClassName, const
-	std::string &CategoryName, const std::string &MethodName, bool isClassMethod)
-{
-	return "__objc_method_" + ClassName +"("+CategoryName+")"+
-		(isClassMethod ? "+" : "-") + SymbolNameForSelector(MethodName);
-}
-#endif
 
 
 CGObjCGNU::CGObjCGNU(llvm::Module &M,
