@@ -35,6 +35,21 @@ static NSBundle *mainBundle = nil;
 }
 @end
 
+@interface LKCompilerWarningIgnoringDelegate : NSObject<LKCompilerDelegate>
+@end
+@implementation LKCompilerWarningIgnoringDelegate
+- (BOOL)compiler: (LKCompiler*)aCompiler
+generatedWarning: (NSString*)aWarning
+         details: (NSDictionary*)info { return YES; }
+- (BOOL)compiler: (LKCompiler*)aCompiler
+  generatedError: (NSString*)aWarning
+         details: (NSDictionary*)info
+{
+	NSLog(@"ERROR: %@", [info objectForKey: kLKHumanReadableDescription]);
+	return NO;
+}
+@end
+
 static NSString* stripScriptPreamble(NSString *script)
 {
 	if ([script length] > 2
@@ -126,30 +141,60 @@ static BOOL staticCompileScript(NSString *script, NSString *outFile,
 	return YES;
 }
 
+static BOOL enableTiming;
+
+static void logTimeSinceWithMessage(clock_t c1, NSString *message)
+{
+	if (!enableTiming) { return; }
+	clock_t c2 = clock();
+	struct rusage r;
+	getrusage(RUSAGE_SELF, &r);
+	NSLog(@"%@ took %f seconds.  Peak used %dKB.", message, 
+		((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
+}
+
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];
 
-	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:i", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:iq", argc, argv);
+
+	// Debug mode.
+	if ([[opts objectForKey:@"d"] boolValue])
+	{
+		[LKCompiler setDebugMode:YES];
+	}
+	// Suppress warnings
+	if ([[opts objectForKey:@"q"] boolValue])
+	{
+		[LKCompiler setDefaultDelegate: [LKCompilerWarningIgnoringDelegate new]];
+	}
+	enableTiming = [[opts objectForKey:@"t"] boolValue];
+	clock_t c1;
+
 	NSString *bundle = [opts objectForKey:@"b"];
 	if (nil != bundle)
 	{
 		if (![bundle isAbsolutePath])
 		{
 			bundle = [[[NSFileManager defaultManager] currentDirectoryPath]
-			   	stringByAppendingPathComponent:bundle];
+				stringByAppendingPathComponent:bundle];
 		}
 		mainBundle = [NSBundle bundleWithPath:bundle];
 		[NSBundleHack enableHack];
+		c1 = clock();
 		Class principalClass = 
 			[LKCompiler loadLanguageKitBundle:mainBundle];
-		if (principalClass == (Class)-1)
+		logTimeSinceWithMessage(c1, @"Loading bundle");
+		if ([principalClass isKindOfClass: [NSNull class]])
 		{
 			return 1;
 		}
+		c1 = clock();
 		[[[principalClass alloc] init] run];
+		logTimeSinceWithMessage(c1, @"Smalltalk execution");
 		return 0;
 	}
 	// Load specified framework
@@ -186,11 +231,7 @@ int main(int argc, char **argv)
 				   	[transformName UTF8String]);
 		}
 	}
-	// Debug mode.
-	if ([[opts objectForKey:@"d"] boolValue])
-	{
-		[LKCompiler setDebugMode:YES];
-	}
+
 	NSString *ProgramFile = [opts objectForKey:@"f"];
 	if (nil == ProgramFile)
 	{
@@ -213,21 +254,14 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	// JIT compile and run
-	clock_t c1 = clock();
+	c1 = clock();
 	BOOL onlyInterpret = [[opts objectForKey:@"i"] boolValue];
 	if (!jitScript(Program, extension, onlyInterpret))
 	{
 		NSLog(@"Failed to compile input.");
 		return 2;
 	}
-	if ([[opts objectForKey:@"t"] boolValue])
-	{
-		clock_t c2 = clock();
-		struct rusage r;
-		getrusage(RUSAGE_SELF, &r);
-		NSLog(@"Smalltalk compilation took %f seconds.  Peak used %dKB.",
-			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
-	}
+	logTimeSinceWithMessage(c1, @"Smalltalk compilation");
 
 	NSString * className = [opts objectForKey:@"C"];
 	if (nil == className)
@@ -249,14 +283,7 @@ int main(int argc, char **argv)
 		NSLog(@"Object at address %x has data: ", (unsigned)(uintptr_t)aTool);
 		[aTool dumpObject];
 	}
+	logTimeSinceWithMessage(c1, @"Smalltalk execution");
 
-	if ([[opts objectForKey:@"t"] boolValue])
-	{
-		clock_t c2 = clock();
-		struct rusage r;
-		getrusage(RUSAGE_SELF, &r);
-		NSLog(@"Smalltalk execution took %f seconds.  Peak used %dKB.",
-			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
-	}
 	return 0;
 }
