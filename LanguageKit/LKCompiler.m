@@ -89,7 +89,7 @@ static BOOL loadLibraryForBundle(NSString *soFile,
                                  NSBundle *bundle,
                                  NSDate *modified)
 {
-	NSLog(@"Trying cache %@", soFile);
+	//NSLog(@"Trying cache %@", soFile);
 	if (nil == soFile)
 	{
 		return NO;
@@ -98,10 +98,10 @@ static BOOL loadLibraryForBundle(NSString *soFile,
 	// If the bundle has been modified after the cached version...
 	if (nil == soDate || [modified compare: soDate] == NSOrderedDescending)
 	{
-		NSLog(@"Cache out of date");
+		//NSLog(@"Cache out of date");
 		return NO;
 	}
-	NSLog(@"Attempting to load recompiled cache...");
+	//NSLog(@"Attempting to load recompiled cache...");
 	// Return YES if dlopen succeeds.
 	//return NULL != dlopen([soFile UTF8String], RTLD_GLOBAL);
 	void *so = dlopen([soFile UTF8String], RTLD_GLOBAL);
