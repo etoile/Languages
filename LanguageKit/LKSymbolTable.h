@@ -30,6 +30,11 @@ typedef	enum
 	LKSymbolTable *enclosingScope;
 }
 /**
+ * Adds a global symbol for the class name.  This allows the class to be
+ * referenced, but not subclassed, before it is defined.
+ */
++ (void) forwardDeclareNewClass: (NSString*) className;
+/**
  * Add a symbol to this table.
  */
 - (void) addSymbol:(NSString*)aSymbol;

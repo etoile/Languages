@@ -19,11 +19,8 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	return LKSymbolScopeInvalid;
 }
 
+
 @implementation LKObjectSymbolTable
-+ (void) initialize
-{
-	NewClasses = [[NSMutableDictionary alloc] init];
-}
 + (LKSymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass
 {
 	return [NewClasses objectForKey:aClass];
@@ -220,6 +217,17 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 @end
 @implementation LKSymbolTable
++ (void) initialize
+{
+	NewClasses = [[NSMutableDictionary alloc] init];
+}
++ (void) forwardDeclareNewClass: (NSString*) className
+{
+	if (![NewClasses objectForKey: className])
+	{
+		[NewClasses setObject: [NSNull null] forKey: className];
+	}
+}
 //TODO You can't insert LKSymbolScopeGlobal symbols yet.
 - (void) addSymbol:(NSString*)aSymbol {}
 - (void) setScope:(LKSymbolTable*)scope

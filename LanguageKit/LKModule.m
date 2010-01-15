@@ -1,4 +1,5 @@
 #import "LKModule.h"
+#import "LKSubclass.h"
 #import <EtoileFoundation/runtime.h>
 
 /**
@@ -197,6 +198,10 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 	// We might want to get some from other sources in future and merge these.
 	ASSIGN(typeOverrides, [pragmas objectForKey:@"types"]);
 	BOOL success = YES;
+	FOREACH(classes, forwardClass, LKSubclass*)
+	{
+		[LKSymbolTable forwardDeclareNewClass: [forwardClass classname]];
+	}
 	FOREACH(classes, class, LKAST*)
 	{
 		[class setParent:self];
