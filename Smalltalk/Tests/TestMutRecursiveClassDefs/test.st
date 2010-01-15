@@ -12,7 +12,7 @@ NSObject subclass: List [
   ]
   print [
     ETTranscript show: '---'; cr.
-    0 to: self theSize do: [ :x |
+    0 to: (self theSize - 1) do: [ :x |
       ETTranscript show: x; show: ': '; show: (self at: x); cr.
     ]
   ]
