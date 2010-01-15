@@ -108,7 +108,16 @@ NSObject subclass: SmalltalkTool
 		'Testing if empty methods return self:' log.
 		self init log.
 		"A really big integer:"
+		'BigInt literals: ' log.
 		10000000000000000 log.
+		'BigInt arithmetic: ' log.
+		(10000000000000000 + 12) log.
+		'floats:' log.
+		((12.5 + '13') + 14) log.
+		'nil == nil' log.
+		nil == nil log.
+		'nil = nil' log.
+		nil = nil log.
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray
