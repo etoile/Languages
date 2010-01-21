@@ -22,6 +22,11 @@
  */
 + (id) messageWithSelectorName:(NSString*)aSelector;
 /**
+ * Return a new message send with the specified selector and arguments.
+ */
++ (id) messageWithSelectorName:(NSString*)aSelector
+                     arguments: (NSArray*)args;
+/**
  * Initialize with the specified selector.
  */
 - (id) initWithSelectorName:(NSString*)aSelector;

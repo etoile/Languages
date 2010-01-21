@@ -101,6 +101,7 @@
 	FOREACH(methods, method, LKAST*)
 	{
 		[str appendString:[method description]];
+		[str appendString: @"\n"];
 	}
 	[str appendString:@"\n]"];
 	return str;

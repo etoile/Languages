@@ -19,6 +19,20 @@
 {
 	return AUTORELEASE([[self alloc] initWithSelectorName:aSelector]);
 }
+- (id)initWithSelectorName: (NSString*)aSelector
+                 arguments: (NSArray*)args
+{
+	SUPERINIT;
+	ASSIGN(selector, aSelector);
+	arguments = [args mutableCopy];
+	return self;
+}
++ (id)messageWithSelectorName: (NSString*)aSelector
+                    arguments: (NSArray*)args
+{
+	return [[[self alloc] initWithSelectorName: aSelector
+	                                 arguments: args] autorelease];
+}
 - (id) initWithSelectorName:(NSString*)aSelector
 {
 	SUPERINIT;
