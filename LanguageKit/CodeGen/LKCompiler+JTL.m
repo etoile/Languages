@@ -130,6 +130,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 		if ([fm movePath: so toPath: path handler: nil])
 		{
 			NSLog(@"Wrote cache to %@", path);
+			[fm removeFileAtPath: tempDirectory handler: nil];
 			return;
 		} 
 		NSArray *dirs = NSSearchPathForDirectoriesInDomains( NSLibraryDirectory,
@@ -147,8 +148,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 		// every time.
 		[fm movePath: so toPath: userCache handler: nil];
 		NSLog(@"Wrote cache to %@", userCache);
+		NSLog(@"Deleting %@", tempDirectory);
 	}
-
-	// TODO: Link the bitcode files together, optimise, emit .so
 }
 @end
