@@ -72,7 +72,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 #FIXME: -fno-inline is just for debugging and will make stuff very slow.  Remove it before committing.
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE -fno-inline
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
-${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++
+${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++ -lLanguageKitRuntime
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += ObjCConstants.plist
