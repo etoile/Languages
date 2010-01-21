@@ -123,10 +123,6 @@
 	{
 		[str appendString:[target description]];
 	}
-	else
-	{
-		[str appendString:@"(nil)"];
-	}
 	[str appendString:@" "];
 	NSArray *sel = [selector componentsSeparatedByString:@":"];
 	if ([sel count] == 1)
