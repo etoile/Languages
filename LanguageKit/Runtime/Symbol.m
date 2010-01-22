@@ -29,4 +29,8 @@
 {
 	return selector;
 }
+- (NSString*)description
+{
+	return [@"#" stringByAppendingString: NSStringFromSelector(selector)];
+}
 @end
