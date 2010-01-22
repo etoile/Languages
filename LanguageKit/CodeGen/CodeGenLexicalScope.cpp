@@ -442,18 +442,22 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// Create the locals and initialise them to nil
 	for (unsigned i = 0 ; i < locals ; i++) 
 	{
-		DIVariable DebugLocal =
-			DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_auto_variable,
-					ScopeDebugContext, symbols[i], ModuleScopeDescriptor, 0,
-					CGM->DebugTypeForEncoding("@"));
 		Value * local = 
 			Builder.CreateStructGEP(Context, contextOffset++, "local");
-		DebugLocals.push_back(DebugLocal);
-		//DebugFactory->InsertDeclare(local, DebugLocal, Builder.GetInsertBlock());
 		Locals.push_back(local);
 		// Initialise the local to nil
 		Builder.CreateStore(ConstantPointerNull::get(IdTy),
 			local);
+
+		if (0 != symbols)
+		{
+			DIVariable DebugLocal =
+				DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_auto_variable,
+						ScopeDebugContext, symbols[i], ModuleScopeDescriptor, 0,
+						CGM->DebugTypeForEncoding("@"));
+			DebugLocals.push_back(DebugLocal);
+		}
+		//DebugFactory->InsertDeclare(local, DebugLocal, Builder.GetInsertBlock());
 	}
 	
 	/// Put self in a register so we can easily get at it later.

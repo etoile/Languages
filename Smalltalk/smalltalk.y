@@ -384,15 +384,32 @@ simple_expression(E) ::= LBRACE expression_list(L) RBRACE.
 {
 	E = [LKArrayExpr arrayWithElements:L];
 }
-simple_expression(E) ::= LSQBRACK argument_list(A) statement_list(S) RSQBRACK.
+simple_expression(E) ::= LSQBRACK argument_list(A) local_list(L) statement_list(S) RSQBRACK.
 {
 	//FIXME: block locals
-	E = [LKBlockExpr blockWithArguments:A locals:nil statements:S];
+	E = [LKBlockExpr blockWithArguments: A
+	                             locals: L
+	                         statements: S];
+/*
+	E = [LKBlockExpr blockWithArguments: [A objectAtIndex: 0]
+	                             locals: [A objectAtIndex: 1]
+	                         statements: S];
+*/
 }
-
-argument_list(L) ::= arguments(T) BAR.
+/*
+block_local_list(L) ::= block_local_list(T) WORD(W) BAR.
 {
+	[T addObject:W];
 	L = T;
+}
+block_local_list(L) ::= .
+{
+	L = [NSMutableArray array];
+}
+*/
+argument_list(A) ::= arguments(T) BAR.
+{
+	A = T;
 }
 argument_list ::= .
 
