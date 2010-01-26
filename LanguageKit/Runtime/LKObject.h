@@ -9,8 +9,7 @@
  * be modified to contain 62-bit integers, 32-bit floats, or pointers.
  */
 
-#include <stdint.h>
-#include "BigInt.h"
+#import <Foundation/Foundation.h>
 
 typedef NSInteger SmallInt;
 
@@ -19,6 +18,8 @@ typedef union
 	id object;
 	SmallInt smallInt;
 } LKObject;
+
+#import "BigInt.h"
 
 static inline BOOL LKObjectIsSmallInt(LKObject obj)
 {

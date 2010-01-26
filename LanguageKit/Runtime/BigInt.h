@@ -5,7 +5,7 @@
 @public
   /**
    * Value for this object.  Public so it can be accessed from others to
-   * slightly lower the cost of operations on BiInts.
+   * slightly lower the cost of operations on BigInts.
    */
 	mpz_t v;
 }

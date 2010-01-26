@@ -1,5 +1,5 @@
 #define class_pointer isa
-#import "BigInt.h"
+#import "LKObject.h"
 #import "BlockClosure.h"
 
 static mpz_t ZERO;
@@ -65,14 +65,14 @@ static BigInt *BigIntNO;
 	return b;
 }
 #define op2(name, func) \
-- (BigInt*) name:(id)other\
+- (LKObject) name:(id)other\
 {\
 	if (nil == other)\
 	{\
 		[NSException raise: @"BigIntException"\
 		            format: @"nil argument to " #name];\
 	}\
-	BigInt *b = [[[BigInt alloc] init] autorelease];\
+	BigInt *b = [[BigInt alloc] init];\
 	mpz_init(b->v);\
 	if (other->isa == BigIntClass || [other isKindOfClass: BigIntClass])\
 	{\
@@ -85,7 +85,20 @@ static BigInt *BigIntNO;
 		mpz_## func (b->v, number, v);\
 		mpz_clear(number);\
 	}\
-	return b;\
+	LKObject ret;\
+	if (mpz_fits_sint_p(b->v))\
+	{\
+		int intValue = mpz_get_si(b->v);\
+		if (intValue << 1 >> 1 == intValue)\
+		{\
+			mpz_clear(b->v);\
+			ret.smallInt = (intValue << 1) | 1;\
+			NSLog(@"Returning small int for %d", intValue);\
+			return ret;\
+		}\
+	}\
+	ret.object = [b autorelease];\
+	return ret;\
 }
 
 #define op(name) op2(name, name)
