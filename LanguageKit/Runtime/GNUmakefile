@@ -30,6 +30,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
 	BigInt.h\
+	LKObject.h\
 	BlockClosure.h
 
 -include GNUmakefile.preamble

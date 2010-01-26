@@ -4,6 +4,7 @@
 #include <llvm/Module.h>
 #include "llvm/Intrinsics.h"
 
+extern const char *LKObjectEncoding;
 
 static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
 {
@@ -48,6 +49,11 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	// Untyped selectors return id
 	if (NULL == typestr || '\0' == *typestr) return V;
+	// Special case for LKObjects
+	if (strncmp(typestr, LKObjectEncoding, strlen(LKObjectEncoding)) == 0)
+	{
+		return V;
+	}
 	// FIXME: Other function type qualifiers
 	while(*typestr == 'V' || *typestr == 'r')
 	{
@@ -183,6 +189,11 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
                                   Value *val,
                                   const char *Type)
 {
+	// Special case for LKObjects
+	if (strncmp(Type, LKObjectEncoding, strlen(LKObjectEncoding)) == 0)
+	{
+		return val;
+	}
 	string returnTypeString = string(1, *Type);
 	const char *castSelName;
 	switch(*Type)

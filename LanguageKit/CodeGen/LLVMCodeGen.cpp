@@ -21,6 +21,8 @@
 
 #include "ABI.h"
 
+extern const char *LKObjectEncoding;
+
 // C++ Implementation
 using namespace llvm;
 using std::string;
@@ -46,6 +48,12 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 {
 	// FIXME: Other function type qualifiers
 	SkipTypeQualifiers(typestr);
+	// Special case for LKObject
+	if (strncmp(*typestr, LKObjectEncoding, strlen(LKObjectEncoding)) == 0)
+	{
+		*typestr += strlen(LKObjectEncoding);
+		return PointerType::getUnqual(Type::getInt8Ty(Context));
+	}
 	switch(**typestr)
 	{
 		case 'c':

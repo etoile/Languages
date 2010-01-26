@@ -1,9 +1,11 @@
 typedef int bool;
 #import "LLVMCodeGen.h"
+#import "../Runtime/LKObject.h"
 #import "../LKSymbolTable.h"
 #include <objc/objc-api.h>
 
 static NSString *SmallIntFile;
+const char * LKObjectEncoding = @encode(LKObject);
 
 @implementation LLVMCodeGen 
 + (void) initialize
