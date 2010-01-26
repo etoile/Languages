@@ -10,8 +10,7 @@
 #include <math.h>
 
 NSString *LKInterpreterException = @"LKInterpreterException";
-NSString *LKSmalltalkBlockNonLocalReturnException =
-	@"LKSmalltalkBlockNonLocalReturnException";
+extern NSString *LKSmalltalkBlockNonLocalReturnException;
 
 static NSMutableDictionary *LKClassVariables;
 static NSMutableDictionary *LKMethodASTs;
