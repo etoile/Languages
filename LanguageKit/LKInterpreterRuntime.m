@@ -98,6 +98,7 @@ static ffi_type *FFITypeForObjCType(const char *typestr)
 		}
 		case 'v':
 			return &ffi_type_void;
+		case '(': // FIXME: Hack
 		case '@':
 		case '#':
 			return &ffi_type_pointer;
@@ -372,6 +373,12 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 id LKGetIvar(id receiver, NSString *name)
 {
 	Ivar ivar = class_getInstanceVariable([receiver class], [name UTF8String]);
+	if (NULL == ivar)
+	{
+                [NSException raise: LKInterpreterException
+                            format: @"Error getting ivar '%@' of object %@",
+		                    name, receiver]; 	
+	}
 	void *ivarAddress = (char*)receiver +ivar_getOffset(ivar);
 	id result = BoxValue(ivarAddress, ivar_getTypeEncoding(ivar));
 	return result;
