@@ -152,8 +152,10 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id interpretedElements[count];
 	for (unsigned int i=0; i<count; i++)
 	{
+		[[elements objectAtIndex: i] retain];
 		interpretedElements[i] =
 			[(LKAST*)[elements objectAtIndex: i] interpretInContext: context];
+		[[elements objectAtIndex: i] release];
 	}
 	return [NSMutableArray arrayWithObjects: interpretedElements count: count];
 }
@@ -164,8 +166,10 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKAssignExpr (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
+	[expr retain];
 	id rvalue = [expr interpretInContext: context];
-	
+	[expr release];
+
 	switch ([symbols scopeOfSymbol: target->symbol])
 	{
 		case LKSymbolScopeLocal:
@@ -205,7 +209,10 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id result;
 	FOREACH(statements, statement, LKAST*)
 	{
+		[statement retain];
 		result = [statement interpretInContext: context];
+		// FIXME: should be in @finally
+		[statement release];
 	}
 	return result;
 }
@@ -262,8 +269,15 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKCompare (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	return [BigInt bigIntWithLong: 
-		[lhs interpretInContext: context] == [rhs interpretInContext: context]];
+	[lhs retain];
+	id lhsInterpreted = [lhs interpretInContext: context];
+	[lhs release];
+	
+	[rhs retain];
+	id rhsInterpreted = [rhs interpretInContext: context];
+	[rhs release];
+
+	return [BigInt bigIntWithLong: lhsInterpreted == rhsInterpreted];
 }
 @end
 
@@ -314,11 +328,16 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	id result = nil;
+	[condition retain];
 	NSArray *statements = [[condition interpretInContext: context] boolValue] ?
 		thenStatements : elseStatements;
+	[condition release];
 	FOREACH(statements, statement, LKAST*)
 	{
+		[statement retain];
 		result = [statement interpretInContext: context];
+		// FIXME: should be in @finally
+		[statement release];
 	}
 	return result;
 }
@@ -371,14 +390,20 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
+		[[arguments objectAtIndex: i] retain];
 		argv[i] = [(LKAST*)[arguments objectAtIndex: i] interpretInContext: context];
+		//FIXME: should be in @finally
+		[[arguments objectAtIndex: i] release];
 	}
 	return LKSendMessage(receiverClassName, receiver, selector, argc, argv);
 }
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	return [self interpretInContext: context
+	[target retain];
+	id result = [self interpretInContext: context
 	                      forTarget: [(LKAST*)target interpretInContext: context]];
+	[target release];
+	return result;
 }
 @end
 
@@ -389,10 +414,15 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	id result = nil;
+	[receiver retain];
 	id target = [receiver interpretInContext: context];
+	[receiver release];
 	FOREACH(messages, message, LKMessageSend*)
 	{
+		[message retain];
 		result = [message interpretInContext: context forTarget: target];
+		// FIXME: should be in @finally
+		[message release];
 	}
 	return result;
 }
@@ -407,12 +437,16 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		{
 			if ([element isMemberOfClass: [LKReturn class]])
 			{
+				[element retain];
 				result = [element interpretInContext: context];
+				[element release];
 				break;
 			}
 			else
 			{
+				[element retain];
 				[element interpretInContext: context];
+				[element release];
 			}
 		}
 	NS_HANDLER
@@ -465,11 +499,15 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	FOREACH(classes, class, LKAST*)
 	{
+		[class retain];
 		[class interpretInContext: context];
+		[class release];
 	}
 	FOREACH(categories, category, LKAST*)
 	{
+		[category retain];
 		[category interpretInContext: context];
+		[category release];
 	}
 	return nil;
 }
@@ -481,12 +519,10 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKReturn (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	if ([[self parent] isKindOfClass: [LKBlockExpr class]])
-	{
-		[LKBlockReturnException raiseWithValue: [ret interpretInContext: context]];
-		return nil;
-	}
-	return [ret interpretInContext: context];
+	[ret retain];
+	id value = [ret interpretInContext: context];
+	[ret release];
+	return value;
 }
 @end
 
@@ -496,8 +532,12 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKBlockReturn (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	[LKBlockReturnException raiseWithValue: [ret interpretInContext: context]];
-	return nil;	
+	[ret retain];
+	id value = [ret interpretInContext: context];
+	[ret release];
+
+	[LKBlockReturnException raiseWithValue: value];
+	return nil;
 }
 @end
 
@@ -550,7 +590,9 @@ static uint8_t logBase2(uint8_t x)
 		{
 			if ([[class classname] isEqualToString: superclass])
 			{
+				[class retain];
 				supercls = [class interpretInContext: context];
+				[class release];
 				break;
 			}
 		}
