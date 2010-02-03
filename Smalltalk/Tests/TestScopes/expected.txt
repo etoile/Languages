@@ -1,0 +1,9 @@
+null2
+null
+set in secondMethod
+set in secondMethod
+set in inner block
+set in inner block
+set in inner block
+set in inner block
+set in inner block
