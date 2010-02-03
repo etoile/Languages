@@ -8,20 +8,24 @@ extern NSString *LKInterpreterException;
 
 LKMethod *LKASTForMethod(Class cls, NSString *selectorName);
 
+/**
+ * Wrapper around a map table which contains the objects in a
+ * Smalltalk stack frame.
+ */
 @interface LKInterpreterContext : NSObject
 {
+@public
 	LKInterpreterContext *parent;
-	id selfObject;
-	NSMutableArray *symbols;
-	id *objects;
+	LKSymbolTable *symbolTable;
+@private
+	NSMapTable *objects;
 }
-- (id) initWithSelf: (id)selfObject
-            symbols: (NSArray*)symbols
-             parent: (LKInterpreterContext*)aParent;
-- (BOOL) setValue: (id)value forSymbol: (NSString*)symbol;
-- (void) addSymbol: (NSString*)symbol;
-- (BOOL) hasSymbol: (NSString*)symbol;
+- (id) initWithSymbolTable: (LKSymbolTable*)aTable
+                    parent: (LKInterpreterContext*)aParent;
+- (void) dealloc;
+- (void) setValue: (id)value forSymbol: (NSString*)symbol;
 - (id) valueForSymbol: (NSString*)symbol;
+- (LKInterpreterContext *) contextForSymbol: (NSString*)symbol;
 @end
 
 

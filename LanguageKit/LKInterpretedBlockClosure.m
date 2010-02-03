@@ -32,9 +32,9 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 	blockAST = [ast retain];
 	
 	interpreterContext = [[LKInterpreterContext alloc]
-				initWithSelf: self
-				     symbols: argNames
-				      parent: parentContext];
+				initWithSymbolTable: [ast symbols]
+				             parent: parentContext];
+	[interpreterContext setValue: self forSymbol: @"self"];
 	args = [argNames count];
 	function = LKBlockFunction;
 	return self;

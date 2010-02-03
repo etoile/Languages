@@ -168,6 +168,7 @@ static id BoxValue(void *value, const char *typestr)
 			// If it's already an object, we don't need to do anything
 		case '@':
 		case '#':
+		case '(': //FIXME: Hack
 			return *(id*)value;
 			// Other types, just wrap them up in an NSValue
 		default:
@@ -226,6 +227,7 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 			break;
 		case '#':
 		case '@':
+		case '(': //FIXME: Hack
 			*(id*)dest = value;
 			return;
 		case 'v':
