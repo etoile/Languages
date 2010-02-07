@@ -19,6 +19,9 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	return LKSymbolScopeInvalid;
 }
 
+@interface LKSymbolTable (Private)
+- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName;
+@end
 
 @implementation LKObjectSymbolTable
 + (LKSymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass
@@ -191,7 +194,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	while (nil != nextscope) 
 	{
 		scope.depth++;
-		LKSymbolScope result = [nextscope scopeOfSymbol:aSymbol];
+		LKSymbolScope result = [nextscope scopeOfSymbolNonrecursive:aSymbol];
 		if (result != LKSymbolScopeInvalid && result != LKSymbolScopeExternal)
 		{
 			scope.scope = nextscope;
