@@ -235,7 +235,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 - (void) addSymbol:(NSString*)aSymbol {}
 - (void) setScope:(LKSymbolTable*)scope
 {
-	enclosingScope = scope;
+	ASSIGN(enclosingScope, scope);
 }
 - (int) indexOfArgument:(NSString*)aName
 {
@@ -284,6 +284,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 - (void) dealloc
 {
+	[enclosingScope release];
 	[types release];
 	[super dealloc];
 }
