@@ -439,9 +439,7 @@ void CodeGenModule::compile(void)
 	if (NULL == EE)
 	{
 		DwarfExceptionHandling = true;
-		// FIXME: The second argument is only here to discriminate two versions of
-		// ExecutionEngine::create().
-		EE = ExecutionEngine::create(TheModule, false);
+		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
 	}
 	LOG("Compiling...\n");
