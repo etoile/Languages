@@ -144,11 +144,11 @@ static void const countIntsAndFloats(const Type *ty,
 	{
 		return;
 	}
-	if (ty->isInteger())
+	if (ty->isIntegerTy())
 	{
 		ints++;
 	}
-	else if (ty->isFloatingPoint())
+	else if (ty->isFloatingPointTy())
 	{
 		floats++;
 	}
