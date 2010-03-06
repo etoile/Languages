@@ -12,7 +12,6 @@
 #include <llvm/GlobalVariable.h>
 #include <llvm/Module.h>
 #include <llvm/LLVMContext.h>
-#include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/IRBuilder.h>

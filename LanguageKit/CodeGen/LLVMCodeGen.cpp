@@ -8,7 +8,6 @@
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/GlobalVariable.h>
 #include <llvm/Module.h>
-#include <llvm/ModuleProvider.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/IRBuilder.h>
