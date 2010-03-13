@@ -153,34 +153,67 @@ statement(S) ::= IF LPAREN expression(C) RPAREN body(T) ELSE body(E).
 {
 	S = [LKIfStatement ifStatementWithCondition:C then:T else:E];
 }
-// FIXME: Allow VAR in I, and I/U are assignments not expressions.
-statement(S) ::= FOR LPAREN expression_list(I) SEMI
-                                 expression(C) SEMI
-                            expression_list(U) RPAREN body(B).
+statement(S) ::= loop_statement(L).
 {
-	// TODO
-	S = I = C = U = B;
+	S = L;
 }
-statement(S) ::= FOR LPAREN ident(V) IN expression(E) RPAREN body(B).
+statement(S) ::= ident(K) COLON loop_statement(L).
+{
+	[L setLabel:K];
+	S = L;
+}
+loop_statement(S) ::= FOR LPAREN expression_list(I) SEMI
+                                maybe_expression(C) SEMI
+                                 expression_list(U) RPAREN body(B).
+{
+	S = [LKLoop loopWithStatements:B];
+	[S setInitStatements:I];
+	[S setPreCondition:C];
+	[S setUpdateStatements:U];
+}
+loop_statement(S) ::= FOR LPAREN VAR declarations(I) SEMI
+                                 maybe_expression(C) SEMI
+                                  expression_list(U) RPAREN body(B).
+{
+	S = [LKLoop loopWithStatements:B];
+	[S setInitStatements:I];
+	[S setPreCondition:C];
+	[S setUpdateStatements:U];
+}
+loop_statement(S) ::= FOR LPAREN ident(V) IN expression(E) RPAREN body(B).
 {
 	// TODO
 	S = V = E = B;
 }
-statement(S) ::= FOR LPAREN VAR ident(V) IN expression(E) RPAREN body(B).
+loop_statement(S) ::= FOR LPAREN VAR ident(V) IN expression(E) RPAREN body(B).
 {
 	// TODO
 	S = V = E = B;
 }
-statement(S) ::= WHILE LPAREN expression(C) RPAREN body(B).
+loop_statement(S) ::= WHILE LPAREN expression(C) RPAREN body(B).
 {
-	// TODO
-	S = C = B;
+	S = [LKLoop loopWithStatements:B];
+	[S setPreCondition:C];
 }
-statement(S) ::= DO body(B) WHILE LPAREN expression(C) RPAREN SEMI.
+loop_statement(S) ::= DO body(B) WHILE LPAREN expression(C) RPAREN SEMI.
 {
-	// TODO
-	S = C = B;
+	S = [LKLoop loopWithStatements:B];
+	[S setPostCondition:C];
 }
+statement(S) ::= BREAK maybe_ident(L) SEMI.
+{
+	S = [LKBreak breakWithLabel:L];
+}
+statement(S) ::= CONTINUE maybe_ident(L) SEMI.
+{
+	S = [LKContinue continueWithLabel:L];
+}
+
+maybe_expression(E) ::= expression(C). { E = C; }
+maybe_expression ::= .
+
+maybe_ident(I) ::= ident(W). { I = W; }
+maybe_ident ::= .
 
 body(L) ::= LBRACE statement_list(S) RBRACE.
 {
@@ -222,6 +255,23 @@ statement_expression(E) ::= ident(T) shortcut_assign(S) expression(R). [PLUSEQ]
 	E = [LKMessageSend messageWithSelectorName:S];
 	[E setTarget:[LKDeclRef referenceWithSymbol:T]];
 	[E addArgument:R];
+	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
+	                              expr:E];
+}
+statement_expression(E) ::= ident(T) increment(S).
+{
+	// FIXME: Should return old value.
+	E = [LKMessageSend messageWithSelectorName:S];
+	[E setTarget:[LKDeclRef referenceWithSymbol:T]];
+	[E addArgument:[LKNumberLiteral literalFromString:@"1"]];
+	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
+	                              expr:E];
+}
+statement_expression(E) ::= increment(S) ident(T).
+{
+	E = [LKMessageSend messageWithSelectorName:S];
+	[E setTarget:[LKDeclRef referenceWithSymbol:T]];
+	[E addArgument:[LKNumberLiteral literalFromString:@"1"]];
 	E = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T]
 	                              expr:E];
 }
@@ -483,3 +533,6 @@ shortcut_assign(S) ::= MINUSEQ. { S = @"sub:"; }
 shortcut_assign(S) ::= MULEQ.   { S = @"mul:"; }
 shortcut_assign(S) ::= DIVEQ.   { S = @"div:"; }
 shortcut_assign(S) ::= MODEQ.   { S = @"mod:"; }
+
+increment(S) ::= PLUSPLUS.   { S = @"plus:"; }
+increment(S) ::= MINUSMINUS. { S = @"sub:"; }

@@ -44,6 +44,14 @@ const char * LKObjectEncoding = @encode(LKObject);
 		LLVMinitialise(path);
 	}
 }
+- (id) init
+{
+	SUPERINIT;
+	labelledBasicBlocks = NSCreateMapTable(NSObjectMapKeyCallBacks,
+	                                       NSNonOwnedPointerMapValueCallBacks,
+	                                       0);
+	return self;
+}
 + (NSString*) smallIntBitcodeFile
 {
 	return SmallIntFile;
@@ -245,6 +253,7 @@ lexicalScopeAtDepth:(unsigned) scope
 - (void) dealloc
 {
 	freeModuleBuilder(Builder);
+	NSFreeMapTable(labelledBasicBlocks);
 	[super dealloc];
 }
 - (void*) generateConstantSymbol:(NSString*)aSymbol
@@ -272,6 +281,25 @@ lexicalScopeAtDepth:(unsigned) scope
 - (void) goToBasicBlock:(void*)aBasicBlock
 {
 	GoTo(Builder, aBasicBlock);
+}
+- (void) setBasicBlock:(void*)aBasicBlock forLabel:(NSString*)aLabel
+{
+	if (aBasicBlock)
+	{
+		NSMapInsert(labelledBasicBlocks, aLabel, aBasicBlock);
+	}
+	else
+	{
+		NSMapRemove(labelledBasicBlocks, aLabel);
+	}
+}
+- (void*) basicBlockForLabel:(NSString*)aLabel
+{
+	return NSMapGet(labelledBasicBlocks, aLabel);
+}
+- (void) goToLabelledBasicBlock:(NSString*)aLabel
+{
+	GoTo(Builder, NSMapGet(labelledBasicBlocks, aLabel));
 }
 @end
 @interface LLVMStaticCodeGen : LLVMCodeGen {

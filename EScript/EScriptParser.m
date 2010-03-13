@@ -1,12 +1,11 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LKToken.h>
 #import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKMethod.h>
+#import <LanguageKit/LKModule.h>
 #import "EScriptParser.h"
 #include <ctype.h>
 #include "escript.h"
-
-@class LKMethod;
-@class LKModule;
 
 typedef unichar(*CIMP)(id, SEL, unsigned);
 
@@ -60,6 +59,24 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 		CALL_PARSER(token1, WORD_TOKEN);\
 		break;
 
+#define CHARCASE4(char1, char2, char3, token1, token2, token3)\
+	case char1:\
+		if (i<sLength-1)\
+		{\
+			if (char2 == CHAR(i + 1))\
+			{\
+				j++; CALL_PARSER(token2, WORD_TOKEN); i++;\
+				break;\
+			}\
+			if (char3 == CHAR(i + 1))\
+			{\
+				j++; CALL_PARSER(token3, WORD_TOKEN); i++;\
+				break;\
+			}\
+		}\
+		CALL_PARSER(token1, WORD_TOKEN);\
+		break;
+
 #define SET_KEYWORD(key, token) \
 	NSMapInsert(keywords, @#key, (void*)(uintptr_t)TOKEN_ ## token)
 
@@ -69,6 +86,8 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 	SET_KEYWORD(new, NEW);
 	SET_KEYWORD(function, FUNCTION);
 	SET_KEYWORD(return, RETURN);
+	SET_KEYWORD(break, BREAK);
+	SET_KEYWORD(continue, CONTINUE);
 	SET_KEYWORD(if, IF);
 	SET_KEYWORD(else, ELSE);
 	SET_KEYWORD(do, DO);
@@ -213,8 +232,8 @@ void EScriptParseFree(void *p, void (*freeProc)(void*));
 				CHARCASE1(':', COLON)
 				CHARCASE1(';', SEMI)
 				CHARCASE1('.', DOT)
-				CHARCASE2('+', '=', PLUS, PLUSEQ)
-				CHARCASE2('-', '=', MINUS, MINUSEQ)
+				CHARCASE4('+', '+', '=', PLUS,  PLUSPLUS,   PLUSEQ)
+				CHARCASE4('-', '-', '=', MINUS, MINUSMINUS, MINUSEQ)
 				CHARCASE2('*', '=', MUL, MULEQ)
 				CHARCASE2('/', '=', DIV, DIVEQ)
 				CHARCASE2('%', '=', MOD, MODEQ)

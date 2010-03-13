@@ -213,6 +213,7 @@ extern int DEBUG_DUMP_MODULES;
  */
 @interface LLVMCodeGen : NSObject <LKCodeGenerator> {
 	ModuleBuilder Builder;
+	NSMapTable *labelledBasicBlocks;
 }
 + (NSString*) smallIntBitcodeFile;
 @end

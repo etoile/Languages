@@ -12,6 +12,7 @@
 #import <LanguageKit/LKDeclRef.h>
 #import <LanguageKit/LKIfStatement.h>
 #import <LanguageKit/LKLiteral.h>
+#import <LanguageKit/LKLoop.h>
 #import <LanguageKit/LKMessageSend.h>
 #import <LanguageKit/LKMethod.h>
 #import <LanguageKit/LKModule.h>

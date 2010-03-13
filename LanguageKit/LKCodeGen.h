@@ -200,7 +200,7 @@ lexicalScopeAtDepth:(unsigned int) scope;
  */
 - (void*) startBasicBlock:(NSString*)aName;
 /**
- * returns a pointer to the current basic block.
+ * Returns a pointer to the current basic block.
  */
 - (void*) currentBasicBlock;
 /**
@@ -219,6 +219,19 @@ lexicalScopeAtDepth:(unsigned int) scope;
  * basic block
  */
 - (void) goToBasicBlock:(void*)aBasicBlock;
+/**
+ * Associate a basic block with the specified label for later retrieval.
+ */
+- (void) setBasicBlock:(void*)aBasicBlock forLabel:(NSString*)aLabel;
+/**
+ * Returns the basic block associated with the specified label.
+ */
+- (void*) basicBlockForLabel:(NSString*)aLabel;
+/**
+ * Ends the current basic block with an unconditional jump to the basic block
+ * that has been associated with the specified label.
+ */
+- (void) goToLabelledBasicBlock:(NSString*)aLabel;
 @end
 /** 
  * Class used to instantiate the default code generators.  Lazily loads the code
