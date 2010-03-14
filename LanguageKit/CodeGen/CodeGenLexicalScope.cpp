@@ -303,15 +303,16 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	}
 
 	DICompileUnit ModuleScopeDescriptor  = CGM->getModuleDescriptor();
+	DIFile ModuleSourceFile  = CGM->getSourceFileDescriptor();
 	DIArray MethodArgDebugTypes = CGM->DebugTypeArrayForEncoding(MethodTypes);
 	DIType MethodDebugType =
 		DebugFactory->CreateCompositeType(llvm::dwarf::DW_TAG_subroutine_type,
-				ModuleScopeDescriptor, "", ModuleScopeDescriptor, 0, 0, 0, 0, 0, DIType(),
+				ModuleScopeDescriptor, "", ModuleSourceFile, 0, 0, 0, 0, 0, DIType(),
 				MethodArgDebugTypes);
 
 	// FIXME: Line number info.
 	DIDescriptor ScopeDebugContext = DebugFactory->CreateSubprogram(context,
-			humanName, humanName, CurrentFunction->getName(), ModuleScopeDescriptor, 0,
+			humanName, humanName, CurrentFunction->getName(), ModuleSourceFile, 0,
 			MethodDebugType, true, true);
 
 	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::getInt8Ty(CGM->Context));
@@ -441,7 +442,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		// DIType...
 		DIVariable DebugArg =
 			DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_arg_variable,
-					ScopeDebugContext, "Argument", ModuleScopeDescriptor, 0,
+					ScopeDebugContext, "Argument", ModuleSourceFile, 0,
 					DIType(MethodArgDebugTypes.getElement(argumentIndex++).getNode()));
 		Value * arg = Builder.CreateStructGEP(Context, contextOffset++, "arg");
 		Args.push_back(arg);
@@ -464,7 +465,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		{
 			DIVariable DebugLocal =
 				DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_auto_variable,
-						ScopeDebugContext, symbols[i], ModuleScopeDescriptor, 0,
+						ScopeDebugContext, symbols[i], ModuleSourceFile, 0,
 						CGM->DebugTypeForEncoding("@"));
 			DebugLocals.push_back(DebugLocal);
 		}

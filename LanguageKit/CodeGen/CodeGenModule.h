@@ -36,6 +36,7 @@ private:
 
   DIFactory *Debug;
   DICompileUnit ModuleScopeDescriptor;
+  DIFile ModuleSourceFile;
   llvm::StringMap<DIType> DebugTypeEncodings;
 
   Module *SmallIntModule;
@@ -89,6 +90,7 @@ public:
 	CGObjCRuntime *getRuntime() { return Runtime; }
 	string getCategoryName() { return CategoryName; }
 	DICompileUnit getModuleDescriptor() { return ModuleScopeDescriptor; }
+	DIFile getSourceFileDescriptor() { return ModuleSourceFile; }
 
 	/**
 	 * Returns the debug info node for an Objective-C type encoding.

@@ -105,8 +105,10 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit)
 	Debug = new DIFactory(*TheModule);
 	// Create some metadata for this module.  Pretend that everything LK
 	// compiles is Objective-C.
-	Debug->CreateCompileUnit(llvm::dwarf::DW_LANG_ObjC, ModuleName, "path",
-			"LanguageKit");
+	ModuleScopeDescriptor = Debug->CreateCompileUnit(llvm::dwarf::DW_LANG_ObjC,
+			ModuleName, "path", "LanguageKit");
+	ModuleSourceFile = Debug->CreateFile(ModuleName, "path",
+			ModuleScopeDescriptor);
 
 	// Store the class to be used for block closures in a global
 	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
@@ -506,7 +508,7 @@ DIType CodeGenModule::DebugTypeForEncoding(const string &encoding)
 			// FIXME: Make id point to something, not just be opaque?
 			DIType PointerTypeInfo =
 				Debug->CreateDerivedType(llvm::dwarf::DW_TAG_pointer_type,
-						ModuleScopeDescriptor, "id", ModuleScopeDescriptor, 0,
+						ModuleScopeDescriptor, "id", ModuleSourceFile, 0,
 						sizeof(void*), __alignof(void*), 0, 0, DIType());
 			DebugTypeEncodings[encoding] = PointerTypeInfo;
 			return PointerTypeInfo;
@@ -514,7 +516,7 @@ DIType CodeGenModule::DebugTypeForEncoding(const string &encoding)
 	}
 	// FIXME: Type Names
 	DIType TypeInfo = Debug->CreateBasicType(ModuleScopeDescriptor, "",
-			ModuleScopeDescriptor, 0, size, align, 0, 0, dwarfEncoding);
+			ModuleSourceFile, 0, size, align, 0, 0, dwarfEncoding);
 	DebugTypeEncodings[encoding] = TypeInfo;
 	return TypeInfo;
 }
