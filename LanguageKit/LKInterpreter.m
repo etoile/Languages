@@ -10,7 +10,6 @@
 #include <math.h>
 
 NSString *LKInterpreterException = @"LKInterpreterException";
-extern NSString *LKSmalltalkBlockNonLocalReturnException;
 
 static NSMutableDictionary *LKClassVariables;
 static NSMutableDictionary *LKMethodASTs;
@@ -195,7 +194,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		        forSymbol: [[(LKBlockSymbolTable*)[self symbols] args] objectAtIndex: i]];
 	}
 
-	id result;
+	id result = nil;
 	FOREACH(statements, statement, LKAST*)
 	{
 		[statement retain];

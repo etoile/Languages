@@ -1,5 +1,6 @@
 #import "LKAST.h"
 #import "LKDeclRef.h"
+#import "LKModule.h"
 
 static Class DeclRefClass;
 static Class ModuleClass;

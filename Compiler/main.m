@@ -149,7 +149,7 @@ static void logTimeSinceWithMessage(clock_t c1, NSString *message)
 	clock_t c2 = clock();
 	struct rusage r;
 	getrusage(RUSAGE_SELF, &r);
-	NSLog(@"%@ took %f seconds.  Peak used %dKB.", message, 
+	NSLog(@"%@ took %f seconds.  Peak used %ldKB.", message, 
 		((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
 }
 

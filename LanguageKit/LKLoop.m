@@ -94,14 +94,14 @@ __thread void *unlabelledContinueBB;
 	void *bodyBB = [aGenerator startBasicBlock: @"loop_body"];
 	void *continueBB = [aGenerator startBasicBlock: @"loop_continue"];
 	void *breakBB = [aGenerator startBasicBlock: @"loop_break"];
-	void *oldBreakBB;
-	void *oldContinueBB;
+	void *oldBreakBB = NULL;
+	void *oldContinueBB = NULL;
 	void *oldUnlabelledBreakBB = unlabelledBreakBB;
 	void *oldUnlabelledContinueBB = unlabelledContinueBB;
 	unlabelledBreakBB = breakBB;
 	unlabelledContinueBB = continueBB;
-	NSString *breakLabel;
-	NSString *continueLabel;
+	NSString *breakLabel = nil;
+	NSString *continueLabel = nil;
 	if (label)
 	{
 		breakLabel = [@"break " stringByAppendingString: label];

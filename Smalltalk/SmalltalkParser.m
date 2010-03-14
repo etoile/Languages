@@ -1,12 +1,11 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LKToken.h>
 #import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKMethod.h>
+#import <LanguageKit/LKModule.h>
 #import "SmalltalkParser.h"
 #include <ctype.h>
 #include "smalltalk.h"
-
-@class LKMethod;
-@class LKModule;
 
 typedef unichar(*CIMP)(id, SEL, unsigned);
 
@@ -50,7 +49,7 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 	// them into ivars.
 	volatile int line = 1;
 	volatile unsigned int j;
-	volatile unsigned int i;
+	volatile unsigned int i = 0; // GCC complains if not initialized.
 	unsigned lineStart = 0;
 	NS_DURING
 	for(i=0 ; i<sLength; i++)

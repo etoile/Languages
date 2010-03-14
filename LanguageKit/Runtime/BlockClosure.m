@@ -1,23 +1,12 @@
 #import <Foundation/Foundation.h>
 #import "BlockClosure.h"
+#import "BlockContext.h"
 
 // Small int 0 is ((0 << 1) & 1).  
 #define IS_NIL_OR_ZERO(x) (((uintptr_t)(x)) < 2)
 
-@interface BlockContext : NSObject {
-@public
-	BlockContext *parent;
-	int count;
-	char **symbolTable;
-	id objects[0];
-}
-@end
-
-@interface StackContext : BlockContext {}
-@end
-
-@interface RetainedStackContext : StackContext {}
-@end
+NSString *LKSmalltalkBlockNonLocalReturnException =
+    @"LKSmalltalkBlockNonLocalReturnException";
 
 @implementation BlockContext
 - (BlockContext*)parent
@@ -163,8 +152,6 @@
 }
 @end
 
-@interface StackBlockClosure : BlockClosure {}
-@end
 @implementation StackBlockClosure
 - (id) retain
 {

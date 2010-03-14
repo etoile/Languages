@@ -1,8 +1,8 @@
 #define __XSI_VISIBLE 600
 #import "BlockClosure.h"
+#import "BlockContext.h"
 #include <signal.h>
 #include <ucontext.h>
-
 
 
 @interface LKStackTraceArray : NSArray {
@@ -12,11 +12,11 @@
 }
 @end
 @implementation LKStackTraceArray
-- (NSInteger)count
+- (NSUInteger)count
 {
 	return count;
 }
-- (id)objectAtIndex: (NSInteger)index
+- (id)objectAtIndex: (NSUInteger)index
 {
 	if (index > count) { return nil; }
 	return buffer[index];
@@ -47,10 +47,6 @@ typedef struct
 {
 	@defs(BlockClosure);
 } *BlockClosureIvars;
-
-@class StackContext;
-@class RetainedStackContext;
-@class StackBlockClosure;
 
 char *LanguageKitStackTopAddress;
 
@@ -90,10 +86,10 @@ static Class StackBlockClosureClass;
 	// This flag is set to 1 if a SegV occurs
 	while(!fellOffStack)
 	{
-		if ((((id)foundContext)->class_pointer == StackContextClass
-			|| ((id)foundContext)->class_pointer == RetainedStackContextClass))
+		if (((Class)((id)foundContext)->class_pointer == StackContextClass
+			|| (Class)((id)foundContext)->class_pointer == RetainedStackContextClass))
 		{
-			if (((id)(foundContext - offset))->class_pointer == StackBlockClosureClass)
+			if ((Class)((id)(foundContext - offset))->class_pointer == StackBlockClosureClass)
 			{
 				// Ignore the BlockClosure object for now. 
 			}

@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "SmalltalkCompiler.h"
-
-@class SmalltalkParser;
+#import "SmalltalkParser.h"
 
 @implementation SmalltalkCompiler
 + (NSString*) languageName

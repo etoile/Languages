@@ -1,9 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "BlockClosure.h"
 
-NSString *LKSmalltalkBlockNonLocalReturnException =
-	@"LKSmalltalkBlockNonLocalReturnException";
-
 @implementation BlockClosure (ExceptionHandling)
 - (id) onException: (NSString*) exceptionName do: (BlockClosure*) handler
 {

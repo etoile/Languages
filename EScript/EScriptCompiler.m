@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "EScriptCompiler.h"
-
-@class EScriptParser;
+#import "EScriptParser.h"
 
 @implementation EScriptCompiler
 + (NSString*) languageName
