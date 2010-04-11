@@ -15,12 +15,11 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 	CodeGenBlock.cpp\
 	CodeGenModule.cpp\
 	CodeGenLexicalScope.cpp\
-	LLVMCodeGen.cpp\
-	LLVMCodeGenCAPI.cpp
+	LLVMCodeGen.cpp
 
-${FRAMEWORK_NAME}_OBJC_FILES = \
-	LKCompiler+JTL.m\
-	LLVMCodeGen.m
+${FRAMEWORK_NAME}_OBJCC_FILES = \
+	LKCompiler+JTL.mm\
+	LLVMCodeGen.mm
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
 	CodeGenBlock.h\
@@ -38,9 +37,12 @@ ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
 
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
+${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
 
 LD = g++
+CC = clang
+CXX = clang++
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc MsgSendSmallInt64.bc
 
@@ -49,4 +51,4 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 
 MsgSendSmallInt.bc: MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages (requires clang)"
-	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc -fconstant-string-class=NSConstantString
+	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc 

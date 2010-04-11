@@ -1,8 +1,22 @@
-typedef int bool;
+extern "C"
+{
+#import "ObjCXXRuntime.h"
 #import "LLVMCodeGen.h"
 #import "../Runtime/LKObject.h"
 #import "../LKSymbolTable.h"
-#include <objc/objc-api.h>
+//#include <objc/objc-api.h>
+}
+
+
+#include "CodeGenLexicalScope.h"
+#include <llvm/Constants.h>
+#include <llvm/LLVMContext.h>
+#include <llvm/DerivedTypes.h>
+#include <llvm/Target/TargetSelect.h>
+#include <llvm/ExecutionEngine/JIT.h>
+
+using llvm::Value;
+using llvm::BasicBlock;
 
 static NSString *SmallIntFile;
 const char * LKObjectEncoding = @encode(LKObject);
@@ -36,12 +50,30 @@ const char * LKObjectEncoding = @encode(LKObject);
 			SmallIntFile = [[[NSBundle bundleForClass:self] 
 				pathForResource: SmallIntFileName ofType: @"bc"] retain];
 		}
-			const char *path = [SmallIntFile UTF8String];
-		NSAssert(path, @"Unable to find the location of MsgSendSmallInt.bc."
+		const char *bcFilePath = [SmallIntFile UTF8String];
+		NSAssert(bcFilePath, 
+		         @"Unable to find the location of MsgSendSmallInt.bc."
 		         "This must be in either the current working directory or in"
 		         " the Resources directory of the Smalltalk language bundle "
 		         "installed on your system.");
-		LLVMinitialise(path);
+		// These two functions don't do anything.  They must be called,
+		// however, to make sure that the linker doesn't optimise the JIT away.
+		InitializeNativeTarget();
+		LLVMLinkInJIT();
+
+		// TODO: These should all use a per-object context so we can have
+		// multiple compilers in the same class.
+		MsgSendSmallIntFilename = strdup(bcFilePath);
+		IdTy = PointerType::getUnqual(Type::getInt8Ty(getGlobalContext()));
+		IntTy = IntegerType::get(getGlobalContext(), sizeof(int) * 8);
+		IntPtrTy = IntegerType::get(getGlobalContext(), sizeof(void*) * 8);
+		Zeros[0] = Zeros[1] = 
+			ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 0);
+		SelTy = IntPtrTy;
+		std::vector<const Type*> IMPArgs;
+		IMPArgs.push_back(IdTy);
+		IMPArgs.push_back(SelTy);
+		IMPTy = PointerType::getUnqual(FunctionType::get(IdTy, IMPArgs, true));
 	}
 }
 - (id) init
@@ -58,12 +90,14 @@ const char * LKObjectEncoding = @encode(LKObject);
 }
 - (void) startModule: (NSString*)fileName;
 {
-	Builder = newModuleBuilder([fileName UTF8String]);
+	const char *ModuleName = [fileName UTF8String];
+	if (NULL == ModuleName) ModuleName = "Anonymous";
+	Builder = new CodeGenModule(ModuleName, getGlobalContext());
 }
 
 - (void) endModule
 {
-	Compile(Builder);
+	Builder->compile();
 }
 
 - (void) createSubclassWithName:(NSString*)aClass
@@ -78,7 +112,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 	Class sup = NSClassFromString(aSuperclass);
 	if (Nil != sup)
 	{
-		supersize = sup->instance_size;
+		supersize = class_getInstanceSize(sup);
 	}
 	else
 	{
@@ -89,21 +123,21 @@ const char * LKObjectEncoding = @encode(LKObject);
 			supersize = [symbols instanceSize];
 		}
 	}
-	BeginClass(Builder, [aClass UTF8String], [aSuperclass UTF8String], 
+	Builder->BeginClass([aClass UTF8String], [aSuperclass UTF8String], 
 			cVarNames, cVarTypes, iVarNames, iVarTypes, offsets, supersize);
 }
 - (void) endClass
 {
-	EndClass(Builder);
+	Builder->EndClass();
 }
 - (void) createCategoryWithName:(NSString*)aCategory
                    onClassNamed:(NSString*)aClass
 {
-	BeginCategory(Builder, [aClass UTF8String], [aClass UTF8String]);
+	Builder->BeginCategory([aClass UTF8String], [aClass UTF8String]);
 }
 - (void) endCategory
 {
-	EndCategory(Builder);
+	Builder->EndCategory();
 }
 
 - (void) beginClassMethod:(const char*) aName
@@ -111,7 +145,7 @@ const char * LKObjectEncoding = @encode(LKObject);
                    locals: (const char**)locals
                     count:(unsigned)localsCount
 {
-	BeginClassMethod(Builder, aName, types, localsCount, locals);
+	Builder->BeginClassMethod(aName, types, localsCount, locals);
 }
 
 - (void) beginInstanceMethod: (const char*) aName
@@ -119,7 +153,7 @@ const char * LKObjectEncoding = @encode(LKObject);
                       locals: (const char**)locals
                        count: (unsigned)localsCount
 {
-	BeginInstanceMethod(Builder, aName, types, localsCount, locals);
+	Builder->BeginInstanceMethod(aName, types, localsCount, locals);
 }
 
 - (void*) sendMessage:(const char*)aMessage
@@ -128,15 +162,20 @@ const char * LKObjectEncoding = @encode(LKObject);
              withArgs:(void**)argv
                 count:(unsigned)argc
 {
-  return MessageSendId(Builder, receiver, aMessage, types, (LLVMValue*)argv,
-      argc);
+	SmallVector<Value*, 8> args;
+	args.append((Value**)argv, ((Value**)argv)+argc);
+	return Builder->getCurrentScope()->MessageSendId((Value*)receiver, aMessage,
+		types, args);
 }
 - (void*) sendSuperMessage:(const char*)sel
-                     types:(const char*)seltypes
+                     types:(const char*)selTypes
                   withArgs:(void**)argv
                      count:(unsigned)argc
 {
-	return MessageSendSuper(Builder, sel, seltypes, (LLVMValue*)argv, argc);
+	SmallVector<Value*, 8> args;
+	args.append((Value**)argv, ((Value**)argv)+argc);
+	return 
+		Builder->getCurrentScope()->MessageSendSuper(sel, selTypes, args);
 }
 - (void*) sendMessage:(const char*)aMessage
                 types:(const char*)types
@@ -144,143 +183,148 @@ const char * LKObjectEncoding = @encode(LKObject);
              withArgs:(void**)argv
                 count:(unsigned)argc
 {
-  return MessageSend(Builder, receiver, aMessage, types, (LLVMValue*)argv,
-      argc);
+	SmallVector<Value*, 8> args;
+	args.append((Value**)argv, ((Value**)argv)+argc);
+	return Builder->getCurrentScope()->MessageSend((Value*)receiver, aMessage,
+		types, args);
 }
 - (void) storeValue:(void*)rval 
     inClassVariable:(NSString*) aClassVar
 {
-	StoreClassVar(Builder, [aClassVar UTF8String], rval);
+	Builder->StoreClassVar([aClassVar UTF8String], (Value*)rval);
 }
 - (void*) loadClassVariable:(NSString*) aSymbol
 {
-	return LoadClassVar(Builder, [aSymbol UTF8String]);
+	return Builder->LoadClassVar([aSymbol UTF8String]);
 }
-- (void) storeValue:(void*)aVal 
-     inLocalAtIndex:(unsigned)index
-lexicalScopeAtDepth:(unsigned) scope
+- (void) storeValue: (void*)aVal 
+     inLocalAtIndex: (unsigned)index
+lexicalScopeAtDepth: (unsigned) scope
 {
-	StoreValueInLocalAtIndex(Builder, aVal, index, scope);
+	Builder->getCurrentScope()->StoreValueInLocalAtIndex((Value*)aVal, index,
+		scope);
 }
-- (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned)index
+- (void) storeValue: (void*)aVal inLocalAtIndex: (unsigned)index
 {
-	StoreValueInLocalAtIndex(Builder, aVal, index, 0);
+	Builder->getCurrentScope()->StoreValueInLocalAtIndex((Value*)aVal, index, 0);
 }
 - (void) storeValue:(void*)aValue
               ofType:(NSString*)aType
             atOffset:(unsigned)anOffset
           fromObject:(void*)anObject
 {
-	StoreValueOfTypeAtOffsetFromObject(Builder, aValue, [aType UTF8String],
-			anOffset, anObject);
+	Builder->getCurrentScope()->StoreValueOfTypeAtOffsetFromObject(
+		(Value*)aValue, [aType UTF8String], anOffset, (Value*)anObject);
 }
 - (void*) loadValueOfType:(NSString*)aType
                  atOffset:(unsigned)anOffset
                fromObject:(void*)anObject
 {
-	return LoadValueOfTypeAtOffsetFromObject(Builder, [aType UTF8String],
-			anOffset, anObject);
+	return Builder->getCurrentScope()->LoadValueOfTypeAtOffsetFromObject(
+		[aType UTF8String], anOffset, (Value*)anObject);
 }
 - (void) beginBlockWithArgs:(unsigned)args
 					 locals:(unsigned)locals
 {
-	BeginBlock(Builder, args, locals);
+	Builder->BeginBlock(args, locals);
 }
 - (void*) endBlock
 {
-	return EndBlock(Builder);
+	return Builder->EndBlock();
 }
 - (void) endMethod
 {
-	EndMethod(Builder);
+	Builder->EndMethod();
 }
 
 - (void) setReturn:(void*)aValue
 {
-	SetReturn(Builder, aValue);
+	Builder->getCurrentScope()->SetReturn((Value*)aValue);
 }
 - (void) blockReturn:(void*)aValue
 {
-	SetBlockReturn(Builder, aValue);
+	Builder->SetBlockReturn((Value*)aValue);
 }
 - (void*) loadSelf
 {
-	return LoadSelf(Builder);
+	return Builder->getCurrentScope()->LoadSelf();
 }
 
 - (void*) loadLocalAtIndex:(unsigned)index
 	   lexicalScopeAtDepth:(unsigned) scope
 {
-	return LoadLocalAtIndex(Builder, index, scope);
+	return Builder->getCurrentScope()->LoadLocalAtIndex(index, scope);
 }
 - (void*) loadArgumentAtIndex:(unsigned) index
 		  lexicalScopeAtDepth:(unsigned) scope
 {
-	return LoadArgumentAtIndex(Builder, index, scope);
+	return Builder->getCurrentScope()->LoadArgumentAtIndex(index, scope);
 }
 - (void*) loadLocalAtIndex:(unsigned)index
 {
-	return LoadLocalAtIndex(Builder, index, 0);
+	return Builder->getCurrentScope()->LoadLocalAtIndex(index, 0);
 }
 - (void*) loadArgumentAtIndex:(unsigned) index
 {
-	return LoadArgumentAtIndex(Builder, index, 0);
+	return Builder->getCurrentScope()->LoadArgumentAtIndex(index, 0);
 }
 - (void*) loadClassNamed:(NSString*)aClass
 {
-	return LoadClass(Builder, [aClass UTF8String]);
+	return Builder->getCurrentScope()->LoadClass([aClass UTF8String]);
 }
 - (void*) intConstant:(NSString*)aString
 {
-	return IntConstant(Builder, [aString UTF8String]);
+	return Builder->getCurrentScope()->IntConstant([aString UTF8String]);
 }
 - (void*) floatConstant:(NSString*)aString
 {
-	return FloatConstant(Builder, [aString UTF8String]);
+	return Builder->getCurrentScope()->FloatConstant([aString UTF8String]);
 }
 - (void*) stringConstant:(NSString*)aString
 {
-	return StringConstant(Builder, [aString UTF8String]);
+	return Builder->StringConstant([aString UTF8String]);
 }
 - (void*) nilConstant
 {
-	return NilConstant();
+	return ConstantPointerNull::get(IdTy);
 }
 - (void*) comparePointer:(void*)lhs to:(void*)rhs
 {
-	return ComparePointers(Builder, lhs, rhs);
+	return Builder->getCurrentScope()->ComparePointers((Value*)lhs, (Value*)rhs);
 }
 - (void) dealloc
 {
-	freeModuleBuilder(Builder);
+	delete Builder;
 	NSFreeMapTable(labelledBasicBlocks);
 	[super dealloc];
 }
 - (void*) generateConstantSymbol:(NSString*)aSymbol
 {
-	return SymbolConstant(Builder, [aSymbol UTF8String]);
+	return Builder->getCurrentScope()->SymbolConstant([aSymbol UTF8String]);
 }
 - (void*) startBasicBlock:(NSString*)aName
 {
-	return StartBasicBlock(Builder, [aName UTF8String]);
+	return Builder->getCurrentScope()->StartBasicBlock([aName UTF8String]);
 }
 - (void*) currentBasicBlock
 {
-	return CurrentBasicBlock(Builder);
+	return Builder->getCurrentScope()->CurrentBasicBlock();
 }
 - (void) moveInsertPointToBasicBlock:(void*)aBasicBlock
 {
-	MoveInsertPointToBasicBlock(Builder, aBasicBlock);
+	Builder->getCurrentScope()->MoveInsertPointToBasicBlock(
+		(BasicBlock*)aBasicBlock);
 }
 - (void) branchOnCondition:(void*)aCondition
                       true:(void*)trueBlock
                      false:(void*)falseBlock
 {
-	BranchOnCondition(Builder, aCondition, trueBlock, falseBlock);
+	Builder->getCurrentScope()->BranchOnCondition((Value*)aCondition, 
+		(BasicBlock*)trueBlock, (BasicBlock*)falseBlock);
 }
 - (void) goToBasicBlock:(void*)aBasicBlock
 {
-	GoTo(Builder, aBasicBlock);
+	Builder->getCurrentScope()->GoTo((BasicBlock*)aBasicBlock);
 }
 - (void) setBasicBlock:(void*)aBasicBlock forLabel:(NSString*)aLabel
 {
@@ -299,7 +343,8 @@ lexicalScopeAtDepth:(unsigned) scope
 }
 - (void) goToLabelledBasicBlock:(NSString*)aLabel
 {
-	GoTo(Builder, NSMapGet(labelledBasicBlocks, aLabel));
+	Builder->getCurrentScope()->GoTo((BasicBlock*)NSMapGet(labelledBasicBlocks,
+				aLabel));
 }
 @end
 @interface LLVMStaticCodeGen : LLVMCodeGen {
@@ -316,12 +361,13 @@ lexicalScopeAtDepth:(unsigned) scope
 }
 - (void) endModule
 {
-	EmitBitcode(Builder, (char*)[outFile UTF8String], NO);
+	Builder->writeBitcodeToFile((char*)[outFile UTF8String], NO);
 }
 - (void) startModule: (NSString*)fileName
 {
-	Builder = newStaticModuleBuilder(
-			[[outFile lastPathComponent] UTF8String]);
+	const char *ModuleName = [[outFile lastPathComponent] UTF8String];
+	if (NULL == ModuleName) { ModuleName = "Anonymous"; }
+	Builder = new CodeGenModule(ModuleName, getGlobalContext(), false);
 }
 @end
 id <LKCodeGenerator> defaultJIT(void)

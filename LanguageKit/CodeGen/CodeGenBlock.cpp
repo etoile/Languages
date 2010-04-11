@@ -25,7 +25,7 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 		IMPTy,                         // 1 - Function pointer.
 		Type::getInt32Ty(Mod->Context),// 2 - Number of args.
 		enclosingContext->getType(),   // 3 - Context.
-		(void*)0);
+		NULL);
 	std::vector<const Type*> argTy;
 	argTy.push_back(PointerType::getUnqual(BlockTy));
 

@@ -1,6 +1,5 @@
 #include "CodeGenModule.h"
 #include "CodeGenBlock.h"
-#include "LLVMCodeGen.h"
 
 #include "llvm/LinkAllPasses.h"
 #include <llvm/Bitcode/ReaderWriter.h>
@@ -421,20 +420,18 @@ void CodeGenModule::compile(void)
 	PassManager pm;
 	pm.add(createVerifierPass());
 	pm.add(new TargetData(TheModule));
-	pm.add(createScalarReplAggregatesPass());
-	pm.add(createPromoteMemoryToRegisterPass());
-	pm.add(createAggressiveDCEPass());
+	//pm.add(createScalarReplAggregatesPass());
+	//pm.add(createPromoteMemoryToRegisterPass());
 	pm.add(createFunctionInliningPass());
+	pm.add(createAggressiveDCEPass());
 	pm.add(createIPConstantPropagationPass());
 	pm.add(createSimplifyLibCallsPass());
-	//pm.add(createPredicateSimplifierPass());
-	//pm.add(createCondPropagationPass());
 	pm.add(createInstructionCombiningPass());
-	//FIXME: Seems broken in current LLVM - reenable when it's fixed
-	//pm.add(createTailDuplicationPass());
+	pm.add(createTailDuplicationPass());
 	pm.add(createStripDeadPrototypesPass());
 	pm.add(createAggressiveDCEPass());
 	pm.add(createCFGSimplificationPass());
+	pm.add(createVerifierPass());
 	pm.run(*TheModule);
 	DUMP(TheModule);
 	if (NULL == EE)

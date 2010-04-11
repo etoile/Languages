@@ -1,4 +1,4 @@
-typedef int bool;
+#import "ObjCXXRuntime.h"
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LLVMCodeGen.h"
 #import <LanguageKit/LKCompiler.h>
