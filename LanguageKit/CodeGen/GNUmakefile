@@ -44,7 +44,7 @@ LD = g++
 CC = clang
 CXX = clang++
 
-${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc MsgSendSmallInt64.bc
+${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc 
 
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
