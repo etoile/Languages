@@ -28,17 +28,9 @@ const char * LKObjectEncoding = @encode(LKObject);
 	{
 		NSString *SmallIntFileName; 
 
-		// Check whether the 64 or 32bit version of the small integer bitcode
-		// is required:
-		if (sizeof(void*) == 8)
-		{
-			SmallIntFileName = @"MsgSendSmallInt64";
-		}
-		else
-		{
-			SmallIntFileName = @"MsgSendSmallInt";
-		}
-		NSString *SmallIntFullName = [SmallIntFileName stringByAppendingString: @".bc"];
+		SmallIntFileName = @"MsgSendSmallInt";
+		NSString *SmallIntFullName = 
+			[SmallIntFileName stringByAppendingString: @".bc"];
 
 		NSFileManager *f = [NSFileManager defaultManager];
 		if ([f fileExistsAtPath: SmallIntFullName])

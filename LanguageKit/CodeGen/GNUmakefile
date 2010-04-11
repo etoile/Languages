@@ -49,6 +49,8 @@ ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc MsgSendSmallInt64.bc
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
 
+all:: MsgSendSmallInt.bc
+
 MsgSendSmallInt.bc: MsgSendSmallInt.m
-	@echo "Generating LLVM bitcode for small int messages (requires clang)"
+	@echo "Generating LLVM bitcode for small int messages..."
 	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc 
