@@ -20,6 +20,8 @@ ${TOOL_NAME}_LDFLAGS += -g -lgmp -lEtoileFoundation -lgnustep-gui\
 	-lSmalltalkSupport\
 	smalltalk.optimised.o
 
+all:: smalltalk.optimised.o
+
 ${TOOL_NAME}_CFLAGS += -Wno-implicit -g
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
@@ -31,11 +33,12 @@ test.bc: test.st
 
 smalltalk.bc: test.bc
 	@echo Linking Smalltalk...
-	@llvm-link $(GNUSTEP_LOCAL_ROOT)/Library/Frameworks/LanguageKit.framework/Versions/0/Resources/MsgSendSmallInt.bc test.bc -o smalltalk.bc
+	@llvm-link $(GNUSTEP_LOCAL_ROOT)/Library/Frameworks/LanguageKitCodeGen.framework/Versions/0/Resources/MsgSendSmallInt.bc test.bc -o smalltalk.bc
 
 smalltalk.optimised.bc: smalltalk.bc
 	@echo Optimising Smalltalk...
-	@opt -O3 smalltalk.bc -o smalltalk.optimised.bc
+	cp smalltalk.bc smalltalk.optimised.bc
+	#@opt -O3 smalltalk.bc -o smalltalk.optimised.bc
 
 smalltalk.optimised.s: smalltalk.optimised.bc
 	@echo Generative code from Smalltalk...
@@ -43,4 +46,4 @@ smalltalk.optimised.s: smalltalk.optimised.bc
 
 smalltalk.optimised.o: smalltalk.optimised.s
 	@echo Assembling Smalltalk...
-	@gcc -c smalltalk.optimised.s
+	@gcc -c smalltalk.optimised.s -g
