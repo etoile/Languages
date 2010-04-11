@@ -37,8 +37,7 @@ smalltalk.bc: test.bc
 
 smalltalk.optimised.bc: smalltalk.bc
 	@echo Optimising Smalltalk...
-	cp smalltalk.bc smalltalk.optimised.bc
-	#@opt -O3 smalltalk.bc -o smalltalk.optimised.bc
+	@opt -O3 smalltalk.bc -o smalltalk.optimised.bc
 
 smalltalk.optimised.s: smalltalk.optimised.bc
 	@echo Generative code from Smalltalk...
