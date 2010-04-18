@@ -691,8 +691,11 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
 {
 	if (NULL == selTypes) 
 	{
-		// All types are id, so do nothing
-		args = argv;
+		// All types are id
+		for (unsigned i=0 ; i<argv.size() ; ++i) 
+		{
+			args.push_back(Unbox(B, F, argv[i], "@"));
+		}
 	} 
 	else 
 	{
