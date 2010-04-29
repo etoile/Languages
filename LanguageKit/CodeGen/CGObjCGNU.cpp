@@ -27,8 +27,6 @@ using namespace std;
 static const int RuntimeVersion = 8;
 static const int ProtocolVersion = 2;
 
-// Currently-private flag for enabling speculative inlining
-int enable_speculative_inlining = false;
 static bool enable_sender_dispatch = false;
 
 namespace {
@@ -78,14 +76,16 @@ private:
 		llvm::Constant *InstanceSize,
 		llvm::Constant *IVars,
 		llvm::Constant *Methods,
-		llvm::Constant *Protocols);
+		llvm::Constant *Protocols,
+		bool isMeta);
 	llvm::Constant *GenerateProtocolMethodList(
 		const llvm::SmallVectorImpl<llvm::Constant *> &MethodNames,
 		const llvm::SmallVectorImpl<llvm::Constant *> &MethodTypes);
 	llvm::Constant *MakeConstantString(const std::string &Str, const std::string
 		&Name="");
 	llvm::Constant *MakeGlobal(const llvm::StructType *Ty,
-		std::vector<llvm::Constant*> &V, const std::string &Name="");
+		std::vector<llvm::Constant*> &V, const std::string &Name="",
+		bool isPublic=false);
 	llvm::Constant *MakeGlobal(const llvm::ArrayType *Ty,
 		std::vector<llvm::Constant*> &V, const std::string &Name="");
 	llvm::Value *GetWeakSymbol(const std::string &Name,
@@ -179,10 +179,6 @@ public:
 } // end anonymous namespace
 
 
-static std::string SymbolNameForClass(const std::string &ClassName) 
-{
-	return "__objc_class_" + ClassName;
-}
 static std::string SymbolNameForSelector(const std::string &MethodName)
 {
   string MethodNameColonStripped = MethodName;
@@ -231,18 +227,12 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	llvm::cast<llvm::OpaqueType>(OpaqueObjTy.get())->refineAbstractTypeTo(IdTy);
 	IdTy = llvm::cast<llvm::StructType>(OpaqueObjTy.get());
 	IdTy = llvm::PointerType::getUnqual(IdTy);
- 
 	// IMP type
 	std::vector<const llvm::Type*> IMPArgs;
 	IMPArgs.push_back(IdTy);
 	IMPArgs.push_back(SelectorTy);
 	IMPTy = llvm::FunctionType::get(IdTy, IMPArgs, true);
 
-	// Enable sender-aware dispatch if the relevant lookup function exists:
-	if (dlsym(RTLD_DEFAULT, "objc_msg_lookup_sender") != 0)
-	{
-		//enable_sender_dispatch = true;
-	}
 }
 
 // This has to perform the lookup every time, since posing and related
@@ -341,11 +331,13 @@ llvm::Constant *CGObjCGNU::MakeConstantString(const std::string &Str,
 
 llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::StructType *Ty,
                                       std::vector<llvm::Constant*> &V,
-                                      const std::string &Name)
+                                      const std::string &Name,
+                                      bool isPublic)
 {
 	llvm::Constant *C = llvm::ConstantStruct::get(Ty, V);
 	return new llvm::GlobalVariable(TheModule, Ty, false,
-		llvm::GlobalValue::InternalLinkage, C, Name);
+		(isPublic ? llvm::GlobalValue::ExternalLinkage :
+		llvm::GlobalValue::InternalLinkage), C, Name);
 }
 
 llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::ArrayType *Ty,
@@ -458,53 +450,6 @@ static llvm::Value *callIMP(LLVMContext &Context,
 	}
 	return ret;
 }
-static llvm::Value *callIMPOrGuess(LLVMContext &Context,
-                                   llvm::IRBuilder<> &Builder,
-                                   llvm::Value *imp,
-                                   llvm::Value *guess,
-                                   const llvm::Type *ReturnTy,
-                                   bool isSRet,
-                                   llvm::Value *Receiver,
-                                   llvm::Value *Selector,
-                                   llvm::SmallVectorImpl<llvm::Value*> &ArgV,
-                                   llvm::BasicBlock *CleanupBlock)
-{
-	if (0 == guess || 0 == enable_speculative_inlining)
-	{
-		return callIMP(Context, Builder, imp, ReturnTy, isSRet, Receiver, Selector,
-				ArgV, CleanupBlock);
-	}
-	llvm::Function *function = Builder.GetInsertBlock()->getParent();
-	llvm::BasicBlock *rejoinBB = llvm::BasicBlock::Create(Context, "rejoin", function);
-	llvm::BasicBlock *guessBB = llvm::BasicBlock::Create(Context, "callGuess", function);
-	llvm::BasicBlock *impBB = llvm::BasicBlock::Create(Context, "callIMP", function);
-	// See if the guess was correct and call the 
-	llvm::Value *isGuessCorrect = Builder.CreateICmpEQ(imp, guess);
-	Builder.CreateCondBr(isGuessCorrect, guessBB, impBB);
-
-	// Emit the call to the guess:
-	Builder.SetInsertPoint(guessBB);
-	llvm::Value *guessResult = callIMP(Context, Builder, guess, ReturnTy, isSRet,
-			Receiver, Selector, ArgV, CleanupBlock);
-	Builder.CreateBr(rejoinBB);
-
-	// Emit the call to the imp:
-	Builder.SetInsertPoint(impBB);
-	llvm::Value *impResult = callIMP(Context, Builder, imp, ReturnTy, isSRet,
-			Receiver, Selector, ArgV, CleanupBlock);
-	Builder.CreateBr(rejoinBB);
-
-	// Join the two code paths together
-	Builder.SetInsertPoint(rejoinBB);
-	llvm::PHINode *result = 0;
-	if (llvm::Type::getVoidTy(Context) != ReturnTy)
-	{
-		result = Builder.CreatePHI(ReturnTy);
-		result->addIncoming(impResult, impBB);
-		result->addIncoming(guessResult, guessBB);
-	}
-	return result;
-}
 
 ///Generates a message send where the super is the receiver.  This is a message
 ///send to self with special delivery semantics indicating which class's method
@@ -517,7 +462,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Receiver,
                                             llvm::Value *Selector,
                                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
-											bool isClassMessage,
+                                            bool isClassMessage,
                                             llvm::BasicBlock *CleanupBlock)
 {
 	// FIXME: Posing will break this.
@@ -563,14 +508,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 		lookupArgs+2);
 	llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
 
-	const char *selName = SelectorNames[Selector];
-	llvm::Value *guess = 0;
-	if (0 != selName)
-	{
-		guess = GetWeakSymbol(SymbolNameForMethod(SuperClassName, 0, selName,
-					isClassMessage), impType);
-	}
-	return callIMPOrGuess(Context, Builder, imp, guess, ReturnTy, isSRet, Receiver,
+	return callIMP(Context, Builder, imp, ReturnTy, isSRet, Receiver,
 			Selector, ArgV, CleanupBlock);
 }
 
@@ -602,44 +540,40 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), impArgTypes, true) :
 		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	
-	llvm::Value *imp;
-	if (enable_sender_dispatch)
+	if (0 == Sender)
 	{
-		if (0 == Sender)
-		{
-			Sender = NULLPtr;
-		}
-		llvm::Constant *lookupFunction = 
-			TheModule.getOrInsertFunction("objc_msg_lookup_sender",
-										  llvm::PointerType::getUnqual(impType),
-										  Receiver->getType(), Selector->getType(),
-										  Sender->getType(), NULL);
-		imp = Builder.CreateCall3(lookupFunction, Receiver, Selector, Sender);
+		Sender = NULLPtr;
 	}
-	else
-	{
-		llvm::Constant *lookupFunction = 
-			TheModule.getOrInsertFunction("objc_msg_lookup",
-										  llvm::PointerType::getUnqual(impType),
-										  Receiver->getType(), Selector->getType(),
-										  NULL);
-		imp = Builder.CreateCall2(lookupFunction, Receiver, Selector);
-	}
-	llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
+	llvm::Value *ReceiverPtr = Builder.CreateAlloca(Receiver->getType());
+	Builder.CreateStore(Receiver, ReceiverPtr);
 
-	llvm::Value *guess = 0;
-	if (ReceiverClass)
+	llvm::Type *SlotTy = llvm::StructType::get(Context, PtrTy, PtrTy, PtrTy,
+			IntTy, llvm::PointerType::getUnqual(impType), NULL);
+
+
+
+	llvm::Constant *lookupFunction = 
+		TheModule.getOrInsertFunction("objc_msg_lookup_sender",
+				llvm::PointerType::getUnqual(SlotTy), ReceiverPtr->getType(),
+				Selector->getType(), Sender->getType(), NULL);
+	// Lookup does not capture the receiver pointer
+	if (llvm::Function *LookupFn = dyn_cast<llvm::Function>(lookupFunction)) 
 	{
-		const char *selName = SelectorNames[Selector];
-		if (0 != selName)
-		{
-			guess = GetWeakSymbol(SymbolNameForMethod(ReceiverClass, 0,
-						selName, isClassMessage), impType);
-		}
+		LookupFn->setDoesNotCapture(1);
 	}
+
+	llvm::CallInst *slot = 
+		Builder.CreateCall3(lookupFunction, ReceiverPtr, Selector, Sender);
+
+	slot->setOnlyReadsMemory();
+
+	llvm::Value *imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
+
+	Receiver = Builder.CreateLoad(ReceiverPtr);
+
 	// Call the method.
-	return callIMPOrGuess(Context, Builder, imp, guess, ReturnTy, isSRet, Receiver,
-			Selector, ArgV, CleanupBlock);
+	return callIMP(Context, Builder, imp, ReturnTy, isSRet, Receiver, Selector,
+				ArgV, CleanupBlock);
 }
 
 /// Generates a MethodList.  Used in construction of a objc_class and 
@@ -762,7 +696,8 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	llvm::Constant *InstanceSize,
 	llvm::Constant *IVars,
 	llvm::Constant *Methods,
-	llvm::Constant *Protocols) 
+	llvm::Constant *Protocols,
+	bool isMeta)
 {
 	// Set up the class structure
 	// Note:  Several of these are char*s when they should be ids.  This is
@@ -807,14 +742,16 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	Elements.push_back(llvm::ConstantExpr::getBitCast(Protocols, PtrTy));
 	Elements.push_back(NullP);
 	// Create an instance of the structure
-	return MakeGlobal(ClassTy, Elements, SymbolNameForClass(Name));
+	return MakeGlobal(ClassTy, Elements, 
+			(isMeta ? "_OBJC_METACLASS_": "_OBJC_CLASS_") + std::string(Name),
+			true);
 }
 
 llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 	const llvm::SmallVectorImpl<llvm::Constant *> &MethodNames,
 	const llvm::SmallVectorImpl<llvm::Constant *> &MethodTypes) 
 {
-	// Get the method structure type.	
+	// Get the method structure type.
 	llvm::StructType *ObjCMethodDescTy = llvm::StructType::get(
 		Context,
 		PtrToInt8Ty, // Really a selector, but the runtime does the casting for us.
@@ -981,12 +918,12 @@ void CGObjCGNU::GenerateClass(
 	//Generate metaclass for class methods
 	llvm::Constant *MetaClassStruct = GenerateClassStructure(NULLPtr,
 		SuperClass, 0x2L, ClassName, 0, ConstantInt::get(LongTy, 0),
-		GenerateIvarList(empty, empty, empty2), ClassMethodList, NULLPtr);
+		GenerateIvarList(empty, empty, empty2), ClassMethodList, NULLPtr, true);
 	// Generate the class structure
 	llvm::Constant *ClassStruct = GenerateClassStructure(MetaClassStruct,
 		SuperClass, 0x1L, ClassName, 0,
 		ConstantInt::get(LongTy, instanceSize), IvarList,
-		MethodList, GenerateProtocolList(Protocols));
+		MethodList, GenerateProtocolList(Protocols), false);
 	// Add class structure to list to be added to the symtab later
 	ClassStruct = llvm::ConstantExpr::getBitCast(ClassStruct, PtrToInt8Ty);
 	Classes.push_back(ClassStruct);
