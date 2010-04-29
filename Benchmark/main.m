@@ -2,6 +2,13 @@
 #include <time.h>
 @class ETTranscript;
 
+const int FibRuns = 1;
+const int FibValue = 47;
+
+@interface Fibonacci : NSObject
+- (void)runNative: (int)i;
+@end
+
 @interface ObjCObject : NSObject {}
 - (id) value:(id)aValue;
 - (int) fibonacci:(int) i;
@@ -38,19 +45,33 @@ int fibonacci(int i)
 double timeFibonacciC(void)
 {
 	clock_t c1 = clock();
-	for (unsigned i=0 ; i<100 ; i++)
+	int result;
+	for (unsigned i=0 ; i<FibRuns ; i++)
 	{
-		fibonacci(30);
+		result = fibonacci(FibValue);
 	}
+	NSLog(@"%d", result);
 	clock_t c2 = clock();
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
 }
 double timeFibonacci(id object)
 {
 	clock_t c1 = clock();
-	for (unsigned i=0 ; i<100 ; i++)
+	int result;
+	for (unsigned i=0 ; i<FibRuns ; i++)
 	{
-		[object fibonacci:30];
+		result = [object fibonacci: FibValue];
+	}
+	NSLog(@"%d", result);
+	clock_t c2 = clock();
+	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
+}
+double timeFibonacciSmalltalk(id object)
+{
+	clock_t c1 = clock();
+	for (unsigned i=0 ; i<FibRuns ; i++)
+	{
+		[object runNative: FibValue];
 	}
 	clock_t c2 = clock();
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
@@ -97,6 +118,9 @@ int main(void)
 	ETLog(@"Ratio: %f", octime / ctime);
 	sttime = timeFibonacci([NSClassFromString(@"SmalltalkFibonacci") new]);
 	ETLog(@"Smalltalk fibonacci execution took %f seconds.  ", sttime);
+	ETLog(@"Ratio: %f", sttime / octime);
+	sttime = timeFibonacciSmalltalk([NSClassFromString(@"SmalltalkFibonacci") new]);
+	ETLog(@"Smalltalk fibonacci SmallInt version execution took %f seconds.  ", sttime);
 	ETLog(@"Ratio: %f", sttime / octime);
 	[pool release];
 	return 0;

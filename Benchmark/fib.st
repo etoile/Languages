@@ -2,6 +2,19 @@
 NSObject subclass: SmalltalkFibonacci [
 	| f |
 
+	fib: n [
+		| c ret |
+		c := (n < 2).
+		c ifTrue:[
+			ret := 1.
+			nil.
+		] ifFalse:[
+			ret := (self fib:(n - 1))
+				 + (self fib:(n - 2)).
+			nil.
+		].
+		^ret.
+	]
 	fibonacci: n [
 		| c ret |
 		c := (n < 2).
@@ -15,6 +28,7 @@ NSObject subclass: SmalltalkFibonacci [
 		].
 		^ret.
 	]
+	runNative: i [ (self fib: i) log]
 	run [
 		(self fibonacci:30) log.
 	]
