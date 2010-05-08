@@ -80,6 +80,11 @@ private:
 	 */
 	void CreateClassPointerGlobal(const char *className, const char *globalName);
 
+	/**
+	 * Finishes IR generation and prepares the module for code generation.
+	 */
+	void EndModule(void);
+
 public:
 	const Type *getCurrentClassTy() { return CurrentClassTy; }
 	IRBuilder<> *getInitBuilder() { return &InitialiseBuilder; }

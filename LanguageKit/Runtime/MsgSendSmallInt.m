@@ -30,8 +30,18 @@
 - (BOOL)isAlphabetic;
 - (id)value;
 @end
-@interface NSString {}
+@interface NSString 
+{
+	id isa;
+}
 + (id) stringWithFormat:(NSString*)a, ...;
+@end
+@interface NSConstantString : NSString
+{
+	id isa;
+	char *str;
+	int length;
+}
 @end
 void NSLog(NSString*, ...);
 

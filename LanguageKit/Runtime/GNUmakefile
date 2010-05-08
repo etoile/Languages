@@ -25,6 +25,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	BoxedFloat.m\
 	NSValue+structs.m\
 	LanguageKitExceptions.m\
+	MsgSendSmallInt.m\
 	OverflowHandler.m\
 	Symbol.m
 

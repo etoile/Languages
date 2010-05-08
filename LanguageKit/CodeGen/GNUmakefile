@@ -51,6 +51,6 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 
 all:: MsgSendSmallInt.bc
 
-MsgSendSmallInt.bc: MsgSendSmallInt.m
+MsgSendSmallInt.bc: ../Runtime/MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages..."
-	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions MsgSendSmallInt.m -o MsgSendSmallInt.bc 
+	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions ../Runtime/MsgSendSmallInt.m -o MsgSendSmallInt.bc 

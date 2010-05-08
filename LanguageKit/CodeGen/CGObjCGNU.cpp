@@ -104,9 +104,9 @@ public:
 	                                         llvm::Value *Receiver,
 	                                         llvm::Value *Selector,
 	                                         llvm::SmallVectorImpl<llvm::Value*> &ArgV,
-                                             llvm::BasicBlock *CleanupBlock,
-											 const char *ReceiverClass,
-											 bool isClassMessage);
+	                                         llvm::BasicBlock *CleanupBlock,
+	                                         const char *ReceiverClass,
+	                                         bool isClassMessage);
 	virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	                                              const llvm::Type *ReturnTy,
 	                                              bool isSRet,
@@ -116,7 +116,7 @@ public:
 	                                              llvm::Value *Selector,
 	                                              llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                              bool isClassMessage,
-                                                  llvm::BasicBlock *CleanupBlock);
+	                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder,
 	                                 llvm::Value *ClassName);
 	virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
@@ -181,7 +181,7 @@ public:
 
 static std::string SymbolNameForSelector(const std::string &MethodName)
 {
-  string MethodNameColonStripped = MethodName;
+	string MethodNameColonStripped = MethodName;
 	std::replace(MethodNameColonStripped.begin(), MethodNameColonStripped.end(), ':', '_');
 	return MethodNameColonStripped;
 }
@@ -192,7 +192,6 @@ static std::string SymbolNameForMethod(const std::string &ClassName, const
 	return std::string(isClassMethod ? "_c_" : "_i_") + ClassName + "_" +
 		CategoryName + "_" + SymbolNameForSelector(MethodName);
 }
-
 
 CGObjCGNU::CGObjCGNU(llvm::Module &M,
                      llvm::LLVMContext &C,
@@ -521,8 +520,8 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Selector,
                                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                             llvm::BasicBlock *CleanupBlock,
-											const char *ReceiverClass,
-											bool isClassMessage)
+                                            const char *ReceiverClass,
+                                            bool isClassMessage)
 {
 
 	// Look up the method implementation.
@@ -549,8 +548,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 
 	llvm::Type *SlotTy = llvm::StructType::get(Context, PtrTy, PtrTy, PtrTy,
 			IntTy, llvm::PointerType::getUnqual(impType), NULL);
-
-
 
 	llvm::Constant *lookupFunction = 
 		TheModule.getOrInsertFunction("objc_msg_lookup_sender",
@@ -704,20 +701,23 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	// because the runtime performs this translation on load.
 	llvm::StructType *ClassTy = llvm::StructType::get(
 		Context,
-		PtrToInt8Ty,        // class_pointer
-		PtrToInt8Ty,        // super_class
-		PtrToInt8Ty,        // name
-		LongTy,             // version
-		LongTy,             // info
-		LongTy,             // instance_size
-		IVars->getType(),   // ivars
-		Methods->getType(), // methods
+		PtrToInt8Ty,            // class_pointer
+		PtrToInt8Ty,            // super_class
+		PtrToInt8Ty,            // name
+		LongTy,                 // version
+		LongTy,                 // info
+		LongTy,                 // instance_size
+		IVars->getType(),       // ivars
+		Methods->getType(),     // methods
 		// These are all filled in by the runtime, so we pretend 
-		PtrTy,              // dtable
-		PtrTy,              // subclass_list
-		PtrTy,              // sibling_class
-		PtrTy,              // protocols
-		PtrTy,              // gc_object_type
+		PtrTy,                  // dtable
+		PtrTy,                  // subclass_list
+		PtrTy,                  // sibling_class
+		PtrTy,                  // protocols
+		PtrTy,                  // gc_object_type
+		LongTy,                 // abi_version
+		// Ivar offset pointers, to be filled in by the runtime
+		//IvarOffsets->getType(), // ivar_offsets
 		NULL);
 	llvm::Constant *Zero = ConstantInt::get(LongTy, 0);
 	llvm::Constant *NullP =

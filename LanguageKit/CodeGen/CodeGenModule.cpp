@@ -69,25 +69,17 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit)
 	// module, to allow them to be inlined by module passes.  When static
 	// compiling, we reference them externally and let the link-time optimiser
 	// inline them.
-	if (jit)
+	if (NULL == SmallIntMessages)
 	{
-		TheModule = 
-			ParseBitcodeFile(MemoryBuffer::getFile(MsgSendSmallIntFilename), 
-					Context);
-		SmallIntModule = TheModule;
+		SmallIntMessages = ParseBitcodeFile(
+				MemoryBuffer::getFile(MsgSendSmallIntFilename), 
+				Context);
 	}
-	else
-	{
-		if (NULL == SmallIntMessages)
-		{
-			SmallIntMessages = ParseBitcodeFile(
-					MemoryBuffer::getFile(MsgSendSmallIntFilename), 
-					Context);
-		}
-		TheModule = new Module(ModuleName, Context);
-		SmallIntModule = SmallIntMessages;
-		TheModule->setDataLayout(SmallIntModule->getDataLayout());
-	}
+
+	TheModule = new Module(ModuleName, Context);
+	SmallIntModule = SmallIntMessages;
+	TheModule->setDataLayout(SmallIntModule->getDataLayout());
+
 	std::vector<const llvm::Type*> VoidArgs;
 	LiteralInitFunction = llvm::Function::Create(
 		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), VoidArgs, false),
@@ -359,6 +351,30 @@ Value *CodeGenModule::FloatConstant(IRBuilder<> &Builder, const char *value)
 
 void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 {
+	EndModule();
+	string err;
+	llvm::raw_fd_ostream os(filename, err);
+	WriteBitcodeToFile(TheModule, os);
+}
+
+void CodeGenModule::StoreClassVar(const char *cVarName, Value *value)
+{
+	getCurrentScope()->StoreValueInClassVariable(ClassName, cVarName, value);
+}
+Value *CodeGenModule::LoadClassVar(const char *cVarName)
+{
+	return getCurrentScope()->LoadClassVariable(ClassName, cVarName);
+}
+
+static ExecutionEngine *EE = NULL;
+
+static void *findSymbol(const string &str)
+{
+	return dlsym(RTLD_DEFAULT, str.c_str());
+}
+
+void CodeGenModule::EndModule(void)
+{
 	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
@@ -387,39 +403,14 @@ void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
 	pm.add(new TargetData(TheModule));
 	pm.run(*TheModule);
 	DUMP(TheModule);
-
-	string err;
-	llvm::raw_fd_ostream os(filename, err);
-	WriteBitcodeToFile(TheModule, os);
-}
-
-void CodeGenModule::StoreClassVar(const char *cVarName, Value *value)
-{
-	getCurrentScope()->StoreValueInClassVariable(ClassName, cVarName, value);
-}
-Value *CodeGenModule::LoadClassVar(const char *cVarName)
-{
-	return getCurrentScope()->LoadClassVariable(ClassName, cVarName);
-}
-
-static ExecutionEngine *EE = NULL;
-
-static void *findSymbol(const string &str)
-{
-	return dlsym(RTLD_DEFAULT, str.c_str());
 }
 
 void CodeGenModule::compile(void)
 {
-	InitialiseBuilder.CreateRetVoid();
-	llvm::Function *init = Runtime->ModuleInitFunction();
-	// Make the init function external so the optimisations won't remove it.
-	init->setLinkage(GlobalValue::ExternalLinkage);
+	EndModule();
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
-	pm.add(createVerifierPass());
-	pm.add(new TargetData(TheModule));
 	//pm.add(createScalarReplAggregatesPass());
 	//pm.add(createPromoteMemoryToRegisterPass());
 	pm.add(createFunctionInliningPass());
@@ -442,10 +433,6 @@ void CodeGenModule::compile(void)
 	}
 	LOG("Compiling...\n");
 	EE->runStaticConstructorsDestructors(TheModule, false);
-	void(*f)(void) = (void(*)(void))EE->getPointerToFunction(init);
-	LOG("Loading %x...\n", (unsigned)(unsigned long)f);
-	((void(*)(void))EE->getPointerToFunction(LiteralInitFunction))();
-	f();
 	LOG("Loaded.\n");
 }
 
