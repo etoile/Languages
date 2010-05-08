@@ -149,6 +149,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 		[fm movePath: so toPath: userCache handler: nil];
 		NSLog(@"Wrote cache to %@", userCache);
 		NSLog(@"Deleting %@", tempDirectory);
+		[fm removeFileAtPath: tempDirectory handler: nil];
 	}
 }
 @end

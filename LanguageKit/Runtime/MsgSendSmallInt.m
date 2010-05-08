@@ -38,7 +38,6 @@
 @end
 @interface NSConstantString : NSString
 {
-	id isa;
 	char *str;
 	int length;
 }
