@@ -93,8 +93,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 				castSelName = "boxedFloatWithDouble:";
 			}
 			Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
-					NULL, BoxedFloatClass, Runtime->GetSelector(*B,
-						castSelName, NULL), V);
+					NULL, BoxedFloatClass, castSelName, NULL, V);
 			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 			{
 				call->setOnlyReadsMemory();
@@ -107,8 +106,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 				CGM->getModule()->getGlobalVariable(
 					".smalltalk_symbol_class", true));
 			return Runtime->GenerateMessageSend(*B, IdTy, false, NULL,
-					SymbolCalss, Runtime->GetSelector(*B, "SymbolForSelector:",
-						NULL), V);
+					SymbolCalss, "SymbolForSelector:", NULL, V);
 		}
 		case '{':
 		{
@@ -140,8 +138,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			if (passValue)
 			{
 				Value *boxed = Runtime->GenerateMessageSend(*B, IdTy, false,
-						NULL, NSValueClass, Runtime->GetSelector(*B,
-							castSelName, NULL), V);
+						NULL, NSValueClass, castSelName, NULL, V);
 				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 				{
 						call->setOnlyReadsMemory();
@@ -165,9 +162,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			args.push_back(V);
 			args.push_back(CGM->MakeConstantString(typestring.c_str()));
 			return Runtime->GenerateMessageSend(*B, IdTy, false, LoadSelf(),
-					NSValueClass, Runtime->GetSelector(*B,
-						"valueWithBytesOrNil:objCType:", NULL),
-					args);
+					NSValueClass, "valueWithBytesOrNil:objCType:", NULL, args);
 		}
 		// Map void returns to nil
 		case 'v':
@@ -563,10 +558,9 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
 		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false,
-				NULL, retObj, Runtime->GetSelector(CleanupBuilder, "retain",
-					NULL));
+				NULL, retObj, "retain", 0);
 		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false, NULL, retObj,
-				Runtime->GetSelector(CleanupBuilder, "autorelease", NULL));
+				"autorelease", NULL);
 		CleanupBuilder.CreateStore(retObj, RetVal);
 	}
 
@@ -592,8 +586,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// Promote the context, if required
 	PromoteBuilder.SetInsertPoint(PromotionBB);
 	CGM->getRuntime()->GenerateMessageSend(PromoteBuilder, Type::getVoidTy(CGM->Context), false,
-		Context, Context, CGM->getRuntime()->GetSelector(PromoteBuilder,
-		"promote", NULL));
+		Context, Context, "promote", NULL);
 
 	//// Handle an exception
 
@@ -729,10 +722,9 @@ Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 
-	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	llvm::Value *msg = Runtime->GenerateMessageSendSuper(*B,
 		MethodTy->getReturnType(), isSRet, Sender,
-		CGM->getSuperClassName().c_str(), SelfPtr, cmd, args,
+		CGM->getSuperClassName().c_str(), SelfPtr, selName, selTypes, args,
 		CGM->inClassMethod, CleanupBB);
 	if (MethodTy->getReturnType() == realReturnType)
 	{
@@ -759,10 +751,9 @@ Value *CodeGenLexicalScope::MessageSendId(IRBuilder<> *B,
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 
-	llvm::Value *cmd = Runtime->GetSelector(*B, selName, selTypes);
 	llvm::Value *msg = Runtime->GenerateMessageSend(*B,
-		MethodTy->getReturnType(), isSRet, SelfPtr, receiver, cmd, argv,
-		ExceptionBB);
+			MethodTy->getReturnType(), isSRet, SelfPtr, receiver, selName,
+			selTypes, argv, ExceptionBB);
 	if (MethodTy->getReturnType() == realReturnType)
 	{
 		msg = Builder.CreateBitCast(msg, realReturnType);
@@ -1007,10 +998,10 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 	// Some objects may return a different object when retained.	Store that
 	// instead.
 		box = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, box,
-			Runtime->GetSelector(Builder, "retain", NULL));
+			"retain", NULL);
 		Value *old = Builder.CreateLoad(addr);
 		Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, old,
-			Runtime->GetSelector(Builder, "autorelease", NULL));
+			"autorelease", NULL);
 	}
 	Builder.CreateStore(box, addr, true);
 }
@@ -1081,10 +1072,10 @@ void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	object = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, object,
-		Runtime->GetSelector(Builder, "retain", NULL));
+		"retain", NULL);
 	Value *old = LoadClassVariable(className, cVarName);
 	Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, old,
-		Runtime->GetSelector(Builder, "release", NULL));
+		"release", NULL);
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
 

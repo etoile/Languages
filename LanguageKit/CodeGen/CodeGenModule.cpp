@@ -25,6 +25,15 @@
 #include <fstream>
 #include <dlfcn.h>
 
+// If we have the libobjc opts, use them
+#ifdef LIBOBJC2_PASSES
+ModulePass *createClassIMPCachePass(void);
+FunctionPass *createClassLookupCachePass(void);
+ModulePass *createClassMethodInliner(void);
+FunctionPass *createGNUNonfragileIvarPass(void);
+FunctionPass *createGNULoopIMPCachePass(void);
+#endif
+
 using std::string;
 
 // A copy of the Small Int message module, used when static compiling.
@@ -293,19 +302,13 @@ Value *CodeGenModule::GenericConstant(IRBuilder<> &Builder,
 	GlobalVariable *ClassPtr = TheModule->getGlobalVariable(className, true);
 	Value *Class = InitialiseBuilder.CreateLoad(ClassPtr);
 
-	Value *CreateSelector = Runtime->GetSelector(InitialiseBuilder,
-			MakeConstantString(constructor), 0);
-	// TODO: Cache this
-	Value *RetainSelector = Runtime->GetSelector(InitialiseBuilder,
-			MakeConstantString("retain"), 0);
-
 	Value *V = MakeConstantString(arg);
 
 	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
-		false,  NULL, Class, CreateSelector, V);
+		false,  NULL, Class, constructor.c_str(), 0, V);
 	// Retain it
 	S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
-		S, RetainSelector);
+		S, "retain", 0);
 	// Define a global variable and store it there.
 	GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
 			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
@@ -406,6 +409,11 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
+	pm.add(createClassIMPCachePass());
+	pm.add(createClassLookupCachePass());
+	pm.add(createClassMethodInliner());
+	pm.add(createGNUNonfragileIvarPass());
+	pm.add(createGNULoopIMPCachePass());
 	pm.add(createScalarReplAggregatesPass());
 	pm.add(createPromoteMemoryToRegisterPass());
 	pm.add(createStripSymbolsPass(true));

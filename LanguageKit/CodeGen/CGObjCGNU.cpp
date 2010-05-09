@@ -14,6 +14,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Target/TargetData.h"
+#include "llvm/LLVMContext.h"
 #include <map>
 #include <string>
 #include <algorithm>
@@ -55,7 +56,17 @@ private:
 	// Some zeros used for GEPs in lots of places.
 	llvm::Constant *Zeros[2];
 	llvm::Constant *NULLPtr;
+	unsigned msgSendMDKind;
 private:
+	llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
+	                     llvm::Value *imp,
+	                     const llvm::Type *ReturnTy,
+	                     bool isSRet,
+	                     llvm::Value *Receiver,
+	                     llvm::Value *Selector,
+	                     llvm::SmallVectorImpl<llvm::Value*> &ArgV,
+	                     llvm::BasicBlock *CleanupBlock,
+	                     llvm::MDNode *metadata);
 	llvm::Constant *GenerateIvarList(
 		const llvm::SmallVectorImpl<std::string> &IvarNames,
 		const llvm::SmallVectorImpl<std::string> &IvarTypes,
@@ -102,7 +113,8 @@ public:
 	                                         bool isSRet,
 	                                         llvm::Value *Sender,
 	                                         llvm::Value *Receiver,
-	                                         llvm::Value *Selector,
+	                                         const char *selName,
+	                                         const char *selTypes,
 	                                         llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                         llvm::BasicBlock *CleanupBlock,
 	                                         const char *ReceiverClass,
@@ -113,7 +125,8 @@ public:
 	                                              llvm::Value *Sender,
 	                                              const char *SuperClassName,
 	                                              llvm::Value *Receiver,
-	                                              llvm::Value *Selector,
+	                                              const char *selName,
+	                                              const char *selTypes,
 	                                              llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
@@ -204,6 +217,9 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 {
 	Zeros[0] = ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
 	Zeros[1] = Zeros[0];
+
+	msgSendMDKind = Context.getMDKindID("GNUObjCMessageSend");
+
 	NULLPtr = llvm::ConstantPointerNull::get(
 		llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(Context)));
 	// C string type.  Used in lots of places.
@@ -379,7 +395,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
 	return ObjCStr;
 }
-static llvm::Value *callIMP(LLVMContext &Context,
+llvm::Value *CGObjCGNU::callIMP(
                             llvm::IRBuilder<> &Builder,
                             llvm::Value *imp,
                             const llvm::Type *ReturnTy,
@@ -387,7 +403,8 @@ static llvm::Value *callIMP(LLVMContext &Context,
                             llvm::Value *Receiver,
                             llvm::Value *Selector,
                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
-                            llvm::BasicBlock *CleanupBlock)
+                            llvm::BasicBlock *CleanupBlock,
+                            llvm::MDNode *metadata)
 {
 	// Call the method
 	llvm::SmallVector<llvm::Value*, 8> callArgs;
@@ -421,7 +438,7 @@ static llvm::Value *callIMP(LLVMContext &Context,
 	{
 		callArgs.insert(callArgs.end(), ArgV.begin(), ArgV.end());
 	}
-	llvm::Value *ret = 0;
+	llvm::Instruction *ret = 0;
 	if (0 != CleanupBlock)
 	{
 		llvm::BasicBlock *continueBB =
@@ -429,6 +446,7 @@ static llvm::Value *callIMP(LLVMContext &Context,
 					Builder.GetInsertBlock()->getParent());
 		ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
 			callArgs.begin(), callArgs.end());
+		ret->setMetadata(msgSendMDKind, metadata);
 		Builder.SetInsertPoint(continueBB);
 		if (isSRet)
 		{
@@ -438,6 +456,7 @@ static llvm::Value *callIMP(LLVMContext &Context,
 	else
 	{
 		ret = Builder.CreateCall(imp, callArgs.begin(), callArgs.end());
+		ret->setMetadata(msgSendMDKind, metadata);
 		if (isSRet)
 		{
 			cast<llvm::CallInst>(ret)->addAttribute(1, Attribute::StructRet);
@@ -459,11 +478,13 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
                                             llvm::Value *Sender,
                                             const char *SuperClassName,
                                             llvm::Value *Receiver,
-                                            llvm::Value *Selector,
+                                            const char *selName,
+                                            const char *selTypes,
                                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                             bool isClassMessage,
                                             llvm::BasicBlock *CleanupBlock)
 {
+	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 	// FIXME: Posing will break this.
 	llvm::Value *ReceiverClass = LookupClass(Builder,
 			MakeConstantString(SuperClassName));
@@ -494,21 +515,38 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	Builder.CreateStore(Receiver, Builder.CreateStructGEP(ObjCSuper, 0));
 	Builder.CreateStore(ReceiverClass, Builder.CreateStructGEP(ObjCSuper, 1));
 
-	// Get the IMP
-	llvm::Constant *lookupFunction = 
-		TheModule.getOrInsertFunction("objc_msg_lookup_super",
-		                              llvm::PointerType::getUnqual(impType),
-		                              llvm::PointerType::getUnqual(ObjCSuperTy),
-		                              SelectorTy, NULL);
-
+	std::vector<const llvm::Type*> Params;
+	Params.push_back(llvm::PointerType::getUnqual(ObjCSuperTy));
+	Params.push_back(SelectorTy);
 
 	llvm::Value *lookupArgs[] = {ObjCSuper, Selector};
-	llvm::Value *imp = Builder.CreateCall(lookupFunction, lookupArgs,
-		lookupArgs+2);
+	llvm::Value *imp;
+
+	// The lookup function returns a slot, which can be safely cached.
+	llvm::Type *SlotTy = llvm::StructType::get(Context, PtrTy, PtrTy, PtrTy,
+		IntTy, llvm::PointerType::getUnqual(impType), NULL);
+
+	llvm::Constant *lookupFunction =
+	TheModule.getOrInsertFunction("objc_slot_lookup_super",
+			llvm::FunctionType::get( llvm::PointerType::getUnqual(SlotTy),
+				Params, true));
+
+	llvm::CallInst *slot = Builder.CreateCall(lookupFunction, lookupArgs,
+	lookupArgs+2);
+	slot->setOnlyReadsMemory();
+
+	imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
 	llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
 
-	return callIMP(Context, Builder, imp, ReturnTy, isSRet, Receiver,
-			Selector, ArgV, CleanupBlock);
+	llvm::Value *impMD[] = {
+		llvm::MDString::get(Context, selName), 
+		llvm::MDString::get(Context, SuperClassName),
+		llvm::ConstantInt::get(llvm::Type::getInt1Ty(Context), isClassMessage)
+		};
+	llvm::MDNode *node = llvm::MDNode::get(Context, impMD, 3);
+
+	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver,
+			Selector, ArgV, CleanupBlock, node);
 }
 
 /// Generate code for a message send expression.
@@ -517,12 +555,14 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
                                             bool isSRet,
                                             llvm::Value *Sender,
                                             llvm::Value *Receiver,
-                                            llvm::Value *Selector,
+                                            const char *selName,
+                                            const char *selTypes,
                                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                             llvm::BasicBlock *CleanupBlock,
                                             const char *ReceiverClass,
                                             bool isClassMessage)
 {
+	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 
 	// Look up the method implementation.
 	std::vector<const llvm::Type*> impArgTypes;
@@ -567,10 +607,16 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	llvm::Value *imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
 
 	Receiver = Builder.CreateLoad(ReceiverPtr);
+	llvm::Value *impMD[] = {
+		llvm::MDString::get(Context, selName),
+		llvm::MDString::get(Context, ReceiverClass),
+		llvm::ConstantInt::get(llvm::Type::getInt1Ty(Context), isClassMessage)
+		};
+	llvm::MDNode *node = llvm::MDNode::get(Context, impMD, 3);
 
 	// Call the method.
-	return callIMP(Context, Builder, imp, ReturnTy, isSRet, Receiver, Selector,
-				ArgV, CleanupBlock);
+	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver, Selector,
+				ArgV, CleanupBlock, node);
 }
 
 /// Generates a MethodList.  Used in construction of a objc_class and 

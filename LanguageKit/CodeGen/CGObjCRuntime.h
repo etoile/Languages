@@ -38,7 +38,8 @@ public:
 	                                       bool isSRet,
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
-                                           llvm::Value *Selector,
+	                                       const char *selName,
+	                                       const char *selTypes,
 	                                       llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                            llvm::BasicBlock *CleanupBlock=0,
                                            const char *ReceiverClass=0,
@@ -48,23 +49,25 @@ public:
 	                                bool isSRet,
 	                                llvm::Value *Sender,
 	                                llvm::Value *Receiver,
-	                                llvm::Value *Selector)
+	                                const char *selName,
+	                                const char *selTypes)
 	{
 		llvm::SmallVector<llvm::Value*,0> noArgs;
 		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
-				Selector, noArgs);
+				selName, selTypes, noArgs);
 	}
 	llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	                                const llvm::Type *ReturnTy,
 	                                bool isSRet,
 	                                llvm::Value *Sender,
 	                                llvm::Value *Receiver,
-	                                llvm::Value *Selector,
+	                                const char *selName,
+	                                const char *selTypes,
 	                                llvm::Value *Value)
 	{
 		llvm::SmallVector<llvm::Value*,1> arg = llvm::SmallVector<llvm::Value*,1>(1, Value);
 		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
-				Selector, arg);
+				selName, selTypes, arg);
 	}
   /// Generate the function required to register all Objective-C components in
   /// this compilation unit with the runtime library.
@@ -110,7 +113,8 @@ public:
                                                 llvm::Value *Sender,
                                                 const char *SuperClassName,
                                                 llvm::Value *Receiver,
-                                                llvm::Value *Sel,
+	                                            const char *selName,
+	                                            const char *selTypes,
                                                 llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 												bool isClassMessage,
 											    llvm::BasicBlock *CleanupBlock=0)=0;
