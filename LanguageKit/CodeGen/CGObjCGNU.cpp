@@ -715,7 +715,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 		PtrTy,                  // sibling_class
 		PtrTy,                  // protocols
 		PtrTy,                  // gc_object_type
-		LongTy,                 // abi_version
+		//LongTy,                 // abi_version
 		// Ivar offset pointers, to be filled in by the runtime
 		//IvarOffsets->getType(), // ivar_offsets
 		NULL);

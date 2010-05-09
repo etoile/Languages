@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <ucontext.h>
 
-
 @interface LKStackTraceArray : NSArray {
 @public
 	int count;

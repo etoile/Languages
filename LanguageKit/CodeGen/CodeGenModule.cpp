@@ -5,6 +5,7 @@
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/Linker.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
@@ -23,13 +24,6 @@
 #include <iostream>
 #include <fstream>
 #include <dlfcn.h>
-
-
-namespace llvm 
-{
-	// Flag used to indicate whether exception handling stuff should be emitted.
-	extern bool DwarfExceptionHandling;
-}
 
 using std::string;
 
@@ -408,26 +402,28 @@ void CodeGenModule::EndModule(void)
 void CodeGenModule::compile(void)
 {
 	EndModule();
+	llvm::Linker::LinkModules(TheModule, SmallIntModule, 0);
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
-	//pm.add(createScalarReplAggregatesPass());
-	//pm.add(createPromoteMemoryToRegisterPass());
-	pm.add(createFunctionInliningPass());
+	pm.add(createScalarReplAggregatesPass());
+	pm.add(createPromoteMemoryToRegisterPass());
+	pm.add(createStripSymbolsPass(true));
+	pm.add(createFunctionInliningPass(10000));
 	pm.add(createAggressiveDCEPass());
 	pm.add(createIPConstantPropagationPass());
+	pm.add(createPartialInliningPass());
 	pm.add(createSimplifyLibCallsPass());
 	pm.add(createInstructionCombiningPass());
 	pm.add(createTailDuplicationPass());
 	pm.add(createStripDeadPrototypesPass());
 	pm.add(createAggressiveDCEPass());
 	pm.add(createCFGSimplificationPass());
-	pm.add(createVerifierPass());
+	//pm.add(createVerifierPass());
 	pm.run(*TheModule);
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
-		DwarfExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
 	}

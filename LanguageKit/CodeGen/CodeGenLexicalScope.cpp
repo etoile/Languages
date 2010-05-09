@@ -443,7 +443,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		DIVariable DebugArg =
 			DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_arg_variable,
 					ScopeDebugContext, "Argument", ModuleSourceFile, 0,
-					DIType(MethodArgDebugTypes.getElement(argumentIndex++).getNode()));
+					DIType(MethodArgDebugTypes.getElement(argumentIndex++)));
 		Value * arg = Builder.CreateStructGEP(Context, contextOffset++, "arg");
 		Args.push_back(arg);
 		DebugArgs.push_back(DebugArg);
