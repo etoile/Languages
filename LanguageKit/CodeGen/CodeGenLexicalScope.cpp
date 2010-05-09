@@ -952,16 +952,19 @@ Value *CodeGenLexicalScope::LoadClass(const char *classname)
 }
 
 Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
-	const char* type,
+	const char *className,
+	const char *ivarName,
+	const char *type,
 	unsigned offset,
 	Value *object)
 {
-	// FIXME: This is really ugly.	We should really create an LLVM type for
-	// the object and use a GEP.
 	// FIXME: Non-id loads
 	assert(*type == '@' || *type == '#');
+
+	Value *Offset = 
+		CGM->getRuntime()->OffsetOfIvar(Builder, className, ivarName, offset);
 	Value *addr = Builder.CreatePtrToInt(object, IntTy);
-	addr = Builder.CreateAdd(addr, ConstantInt::get(IntTy, offset));
+	addr = Builder.CreateAdd(addr, Offset);
 	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
 	return Builder.CreateLoad(addr, true, "ivar");
 }
@@ -981,20 +984,24 @@ void CodeGenLexicalScope::CreatePrintf(IRBuilder<> &Builder,
 
 void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 	Value *value,
+	const char *className,
+	const char *ivarName,
 	const char* type,
 	unsigned offset,
 	Value *object)
 {
+	CGObjCRuntime *Runtime = CGM->getRuntime();
 	// Turn the value into something valid for storing in this ivar
 	Value *box = Unbox(&Builder, CurrentFunction, value, type);
 	// Calculate the offset of the ivar
-	Value *addr = Builder.CreateGEP(object, ConstantInt::get(IntTy, offset));
-	addr = Builder.CreateBitCast(addr, PointerType::getUnqual(box->getType()),
+	Value *Offset = Runtime->OffsetOfIvar(Builder, className, ivarName, offset);
+	Value *addr = Builder.CreatePtrToInt(object, IntTy);
+	addr = Builder.CreateAdd(addr, Offset);
+	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(box->getType()),
 		"ivar");
 	// Do the ASSIGN() thing if it's an object.
 	if (type[0] == '@')
 	{
-		CGObjCRuntime *Runtime = CGM->getRuntime();
 	// Some objects may return a different object when retained.	Store that
 	// instead.
 		box = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, box,

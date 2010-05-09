@@ -66,6 +66,10 @@ typedef	enum
  * it encounters the definition.
  */
 - (int) indexOfArgument:(NSString*)aName;
+/**
+ * The name of the class on which the named instance variable is declared.
+ */
+- (NSString*)classForIvar: (NSString*)aName;
 @end
 
 /**
@@ -124,6 +128,8 @@ typedef struct
 	NSMutableArray * classVariables;
 	/** Next offset at which an ivar can be added. */
 	int nextOffset;
+	/** Name of this class. */
+	NSString *className;
 }
 /**
  * Add a class variable to this symbol table. 
@@ -147,4 +153,8 @@ typedef struct
  * Returns the symbol table for a newly-created class.
  */
 + (LKSymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass;
+/**
+ * Creates and returns a new autoreleased symbol table for a subclass of this class.
+ */
+- (LKObjectSymbolTable*)symbolTableForSubclassNamed: (NSString*)aString;
 @end

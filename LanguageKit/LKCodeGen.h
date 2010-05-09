@@ -115,17 +115,21 @@ lexicalScopeAtDepth:(unsigned int) scope;
  * Stores a value at a specific offset from an object.  Used for instance
  * variables.  The type is an Objective-C type encoding.
  */
-- (void) storeValue:(void*)aValue
-              ofType:(NSString*)aType
-            atOffset:(unsigned int)anOffset
-          fromObject:(void*)anObject;
+- (void) storeValue: (void*)aValue
+             inIvar: (NSString*)anIvar
+             ofType: (NSString*)aType
+           atOffset: (unsigned)anOffset
+         fromObject: (void*)anObject
+            ofClass: (NSString*)className;
 /**
  * Loads a value at a specific offset from an object.  Used for instance
  * variables. The type is an Objective-C type encoding.  
  */
-- (void*) loadValueOfType:(NSString*)aType
-                 atOffset:(unsigned int)anOffset
-               fromObject:(void*)anObject;
+- (void*) loadValueOfType: (NSString*)aType
+                 fromIvar: (NSString*)anIvar
+                 atOffset: (unsigned)anOffset
+               fromObject: (void*)anObject
+                 ofClass: (NSString*)className;
 /**
  * Begin generating a block expression with the specified number of arguments
  * and locals.  The bound variables are pointers to variables declared outside

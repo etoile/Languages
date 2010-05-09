@@ -151,6 +151,11 @@ public:
 	/// Store a value to a class variable
 	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, std::string
 		&ClassName, std::string &CvarName, llvm::Value* aValue) = 0;
+	// Look up the offset of an instance variable.
+	virtual llvm::Value *OffsetOfIvar(llvm::IRBuilder<> &Builder,
+	                                  const char *className,
+	                                  const char *ivarName,
+	                                  int offsetGuess) = 0;
   /// If instance variable addresses are determined at runtime then this should
   /// return true, otherwise instance variables will be accessed directly from
   /// the structure.  If this returns true then @defs is invalid for this

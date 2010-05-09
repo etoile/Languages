@@ -58,6 +58,8 @@ private:
 	llvm::Constant *NULLPtr;
 	unsigned msgSendMDKind;
 private:
+	GlobalVariable *ObjCIvarOffsetVariable(const char *className,
+		const char *ivarName, uint64_t Offset);
 	llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
 	                     llvm::Value *imp,
 	                     const llvm::Type *ReturnTy,
@@ -68,9 +70,11 @@ private:
 	                     llvm::BasicBlock *CleanupBlock,
 	                     llvm::MDNode *metadata);
 	llvm::Constant *GenerateIvarList(
+		const char *ClassName,
 		const llvm::SmallVectorImpl<std::string> &IvarNames,
 		const llvm::SmallVectorImpl<std::string> &IvarTypes,
-		const llvm::SmallVectorImpl<int> &IvarOffsets);
+		const llvm::SmallVectorImpl<int> &IvarOffsets,
+		llvm::Constant *&IvarOffsetArray);
 	llvm::Constant *GenerateMethodList(const std::string &ClassName,
 		const std::string &CategoryName,
 		const llvm::SmallVectorImpl<std::string> &MethodNames, 
@@ -88,6 +92,7 @@ private:
 		llvm::Constant *IVars,
 		llvm::Constant *Methods,
 		llvm::Constant *Protocols,
+		llvm::Constant *IvarOffsets,
 		bool isMeta);
 	llvm::Constant *GenerateProtocolMethodList(
 		const llvm::SmallVectorImpl<llvm::Constant *> &MethodNames,
@@ -148,6 +153,10 @@ public:
 	                                       bool isClassMethod,
 	                                       bool isSRet,
 	                                       bool isVarArg);
+	virtual llvm::Value *OffsetOfIvar(llvm::IRBuilder<> &Builder,
+	                                  const char *className,
+	                                  const char *ivarName,
+	                                  int offsetGuess);
 	virtual void GenerateCategory(
 		const char *ClassName, const char *CategoryName,
 		const llvm::SmallVectorImpl<std::string>  &InstanceMethodNames,
@@ -685,9 +694,11 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 
 /// Generates an IvarList.  Used in construction of a objc_class.
 llvm::Constant *CGObjCGNU::GenerateIvarList(
+	const char *ClassName,
 	const llvm::SmallVectorImpl<std::string>  &IvarNames, const
 	llvm::SmallVectorImpl<std::string>  &IvarTypes, const
-	llvm::SmallVectorImpl<int>  &IvarOffsets) 
+	llvm::SmallVectorImpl<int>  &IvarOffsets, 
+	llvm::Constant *&IvarOffsetArray)
 {
 	if (0 == IvarNames.size())
 	{
@@ -702,6 +713,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		NULL);
 	std::vector<llvm::Constant*> Ivars;
 	std::vector<llvm::Constant*> Elements;
+
 	for (unsigned int i = 0, e = IvarNames.size() ; i < e ; i++)
  	{
 		Elements.clear();
@@ -711,10 +723,9 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		Ivars.push_back(llvm::ConstantStruct::get(ObjCIvarTy, Elements));
 	}
 
-	// Array of method structures
+	// Array of ivar structures
 	llvm::ArrayType *ObjCIvarArrayTy = llvm::ArrayType::get(ObjCIvarTy,
 		IvarNames.size());
-
 	
 	Elements.clear();
 	Elements.push_back(ConstantInt::get(
@@ -726,7 +737,61 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		NULL);
 
 	// Create an instance of the structure
-	return MakeGlobal(ObjCIvarListTy, Elements, ".objc_ivar_list");
+	llvm::Constant *IvarList =
+		MakeGlobal(ObjCIvarListTy, Elements, ".objc_ivar_list");
+
+	// Generate the non-fragile ABI offset variables.
+	const llvm::Type *IndexTy = llvm::Type::getInt32Ty(Context);
+	llvm::Constant *offsetPointerIndexes[] = {Zeros[0],
+		llvm::ConstantInt::get(IndexTy, 1), 0,
+		llvm::ConstantInt::get(IndexTy, 2) };
+
+	std::vector<llvm::Constant*> IvarOffsetValues;
+
+	for (unsigned int i = 0, e = IvarNames.size() ; i < e ; i++)
+	{
+		const std::string Name = std::string("__objc_ivar_offset_") + ClassName
+			+ '.' + IvarNames[i];
+		offsetPointerIndexes[2] = llvm::ConstantInt::get(IndexTy, i);
+		// Get the correct ivar field
+		llvm::Constant *offsetValue = llvm::ConstantExpr::getGetElementPtr(
+				IvarList, offsetPointerIndexes, 4);
+		// Get the existing alias, if one exists.
+		llvm::GlobalVariable *offset = TheModule.getNamedGlobal(Name);
+		if (offset)
+		{
+			offset->setInitializer(offsetValue);
+			// If this is the real definition, change its linkage type so that
+			// different modules will use this one, rather than their private
+			// copy.
+			offset->setLinkage(llvm::GlobalValue::ExternalLinkage);
+		}
+		else 
+		{
+			// Add a new alias if there isn't one already.
+			offset = new llvm::GlobalVariable(TheModule, offsetValue->getType(),
+			false, llvm::GlobalValue::ExternalLinkage, offsetValue, Name);
+		}
+
+		IvarOffsetValues.push_back(new llvm::GlobalVariable(TheModule, IntTy,
+					false, llvm::GlobalValue::ExternalLinkage,
+					llvm::ConstantInt::get(IntTy, IvarOffsets[i]),
+					std::string("__objc_ivar_offset_value_") + ClassName +'.' +
+					IvarNames[i]));
+	}
+
+	if (IvarOffsetArray)
+	{
+		llvm::Constant *IvarOffsetArrayInit =
+			llvm::ConstantArray::get(llvm::ArrayType::get(PtrToIntTy,
+						IvarOffsetValues.size()), IvarOffsetValues);
+		IvarOffsetArray = new llvm::GlobalVariable(TheModule,
+				IvarOffsetArrayInit->getType(), false,
+				llvm::GlobalValue::InternalLinkage, IvarOffsetArrayInit,
+				".ivar.offsets");
+	}
+
+	return IvarList;
 }
 
 /// Generate a class structure
@@ -740,6 +805,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	llvm::Constant *IVars,
 	llvm::Constant *Methods,
 	llvm::Constant *Protocols,
+	llvm::Constant *IvarOffsets,
 	bool isMeta)
 {
 	// Set up the class structure
@@ -761,9 +827,10 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 		PtrTy,                  // sibling_class
 		PtrTy,                  // protocols
 		PtrTy,                  // gc_object_type
-		//LongTy,                 // abi_version
+		LongTy,                 // abi_version
 		// Ivar offset pointers, to be filled in by the runtime
-		//IvarOffsets->getType(), // ivar_offsets
+		IvarOffsets->getType(), // ivar_offsets
+		PtrTy,                  // properties (not used by LK yet)
 		NULL);
 	llvm::Constant *Zero = ConstantInt::get(LongTy, 0);
 	llvm::Constant *NullP =
@@ -786,6 +853,9 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	Elements.push_back(NullP);
 	Elements.push_back(NullP);
 	Elements.push_back(llvm::ConstantExpr::getBitCast(Protocols, PtrTy));
+	Elements.push_back(NullP);
+	Elements.push_back(Zero);
+	Elements.push_back(IvarOffsets);
 	Elements.push_back(NullP);
 	// Create an instance of the structure
 	return MakeGlobal(ClassTy, Elements, 
@@ -959,17 +1029,20 @@ void CGObjCGNU::GenerateClass(
 		InstanceMethodNames, InstanceMethodTypes, false);
 	llvm::Constant *ClassMethodList = GenerateMethodList(ClassName, "",
 		ClassMethodNames, ClassMethodTypes, true);
-	llvm::Constant *IvarList = GenerateIvarList(IvarNames, IvarTypes,
-		IvarOffsets);
+	llvm::Constant *IvarOffsetValues=NULLPtr, *ignored;
+	llvm::Constant *IvarList = GenerateIvarList(ClassName, IvarNames,
+			IvarTypes, IvarOffsets, IvarOffsetValues);
 	//Generate metaclass for class methods
 	llvm::Constant *MetaClassStruct = GenerateClassStructure(NULLPtr,
-		SuperClass, 0x2L, ClassName, 0, ConstantInt::get(LongTy, 0),
-		GenerateIvarList(empty, empty, empty2), ClassMethodList, NULLPtr, true);
+		SuperClass, 0x12L, ClassName, 0, ConstantInt::get(LongTy, 0),
+		GenerateIvarList(ClassName, empty, empty, empty2, ignored),
+		ClassMethodList,
+		NULLPtr, NULLPtr, true);
 	// Generate the class structure
 	llvm::Constant *ClassStruct = GenerateClassStructure(MetaClassStruct,
-		SuperClass, 0x1L, ClassName, 0,
-		ConstantInt::get(LongTy, instanceSize), IvarList,
-		MethodList, GenerateProtocolList(Protocols), false);
+		SuperClass, 0x11L, ClassName, 0,
+		ConstantInt::get(LongTy, 0-instanceSize), IvarList,
+		MethodList, GenerateProtocolList(Protocols), IvarOffsetValues, false);
 	// Add class structure to list to be added to the symtab later
 	ClassStruct = llvm::ConstantExpr::getBitCast(ClassStruct, PtrToInt8Ty);
 	Classes.push_back(ClassStruct);
@@ -1221,6 +1294,40 @@ void CGObjCGNU::StoreClassVariable(llvm::IRBuilder<> &Builder, string
 	Builder.CreateStore(aValue, var);
 }
 
+GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(const char *className,
+		const char *ivarName, uint64_t Offset)
+{
+	const std::string Name = std::string("__objc_ivar_offset_") + className +
+		'.' + ivarName;
+	// Emit the variable and initialize it with what we think the correct value
+	// is.  This allows code compiled with non-fragile ivars to work correctly
+	// when linked against code which isn't (most of the time).
+	llvm::GlobalVariable *IvarOffsetPointer = TheModule.getNamedGlobal(Name);
+	if (!IvarOffsetPointer)
+	{
+		llvm::ConstantInt *OffsetGuess =
+			llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), Offset,
+					"ivar");
+		llvm::GlobalVariable *IvarOffsetGV = new
+			llvm::GlobalVariable(TheModule, llvm::Type::getInt32Ty(Context),
+					false, llvm::GlobalValue::PrivateLinkage, OffsetGuess,
+					Name+".guess");
+		IvarOffsetPointer = new llvm::GlobalVariable(TheModule,
+		IvarOffsetGV->getType(), false, llvm::GlobalValue::LinkOnceAnyLinkage,
+		IvarOffsetGV, Name);
+	}
+	return IvarOffsetPointer;
+}
+llvm::Value *CGObjCGNU::OffsetOfIvar(llvm::IRBuilder<> &Builder,
+                                     const char *className,
+                                     const char *ivarName,
+                                     int offsetGuess)
+{
+	return Builder.CreateLoad(Builder.CreateLoad(
+		ObjCIvarOffsetVariable(className, ivarName, offsetGuess), false,
+		"ivar"));
+}
+
 CGObjCRuntime *CreateObjCRuntime(llvm::Module &M,
                                  llvm::LLVMContext &C,
                                  const llvm::Type *LLVMIntType,
@@ -1228,4 +1335,3 @@ CGObjCRuntime *CreateObjCRuntime(llvm::Module &M,
 {
   return new CGObjCGNU(M, C, LLVMIntType, LLVMLongType);
 }
-

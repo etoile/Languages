@@ -21,7 +21,6 @@ ${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions
 ${FRAMEWORK_NAME}_OBJC_FILES = \
 	BigInt.m\
 	BlockClosure.m\
-	BlockClosure+debug.m\
 	BoxedFloat.m\
 	NSValue+structs.m\
 	LanguageKitExceptions.m\

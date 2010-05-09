@@ -37,8 +37,8 @@
 	//Construct symbol table.
 	if (Nil == SuperClass)
 	{
-		ASSIGNCOPY(symbols,
-			[LKObjectSymbolTable symbolTableForNewClassNamed:superclass]);
+		symbols =
+			[LKObjectSymbolTable symbolTableForNewClassNamed: superclass];
 		if (symbols == nil)
 		{
 			NSDictionary *errorDetails = D([NSString stringWithFormat:
@@ -56,8 +56,9 @@
 	}
 	else
 	{
-		symbols = [[LKObjectSymbolTable alloc] initForClass:SuperClass];
+		symbols = [[LKObjectSymbolTable alloc] initForClass: SuperClass];
 	}
+	ASSIGN(symbols, [(id)symbols symbolTableForSubclassNamed: classname]);
 	if (Nil != NSClassFromString(classname))
 	{
 		NSDictionary *errorDetails = D([NSString stringWithFormat:
@@ -155,9 +156,11 @@
 		const char* releasety = [[self module] typeForMethod: @"release"];
 		for (unsigned i=0 ; i<[ivars count] ; i++)
 		{
-			void *ivar = [aGenerator loadValueOfType:@"@"
-			                                atOffset:ivarOffsets[i]
-			                              fromObject:selfptr];
+			void *ivar = [aGenerator loadValueOfType: @"@"
+			                                fromIvar: [ivars objectAtIndex: i]
+			                                atOffset: ivarOffsets[i]
+			                              fromObject: selfptr
+			                                 ofClass: classname];
 			[aGenerator sendMessage:"release"
 			                  types:releasety
 			               toObject:ivar

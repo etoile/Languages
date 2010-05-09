@@ -146,7 +146,7 @@ void CodeGenModule::BeginClass(const char *Class,
 	IvarOffsets.clear();
 	while (*iVarOffsets)
 	{
-		IvarOffsets.push_back(*iVarOffsets);
+		IvarOffsets.push_back(*iVarOffsets - SuperclassSize);
 		iVarOffsets++;
 	}
 	SmallVector<string, 8> cvarnames, cvartypes;
@@ -159,7 +159,7 @@ void CodeGenModule::BeginClass(const char *Class,
 	}
 	Runtime->DefineClassVariables(ClassName, cvarnames, cvartypes);
 	
-	InstanceSize = SuperclassSize + sizeof(void*) * IvarNames.size();
+	InstanceSize = sizeof(void*) * IvarNames.size();
 	CurrentClassTy = IdTy;
 }
 

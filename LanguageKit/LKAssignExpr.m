@@ -45,10 +45,12 @@
 				            format:@"Can not yet generate code for assignment"];
 			}
 			// Assign
-			[aGenerator storeValue:rval
-			                ofType:@"@"
-			              atOffset:[symbols offsetOfIVar:target->symbol]
-			            fromObject:[aGenerator loadSelf]];
+			[aGenerator storeValue: rval
+			                inIvar: target->symbol
+			                ofType: @"@"
+			              atOffset: [symbols offsetOfIVar: target->symbol]
+			            fromObject: [aGenerator loadSelf]
+			               ofClass: [symbols classForIvar: target->symbol]];
 			break;
 		}
 		case LKSymbolScopeClass:
@@ -78,10 +80,12 @@
 									format:@"Can not yet generate code for assignment"];
 					}
 					// Assign
-					[aGenerator storeValue:rval
-									ofType:@"@"
-								  atOffset:[scope.scope offsetOfIVar:target->symbol]
-								fromObject:[aGenerator loadSelf]];
+					[aGenerator storeValue: rval
+					                inIvar: target->symbol
+					                ofType: @"@"
+					              atOffset: [scope.scope offsetOfIVar: target->symbol]
+					            fromObject: [aGenerator loadSelf]
+					               ofClass: [scope.scope classForIvar: target->symbol]];
 					break;
 				case LKSymbolScopeClass:
 					[aGenerator storeValue:rval inClassVariable:target->symbol];

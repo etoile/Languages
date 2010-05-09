@@ -168,14 +168,15 @@ public:
   /**
    * Load an instance variable.
    */
-  Value *LoadValueOfTypeAtOffsetFromObject( const char* type, unsigned offset,
-      Value *object);
+  Value *LoadValueOfTypeAtOffsetFromObject(const char *className, const char
+		  *ivarName, const char* type, unsigned offset, Value *object);
 
   /**
    * Store an instance value.
    */
-  void StoreValueOfTypeAtOffsetFromObject(Value *value,
-      const char* type, unsigned offset, Value *object);
+  void StoreValueOfTypeAtOffsetFromObject(Value *value, const char *className,
+		  const char *ivarName, const char* type, unsigned offset, Value
+		  *object);
   /**
    * Clean up after a block.
    */

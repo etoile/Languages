@@ -200,20 +200,26 @@ lexicalScopeAtDepth: (unsigned) scope
 {
 	Builder->getCurrentScope()->StoreValueInLocalAtIndex((Value*)aVal, index, 0);
 }
-- (void) storeValue:(void*)aValue
-              ofType:(NSString*)aType
-            atOffset:(unsigned)anOffset
-          fromObject:(void*)anObject
+- (void) storeValue: (void*)aValue
+             inIvar: (NSString*)anIvar
+             ofType: (NSString*)aType
+           atOffset: (unsigned)anOffset
+         fromObject: (void*)anObject
+            ofClass: (NSString*)className
 {
 	Builder->getCurrentScope()->StoreValueOfTypeAtOffsetFromObject(
-		(Value*)aValue, [aType UTF8String], anOffset, (Value*)anObject);
+		(Value*)aValue, [className UTF8String], [anIvar UTF8String], 
+		[aType UTF8String], anOffset, (Value*)anObject);
 }
-- (void*) loadValueOfType:(NSString*)aType
-                 atOffset:(unsigned)anOffset
-               fromObject:(void*)anObject
+- (void*) loadValueOfType: (NSString*)aType
+                 fromIvar: (NSString*)anIvar
+                 atOffset: (unsigned)anOffset
+               fromObject: (void*)anObject
+                  ofClass: (NSString*)className
 {
 	return Builder->getCurrentScope()->LoadValueOfTypeAtOffsetFromObject(
-		[aType UTF8String], anOffset, (Value*)anObject);
+		[className UTF8String], [anIvar UTF8String], [aType UTF8String],
+		anOffset, (Value*)anObject);
 }
 - (void) beginBlockWithArgs:(unsigned)args
 					 locals:(unsigned)locals

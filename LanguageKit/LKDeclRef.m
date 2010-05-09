@@ -97,9 +97,11 @@
 					                   lexicalScopeAtDepth: s.depth];
 				case LKSymbolScopeObject:
 				{
-					return [aGenerator loadValueOfType: [s.scope typeOfSymbol:symbol]
-											  atOffset: [s.scope offsetOfIVar:symbol]
-											fromObject: [aGenerator loadSelf]];
+					return [aGenerator loadValueOfType: [s.scope typeOfSymbol: symbol]
+					                          fromIvar: symbol
+					                          atOffset: [s.scope offsetOfIVar: symbol]
+					                        fromObject: [aGenerator loadSelf]
+					                           ofClass: [s.scope classForIvar: symbol]];
 				}
 				case LKSymbolScopeClass:
 				{
@@ -111,9 +113,11 @@
 		}
 		case LKSymbolScopeObject:
 		{
-			return [aGenerator loadValueOfType: [symbols typeOfSymbol:symbol]
-			                          atOffset: [symbols offsetOfIVar:symbol]
-			                        fromObject: [aGenerator loadSelf]];
+			return [aGenerator loadValueOfType: [symbols typeOfSymbol: symbol]
+			                          fromIvar: symbol
+			                          atOffset: [symbols offsetOfIVar: symbol]
+			                        fromObject: [aGenerator loadSelf]
+			                           ofClass: [symbols classForIvar: symbol]];
 		}
 		case LKSymbolScopeClass:
 		{
