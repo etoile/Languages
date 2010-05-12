@@ -1066,8 +1066,9 @@ Value *CodeGenLexicalScope::MessageSend(Value *receiver,
                                         SmallVectorImpl<Value*> &argv)
 {
 	LOG("Generating %s (%s)\n", selName, selTypes);
-	return BoxValue(&Builder, MessageSend(&Builder, CurrentFunction, receiver,
-		selName, selTypes, argv), selTypes);
+	Value *msg = MessageSend(&Builder, CurrentFunction, receiver, selName,
+			selTypes, argv);
+	return BoxValue(&Builder, msg, selTypes);
 }
 Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 		cVarName)
@@ -1136,3 +1137,11 @@ void CodeGenLexicalScope::SetReturn(Value * Ret)
 	Builder.ClearInsertionPoint();
 }
 
+CodeGenLexicalScope::~CodeGenLexicalScope()
+{
+	BasicBlock *BB = Builder.GetInsertBlock();
+	if (0 != BB && 0 == BB->getTerminator())
+	{
+		SetReturn();
+	}
+}

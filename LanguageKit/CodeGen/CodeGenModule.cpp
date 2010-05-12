@@ -32,10 +32,17 @@ FunctionPass *createClassLookupCachePass(void);
 ModulePass *createClassMethodInliner(void);
 FunctionPass *createGNUNonfragileIvarPass(void);
 FunctionPass *createGNULoopIMPCachePass(void);
+
+ModulePass *createTypeFeedbackPass(void);
+ModulePass *createTypeFeedbackDrivenInlinerPass(void);
 #endif
 
 using std::string;
 
+namespace llvm 
+{
+	extern bool JITExceptionHandling;
+}
 // A copy of the Small Int message module, used when static compiling.
 static Module *SmallIntMessages = NULL;
 
@@ -65,8 +72,9 @@ void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *
 					MakeConstantString(className)), IdTy), global);
 }
 
-CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit) 
-	: Context(C), InitialiseBuilder(Context)
+CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit,
+		bool profiling) 
+	: Context(C), InitialiseBuilder(Context), profilingEnabled(profiling)
 {
 	// When we JIT code, we put the Small Int message functions inside the
 	// module, to allow them to be inlined by module passes.  When static
@@ -409,11 +417,17 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
+	if (profilingEnabled)
+	{
+		pm.add(createTypeFeedbackDrivenInlinerPass());
+	}
+#ifdef LIBOBJC2_PASSES
 	pm.add(createClassIMPCachePass());
 	pm.add(createClassLookupCachePass());
 	pm.add(createClassMethodInliner());
 	pm.add(createGNUNonfragileIvarPass());
 	pm.add(createGNULoopIMPCachePass());
+#endif
 	pm.add(createScalarReplAggregatesPass());
 	pm.add(createPromoteMemoryToRegisterPass());
 	pm.add(createStripSymbolsPass(true));
@@ -432,6 +446,7 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
+		//JITExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
 	}

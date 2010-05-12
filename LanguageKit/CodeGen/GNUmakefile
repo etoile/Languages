@@ -27,7 +27,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 
 # uncomment this line when debugging if you have problems with over-aggressive
 # inlining throwing away useful debugging info.
-#${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
+${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++
@@ -61,6 +61,6 @@ all:: MsgSendSmallInt.bc
 MsgSendSmallInt.bc: ../Runtime/MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages..."
 	@clang -c -ftrapv `gnustep-config --objc-flags` -emit-llvm -fexceptions ../Runtime/MsgSendSmallInt.m -o MsgSendSmallInt.private.bc 
-	@#cp MsgSendSmallInt.private.bc MsgSendSmallInt.bc
-	@opt -make-runtime-lib-interface MsgSendSmallInt.private.bc -o MsgSendSmallInt.bc
+	@cp MsgSendSmallInt.private.bc MsgSendSmallInt.bc
+	@#opt -make-runtime-lib-interface MsgSendSmallInt.private.bc -o MsgSendSmallInt.bc
 	@rm MsgSendSmallInt.private.bc

@@ -63,6 +63,8 @@ private:
   llvm::SmallVector<string, 8> ClassMethodTypes;
   llvm::SmallVector<std::string, 8> Protocols;
 
+  bool profilingEnabled;
+
   /**
    * Returns a constant C string using Str as an initialiser.
    */
@@ -115,7 +117,8 @@ public:
 	 * Initialise for the specified module.  The second argument specifies
 	 * whether the module should be used for static or JIT compilation.
 	 */
-	CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit=true);
+	CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit=true,
+			bool profiling=false);
 
 	/**
 	 * Start generating code for a class.

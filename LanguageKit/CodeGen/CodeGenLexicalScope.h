@@ -229,14 +229,7 @@ public:
 	 */
 	void BranchOnCondition(Value *condition, BasicBlock *TrueBB, BasicBlock
 		*FalseBB);
-	virtual ~CodeGenLexicalScope()
-	{
-		BasicBlock *BB = Builder.GetInsertBlock();
-		if (0 != BB && 0 == BB->getTerminator())
-		{
-			SetReturn();
-		}
-	}
+	virtual ~CodeGenLexicalScope();
 };
 
 class CodeGenMethod : public CodeGenLexicalScope {
