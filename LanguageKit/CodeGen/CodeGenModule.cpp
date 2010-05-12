@@ -417,11 +417,11 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
+#ifdef LIBOBJC2_PASSES
 	if (profilingEnabled)
 	{
 		pm.add(createTypeFeedbackDrivenInlinerPass());
 	}
-#ifdef LIBOBJC2_PASSES
 	pm.add(createClassIMPCachePass());
 	pm.add(createClassLookupCachePass());
 	pm.add(createClassMethodInliner());
