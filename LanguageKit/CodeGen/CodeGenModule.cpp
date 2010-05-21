@@ -446,7 +446,7 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
-		//JITExceptionHandling = true;
+		JITExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
 	}
