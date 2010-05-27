@@ -16,11 +16,11 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 {
 	return [[[LKToken alloc] initWithRange:aRange inSource:aString] autorelease];
 }
-- (unsigned) length
+- (NSUInteger) length
 {
 	return range.length;
 }
-- (unichar) characterAtIndex:(unsigned)index
+- (unichar) characterAtIndex:(NSUInteger)index
 {
 	return charAtIndex(source, @selector(characterAtIndex:), index +
 			range.location);
