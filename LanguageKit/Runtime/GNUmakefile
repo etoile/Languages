@@ -12,8 +12,8 @@ FRAMEWORK_NAME = LanguageKitRuntime
 LIBRARIES_DEPEND_UPON += -lgmp $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
 
 ${FRAMEWORK_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=199309 -D_BSD_SOURCE
-${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions -fobjc-exceptions -Wno-overflow
-${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions 
+${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions -fobjc-exceptions
+${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions
 
 #
 # Class files
@@ -24,9 +24,10 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	BoxedFloat.m\
 	NSValue+structs.m\
 	LanguageKitExceptions.m\
-	MsgSendSmallInt.m\
 	OverflowHandler.m\
 	Symbol.m
+
+${FRAMEWORK_NAME}_OBJ_FILES = MsgSendSmallInt.o
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
 	BigInt.h\
@@ -37,3 +38,12 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
 -include GNUmakefile.postamble
+
+MsgSendSmallInt.o:
+	@echo " Compiling small int messages..."
+	@clang -c -ftrapv `gnustep-config --objc-flags` ${${FRAMEWORK_NAME}_OBJCFLAGS} MsgSendSmallInt.m -o MsgSendSmallInt.o
+
+before-clean::
+	@rm -f MsgSendSmallInt.o MsgSendSmallInt.d
+
+before-distclean:: before-clean
