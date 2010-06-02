@@ -42,7 +42,8 @@ LKAST extend
 
 	conformsToProtocol: protocol
 	[
-		^ protocol isEqual: (ETProtocol protocolForName: 'ETCollection').
+		^ (ETReflection reflectProtocol: protocol) isEqual: 
+			(ETReflection reflectProtocolWithName: 'ETCollection').
 	]
 ]
 
