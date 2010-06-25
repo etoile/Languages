@@ -38,11 +38,11 @@ LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine execu
 
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 ${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
-LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}` 
+LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
 
 # If the GNUObjCRuntime.so file exists, we want to link against it and use all
 # of the nice shiny passes.
-ifeq ($(shell echo `llvm-config --libdir`/libGNUObjCRuntime.so), $(shell ls `llvm-config --libdir`/libGNUObjCRuntime.so))
+ifneq ($(wildcard $(shell echo `llvm-config --libdir`)/libGNUObjCRuntime.so),)
 	${FRAMEWORK_NAME}_CPPFLAGS += -DLIBOBJC2_PASSES
 	${FRAMEWORK_NAME}_LDFLAGS += -L`llvm-config --libdir` -lGNUObjCRuntime
 endif
