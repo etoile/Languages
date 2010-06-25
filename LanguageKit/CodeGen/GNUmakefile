@@ -3,12 +3,12 @@ include $(GNUSTEP_MAKEFILES)/common.make
 # We reset PROJECT_DIR provided by etoile.make to match the subproject since 
 # etoile.make doesn't detect and handle such embedded project
 PROJECT_DIR = $(CURDIR)
+# We redefine the project name since the framework name doesn't match the name
+# of the project directory (CodeGen)
+PROJECT_NAME = LanguageKitCodeGen
 
-#
-# Library
-#
 VERSION = 0.6
-FRAMEWORK_NAME = LanguageKitCodeGen
+FRAMEWORK_NAME = ${PROJECT_NAME}
 
 ${FRAMEWORK_NAME}_CC_FILES = \
 	CGObjCGNU.cpp\
