@@ -55,6 +55,7 @@ ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc
 
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
+-include ../../../documentation.make
 
 all:: MsgSendSmallInt.bc
 

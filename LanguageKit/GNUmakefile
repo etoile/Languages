@@ -81,4 +81,5 @@ ${FRAMEWORK_NAME}_RESOURCE_FILES += ObjCConstants.plist
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
 -include ../../etoile.make
+-include ../../documentation.make
 include $(GNUSTEP_MAKEFILES)/framework.make

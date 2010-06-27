@@ -32,10 +32,9 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKObject.h\
 	BlockClosure.h
 
--include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
--include GNUmakefile.postamble
+-include ../../../documentation.make
 
 MsgSendSmallInt.o:
 	@echo " Compiling small int messages..."
