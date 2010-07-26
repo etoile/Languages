@@ -30,7 +30,8 @@ ${FRAMEWORK_NAME}_OBJ_FILES = MsgSendSmallInt.o
 ${FRAMEWORK_NAME}_HEADER_FILES = \
 	BigInt.h\
 	LKObject.h\
-	BlockClosure.h
+	BlockClosure.h\
+	Symbol.h
 
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
