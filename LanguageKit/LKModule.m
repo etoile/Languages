@@ -3,12 +3,6 @@
 #import <EtoileFoundation/runtime.h>
 #import "Runtime/LKObject.h"
 
-#ifdef LK_BRAINDEAD_ABI
-#define LKObjectType id
-#else
-#define LKObjectType LKObject
-#endif
-
 /**
  * Maps method names to type encodings, gathered by iterating through all
  * methods in all classes. Needed only on the Mac runtime, which
@@ -190,12 +184,12 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 		}
 		int offset = sizeof(id) + sizeof(SEL);
 		NSMutableString *ty = [NSMutableString stringWithFormat: @"%s%d@0:%d",
-			@encode(LKObjectType), sizeof(SEL) + sizeof(id) * (argCount + 2),
+			@encode(LKObjectPtr), sizeof(SEL) + sizeof(id) * (argCount + 2),
 			offset];
 		for (int i=0 ; i<argCount ; i++)
 		{
 			offset += sizeof(id);
-			[ty appendFormat: @"%s%d", @encode(LKObjectType), offset];
+			[ty appendFormat: @"%s%d", @encode(LKObjectPtr), offset];
 		}
 		types = [ty UTF8String];
 	}
