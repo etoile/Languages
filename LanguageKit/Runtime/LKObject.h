@@ -19,8 +19,6 @@ typedef union
 	SmallInt smallInt;
 } LKObject;
 
-#import "BigInt.h"
-
 static inline BOOL LKObjectIsSmallInt(LKObject obj)
 {
 	return (obj.smallInt & 1);
@@ -37,16 +35,3 @@ static inline NSInteger NSIntegerFromSmallInt(SmallInt smallInt)
 	return smallInt >> 1;
 }
 
-static inline LKObject LKObjectFromNSInteger(NSInteger integer)
-{
-	LKObject obj;
-	if((integer << 1 >> 1) != integer)
-	{
-		obj.object = [BigInt bigIntWithLongLong: (long long)integer];
-	}
-	else
-	{
-		obj.smallInt = (integer << 1) | 1;
-	}
-	return obj;
-}

@@ -1,5 +1,5 @@
 #define class_pointer isa
-#import "LKObject.h"
+#import "BigInt.h"
 #import "BlockClosure.h"
 
 static mpz_t ZERO;

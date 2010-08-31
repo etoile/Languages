@@ -2,7 +2,8 @@
 #include "CodeGenBlock.h"
 #include "CodeGenModule.h"
 #include <llvm/Module.h>
-#include "llvm/Intrinsics.h"
+#include <llvm/Intrinsics.h>
+#include <llvm/LLVMContext.h>
 
 extern const char *LKObjectEncoding;
 
