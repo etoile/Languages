@@ -19,7 +19,7 @@ using llvm::Value;
 using llvm::BasicBlock;
 
 static NSString *SmallIntFile;
-const char * LKObjectEncoding = @encode(LKObject);
+const char * LKObjectEncoding = @encode(LKObjectPtr);
 
 @implementation LLVMCodeGen 
 + (void) initialize

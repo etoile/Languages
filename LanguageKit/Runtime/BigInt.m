@@ -65,7 +65,7 @@ static BigInt *BigIntNO;
 	return b;
 }
 #define op2(name, func) \
-- (LKObject) name:(id)other\
+- (LKObjectPtr) name:(id)other\
 {\
 	if (nil == other)\
 	{\
@@ -98,7 +98,7 @@ static BigInt *BigIntNO;
 		}\
 	}\
 	ret.object = [b autorelease];\
-	return ret;\
+	return LKOBJECTPTR(ret);\
 }
 
 #define op(name) op2(name, name)

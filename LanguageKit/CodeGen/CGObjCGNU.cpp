@@ -545,7 +545,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	slot->setOnlyReadsMemory();
 
 	imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
-	llvm::cast<llvm::CallInst>(imp)->setOnlyReadsMemory();
 
 	llvm::Value *impMD[] = {
 		llvm::MDString::get(Context, selName), 

@@ -11,6 +11,10 @@
 
 #import <Foundation/Foundation.h>
 
+#ifdef __linux__
+#define BRAINDEAD_ABI
+#endif
+
 typedef NSInteger SmallInt;
 
 typedef union 
@@ -18,6 +22,26 @@ typedef union
 	id object;
 	SmallInt smallInt;
 } LKObject;
+
+/**
+ * Some ABIs (*cough* Linux *cough*) are really stupid.  Rather than passing a
+ * union of two register-sized values in a register, they pass it on the stack
+ * via a pointer.  
+ *
+ * To hack around this, we define two types: LKObject and LKObjectPtr.  On sane
+ * platforms, these are the same.  On braindead platforms, LKObjectPtr is
+ * something different.  You should always declare parameters as LKObjectPtr
+ * and then cast them to LKObject using the LKOBJECT() macro if you want to
+ * interoperate with code compiled with LanguageKit.
+ */
+#ifdef BRAINDEAD_ABI
+struct LKObject_hack { LKObject hack; };
+typedef struct LKObject_hack* LKObjectPtr;
+#else
+typedef LKObject LKObjectPtr;
+#endif
+#define LKOBJECT(x) (*(LKObject*)&x)
+#define LKOBJECTPTR(x) (*(LKObjectPtr*)&x)
 
 static inline BOOL LKObjectIsSmallInt(LKObject obj)
 {
