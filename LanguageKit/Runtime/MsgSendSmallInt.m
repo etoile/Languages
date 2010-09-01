@@ -3,22 +3,24 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+typedef intptr_t NSInteger;
+#include "LKObject.h"
 
 // Dummy interfaces to make warnings go away
 @interface BigInt {}
 + (id)bigIntWithLongLong:(long long)a;
-- (id)plus:(id)a;
-- (id)sub:(id)a;
-- (id)div:(id)a;
-- (id)mul:(id)a;
-- (id)mod:(id)a;
+- (LKObjectPtr)plus:(id)a;
+- (LKObjectPtr)sub:(id)a;
+- (LKObjectPtr)div:(id)a;
+- (LKObjectPtr)mul:(id)a;
+- (LKObjectPtr)mod:(id)a;
 - (id)to:(id)a by:(id)b do:(id)c;
 - (id)to:(id)a do:(id)c;
 - (id)and: (id)a;
 - (id)or: (id)a;
-- (id)bitwiseAnd: (id)a;
-- (id)bitwiseOr: (id)a;
 - (id)not;
+- (LKObjectPtr)bitwiseAnd: (id)a;
+- (LKObjectPtr)bitwiseOr: (id)a;
 - (BOOL)isLessThan: (id)a;
 - (BOOL)isGreaterThan: (id)a;
 - (BOOL)isLessThanOrEqualTo: (id)a;
@@ -174,6 +176,14 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 #define BOX_AND_RETRY(op) [[BigInt bigIntWithLongLong:(long long)val] \
                     op:[BigInt bigIntWithLongLong:(long long)otherval]]
 
+#define OTHER_OBJECT_CAST(op) \
+	if ((((intptr_t)other) & 1) == 0)\
+	{\
+		intptr_t val = (intptr_t)obj >> 1;\
+		LKObjectPtr ret = \
+			[[BigInt bigIntWithLongLong:(long long)val] op:other];\
+		return *(void**)&ret;\
+	}
 #define OTHER_OBJECT(op) \
 	if ((((intptr_t)other) & 1) == 0)\
 	{\
@@ -188,7 +198,7 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 
 void *SmallIntMsgplus_(void *obj, void *other)
 {
-	OTHER_OBJECT(plus);
+	OTHER_OBJECT_CAST(plus);
 	// Clear the low bit on obj
 	intptr_t val = ((intptr_t)other) & ~ 1;
 	// Add the two values together.  This will cause the overflow handler to be
@@ -198,7 +208,7 @@ void *SmallIntMsgplus_(void *obj, void *other)
 }
 void *SmallIntMsgsub_(void *obj, void *other)
 {
-	OTHER_OBJECT(sub);
+	OTHER_OBJECT_CAST(sub);
 	// Clear the low bit and invert the sign bit on other 
 	intptr_t val = -(((intptr_t)other) & ~1);
 	// Add the two values together.  This will cause the overflow handler to be
@@ -208,7 +218,7 @@ void *SmallIntMsgsub_(void *obj, void *other)
 }
 void *SmallIntMsgmul_(void *obj, void *other)
 {
-	OTHER_OBJECT(mul)
+	OTHER_OBJECT_CAST(mul)
 	// Clear the low bit on obj
 	intptr_t val = ((intptr_t)obj) & ~ 1;
 	// Turn other into a C integer
@@ -220,19 +230,19 @@ void *SmallIntMsgmul_(void *obj, void *other)
 	return (void*)((val * otherval) ^ 1);
 }
 MSG1(div_)
-	OTHER_OBJECT(div)
+	OTHER_OBJECT_CAST(div)
 	RETURN_INT((val / otherval));
 }
 MSG1(mod_)
-	OTHER_OBJECT(mod)
+	OTHER_OBJECT_CAST(mod)
 	RETURN_INT((val % otherval));
 }
 MSG1(bitwiseAnd_)
-	OTHER_OBJECT(bitwiseAnd)
+	OTHER_OBJECT_CAST(bitwiseAnd)
 	RETURN_INT((val & otherval));
 }
 MSG1(bitwiseOr_)
-	OTHER_OBJECT(bitwiseOr)
+	OTHER_OBJECT_CAST(bitwiseOr)
 	RETURN_INT((val | otherval));
 }
 

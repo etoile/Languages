@@ -9,8 +9,6 @@
  * be modified to contain 62-bit integers, 32-bit floats, or pointers.
  */
 
-#import <Foundation/Foundation.h>
-
 #ifdef __linux__
 #define BRAINDEAD_ABI
 #endif

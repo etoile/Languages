@@ -1,5 +1,6 @@
 #define class_pointer isa
 #import "BoxedFloat.h"
+#import "LKObject.h"
 
 @implementation BoxedFloat
 + (BoxedFloat*) boxedFloatWithCString:(const char*) aString
@@ -22,10 +23,10 @@
 }
 
 #define op(name, op) \
-- (BoxedFloat*) name:(id)other\
+- (LKObjectPtr) name: (id)other\
 {\
 	BoxedFloat *b = [[[BoxedFloat alloc] init] autorelease];\
-	if (other->isa == isa || [other isKindOfClass: isa])\
+	if (other->isa == isa)\
 	{\
 		b->value = value op ((BoxedFloat*)other)->value;\
 	}\
@@ -33,7 +34,7 @@
 	{\
 		b->value = value op [other doubleValue];\
 	}\
-	return b;\
+	return LKOBJECTPTR(b);\
 }
 
 #define cmp(name, op) \
