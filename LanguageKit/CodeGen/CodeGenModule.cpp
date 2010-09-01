@@ -413,7 +413,10 @@ void CodeGenModule::EndModule(void)
 void CodeGenModule::compile(void)
 {
 	EndModule();
-	llvm::Linker::LinkModules(TheModule, SmallIntModule, 0);
+	llvm::Linker::LinkModules(TheModule, 
+		ParseBitcodeFile(
+				MemoryBuffer::getFile(MsgSendSmallIntFilename), 
+				Context), 0);
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
