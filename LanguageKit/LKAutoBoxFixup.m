@@ -11,20 +11,21 @@ static struct objc_slot* objc_method_type_fixup(Class cls, SEL
 	LOCAL_AUTORELEASE_POOL();
 	id <LKCodeGenerator> jit = defaultJIT();
 	const char *selName = sel_getName(selector);
+	const char *selTypes = sel_getType_np(selector);
 	[jit startModule: nil];
 	[jit createCategoryWithName: @"Type_Fixup"
 				   onClassNamed: [NSString stringWithUTF8String: cls->name]];
 	if (class_isMetaClass(cls))
 	{
 		[jit beginClassMethod: selName
-		            withTypes: sel_getType_np(selector)
+		            withTypes: selTypes
 		               locals: NULL
 		                count: 0];
 	}
 	else
 	{
 		[jit beginInstanceMethod: selName
-		               withTypes: sel_getType_np(selector)
+		               withTypes: selTypes
 		                  locals: NULL
 		                   count: 0];
 	}
@@ -36,11 +37,15 @@ static struct objc_slot* objc_method_type_fixup(Class cls, SEL
 	{
 		argv[i] = [jit loadArgumentAtIndex: i lexicalScopeAtDepth: 0];
 	}
-	[jit sendMessage: selName
-	           types: result->types
-	        toObject: [jit loadSelf]
-	        withArgs: argv
-	           count: argc];
+	void *ret = [jit sendMessage: selName
+	                       types: result->types
+	                    toObject: [jit loadSelf]
+	                    withArgs: argv
+	                       count: argc];
+	if (selTypes[0] != 'v' && result->types[0] != 'v')
+	{
+		[jit setReturn: ret];
+	}
 	[jit endMethod];
 	[jit endCategory];
 	[jit endModule];
