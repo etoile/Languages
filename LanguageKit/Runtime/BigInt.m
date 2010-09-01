@@ -340,4 +340,10 @@ CASTMETHOD(float, floatValue, mpz_get_d)
 CASTMETHOD(double, doubleValue, mpz_get_d)
 CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 
+- (id)copyWithZone: (NSZone*)aZone
+{
+	BigInt *new = [isa allocWithZone: aZone];
+	mpz_init_set(new->v, v);
+	return new;
+}
 @end
