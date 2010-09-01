@@ -153,9 +153,51 @@ static void logTimeSinceWithMessage(clock_t c1, NSString *message)
 		((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
 }
 
+/*
+ * Functions for listing the type encodings used by a specific method name.
+ * Useful for tracking down where polymorphic selector warnings are coming
+ * from...
+static void checkMethodInClass(const char *name, Class c)
+{
+	unsigned int methodCount;
+	Method *methods = class_copyMethodList(c, &methodCount);
+	if (NULL != methods)
+	{
+		for (unsigned int i=0 ; i<methodCount ; i++)
+		{
+			Method m = methods[i];
+			const char *n = sel_getName(method_getName(m));
+			if (strcmp(n, name) == 0)
+			{
+				fprintf(stderr, "%s declares %c%s, %s\n", class_getName(c),
+				        class_isMetaClass(c) ? '+' : '-', name,
+				        method_getTypeEncoding(m));
+			}
+		}
+		free(methods);
+	}
+}
+
+static void check_method(const char *name)
+{
+	int numClasses = objc_getClassList(NULL, 0);
+	Class *classes = malloc(sizeof(Class) * numClasses);
+
+	numClasses = objc_getClassList(classes, numClasses);
+	for (int i=0 ; i<numClasses ; i++)
+	{
+		Class c = classes[i];
+		checkMethodInClass(name, c);
+		checkMethodInClass(name, object_getClass(c));
+	}
+	free(classes);
+}
+*/
+
 int main(int argc, char **argv)
 {
 	[NSAutoreleasePool new];
+	//check_method("value");
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];
 
