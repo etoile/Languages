@@ -17,6 +17,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKASTVisitor.m\
 	LKArrayExpr.m\
 	LKAssignExpr.m\
+	LKAutoBoxFixup.m\
 	LKBlockExpr.m\
 	LKCategory.m\
 	LKCodeGen.m\
