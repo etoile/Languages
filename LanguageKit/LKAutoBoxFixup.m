@@ -14,7 +14,7 @@ static struct objc_slot* objc_method_type_fixup(Class cls, SEL
 	const char *selTypes = sel_getType_np(selector);
 	[jit startModule: nil];
 	[jit createCategoryWithName: @"Type_Fixup"
-				   onClassNamed: [NSString stringWithUTF8String: cls->name]];
+				   onClassNamed: [NSString stringWithUTF8String: class_getName(cls)]];
 	if (class_isMetaClass(cls))
 	{
 		[jit beginClassMethod: selName

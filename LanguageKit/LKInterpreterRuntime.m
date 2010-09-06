@@ -288,7 +288,7 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	if (className)
 	{
 		struct objc_super sup = { receiver, NSClassFromString(className) };
-		if (class_isMetaClass(receiver->class_pointer))
+		if (class_isMetaClass(object_getClass(receiver)))
 		{
 			sup.class = object_getClass(sup.class);
 		}
