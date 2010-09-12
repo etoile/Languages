@@ -107,6 +107,8 @@
 		66AC4544108ADD5900047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
 		66AC4550108ADD7000047C26 /* EtoileFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66AC44FA108ADCCD00047C26 /* EtoileFoundation.framework */; };
 		66CC0B0B1082628100FABEBF /* Symbol.h in Headers */ = {isa = PBXBuildFile; fileRef = 66CC0B0A1082628100FABEBF /* Symbol.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		794B2BC0123D774F008A4663 /* LKLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = 794B2BBF123D774F008A4663 /* LKLoop.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		794B2BC5123D7828008A4663 /* LanguageKitRuntime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6697AFCA1048CF9200456911 /* LanguageKitRuntime.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -358,6 +360,8 @@
 		66AC4591108ADFAE00047C26 /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = COPYING; path = ../Compiler/COPYING; sourceTree = SOURCE_ROOT; };
 		66CC0B0A1082628100FABEBF /* Symbol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Symbol.h; path = Runtime/Symbol.h; sourceTree = "<group>"; };
 		66DD61A71079ABA8009FC3B1 /* libffi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libffi.dylib; path = /opt/local/lib/libffi.dylib; sourceTree = "<absolute>"; };
+		794B2BBC123D7735008A4663 /* LKLoop.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LKLoop.m; sourceTree = "<group>"; };
+		794B2BBF123D774F008A4663 /* LKLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LKLoop.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -402,6 +406,7 @@
 				663A0E83108D622400B921B0 /* Foundation.framework in Frameworks */,
 				66AC4544108ADD5900047C26 /* EtoileFoundation.framework in Frameworks */,
 				66A1FC821049DC2000A19C65 /* libgmp.dylib in Frameworks */,
+				794B2BC5123D7828008A4663 /* LanguageKitRuntime.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -460,6 +465,7 @@
 				6697B0321048D19A00456911 /* LKDeclRef.m */,
 				6697B0331048D19A00456911 /* LKIfStatement.m */,
 				6697B0341048D19A00456911 /* LKLiteral.m */,
+				794B2BBC123D7735008A4663 /* LKLoop.m */,
 				6697B0351048D19A00456911 /* LKMessageSend.m */,
 				6697B0361048D19A00456911 /* LKReturn.m */,
 				6697B0371048D19A00456911 /* LKSubclass.m */,
@@ -574,6 +580,7 @@
 		66A1FAA71049C34000A19C65 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				794B2BBF123D774F008A4663 /* LKLoop.h */,
 				6697B00C1048D19A00456911 /* LanguageKit.h */,
 				6697B00D1048D19A00456911 /* LKArrayExpr.h */,
 				6697B00E1048D19A00456911 /* LKAssignExpr.h */,
@@ -651,6 +658,7 @@
 				668C491510915C17002A20A3 /* LKInterpreterRuntime.h in Headers */,
 				668C491710915C17002A20A3 /* LKInterpreter.h in Headers */,
 				668C491910915C17002A20A3 /* LKInterpretedBlockClosure.h in Headers */,
+				794B2BC0123D774F008A4663 /* LKLoop.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1017,6 +1025,7 @@
 		6697AF811048CE7100456911 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				DSTROOT = /;
 			};
 			name = Debug;
@@ -1024,6 +1033,7 @@
 		6697AF821048CE7100456911 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				DSTROOT = /;
 			};
 			name = Release;
@@ -1032,11 +1042,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
-					"\"$(SRCROOT)/../../../trunk/Etoile/Frameworks/EtoileUI/build/Debug\"",
-				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)/../../Frameworks/EtoileUI/build/Debug\"";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				INSTALL_PATH = /usr/local/bin;
@@ -1048,11 +1053,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
-					"\"$(SRCROOT)/../../../trunk/Etoile/Frameworks/EtoileUI/build/Debug\"",
-				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)/../../Frameworks/EtoileUI/build/Debug\"";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				INSTALL_PATH = /usr/local/bin;
@@ -1203,11 +1203,6 @@
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DSTROOT = /;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../Frameworks/EtoileUI/build/Debug\"",
-					"\"$(SRCROOT)/../../../trunk/Etoile/Frameworks/EtoileUI/build/Debug\"",
-				);
 				INSTALL_PATH = "$(HOME)/Library/Bundles/LanguageKit";
 				PRODUCT_NAME = Smalltalk;
 				SKIP_INSTALL = NO;
@@ -1222,11 +1217,6 @@
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DSTROOT = /;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../Frameworks/EtoileUI/build/Debug\"",
-					"\"$(SRCROOT)/../../../trunk/Etoile/Frameworks/EtoileUI/build/Debug\"",
-				);
 				INSTALL_PATH = "$(HOME)/Library/Bundles/LanguageKit";
 				PRODUCT_NAME = Smalltalk;
 				SKIP_INSTALL = NO;
