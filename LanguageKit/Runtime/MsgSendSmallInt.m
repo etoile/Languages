@@ -3,7 +3,13 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+
 typedef intptr_t NSInteger;
+// Redefine a few things so LKObject will work correctly.
+#define NSCAssert(x, msg) if (!(x)) { NSLog(msg); abort(); }
+@class NSString;
+__attribute__((noreturn)) void abort(void);
+void NSLog(NSString*, ...);
 #include "LKObject.h"
 
 // Dummy interfaces to make warnings go away
@@ -44,7 +50,6 @@ typedef intptr_t NSInteger;
 	int length;
 }
 @end
-void NSLog(NSString*, ...);
 
 typedef struct
 {

@@ -39,5 +39,3 @@ long long smalltalk_overflow_handler(long long val, long long otherval, char op,
 long long (*__overflow_handler)(long long a, long long b, char op, char width)
 	    = smalltalk_overflow_handler;
 
-				
-
