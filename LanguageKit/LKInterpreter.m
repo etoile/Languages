@@ -444,33 +444,25 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)executeInContext: (LKInterpreterContext*)context
 {
 	id result = [context selfObject];
-	NS_DURING
+	@try
+	{
 		FOREACH(statements, element, LKAST*)
 		{
-			if ([element isMemberOfClass: [LKReturn class]])
+			@try
 			{
 				[element retain];
 				result = [element interpretInContext: context];
-				[element release];
-				break;
 			}
-			else
+			@finally 
 			{
 				[element retain];
-				[element interpretInContext: context];
-				[element release];
 			}
 		}
-	NS_HANDLER
-		if ([localException isKindOfClass: [LKBlockReturnException class]])
-		{
-			result = [(LKBlockReturnException*)localException returnValue];
-		}
-		else
-		{
-			[localException raise];
-		}
-	NS_ENDHANDLER
+	}
+	@catch (LKBlockReturnException *ret)
+	{
+		result = [ret returnValue];
+	}
 	return result;
 }
 - (id)executeWithReciever: (id)receiver arguments: (id*)args count: (int)count
@@ -526,9 +518,9 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @end
 
 
-@interface LKReturn (LKInterpreter)
+@interface LKBlockReturn (LKInterpreter)
 @end
-@implementation LKReturn (LKInterpreter)
+@implementation LKBlockReturn (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	[ret retain];
@@ -539,9 +531,9 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @end
 
 
-@interface LKBlockReturn (LKInterpreter)
+@interface LKReturn (LKInterpreter)
 @end
-@implementation LKBlockReturn (LKInterpreter)
+@implementation LKReturn (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	[ret retain];
