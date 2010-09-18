@@ -58,7 +58,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 }
 @end
 
-
 @implementation LKInterpreterContext
 - (id) initWithSymbolTable: (LKSymbolTable*)aTable
                     parent: (LKInterpreterContext*)aParent
@@ -92,27 +91,41 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	return NSMapGet(objects, symbol);
 }
-- (LKInterpreterContext *) contextForSymbol: (NSString*)symbol
+- (LKInterpreterVariableContext)contextForSymbol: (NSString*)symbol
 {
-	LKInterpreterContext *context = self;
-	LKSymbolScope scope = [symbolTable scopeOfSymbol: symbol];
-	if (scope == LKSymbolScopeExternal)
+	LKInterpreterVariableContext context;
+	context.context = self;
+	context.scope = [symbolTable scopeOfSymbol: symbol];
+	if (context.scope == LKSymbolScopeExternal)
 	{
 		LKExternalSymbolScope externalScope = 
 			[(LKBlockSymbolTable*)self->symbolTable 
 				scopeOfExternalSymbol: symbol];
-		while (context->symbolTable != externalScope.scope)
+		context.scope = [externalScope.scope scopeOfSymbol: symbol];
+		if ((context.scope == LKSymbolScopeLocal) ||
+		    (context.scope == LKSymbolScopeArgument))
 		{
-			if (nil == context->parent)
+			while (context.context->symbolTable != externalScope.scope)
 			{
-				[NSException raise: LKInterpreterException
-				            format: @"Couldn't locate external symbol %@",
-				                    symbol];
+				if (nil == context.context->parent)
+				{
+					[NSException raise: LKInterpreterException
+					            format: @"Couldn't locate external symbol %@",
+					                    symbol];
+				}
+				context.context = context.context->parent;
 			}
-			context = context->parent;
 		}
 	}
 	return context;
+}
+- (id)selfObject
+{
+	if (nil != parent)
+	{
+		return [parent selfObject];
+	}
+	return NSMapGet(objects, @"self");
 }
 @end
 
@@ -152,18 +165,19 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id rvalue = [expr interpretInContext: currentContext];
 	[expr release];
 
-	LKInterpreterContext *context = [currentContext contextForSymbol: target->symbol];
+	LKInterpreterVariableContext context = [currentContext contextForSymbol: target->symbol];
 
-	switch ([context->symbolTable scopeOfSymbol: target->symbol])
+	switch (context.scope)
 	{
 		case LKSymbolScopeLocal:
-			[context setValue: rvalue
-			        forSymbol: target->symbol];
-			break;	
+		{
+			[context.context setValue: rvalue
+			                forSymbol: target->symbol];
+			break;
+		}
 		case LKSymbolScopeObject:
 		{
-			id selfObj = [context valueForSymbol: @"self"];
-			LKSetIvar(selfObj, target->symbol, rvalue);
+			LKSetIvar([context.context selfObject], target->symbol, rvalue);
 			break;
 		}
 		case LKSymbolScopeClass:
@@ -274,19 +288,22 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKDeclRef (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)currentContext
 {
-	LKInterpreterContext *context = [currentContext contextForSymbol: symbol];
-
-	switch ([context->symbolTable scopeOfSymbol: symbol])
+	LKInterpreterVariableContext context = [currentContext contextForSymbol: symbol];
+	switch (context.scope)
 	{
 		case LKSymbolScopeObject:
-			return LKGetIvar([context valueForSymbol: @"self"], symbol); 
+		{
+			return LKGetIvar([currentContext selfObject], symbol); 
+		}
 		case LKSymbolScopeLocal:
 		case LKSymbolScopeArgument:
-			return [context valueForSymbol: symbol];
+		{
+			return [context.context valueForSymbol: symbol];
+		}
 		case LKSymbolScopeBuiltin:
 			if ([symbol isEqualToString: @"self"] || [symbol isEqualToString: @"super"])
 			{
-				return [context valueForSymbol: @"self"];
+				return [context.context selfObject];
 			}
 			else if ([symbol isEqualToString: @"nil"] || [symbol isEqualToString: @"Nil"])
 			{
@@ -379,10 +396,16 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
-		[[arguments objectAtIndex: i] retain];
-		argv[i] = [(LKAST*)[arguments objectAtIndex: i] interpretInContext: context];
-		//FIXME: should be in @finally
-		[[arguments objectAtIndex: i] release];
+		LKAST *arg = [arguments objectAtIndex: i];
+		[arg retain];
+		@try
+		{
+			argv[i] = [arg interpretInContext: context];
+		}
+		@finally
+		{
+			[arg release];
+		}
 	}
 	return LKSendMessage(receiverClassName, receiver, selector, argc, argv);
 }
@@ -420,7 +443,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKMethod (LKInterpreter)
 - (id)executeInContext: (LKInterpreterContext*)context
 {
-	id result = [context valueForSymbol: @"self"];
+	id result = [context selfObject];
 	NS_DURING
 		FOREACH(statements, element, LKAST*)
 		{

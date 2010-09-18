@@ -93,7 +93,6 @@ static BigInt *BigIntNO;
 		{\
 			mpz_clear(b->v);\
 			ret.smallInt = (intValue << 1) | 1;\
-			NSLog(@"Returning small int for %d", intValue);\
 			return LKOBJECTPTR(ret);\
 		}\
 	}\

@@ -8,6 +8,22 @@ extern NSString *LKInterpreterException;
 
 LKMethod *LKASTForMethod(Class cls, NSString *selectorName);
 
+
+/**
+ * Structure for looking up the scope of a variable in interpreter contexts.
+ */
+typedef struct
+{
+	/**
+	 * The scope of this symbol, once external references have been resolved.
+	 */
+	LKSymbolScope scope;
+	/**
+	 * The context where this variable can be accessed.
+	 */
+	LKInterpreterContext *context;
+} LKInterpreterVariableContext;
+
 /**
  * Wrapper around a map table which contains the objects in a
  * Smalltalk stack frame.
@@ -25,7 +41,7 @@ LKMethod *LKASTForMethod(Class cls, NSString *selectorName);
 - (void) dealloc;
 - (void) setValue: (id)value forSymbol: (NSString*)symbol;
 - (id) valueForSymbol: (NSString*)symbol;
-- (LKInterpreterContext *) contextForSymbol: (NSString*)symbol;
+- (LKInterpreterVariableContext)contextForSymbol: (NSString*)symbol;
 @end
 
 

@@ -2,6 +2,7 @@
 #import "Runtime/BigInt.h"
 #import "Runtime/BoxedFloat.h"
 #import "Runtime/Symbol.h"
+#import "Runtime/LKObject.h"
 #import "LKInterpreterRuntime.h"
 #import "LKInterpreter.h"
 #import "LKTypeHelpers.h"
@@ -166,10 +167,17 @@ static id BoxValue(void *value, const char *typestr)
 		case 'v':
 			return nil;
 			// If it's already an object, we don't need to do anything
+		case '(': //FIXME: Hack
 		case '@':
 		case '#':
-		case '(': //FIXME: Hack
-			return *(id*)value;
+			{
+				LKObject v = LKOBJECT(*(id*)value);
+				if (LKObjectIsSmallInt(v))
+				{
+					return [BigInt bigIntWithLongLong: NSIntegerFromSmallInt(v.smallInt)];
+				}
+				return *(id*)value;
+			}
 			// Other types, just wrap them up in an NSValue
 		default:
 			NSLog(@"Warning: using +[NSValue valueWithBytes:objCType:]");
@@ -377,9 +385,9 @@ id LKGetIvar(id receiver, NSString *name)
 	Ivar ivar = class_getInstanceVariable([receiver class], [name UTF8String]);
 	if (NULL == ivar)
 	{
-                [NSException raise: LKInterpreterException
-                            format: @"Error getting ivar '%@' of object %@",
-		                    name, receiver]; 	
+		[NSException raise: LKInterpreterException
+                    format: @"Error getting ivar '%@' of object %@",
+		                    name, receiver];
 	}
 	void *ivarAddress = (char*)receiver +ivar_getOffset(ivar);
 	id result = BoxValue(ivarAddress, ivar_getTypeEncoding(ivar));
