@@ -249,7 +249,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		//FIXME: check the superclass type explicitly
 		const char *type = [(LKModule*)[self parent] typeForMethod: methodName];
 		Class destClass = isClassMethod ? object_getClass(cls) : cls;
-		class_replaceMethod(destClass, sel, LKInterpreterIMPForType([NSString stringWithUTF8String: type]), type);
+		class_replaceMethod(destClass, sel, LKInterpreterMakeIMP(destClass, type), type);
 		StoreASTForMethod(classname, isClassMethod, methodName, method);
 	}
 	return nil;
@@ -640,7 +640,7 @@ static uint8_t logBase2(uint8_t x)
 		//FIXME: If overriding, check the superclass type explicitly
 		const char *type = [(LKModule*)[self parent] typeForMethod: methodName];
 		Class destClass = isClassMethod ? object_getClass(cls) : cls;
-		class_addMethod(destClass, sel, LKInterpreterIMPForType([NSString stringWithUTF8String: type]), type);
+		class_addMethod(destClass, sel, LKInterpreterMakeIMP(destClass, type), type);
 		StoreASTForMethod(classname, isClassMethod, methodName, method);
 	}
 	

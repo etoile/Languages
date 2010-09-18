@@ -40,8 +40,7 @@ BOOL LKSetIvar(id receiver, NSString *name, id value);
  * finally interpret the AST node using
  * -[LKMethod executeWithReciever:arguments:count:].
  *
- * Note that the method IMPs returned by LKInterpreterIMPForType can never be
- * freed (because they might be cached), but only one is created per unique type
- * string, so it's not a memory leak.
+ * Note that the method IMPs returned by LKInterpreterMakeIMP can never be
+ * freed (because they might be cached).
  */
-IMP LKInterpreterIMPForType(NSString *typestr);
+IMP LKInterpreterMakeIMP(Class cls, const char *objctype);

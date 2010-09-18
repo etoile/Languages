@@ -15,8 +15,6 @@
 static id BoxValue(void *value, const char *typestr);
 static void UnboxValue(id value, void *dest, const char *objctype);
 
-static NSMutableDictionary *_InterpreterIMPs;
-
 ffi_type *_ffi_type_nspoint_elements[] = {
 	&ffi_type_float, &ffi_type_float, NULL
 };
@@ -40,6 +38,12 @@ ffi_type *_ffi_type_nsrange_elements[] = {
 #endif
 ffi_type ffi_type_nsrange = {
 	0, 0, FFI_TYPE_STRUCT, _ffi_type_nsrange_elements
+};
+
+struct trampoline
+{
+	Class cls;
+	const char *types;
 };
 
 static ffi_type *FFITypeForObjCType(const char *typestr)
@@ -417,11 +421,14 @@ BOOL LKSetIvar(id receiver, NSString *name, id value)
 static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret, 
                                        void **args, void *user_data)
 {
-	const char *objctype = (const char*)user_data;
+	struct trampoline *t = user_data;
+	Class cls = t->cls;
 	
 	id receiver = *((id*)args[0]);
 	SEL cmd = *((SEL*)args[1]);
-	LKMethod *methodASTNode = LKASTForMethod(object_getClass(receiver),
+	const char *objctype = t->types;
+
+	LKMethod *methodASTNode = LKASTForMethod(cls, 
 		[NSString stringWithUTF8String: sel_getName(cmd)]);
 	
 	id returnObject;
@@ -453,19 +460,12 @@ static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret,
 	UnboxValue(returnObject, ret, objctype);
 }
 
-IMP LKInterpreterIMPForType(NSString *typestr)
+IMP LKInterpreterMakeIMP(Class cls, const char *objctype)
 {
-	// FIXME: use a map table
-	if (nil == _InterpreterIMPs)
-	{
-		_InterpreterIMPs = [[NSMutableDictionary alloc] init];
-	}
-	if (nil != [_InterpreterIMPs objectForKey: typestr])
-	{
-		return (IMP)[[_InterpreterIMPs objectForKey: typestr] pointerValue];
-	}
-	
-	const char *objctype = [typestr UTF8String];
+	struct trampoline *t = malloc(sizeof(struct trampoline));
+	t->cls = cls;
+	t->types = strdup(objctype);
+
 	int nargs = LKCountObjCTypes(objctype);
 	ffi_type *ffi_ret_ty;
 	ffi_type **ffi_tys = malloc((nargs - 1) * sizeof(ffi_type*));
@@ -486,19 +486,17 @@ IMP LKInterpreterIMPForType(NSString *typestr)
 		            format: @"Error preparing closure signature"];
 	}
 	
-	void *user_data = strdup([typestr UTF8String]);
 	ffi_closure *closure_exec;
 	ffi_closure *closure_write = ffi_closure_alloc(sizeof(ffi_closure),
 	                                               (void*)&closure_exec);
+	
 	if (FFI_OK != ffi_prep_closure_loc(closure_write, cif, 
 	                                   LKInterpreterFFITrampoline, 
-	                                   user_data, closure_exec))
+	                                   t, closure_exec))
 	{
 		[NSException raise: LKInterpreterException
 		            format: @"Error preparing closure"];
 	}
 	
-	[_InterpreterIMPs setObject: [NSValue valueWithPointer: closure_exec]
-						 forKey: typestr];
 	return (IMP)closure_exec;
 }
