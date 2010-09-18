@@ -52,7 +52,7 @@ static struct objc_slot* objc_method_type_fixup(Class cls, SEL
 	return objc_get_slot(cls, selector);
 }
 
-static __attribute__((constructor)) void main(void)
+static __attribute__((constructor)) void load(void)
 {
 	_objc_selector_type_mismatch = objc_method_type_fixup;
 }
