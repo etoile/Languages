@@ -1,4 +1,4 @@
 Boxing:
-{width = 13.1; height = 50.5}
+{width = 13.100000; height = 50.500000}
 Unboxing:
 1

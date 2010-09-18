@@ -6,7 +6,10 @@ NSObject subclass: FilteredStringPrinter [
 	 withBlock: aBlock [
 	     "This is a setter, not an initialiser."
 	     myBlock := aBlock.
-	     ETTranscript show: 'The aBlock object is a '; show: myBlock className; cr.
+	     ETTranscript show: 'The aBlock object is a BlockClosure: '; 
+			show: (myBlock isKindOfClass: BlockClosure class) ; cr;
+			show: 'The aBlock object should not be a StackBlockClosure: '; 
+			show: (myBlock isKindOfClass: StackBlockClosure class) ; cr.
 	     myBlock value: 'the secret string in the withBlock: method'.
 		 ^self.
 	 ]
