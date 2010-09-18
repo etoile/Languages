@@ -3,6 +3,7 @@ Parser definition file.  This uses LEMON (from the SQLite project), a public
 domain parser generator, to produce an Objective-C parser.
 */
 %include {
+#include <assert.h>
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LanguageKit.h>
 #import "SmalltalkParser.h"
