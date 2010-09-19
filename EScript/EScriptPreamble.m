@@ -21,8 +21,9 @@
 	return AUTORELEASE([[self alloc] init]);
 }
 
-- (void) check
+- (BOOL)check
 {
+	return YES;
 }
 
 - (NSString*) description

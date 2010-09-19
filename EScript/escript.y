@@ -4,6 +4,7 @@ domain parser generator, to produce an Objective-C parser.
 */
 %include {
 #import <EtoileFoundation/EtoileFoundation.h>
+#include <assert.h>
 #import <LanguageKit/LanguageKit.h>
 #import "EScriptParser.h"
 #import "EScriptPreamble.h"
