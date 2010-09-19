@@ -27,6 +27,7 @@ protected:
 	SmallVector<DIVariable, 8> DebugArgs;
 	Value * RetVal;
 	BasicBlock * CleanupBB;
+	BasicBlock * CleanupEndBB;
 	BasicBlock * ExceptionBB;
 	BasicBlock * PromoteBB;
 	BasicBlock * RetBB;

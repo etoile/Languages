@@ -568,12 +568,50 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	{
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
-		retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false,
-				NULL, retObj, "retain", 0);
-		Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false, NULL, retObj,
-				"autorelease", NULL);
+		if (isLKObject(ReturnType))
+		{
+			// Note: We can't use MessageSend() here, beucase it will try to
+			// set the current BB as the unwind destination and things get
+			// horribly confused.  We simple assume retain and release won't
+			// throw for this case.  We also special-case the small int
+			// versions to do nothing.
+			Value *Int = CleanupBuilder.CreatePtrToInt(retObj, IntPtrTy);
+			Value *IsSmallInt = CleanupBuilder.CreateTrunc(Int,
+					Type::getInt1Ty(CGM->Context), "is_small_int");
+
+			// Basic blocks for messages to SmallInts and ObjC objects:
+			BasicBlock *continueBB = BasicBlock::Create(CGM->Context, "retained", CurrentFunction);
+			BasicBlock *retainBB = BasicBlock::Create(CGM->Context, "retain_return", CurrentFunction);
+
+			// Skip the message sends if this is a small int
+			CleanupBuilder.CreateCondBr(IsSmallInt, continueBB, retainBB);
+
+			CleanupBuilder.SetInsertPoint(retainBB);
+			Value *retained = Runtime->GenerateMessageSend(CleanupBuilder,
+					IdTy, false, NULL, retObj, "retain", NULL);
+			Runtime->GenerateMessageSend(CleanupBuilder,
+					Type::getVoidTy(CGM->Context), false, NULL, retObj,
+					"autorelease", NULL);
+			CleanupBuilder.CreateBr(continueBB);
+			CleanupBuilder.SetInsertPoint(continueBB);
+
+			PHINode *phi = CleanupBuilder.CreatePHI(retObj->getType(), "retained_return");
+			phi->reserveOperandSpace(2);
+			phi->addIncoming(retObj, CleanupBB);
+			phi->addIncoming(retained, retainBB);
+			retObj = phi;
+		}
+		else
+		{
+			retObj = Runtime->GenerateMessageSend(CleanupBuilder, IdTy, false,
+					NULL, retObj, "retain", NULL);
+			Runtime->GenerateMessageSend(CleanupBuilder,
+					Type::getVoidTy(CGM->Context), false, NULL, retObj,
+					"autorelease", NULL);
+		}
 		CleanupBuilder.CreateStore(retObj, RetVal);
 	}
+	CleanupEndBB = CleanupBuilder.GetInsertBlock();
 
 	PromoteBB = BasicBlock::Create(CGM->Context, "promote", CurrentFunction);
 	IRBuilder<> PromoteBuilder = IRBuilder<>(PromoteBB);
@@ -676,7 +714,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 void CodeGenLexicalScope::EndScope(void)
 {
-	IRBuilder<> CleanupBuilder = IRBuilder<>(CleanupBB);
+	IRBuilder<> CleanupBuilder = IRBuilder<>(CleanupEndBB);
 	if (containsBlocks)
 	{
 		CleanupBuilder.CreateBr(PromoteBB);
@@ -1021,6 +1059,12 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 		Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, old,
 			"autorelease", NULL);
 	}
+	else if (isLKObject(type))
+	{
+		box = MessageSend(&Builder, CurrentFunction, box, "retain", 0);
+		Value *old = Builder.CreateLoad(addr);
+		MessageSend(&Builder, CurrentFunction, old, "autorelease", 0);
+	}
 	Builder.CreateStore(box, addr, true);
 }
 
@@ -1089,12 +1133,9 @@ Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 		cVarName, Value *object)
 {
-	CGObjCRuntime *Runtime = CGM->getRuntime();
-	object = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, object,
-		"retain", NULL);
+	object = MessageSend(&Builder, CurrentFunction, object, "retain", 0);
 	Value *old = LoadClassVariable(className, cVarName);
-	Runtime->GenerateMessageSend(Builder, Type::getVoidTy(CGM->Context), false, NULL, old,
-		"release", NULL);
+	MessageSend(&Builder, CurrentFunction, old, "autorelease", 0);
 	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
 }
 

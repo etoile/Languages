@@ -81,6 +81,13 @@ MSG0(log)
 	NSLog(@"%lld", (long long) ((intptr_t)obj >>1));
 	return obj;
 }
+MSG0(retain)
+	return obj;
+}
+MSG0(autorelease)
+	return obj;
+}
+void SmallIntMsgrelease(void *obj) {}
 
 MSG1(ifTrue_)
 	if (val == 0)
