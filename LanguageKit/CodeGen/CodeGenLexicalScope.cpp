@@ -7,6 +7,16 @@
 
 extern const char *LKObjectEncoding;
 
+static bool isLKObject(const char *encoding)
+{
+	return strncmp(LKObjectEncoding, encoding, strlen(LKObjectEncoding)) == 0;
+}
+
+static bool isObject(const char *encoding)
+{
+	return (encoding[0] == '@') || (encoding[0] == '#') || isLKObject(encoding);
+}
+
 static Function *getSmallIntModuleFunction(CodeGenModule *CGM, string name)
 {
 	// If the function already exists, return it
@@ -51,7 +61,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 	// Untyped selectors return id
 	if (NULL == typestr || '\0' == *typestr) return V;
 	// Special case for LKObjects
-	if (strncmp(typestr, LKObjectEncoding, strlen(LKObjectEncoding)) == 0)
+	if (isLKObject(typestr))
 	{
 		return V;
 	}
@@ -186,7 +196,7 @@ Value *CodeGenLexicalScope::Unbox(IRBuilder<> *B,
                                   const char *Type)
 {
 	// Special case for LKObjects
-	if (strncmp(Type, LKObjectEncoding, strlen(LKObjectEncoding)) == 0)
+	if (isLKObject(Type))
 	{
 		return val;
 	}
@@ -514,7 +524,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			RetVal = Builder.CreateAlloca(RetTy, 0, "return_value");
 		}
 		// On id returns, default to returning self, otherwise default to 0.
-		if (ReturnType[0] == '@')
+		if (isObject(ReturnType))
 		{
 			Builder.CreateStore(LoadSelf(), RetVal);
 		}
@@ -554,7 +564,8 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// If we are returning a block that is currently on the stack, we need to
 	// promote it first.  For now, we -retain / -autorelease every object
 	// return.
-	if (RetTy != Type::getVoidTy(CGM->Context) && ReturnType[0] == '@')
+	RetTy->dump();
+	if (RetTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
 	{
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
@@ -960,7 +971,7 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
 	Value *object)
 {
 	// FIXME: Non-id loads
-	assert(*type == '@' || *type == '#');
+	assert(isLKObject(type));
 
 	Value *Offset = 
 		CGM->getRuntime()->OffsetOfIvar(Builder, className, ivarName, offset);
