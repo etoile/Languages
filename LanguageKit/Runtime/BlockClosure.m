@@ -231,7 +231,7 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval);
 		[NSException raise:@"InvalidBlockValueCall" format:@"Block expects %d arguments", args];
 	}
 	id last = nil;
-	for (id ret = ret = function(self, _cmd) ;
+	for (id ret = function(self, _cmd) ;
 		(uintptr_t)ret != 1 && [ret boolValue] ;
 		ret = function(self, _cmd)) 
 	{

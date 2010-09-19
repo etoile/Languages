@@ -171,6 +171,8 @@ _Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
 	{
 		size_t offset = landingPadForInvoke(context);
 		_Unwind_SetIP(context, _Unwind_GetRegionStart(context) + offset);
+		_Unwind_SetGR(context, __builtin_eh_return_data_regno(0), 
+			(unsigned long)exceptionObject);
 		return _URC_INSTALL_CONTEXT;
 	}
 	return _URC_CONTINUE_UNWIND;
