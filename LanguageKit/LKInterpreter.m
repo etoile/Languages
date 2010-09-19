@@ -451,7 +451,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			@try
 			{
 				[element retain];
-				result = [element interpretInContext: context];
+				[element interpretInContext: context];
 			}
 			@finally 
 			{
