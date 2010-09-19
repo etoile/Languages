@@ -564,7 +564,6 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// If we are returning a block that is currently on the stack, we need to
 	// promote it first.  For now, we -retain / -autorelease every object
 	// return.
-	RetTy->dump();
 	if (RetTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
 	{
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
