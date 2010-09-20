@@ -6,7 +6,9 @@
 static id LKBlockFunction(id receiver, SEL cmd, ...)
 {
 	LKBlockExpr *blockAST = [receiver blockAST];
-	LKInterpreterContext *context = [receiver interpreterContext];
+	LKInterpreterContext *context = [[LKInterpreterContext alloc]
+	            initWithSymbolTable: [blockAST symbols]
+	                         parent: [receiver blockContext]];
 	int count = [receiver argumentCount];
 	id params[count];
 	
@@ -18,9 +20,16 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 	}
 	va_end(arglist);
 	
-	return [blockAST executeWithArguments: params
-	                                count: count
-	                            inContext: context];
+	@try
+	{
+		return [blockAST executeWithArguments: params
+		                                count: count
+		                            inContext: context];
+	}
+	@finally
+	{
+		[context release];
+	}
 }
 
 
@@ -33,9 +42,6 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 	SUPERINIT;
 	blockAST = [ast retain];
 	
-	interpreterContext = [[LKInterpreterContext alloc]
-	            initWithSymbolTable: [ast symbols]
-	                         parent: parentContext];
 	context = (BlockContext*)parentContext;
 	args = [argNames count];
 	function = LKBlockFunction;
@@ -44,16 +50,11 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 
 - (void)dealloc
 {
-	[interpreterContext release];
 	[blockAST release];
 	[super dealloc];
 }
 - (LKBlockExpr*)blockAST
 {
 	return blockAST;
-}
-- (LKInterpreterContext*)interpreterContext
-{
-	return interpreterContext;
 }
 @end

@@ -16,6 +16,7 @@ extern NSString *LKSmalltalkBlockNonLocalReturnException;
 	/** The context for this block. */
 	BlockContext *context;
 }
+- (id)blockContext;
 - (int32_t) argumentCount;
 - (id) value;
 - (id) value:(id)a1;

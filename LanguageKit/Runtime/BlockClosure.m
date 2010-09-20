@@ -255,4 +255,8 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval);
 	[context release];
 	[super dealloc];
 }
+- (id)blockContext
+{
+	return context;
+}
 @end
