@@ -25,7 +25,7 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 
 
 
-@implementation LKInterpretedBlockClosure : BlockClosure
+@implementation LKInterpretedBlockClosure
 - (id)initWithAST: (LKBlockExpr*)ast
     argumentNames: (NSArray*)argNames
     parentContext: (LKInterpreterContext*)parentContext
@@ -36,7 +36,7 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 	interpreterContext = [[LKInterpreterContext alloc]
 	            initWithSymbolTable: [ast symbols]
 	                         parent: parentContext];
-	//[interpreterContext setValue: self forSymbol: @"self"];
+	context = (BlockContext*)parentContext;
 	args = [argNames count];
 	function = LKBlockFunction;
 	return self;

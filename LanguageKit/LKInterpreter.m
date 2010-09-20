@@ -397,7 +397,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
 		LKAST *arg = [arguments objectAtIndex: i];
-		[arg retain];
+		arg = [arg retain];
 		@try
 		{
 			argv[i] = [arg interpretInContext: context];
