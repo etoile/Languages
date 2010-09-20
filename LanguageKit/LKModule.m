@@ -13,11 +13,12 @@ static NSMutableDictionary *SelectorConflicts = nil;
 NSString *LKCompilerDidCompileNewClassesNotification = 
 	@"LKCompilerDidCompileNewClassesNotification";
 
+SEL sel_get_any_typed_uid(const char *name);
 
 #if defined(GNU_RUNTIME)
 static const char *TypesForMethodName(NSString *methodName)
 {
-	return sel_get_type(sel_get_any_typed_uid([methodName UTF8String]));
+	return sel_getType_np(sel_get_any_typed_uid([methodName UTF8String]));
 }
 #else
 static const char *TypesForMethodName(NSString *methodName)
