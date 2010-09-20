@@ -15,9 +15,12 @@ NSString *LKSmalltalkBlockNonLocalReturnException =
 }
 - (BOOL)setValue: (id)aValue forSymbol: (NSString*)aSymbol
 {
+	// Symbol table doesn't contain the first bound var, which is always the
+	// self symbol.
 	if ([aSymbol isEqualToString: @"self"])
 	{
 		objects[0] = aValue;
+		return YES;
 	}
 
 	if (NULL == symbolTable) { return NO; }
