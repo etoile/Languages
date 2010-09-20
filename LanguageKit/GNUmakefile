@@ -80,6 +80,8 @@ ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += ObjCConstants.plist
 
+CC = clang
+
 include $(GNUSTEP_MAKEFILES)/aggregate.make
 -include ../../etoile.make
 -include ../../documentation.make
