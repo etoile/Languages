@@ -644,6 +644,46 @@ static uint8_t logBase2(uint8_t x)
 	return cls;
 }
 @end
+@implementation LKVariableDecl (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)context
+{
+	[context setValue: nil forSymbol: (NSString*)variableName];
+	return nil;
+}
+@end
+@implementation LKLoop (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)context
+{
+	// FIXME: @try for LKBreak support.
+	BOOL cond = YES;
+	
+	for (LKAST *statement in initStatements)
+	{
+		[statement interpretInContext: context];
+	}
+	while (cond)
+	{
+		if (nil != preCondition)
+		{
+			cond = [[preCondition interpretInContext: context] boolValue];
+			if (!cond) { break; }
+		}
+		for (LKAST *statement in statements)
+		{
+			[statement interpretInContext: context];
+		}
+		for (LKAST *statement in updateStatements)
+		{
+			[statement interpretInContext: context];
+		}
+		if (nil != postCondition)
+		{
+			cond = [[postCondition interpretInContext: context] boolValue];
+		}
+	}
+	return nil;
+}
+@end
 
 
 @interface LKSymbolRef (LKInterpreter)
@@ -651,6 +691,6 @@ static uint8_t logBase2(uint8_t x)
 @implementation LKSymbolRef (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	return [Symbol SymbolForString: symbol];
+	return [[Symbol SymbolForString: symbol] autorelease];
 }
 @end
