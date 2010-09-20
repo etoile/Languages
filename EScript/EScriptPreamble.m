@@ -1,5 +1,7 @@
 #import "EScriptPreamble.h"
 #import <LanguageKit/LKModule.h>
+#import <LanguageKit/LKInterpreter.h>
+#import "EScriptObject.h"
 
 #define MAKE_PROTOTYPE(name, class)\
 	res = [aGenerator loadClassNamed:@#class];\
@@ -42,5 +44,17 @@
 	MAKE_PROTOTYPE(Array,  NSMutableArray)
 
 	return NULL;
+}
+- (id)interpretInContext: (LKInterpreterContext*)context
+{
+	id o = [EScriptObject new];
+	[o becomePrototype];
+	[context setValue: o
+	        forSymbol: @"Object"];
+	o = [NSMutableArray new];
+	[o becomePrototype];
+	[context setValue: o
+	        forSymbol: @"Array"];
+	return nil;
 }
 @end

@@ -29,6 +29,7 @@ file ::= module(M) script(S).
 	// NSLog(@"%@", S);
 	[M addClass:S];
 	[p setAST:M];
+	//NSLog(@"Parsed AST: %@", M);
 }
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
@@ -60,12 +61,17 @@ script(S) ::= statement_list(L).
 	id globals = [NSArray arrayWithObjects:@"Object", @"Array", nil];
 
 	[L insertObject:[EScriptPreamble preamble] atIndex:0];
+	// Ugly hack.  The +load method is being given a BOOL return type because
+	// someone did something stupid somewhere, and we're crashing in the auto-unboxing.
+	//[L addObject: [LKReturn returnWithExpr: [LKDeclRef referenceWithSymbol:@"nil"]]];
 
-	id m = [LKClassMethod methodWithSignature:[LKMessageSend messageWithSelectorName:@"load"]
+	//id m = [LKClassMethod methodWithSignature:[LKMessageSend messageWithSelectorName:@"load"]
+	id m = [LKInstanceMethod methodWithSignature: [LKMessageSend messageWithSelectorName:@"run"]
 	                                   locals:nil
 	                               statements:L];
 
-	S = [LKSubclass subclassWithName:[[ETUUID UUID] stringValue]
+	//S = [LKSubclass subclassWithName:[[ETUUID UUID] stringValue]
+	S = [LKSubclass subclassWithName: @"SmalltalkTool"
 	                 superclassNamed:@"NSObject"
 	                           cvars:globals
 	                           ivars:nil
@@ -355,17 +361,14 @@ expression(E) ::= statement_expression(S).
 }
 expression(E) ::= NEW WORD(V) LPAREN RPAREN.
 {
-	id m = [LKMessageSend messageWithSelectorName:@"clone"];
-	[m setTarget:[LKDeclRef referenceWithSymbol:V]];
 	E = [LKMessageSend messageWithSelectorName:@"construct"];
-	[E setTarget:m];
+	[E setTarget: [LKDeclRef referenceWithSymbol:V]];
 }
 expression(E) ::= NEW WORD(V) LPAREN expressions(A) RPAREN.
 {
-	id m = [LKMessageSend messageWithSelectorName:@"clone"];
-	[m setTarget:[LKDeclRef referenceWithSymbol:V]];
 	E = [LKMessageSend messageWithSelectorName:@"construct:"];
-	[E setTarget:m];
+	[E setTarget: [LKDeclRef referenceWithSymbol:V]];
+	// FIXME: pop these in an array.
 	FOREACH(A, arg, LKAST*)
 	{
 		[E addArgument:arg];
