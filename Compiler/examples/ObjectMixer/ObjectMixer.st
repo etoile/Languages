@@ -149,7 +149,6 @@ NSObject subclass: SmalltalkTool
 		objectMixerItem setLayout: (ETColumnLayout layout).
 		objectMixerItem setWidth: 700.
 		objectMixerItem setHeight: 600.
-		objectMixerItem supervisorView setEnablesHitTest: 1.
 
 		objectMixerItem addItem: browserItem.
 		objectMixerItem addItem: codeEditorItem.
