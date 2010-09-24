@@ -22,6 +22,10 @@
 	[super setParent:aParent];
 	[symbols addSymbol:variableName];
 }
+- (NSString*)name
+{
+	return (NSString*)variableName;
+}
 - (BOOL) check { return YES; }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {

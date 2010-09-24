@@ -89,11 +89,11 @@ typedef	enum
 /**
  * Returns the local variables declared in this scope.
  */
-- (NSArray*) locals;
+- (NSMutableArray*) locals;
 /**
  * returns the arguments declared in this scope.
  */
-- (NSArray*) args;
+- (NSMutableArray*) args;
 @end
 
 /**

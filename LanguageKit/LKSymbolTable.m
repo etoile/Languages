@@ -203,11 +203,11 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	[localVariables addObject:aSymbol];
 }
 
-- (NSArray*) locals
+- (NSMutableArray*)locals
 {
 	return localVariables;
 }
-- (NSArray*) args
+- (NSMutableArray*) args
 {
 	return arguments;
 }

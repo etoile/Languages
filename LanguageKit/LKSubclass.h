@@ -11,9 +11,9 @@
   /** Array of methods defined in this class. */
   NSMutableArray * methods;
   /** Array of class variables defined for this class. */
-  NSArray * cvars;
+  NSMutableArray * cvars;
   /** Array of instance variables defined for this class. */
-  NSArray * ivars;
+  NSMutableArray * ivars;
 }
 /**
  * Return a new Subclass with the specified name, superclass and list of
@@ -37,13 +37,21 @@
 /**
  * Returns the methods
  */
-- (NSArray*) methods;
+- (NSMutableArray*)methods;
 /**
  * Returns the class variables
  */
-- (NSArray*) cvars;
+- (NSMutableArray*)cvars;
 /**
  * Returns the instance variables
  */
-- (NSArray*) ivars;
+- (NSMutableArray*)ivars;
+/**
+ * Adds an instance variable to this class definition. 
+ */
+- (void)addInstanceVariable: (NSString*)aName;
+/**
+ * Adds a class variable to this class definition. 
+ */
+- (void)addClassVariable: (NSString*)aName;
 @end

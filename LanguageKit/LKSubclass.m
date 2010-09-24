@@ -13,9 +13,9 @@
 	SUPERINIT;
 	ASSIGN(classname, aName);
 	ASSIGN(superclass, aClass);
-	ASSIGN(ivars, anIvarList);
-	ASSIGN(cvars, aCvarList);
-	methods = [aMethodList mutableCopy];
+	ivars = anIvarList != nil ? [anIvarList mutableCopy] : [NSMutableArray new];
+	cvars = aCvarList != nil ? [aCvarList mutableCopy] : [NSMutableArray new];
+	methods = aMethodList != nil ? [aMethodList mutableCopy] : [NSMutableArray new];
 	return self;
 }
 + (id) subclassWithName:(NSString*)aName
@@ -193,17 +193,27 @@
 {
 	return superclass;
 }
-- (NSArray*) methods
+- (NSMutableArray*)methods
 {
 	return methods;
 }
-- (NSArray*) cvars
+- (NSMutableArray*)cvars
 {
 	return cvars;
 }
-- (NSArray*) ivars
+- (NSMutableArray*)ivars
 {
 	return ivars;
+}
+- (void)addInstanceVariable: (NSString*)aName
+{
+	[ivars addObject: aName];
+	[symbols addSymbol: aName];
+}
+- (void)addClassVariable: (NSString*)aName
+{
+	[cvars addObject: aName];
+	[(LKObjectSymbolTable*)symbols addClassVariable: aName];
 }
 - (void)dealloc
 {

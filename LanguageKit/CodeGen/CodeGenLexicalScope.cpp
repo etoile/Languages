@@ -329,12 +329,15 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		++AI;
 	}
 	ScopeSelf = AI;
+	const Type *Int1Ty = Type::getInt1Ty(CGM->Context);
 	// Create the skeleton
 	BasicBlock * EntryBB = llvm::BasicBlock::Create(CGM->Context, "entry", CurrentFunction);
 	Builder.SetInsertPoint(EntryBB);
 	// Flag indicating if we are in an exception handler.  Used for branching
 	// later - should be removed by mem2reg and subsequent passes.
-	Value *inException = Builder.CreateAlloca(Type::getInt1Ty(CGM->Context), 0, "inException");
+	Value *inException = Builder.CreateAlloca(Int1Ty, 0, "inException");
+	Value *is_catch = 
+		Builder.CreateAlloca(Int1Ty, 0, "is_catch");
 	Value *exceptionPtr = 
 		Builder.CreateAlloca(Int8PtrTy, 0, "exception_pointer");
 
@@ -654,11 +657,14 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			"__LanguageKitEHPersonalityRoutine", Type::getVoidTy(CGM->Context), NULL),
 			Int8PtrTy);
 
-	ExceptionBuilder.CreateCall3(
+	Value *eh_selector = ExceptionBuilder.CreateCall4(
 		llvm::Intrinsic::getDeclaration(TheModule,
 			llvm::Intrinsic::eh_selector, 0, 0),
-		exception, ehPersonality, ConstantPointerNull::get(Int8PtrTy));
+		exception, ehPersonality, 
+		ConstantExpr::getPointerCast(ConstantInt::get(IntPtrTy, 1), Int8PtrTy),
+		ConstantPointerNull::get(Int8PtrTy));
 
+	ExceptionBuilder.CreateStore(ExceptionBuilder.CreateTrunc(eh_selector, Int1Ty), is_catch);
 	ExceptionBuilder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 1), inException);
 	ExceptionBuilder.CreateBr(CleanupBB);
 	ExceptionBuilder.ClearInsertionPoint();
@@ -674,6 +680,15 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	PromoteBuilder.CreateBr(RetBB);
 	ExceptionBuilder.SetInsertPoint(EHBlock);
 
+	BasicBlock *CatchBlock = BasicBlock::Create(CGM->Context,
+			"non_local_return", CurrentFunction);
+	BasicBlock *rethrowBB = BasicBlock::Create(CGM->Context, "rethrow", CurrentFunction);
+	// If we've caught a non-local return, then we want to test if it's meant
+	// to land here, otherwise we continue unwinding.
+	ExceptionBuilder.CreateCondBr(ExceptionBuilder.CreateLoad(is_catch),
+			CatchBlock, rethrowBB);
+
+	ExceptionBuilder.SetInsertPoint(CatchBlock);
 	// This function will rethrow if the frames do not match.  Otherwise it will
 	// insert the correct 
 	Value *RetPtr = RetVal;
@@ -698,14 +713,13 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		ExceptionBuilder.CreateLoad(exceptionPtr),
 	   	RetPtr);
 	isRet = ExceptionBuilder.CreateTrunc(isRet, Type::getInt1Ty(CGM->Context));
-	BasicBlock *rethrowBB = BasicBlock::Create(CGM->Context, "rethrow", CurrentFunction);
 	ExceptionBuilder.CreateCondBr(isRet, realRetBB, rethrowBB);
 
 	// Rethrow the exception
 	ExceptionBuilder.SetInsertPoint(rethrowBB);
 	Function *rethrowFunction = cast<Function>(
-		TheModule->getOrInsertFunction("_Unwind_RaiseException", Type::getVoidTy(CGM->Context), PtrTy,
-			NULL));
+		TheModule->getOrInsertFunction("_Unwind_Resume_or_Rethrow",
+			Type::getVoidTy(CGM->Context), PtrTy, NULL));
 	ExceptionBuilder.CreateCall(rethrowFunction,
 			ExceptionBuilder.CreateLoad(exceptionPtr));
 	ExceptionBuilder.CreateUnreachable();

@@ -2,57 +2,15 @@
 #import <Foundation/NSString.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "dwarf_eh.h"
 
-/**
- * Typedef to allow prototypes from EH documentation to work unmodified
- */
-typedef uint64_t uint64;
-
-/**
- * Standard exception handling definitions which don't seem to be in a header.
- */
-typedef enum {
-	_URC_NO_REASON = 0,
-	_URC_FOREIGN_EXCEPTION_CAUGHT = 1,
-	_URC_FATAL_PHASE2_ERROR = 2,
-	_URC_FATAL_PHASE1_ERROR = 3,
-	_URC_NORMAL_STOP = 4,
-	_URC_END_OF_STACK = 5,
-	_URC_HANDLER_FOUND = 6,
-	_URC_INSTALL_CONTEXT = 7,
-	_URC_CONTINUE_UNWIND = 8
-} _Unwind_Reason_Code;
-
-typedef void (*_Unwind_Exception_Cleanup_Fn)
-	(_Unwind_Reason_Code reason,
-			  void *exc);
-
-struct _Unwind_Exception {
-	uint64			 exception_class;
-	_Unwind_Exception_Cleanup_Fn exception_cleanup;
-	uint64			 private_1;
-	uint64			 private_2;
-};
-
-_Unwind_Reason_Code _Unwind_RaiseException
-	  ( struct _Unwind_Exception *exception_object );
-
-void _Unwind_Resume (struct _Unwind_Exception *exception_object);
-
-struct _Unwind_Context;
-uintptr_t _Unwind_GetIP(struct _Unwind_Context *context);
-void _Unwind_SetIP(struct _Unwind_Context *context, uintptr_t);
-uintptr_t _Unwind_GetLanguageSpecificData(struct _Unwind_Context *context);
-uintptr_t _Unwind_GetRegionStart(struct _Unwind_Context *context);
-
-typedef int _Unwind_Action;
-static const _Unwind_Action _UA_SEARCH_PHASE = 1;
-static const _Unwind_Action _UA_CLEANUP_PHASE = 2;
-static const _Unwind_Action _UA_HANDLER_FRAME = 4;
-static const _Unwind_Action _UA_FORCE_UNWIND = 8;
-
+#define D(chr, byte) ((((uint64_t)chr)<<(64 - (8*byte))))
+static const uint64_t LKEXCEPTION_TYPE = D('E',1) + D('T',2) + D('O',3) +
+D('I',4) + D('L',5) + D('E',6) + D('L',7) + D('K',8);
+#undef D
 
 /**
  * Thread-local LanguageKit exception object.  Could be allocated with
@@ -68,45 +26,6 @@ typedef struct
 	void *retval;
 } LKException;
 
-/** 
- * Read an unsigned, little-endian, base-128, DWARF value.  Updates *data to
- * point to the end of the value.
- */
-static size_t read_uleb128(unsigned char** data)
-{
-	size_t uleb = 0;
-	int bit = 0;
-	unsigned char digit = 0;
-	// We have to read at least one octet, and keep reading until we get to one
-	// with the high bit unset
-	do
-	{
-		// This check is a bit too strict - we should also check the highest
-		// bit of the digit.
-		assert(bit < sizeof(size_t) * 8);
-		// Get the base 128 digit 
-		digit = (**data) & 0x7f;
-		// Add it to the current value
-		uleb += digit << bit;
-		// Increase the shift value
-		bit += 7;
-		// Proceed to the next octet
-		(*data)++;
-	} while ((*(*data - 1)) != digit);
-
-	return uleb;
-}
-
-/**
- * Read a long DWARF value.
- */
-static size_t read_long(unsigned char **data)
-{
-	size_t value = *(size_t*)(*data);
-	*data += sizeof(size_t);
-	return value;
-}
-
 /**
  * Try to read the expected value and fail loudly if you can't.
  */
@@ -121,32 +40,42 @@ static inline void expect(unsigned char **data, unsigned char value)
 }
 
 /**
- * Look up the landing pad that corresponds to the current invoke.
+ * Returns YES if this is an LK catch handler, NO if it is a cleanup.
  */
-static size_t landingPadForInvoke(struct _Unwind_Context *context)
+static BOOL check_action_record(struct _Unwind_Context *context,
+                                struct dwarf_eh_lsda *lsda,
+                                dw_eh_ptr_t action_record,
+                                unsigned long *selector)
 {
-	size_t invokesite = _Unwind_GetIP(context) - _Unwind_GetRegionStart(context);
-	unsigned char *tables = 
-		(unsigned char*)_Unwind_GetLanguageSpecificData(context);
-	expect(&tables, 0xff);
-	expect(&tables, 0x00);
-	read_uleb128(&tables);
-
-	if (*tables != 0x03) return -1;
-	expect(&tables, 0x03);
-	unsigned char *actions = tables + read_uleb128(&tables);
-	while(tables <= actions)
+	//if (!action_record) { return handler_cleanup; }
+	while (action_record)
 	{
-		size_t callsite = read_long(&tables);
-		size_t callsiteSize= read_long(&tables);
-		size_t action = read_long(&tables);
-		if (invokesite >= callsite && invokesite <= (callsite + callsiteSize))
+		int filter = read_sleb128(&action_record);
+		dw_eh_ptr_t action_record_offset_base = action_record;
+		int displacement = read_sleb128(&action_record);
+		*selector = filter;
+		if (filter > 0)
 		{
-			return action;
+			return YES;
 		}
-		read_uleb128(&tables);
+		else if (filter == 0)
+		{
+			// Cleanup?  I think the GNU ABI doesn't actually use this, but it
+			// would be a good way of indicating a non-id catchall...
+			return NO;
+		}
+		else
+		{
+			fprintf(stderr, "Filter value: %d\n"
+					"Your compiler and I disagree on the correct layout of EH data.\n", 
+					filter);
+			abort();
+		}
+		*selector = 0;
+		action_record = displacement ? 
+			action_record_offset_base + displacement : 0;
 	}
-	return 0;
+	return NO;
 }
 
 _Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
@@ -156,26 +85,62 @@ _Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
 			struct _Unwind_Exception *exceptionObject,
 			struct _Unwind_Context *context)
 {
-	if ((actions & _UA_SEARCH_PHASE))
+	// This personality function is for version 1 of the ABI.  If you use it
+	// with a future version of the ABI, it won't know what to do, so it
+	// reports a fatal error and give up before it breaks anything.
+	if (1 != version)
 	{
-		// Try to find a landing pad in this function
-		if (landingPadForInvoke(context) != 0)
+		return _URC_FATAL_PHASE1_ERROR;
+	}
+	// Check if this is a foreign exception.  We only catch LK exceptions, but
+	// we run cleanups anyway.
+	BOOL foreignException = exceptionClass != LKEXCEPTION_TYPE;
+
+
+	unsigned char *lsda_addr = (void*)_Unwind_GetLanguageSpecificData(context);
+
+	// No LSDA implies no landing pads - try the next frame
+	if (0 == lsda_addr) { return _URC_CONTINUE_UNWIND; }
+
+	// These two variables define how the exception will be handled.
+	struct dwarf_eh_action action = {0};
+	unsigned long selector = 0;
+	
+	struct dwarf_eh_lsda lsda = parse_lsda(context, lsda_addr);
+	action = dwarf_eh_find_callsite(context, &lsda);
+	BOOL handler = check_action_record(context, &lsda, action.action_record,
+			&selector);
+	if (actions & _UA_SEARCH_PHASE)
+	{
+		// If there's no action record, we've only found a cleanup, so keep
+		// searching for something real
+		if (handler && !foreignException)
 		{
 			return _URC_HANDLER_FOUND;
 		}
 		return _URC_CONTINUE_UNWIND;
 	}
-	// Always install the handler - we check if it's a valid LanguageKit
-	// exception elsewhere.
-	if (actions & _UA_HANDLER_FRAME) 
+
+	void *object = nil;
+	if (!(actions & _UA_HANDLER_FRAME))
 	{
-		size_t offset = landingPadForInvoke(context);
-		_Unwind_SetIP(context, _Unwind_GetRegionStart(context) + offset);
-		_Unwind_SetGR(context, __builtin_eh_return_data_regno(0), 
-			(unsigned long)exceptionObject);
-		return _URC_INSTALL_CONTEXT;
+		// If there's no cleanup here, continue unwinding.
+		if (0 == action.landing_pad)
+		{
+			return _URC_CONTINUE_UNWIND;
+		}
+		selector = 0;
 	}
-	return _URC_CONTINUE_UNWIND;
+	else
+	{
+		selector = !foreignException;
+	}
+
+	_Unwind_SetIP(context, (unsigned long)action.landing_pad);
+	_Unwind_SetGR(context, __builtin_eh_return_data_regno(0), exceptionObject);
+	_Unwind_SetGR(context, __builtin_eh_return_data_regno(1), selector);
+
+	return _URC_INSTALL_CONTEXT;
 }
 
 static void LKCleanupException(_Unwind_Reason_Code reason, void *exc)
@@ -196,7 +161,7 @@ static void LKCleanupException(_Unwind_Reason_Code reason, void *exc)
 void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
 {
 	LKException *exception = calloc(1, sizeof(LKException));
-	exception->exception.exception_class = *(uint64*)"ETOILEST";
+	exception->exception.exception_class = LKEXCEPTION_TYPE;
 	exception->context = context;
 	exception->exception.exception_cleanup = LKCleanupException;
 	// TODO: We could probably have the return value space allocated in the
@@ -219,28 +184,27 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
  * exception to the address pointed to by retval.
  */
 char __LanguageKitTestNonLocalReturn(void *context,
-                                   struct _Unwind_Exception *exception,
-								   void **retval)
+                                    struct _Unwind_Exception *exception,
+                                    void **retval)
 {
-	// Test if this is a smalltalk exception at all
-	if (NULL != exception && exception->exception_class == *(uint64*)"ETOILEST")
+	// This must only be called with a LanguageKit exception
+	assert(NULL != exception && exception->exception_class == LKEXCEPTION_TYPE);
+
+	LKException *LanguageKitException = (LKException*)exception;
+	// Test if this frame is the correct one.
+	if (LanguageKitException->context == context)
 	{
-		LKException *LanguageKitException = (LKException*)exception;
-		// Test if this frame is the correct one.
-		if (LanguageKitException->context == context)
-		{
-			*retval = LanguageKitException->retval;
-			return 1;
-		}
-		// Rethrow it if it isn't.  Note that you need to make a copy because
-		// libgcc contains some braindead optimisations that crash if you throw
-		// an exception you've just caught.
-		LKException *rethrow = calloc(1, sizeof(LKException));
-		memcpy(rethrow, exception, sizeof(LKException));
-		_Unwind_RaiseException(&rethrow->exception);
+		*retval = LanguageKitException->retval;
+		free(exception);
+		return 1;
 	}
-	// This does not return, it jumps back to the unwind library, which jumps
-	// to the LanguageKit personality function, and proceeds to unwind the stack.
-	_Unwind_Resume(exception);
-	return 0;
+	// Rethrow it if it isn't.  Note that you need to make a copy because
+	// libgcc contains some braindead optimisations that crash if you throw
+	// an exception you've just caught.
+	LKException *rethrow = calloc(1, sizeof(LKException));
+	memcpy(rethrow, exception, sizeof(LKException));
+	free(exception);
+	_Unwind_Resume_or_Rethrow(&rethrow->exception);
+	// Should not be reached:
+	abort();
 }

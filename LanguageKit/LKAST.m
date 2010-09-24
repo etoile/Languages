@@ -116,16 +116,25 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
         withVisitor:(id<LKASTVisitor>)aVisitor
 {
 	unsigned int count = [anArray count];
+	NSMutableIndexSet *remove = [NSMutableIndexSet new];
 	for (int i=0 ; i<count ; i++)
 	{
 		LKAST *old = [anArray objectAtIndex:i];
 		LKAST *new = [aVisitor visitASTNode:old];
 		if (new != old)
 		{
-			[anArray replaceObjectAtIndex:i withObject:new];
+			if (nil == new)
+			{
+				[remove addIndex: i];
+			}
+			else
+			{
+				[anArray replaceObjectAtIndex:i withObject:new];
+			}
 		}
 		[new visitWithVisitor:aVisitor];
 	}
+	[anArray removeObjectsAtIndexes: remove];
 }
 - (void)dealloc
 {
