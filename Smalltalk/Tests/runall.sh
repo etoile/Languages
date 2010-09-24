@@ -32,4 +32,5 @@ if [ 1 -eq $QUIET ] ; then
 	echo
 	echo `expr $PASSES + $FAILS` tests run.  $PASSES passed, $FAILS failed.
 fi
+rm -f */*.core
 exit $FAILS
