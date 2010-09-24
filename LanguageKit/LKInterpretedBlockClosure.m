@@ -42,7 +42,7 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 	SUPERINIT;
 	blockAST = [ast retain];
 	
-	context = (BlockContext*)parentContext;
+	ASSIGN(context, (BlockContext*)parentContext);
 	args = [argNames count];
 	function = LKBlockFunction;
 	return self;
