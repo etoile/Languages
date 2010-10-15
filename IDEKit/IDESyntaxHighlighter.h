@@ -47,17 +47,17 @@
  */
 - (void)reparse;
 /**
- * Perform lexical highlighting on a specified source range.
- */
-//- (void)highlightRange: (CXSourceRange)r syntax: (BOOL)highightSyntax;
-/**
  * Performs lexical highlighting on the entire file.
  */
 - (void)lexicalHighlightFile;
 /**
- * Perform syntax highlighting on the file.
+ * Perform syntax highlighting on the whole file.
  */
 - (void)syntaxHighlightFile;
+/**
+ * Performs syntax highlighting on the specified range.
+ */
+- (void)syntaxHighlightRange: (NSRange)r;
 /**
  * Convert the semantic markup into presentation markup in the attributed
  * string.

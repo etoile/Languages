@@ -2,6 +2,9 @@
 #import <Cocoa/Cocoa.h>
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "IDETextTypes.h"
+#include <time.h>
+
+#define NSLog(...)
 
 /**
  * Converts a clang source range into an NSRange within its enclosing file.
@@ -18,6 +21,12 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 	return r;
 }
 
+@interface IDESyntaxHighlighter ()
+/**
+ * Perform lexical highlighting on a specified source range.
+ */
+- (void)highlightRange: (CXSourceRange)r syntax: (BOOL)highightSyntax;
+@end
 
 @implementation IDESyntaxHighlighter
 - (id)init
@@ -63,8 +72,11 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 	const char *fn = [fileName UTF8String];
 	struct CXUnsavedFile unsaved = { 
 		fn, [[source string] UTF8String], [source length] };
+	//NSLog(@"File is %d chars long", [source length]);
+	file = NULL;
 	if (NULL == translationUnit)
 	{
+		//NSLog(@"Creating translation unit from file");
 		unsigned argc = [args count];
 		const char *argv[argc];
 		int i=0;
@@ -73,21 +85,38 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 			argv[i++] = [arg UTF8String];
 		}
 		translationUnit = 
-			//clang_createTranslationUnitFromSourceFile(index, fn, argc, argv, 1, &unsaved);
 			clang_createTranslationUnitFromSourceFile(index, fn, argc, argv, 1, &unsaved);
+			//clang_parseTranslationUnit(index, fn, argv, argc, &unsaved, 1, CXTranslationUnit_PrecompiledPreamble | CXTranslationUnit_CacheCompletionResults | CXTranslationUnit_DetailedPreprocessingRecord);
 		file = clang_getFile(translationUnit, fn);
+		/*
 		[self syntaxHighlightFile];
 		[self convertSemanticToPresentationMarkup];
+		*/
 	}
 	else
 	{
-		clang_reparseTranslationUnit(translationUnit, 1, &unsaved, 0);
+		clock_t c1 = clock();
+		//NSLog(@"Reparsing translation unit");
+		if (0 != clang_reparseTranslationUnit(translationUnit, 1, &unsaved, clang_defaultReparseOptions(translationUnit)))
+		{
+			NSLog(@"Reparsing failed");
+			clang_disposeTranslationUnit(translationUnit);
+			translationUnit = 0;
+		}
+		else
+		{
+			file = clang_getFile(translationUnit, fn);
+		}
+		clock_t c2 = clock();
+		NSLog(@"Reparsing took %f seconds.  .",
+			((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC);
+
 	}
 }
 - (void)lexicalHighlightFile
 {
-	CXSourceLocation start = clang_getLocation(translationUnit, file, 0, 0);
-	CXSourceLocation end = clang_getLocation(translationUnit, file, -1, -1);
+	CXSourceLocation start = clang_getLocation(translationUnit, file, 1, 1);
+	CXSourceLocation end = clang_getLocationForOffset(translationUnit, file, [source length]);
 	[self highlightRange: clang_getRange(start, end) syntax: NO];
 }
 
@@ -98,11 +127,13 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 		IDETextTokenTypeComment};
 	if (clang_equalLocations(clang_getRangeStart(r), clang_getRangeEnd(r)))
 	{
+		NSLog(@"Range has no length!");
 		return;
 	}
 	CXToken *tokens;
 	unsigned tokenCount;
 	clang_tokenize(translationUnit, r , &tokens, &tokenCount);
+	//NSLog(@"Found %d tokens", tokenCount);
 	if (tokenCount > 0)
 	{
 		CXCursor *cursors = NULL;
@@ -169,6 +200,7 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 }
 - (void)convertSemanticToPresentationMarkup
 {
+	clock_t c1 = clock();
 	NSUInteger end = [source length];
 	NSUInteger i = 0;
 	NSRange r;
@@ -196,8 +228,11 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 		NSDictionary *attrs = [source attributesAtIndex: i
 		                          longestEffectiveRange: &r
 		                                        inRange: NSMakeRange(i, end-i)];
+		i = r.location + r.length;
 		NSString *token = [attrs objectForKey: kIDETextTokenType];
 		NSString *semantic = [attrs objectForKey: kIDETextSemanticType];
+		// Skip ranges that have attributes other than semantic markup
+		if ((nil == semantic) && (nil == token)) continue;
 		if (semantic == IDETextTypePreprocessorDirective)
 		{
 			attrs = [semanticAttributes objectForKey: semantic];
@@ -218,14 +253,24 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 		}
 		[source setAttributes: attrs
 		                range: r];
-		i = r.location + r.length;
 	} while (i < end);
+	clock_t c2 = clock();
+	NSLog(@"Generating presentation markup took %f seconds.  .",
+		((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC);
+}
+- (void)syntaxHighlightRange: (NSRange)r
+{
+	CXSourceLocation start = clang_getLocationForOffset(translationUnit, file, r.location);
+	CXSourceLocation end = clang_getLocationForOffset(translationUnit, file, r.location + r.length);
+	clock_t c1 = clock();
+	[self highlightRange: clang_getRange(start, end) syntax: YES];
+	clock_t c2 = clock();
+	NSLog(@"Highlighting took %f seconds.  .",
+		((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC);
 }
 - (void)syntaxHighlightFile
 {
-	CXSourceLocation start = clang_getLocation(translationUnit, file, 0, 0);
-	CXSourceLocation end = clang_getLocation(translationUnit, file, -1, -1);
-	[self highlightRange: clang_getRange(start, end) syntax: YES];
+	[self syntaxHighlightRange: NSMakeRange(0, [source length])];
 }
 @end
 
