@@ -55,6 +55,13 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 - (void)addIncludePath: (NSString*)includePath
 {
 	[args addObject: [NSString stringWithFormat: @"-I%@", includePath]];
+	// After we've added an include path, we may change how the file is parsed,
+	// so parse it again, if required
+	if (NULL != translationUnit)
+	{
+		clang_disposeTranslationUnit(translationUnit);
+		[self reparse];
+	}
 }
 
 - (void)dealloc
@@ -88,10 +95,6 @@ NSRange NSRangeFromCXSourceRange(CXSourceRange sr)
 			clang_createTranslationUnitFromSourceFile(index, fn, argc, argv, 1, &unsaved);
 			//clang_parseTranslationUnit(index, fn, argv, argc, &unsaved, 1, CXTranslationUnit_PrecompiledPreamble | CXTranslationUnit_CacheCompletionResults | CXTranslationUnit_DetailedPreprocessingRecord);
 		file = clang_getFile(translationUnit, fn);
-		/*
-		[self syntaxHighlightFile];
-		[self convertSemanticToPresentationMarkup];
-		*/
 	}
 	else
 	{
