@@ -237,6 +237,15 @@ lexicalScopeAtDepth:(unsigned int) scope;
  */
 - (void) goToLabelledBasicBlock:(NSString*)aLabel;
 @end
+/**
+ * Protocol for static code generators.
+ */
+@protocol LKStaticCodeGenerator <LKCodeGenerator>
+/**
+ * Initializes the code generator with the specified file.
+ */
+- (id<LKStaticCodeGenerator>) initWithFile:(NSString*)outFile;
+@end
 /** 
  * Class used to instantiate the default code generators.  Lazily loads the code
  * generator components the first time it receives a message.
@@ -250,16 +259,7 @@ lexicalScopeAtDepth:(unsigned int) scope;
  * Returns the default code generator for static compilation, outputting to the
  * file specified in the argument.
  */
-+ (id<LKCodeGenerator>) defaultStaticCompilerWithFile:(NSString*)outFile;
-@end
-/**
- * Protocol for static code generators.
- */
-@protocol LKStaticCodeGenerator <LKCodeGenerator>
-/**
- * Initializes the code generator with the specified file.
- */
-- (id<LKStaticCodeGenerator>) initWithFile:(NSString*)outFile;
++ (id<LKStaticCodeGenerator>) defaultStaticCompilerWithFile:(NSString*)outFile;
 @end
 /**
  * Returns the default code generator for JIT compilation.

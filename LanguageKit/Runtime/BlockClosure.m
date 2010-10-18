@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import "BlockClosure.h"
 #import "BlockContext.h"
+#include <string.h>
 
 // Small int 0 is ((0 << 1) & 1).  
 #define IS_NIL_OR_ZERO(x) (((uintptr_t)(x)) < 2)

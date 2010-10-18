@@ -661,7 +661,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		llvm::Intrinsic::getDeclaration(TheModule,
 			llvm::Intrinsic::eh_selector, 0, 0),
 		exception, ehPersonality, 
-		ConstantExpr::getPointerCast(ConstantInt::get(IntPtrTy, 1), Int8PtrTy),
+		ConstantExpr::getIntToPtr(ConstantInt::get(IntPtrTy, 1), Int8PtrTy),
 		ConstantPointerNull::get(Int8PtrTy));
 
 	ExceptionBuilder.CreateStore(ExceptionBuilder.CreateTrunc(eh_selector, Int1Ty), is_catch);

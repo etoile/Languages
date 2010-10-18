@@ -10,6 +10,7 @@
 #ifndef GNU_RUNTIME
 #include <objc/objc-runtime.h>
 #endif
+#include <string.h>
 #include <ffi.h>
 
 static id BoxValue(void *value, const char *typestr);
