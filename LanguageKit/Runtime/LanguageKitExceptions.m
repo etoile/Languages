@@ -12,6 +12,8 @@ static const uint64_t LKEXCEPTION_TYPE = D('E',1) + D('T',2) + D('O',3) +
 D('I',4) + D('L',5) + D('E',6) + D('L',7) + D('K',8);
 #undef D
 
+char __LanguageKitNonLocalReturn;
+
 /**
  * Thread-local LanguageKit exception object.  Could be allocated with
  * malloc/free, but not really worth it.
@@ -56,6 +58,7 @@ static BOOL check_action_record(struct _Unwind_Context *context,
 		*selector = filter;
 		if (filter > 0)
 		{
+			*selector = 1;
 			return YES;
 		}
 		else if (filter == 0)
@@ -121,7 +124,6 @@ _Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
 		return _URC_CONTINUE_UNWIND;
 	}
 
-	void *object = nil;
 	if (!(actions & _UA_HANDLER_FRAME))
 	{
 		// If there's no cleanup here, continue unwinding.
@@ -178,12 +180,12 @@ void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
 }
 
 /**
- * Rest whether a given exception object is a valid non-local return.  Returns
- * if it is, otherwise instructs the unwinding runtime to continue propagating
- * the exception up the stack.  Copies the return value from the LanguageKit
- * exception to the address pointed to by retval.
+ * Called from a non-local return handler.  Tests whether the non-local return
+ * was meant to be caught by this frame.  If it was not, then it rethrows the
+ * exception.  If the caller is the correct handler, then this function
+ * destroys the exception object and returns..
  */
-char __LanguageKitTestNonLocalReturn(void *context,
+void __LanguageKitTestNonLocalReturn(void *context,
                                     struct _Unwind_Exception *exception,
                                     void **retval)
 {
@@ -195,8 +197,12 @@ char __LanguageKitTestNonLocalReturn(void *context,
 	if (LanguageKitException->context == context)
 	{
 		*retval = LanguageKitException->retval;
+		if ((((uintptr_t)*retval) & 1) == 0)
+		{
+			*retval = [*(id*)retval autorelease];
+		}
 		free(exception);
-		return 1;
+		return;
 	}
 	// Rethrow it if it isn't.  Note that you need to make a copy because
 	// libgcc contains some braindead optimisations that crash if you throw
