@@ -1021,15 +1021,12 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
 	unsigned offset,
 	Value *object)
 {
-	// FIXME: Non-id loads
-	assert(isObject(type));
-
 	Value *Offset = 
 		CGM->getRuntime()->OffsetOfIvar(Builder, className, ivarName, offset);
 	Value *addr = Builder.CreatePtrToInt(object, IntTy);
 	addr = Builder.CreateAdd(addr, Offset);
 	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(IdTy));
-	return Builder.CreateLoad(addr, true, "ivar");
+	return BoxValue(&Builder, Builder.CreateLoad(addr, true, "ivar"), type);
 }
 
 // Generate a printf() call with the specified string and value.  Used for
