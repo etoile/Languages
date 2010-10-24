@@ -104,7 +104,12 @@ static ffi_type *FFITypeForObjCType(const char *typestr)
 		}
 		case 'v':
 			return &ffi_type_void;
-		case '(': // FIXME: Hack
+		case '(':
+		case '^':
+			if (strncmp(typestr, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) != 0)
+			{
+				break;
+			}
 		case '@':
 		case '#':
 			return &ffi_type_pointer;
@@ -173,8 +178,8 @@ static id BoxValue(void *value, const char *typestr)
 			return nil;
 			// If it's already an object, we don't need to do anything
 		case '(': //FIXME: Hack
-		case '@':
-		case '#':
+		case '^':
+			if (strncmp(typestr, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) == 0)
 			{
 				LKObject v = LKOBJECT(*(id*)value);
 				if (LKObjectIsSmallInt(v))
@@ -183,6 +188,9 @@ static id BoxValue(void *value, const char *typestr)
 				}
 				return *(id*)value;
 			}
+		case '@':
+		case '#':
+			return *(id*)value;
 			// Other types, just wrap them up in an NSValue
 		default:
 			NSLog(@"Warning: using +[NSValue valueWithBytes:objCType:]");
@@ -238,9 +246,14 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 		case ':':
 			*(SEL*)dest = [value selValue];
 			break;
+		case '(':
+		case '^':
+			if (strncmp(objctype, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) != 0)
+			{
+				break;
+			}
 		case '#':
 		case '@':
-		case '(': //FIXME: Hack
 			*(id*)dest = value;
 			return;
 		case 'v':
