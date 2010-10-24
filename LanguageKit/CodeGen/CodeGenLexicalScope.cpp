@@ -1022,7 +1022,7 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
 	Value *object)
 {
 	// FIXME: Non-id loads
-	assert(isLKObject(type));
+	assert(isObject(type));
 
 	Value *Offset = 
 		CGM->getRuntime()->OffsetOfIvar(Builder, className, ivarName, offset);
