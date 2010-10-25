@@ -313,11 +313,12 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 #ifdef GNU_RUNTIME
 	if (className)
 	{
-		struct objc_super sup = { receiver, NSClassFromString(className) };
+		Class cls = NSClassFromString(className);
 		if (class_isMetaClass(object_getClass(receiver)))
 		{
-			sup.class = object_getClass(sup.class);
+			cls = object_getClass(cls);
 		}
+		struct objc_super sup = { receiver, cls };
 		methodIMP = objc_msg_lookup_super(&sup, sel);
 	}
 	else
