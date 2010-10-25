@@ -204,13 +204,7 @@ void __LanguageKitTestNonLocalReturn(void *context,
 		free(exception);
 		return;
 	}
-	// Rethrow it if it isn't.  Note that you need to make a copy because
-	// libgcc contains some braindead optimisations that crash if you throw
-	// an exception you've just caught.
-	LKException *rethrow = calloc(1, sizeof(LKException));
-	memcpy(rethrow, exception, sizeof(LKException));
-	free(exception);
-	_Unwind_Resume_or_Rethrow(&rethrow->exception);
+	_Unwind_Resume_or_Rethrow(exception);
 	// Should not be reached:
 	abort();
 }
