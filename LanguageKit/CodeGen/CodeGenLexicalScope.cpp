@@ -703,17 +703,16 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	Function *EHFunction = cast<Function>(
 		TheModule->getOrInsertFunction("__LanguageKitTestNonLocalReturn",
-			Type::getInt8Ty(CGM->Context), PtrTy, PtrTy, PtrTy, NULL));
+			Type::getVoidTy(CGM->Context), PtrTy, PtrTy, PtrTy, NULL));
 	// Note: This is not an invoke - if this throws we want it to unwind up the
 	// stack past the current frame.  If it didn't, we'd get an infinite loop,
 	// with the function continually catching the non-local return exception
 	// and rethrowing it.
-	Value *isRet = ExceptionBuilder.CreateCall3(EHFunction, 
+	ExceptionBuilder.CreateCall3(EHFunction, 
 		ExceptionBuilder.CreateBitCast(Context, PtrTy),
 		ExceptionBuilder.CreateLoad(exceptionPtr),
 	   	RetPtr);
-	isRet = ExceptionBuilder.CreateTrunc(isRet, Type::getInt1Ty(CGM->Context));
-	ExceptionBuilder.CreateCondBr(isRet, realRetBB, rethrowBB);
+	ExceptionBuilder.CreateBr(realRetBB);
 
 	// Rethrow the exception
 	ExceptionBuilder.SetInsertPoint(rethrowBB);
