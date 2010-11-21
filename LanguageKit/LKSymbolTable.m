@@ -44,7 +44,15 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 }
 - (int) instanceSize
 {
-	return nextOffset;
+	// Check for nil in case nil messaging does not return zero
+	if (nil != enclosingScope)
+	{
+		return [(id)enclosingScope instanceSize] + nextOffset;
+	}
+	else
+	{
+		return nextOffset;
+	}
 }
 - (void) registerNewClassNamed: (NSString*)aClass
 {
@@ -80,14 +88,14 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 - (void)setScope:(LKSymbolTable*)scope
 {
 	[super setScope: scope];
-	nextOffset = [(id)enclosingScope nextOffset];
 }
 - (LKSymbolTable*) initForClass:(Class)aClass 
 {
 	SELFINIT;
+	Class aSuperClass;
 	classVariables = [[NSMutableArray alloc] init];
 	instanceVariables = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 10);
-	nextOffset = class_getInstanceSize(aClass);
+	// nextOffset = class_getInstanceSize(aClass);
 	NSMutableDictionary *ivarTypes = [NSMutableDictionary new];
 	className = [[NSString alloc] initWithUTF8String: class_getName(aClass)];
 	
@@ -109,38 +117,53 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 		free(ivarlist);
 	}
 	types = ivarTypes;
-	if (Nil != (aClass = class_getSuperclass(aClass)))
+	if (Nil != (aSuperClass = class_getSuperclass(aClass)))
 	{
-		NSString *superName = [[NSString alloc] initWithUTF8String: class_getName(aClass)];
+		NSString *superName = [[NSString alloc] initWithUTF8String: class_getName(aSuperClass)];
 		id parentScope = [NewClasses objectForKey: superName];
 		[superName release];
 		if (nil == parentScope)
 		{
-			parentScope = [[LKObjectSymbolTable alloc] initForClass: aClass];
+			parentScope = [[LKObjectSymbolTable alloc] initForClass: aSuperClass];
 		}
 		[self setScope: parentScope];
 	}
+
+	// Calculate the next offset for adding instance variables
+	// based on the class size and superclass size.
+	nextOffset = class_getInstanceSize(aClass);
+	if (aSuperClass != nil)
+		nextOffset -= class_getInstanceSize(aSuperClass);
+
 	[NewClasses setObject: self forKey: className];
 	return self;
 }
 
 - (int) offsetOfIVar:(NSString*)aName
 {
-	int offset = (int)(intptr_t)NSMapGet(instanceVariables, aName);
-	if (offset > 0)
+	int offset;
+
+	if (YES == NSMapMember(instanceVariables, aName, NULL, (void**)&offset))
 	{
-		return offset;
+		return [(id)enclosingScope instanceSize] + offset;
 	}
-	return [enclosingScope offsetOfIVar: aName];
+	else
+	{
+		return [enclosingScope offsetOfIVar: aName];
+	}
 }
 - (NSString*)classForIvar: (NSString*)aName
 {
-	int offset = (int)(intptr_t)NSMapGet(instanceVariables, aName);
-	if (offset > 0)
+	int offset;
+
+	if (YES == NSMapMember(instanceVariables, aName, NULL, (void**)&offset))
 	{
 		return className;
 	}
-	return [enclosingScope classForIvar: aName];
+	else
+	{
+		return [enclosingScope classForIvar: aName];
+	}
 }
 
 - (void) addSymbol:(NSString*)aSymbol
@@ -151,7 +174,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 
 - (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
 {
-	if (NSMapMember(instanceVariables, aName, 0, 0))
+	if (YES == NSMapMember(instanceVariables, aName, 0, 0))
 	{
 		return LKSymbolScopeObject;
 	}
