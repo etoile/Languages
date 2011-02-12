@@ -165,7 +165,7 @@
 		LKDeclRef *ref = SAFECAST(LKDeclRef, target);
 		NSString *symbol = ref->symbol;
 		LKSymbolScope scope = [symbols scopeOfSymbol:symbol];
-		if (scope == LKSymbolScopeGlobal)
+		if (scope == LKSymbolScopeClassName)
 		{
 			result = [aGenerator sendMessage:sel
 			                           types:type

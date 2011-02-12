@@ -3,6 +3,7 @@
 #include <sys/resource.h>
 
 #import <EtoileFoundation/EtoileFoundation.h>
+#import <SourceCodeKit/SourceCodeKit.h>
 #import "LKAST.h"
 #import "LKCategory.h"
 #import "LKCompiler.h"
@@ -322,6 +323,26 @@ static NSString *loadFramework(NSString *framework)
 	return nil;
 }
 
++ (BOOL)loadHeadersForBundleAtPath: (NSString*)aPath
+{
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSString *headerPath = [aPath stringByAppendingPathComponent: @"Headers"];
+	BOOL isDir = NO;
+	if (!([fm fileExistsAtPath: headerPath isDirectory: &isDir] && isDir)) { return NO; }
+	NSDirectoryEnumerator *e = [fm enumeratorAtPath: headerPath];
+	NSString *header;
+	SCKSourceCollection *collection = [LKModule sourceCollection];
+	while (nil != (header = [e nextObject]))
+	{
+		if ([@"h" isEqualToString: [header pathExtension]])
+		{
+			NSLog(@"Found header: %@", header);
+			id file = [collection sourceFileForPath: [headerPath stringByAppendingPathComponent: header]];
+		}
+	}
+	return YES;
+}
+
 + (BOOL) loadFrameworkNamed:(NSString*)framework
 {
 	return nil != loadFramework(framework);
@@ -363,6 +384,10 @@ static NSString *loadFramework(NSString *framework)
 	// TODO: Specify a set of AST transforms to apply.
 	if (!(success &= loadAnyLibraryForBundle(bundle, recentModificationDate)))
 	{
+		FOREACH(pathsToCheckDateOf, path, NSString*)
+		{
+			[self loadHeadersForBundleAtPath: path];
+		}
 		success = YES;
 		FOREACH(sourceFiles, source, NSString*)
 		{

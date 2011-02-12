@@ -89,6 +89,10 @@
              toObject:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned int)argc;
+- (void*)callFunction: (NSString*)functionName
+                types: (NSString*)types
+             withArgs: (void**)argv
+                count: (unsigned int)argc;
 /**
  * Store the specified value in the named class variable.
  */

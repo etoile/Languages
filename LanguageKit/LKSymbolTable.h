@@ -1,6 +1,7 @@
 #import <EtoileFoundation/EtoileFoundation.h>
 
 @class LKAST;
+@class SCKSourceCollection;
 
 /** 
  * Enumerated type representing the scope of a variable.
@@ -14,7 +15,8 @@ typedef	enum
 	LKSymbolScopeLocal,    /** Variable declared in this lexical scope */
 	LKSymbolScopeObject,   /** Instance variable */
 	LKSymbolScopeClass,    /** Class variable */
-	LKSymbolScopeGlobal,   /** Global (only clas names) */
+	LKSymbolScopeClassName,/** Class name (special case of global) */
+	LKSymbolScopeGlobal,   /** Global variable */
 	LKSymbolScopeBuiltin   /** Variable with special semantics 
 							 (e.g. self / super) */
 } LKSymbolScope;
@@ -157,4 +159,15 @@ typedef struct
  * Creates and returns a new autoreleased symbol table for a subclass of this class.
  */
 - (LKObjectSymbolTable*)symbolTableForSubclassNamed: (NSString*)aString;
+@end
+
+/**
+ * Symbol table containing global symbols.
+ */
+@interface LKGlobalSymbolTable : LKSymbolTable
+{
+  /** Index of source code loaded from Objective-C headers. */
+  SCKSourceCollection *sources;
+}
++ (LKGlobalSymbolTable*)symbolTableWithSourceCollection: (SCKSourceCollection*)collection;
 @end

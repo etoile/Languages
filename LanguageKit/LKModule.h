@@ -3,6 +3,7 @@
 
 @class LKSubclass;
 @class LKCategory;
+@class SCKSourceCollection;
 
 /**
  * AST node representing a module - a set of classes and categories compiled
@@ -11,11 +12,11 @@
 @interface LKModule : LKAST
 {
   /** Classes defined in this module. */
-  NSMutableArray * classes;
+  NSMutableArray *classes;
   /** Categories defined in this module. */
-  NSMutableArray * categories;
+  NSMutableArray *categories;
   /** Current pragmas */
-  NSMutableDictionary * pragmas;
+  NSMutableDictionary *pragmas;
   /** Manually-specified method types. */
   NSMutableDictionary *typeOverrides;
 }
@@ -23,6 +24,11 @@
  * Return a new autoreleased module.
  */
 + (id) module;
+/**
+ * Returns the source collection used for resolving symbols that are not
+ * visible at run time.
+ */
++ (SCKSourceCollection*)sourceCollection;
 /**
  * Add compile-time pragmas.
  */
