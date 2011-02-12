@@ -180,6 +180,16 @@ const char * LKObjectEncoding = @encode(LKObjectPtr);
 	return Builder->getCurrentScope()->MessageSend((Value*)receiver, aMessage,
 		types, args);
 }
+- (void*)callFunction: (NSString*)functionName
+                types: (NSString*)types
+             withArgs: (void**)argv
+                count: (unsigned int)argc;
+{
+	SmallVector<Value*, 8> args;
+	args.append((Value**)argv, ((Value**)argv)+argc);
+	return Builder->getCurrentScope()->CallFunction([functionName UTF8String],
+		[types UTF8String], args);
+}
 - (void) storeValue:(void*)rval 
     inClassVariable:(NSString*) aClassVar
 {

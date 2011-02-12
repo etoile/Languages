@@ -64,11 +64,16 @@ protected:
   Value *Unbox(IRBuilder<> *B, Function *F, Value *val, const char *Type);
 
 	/**
-	* Construct C primitives from Smalltalk objects in an argument list.
+	* Construct C primitives from Smalltalk objects in an argument list.  Skips
+	* the two implicit arguments in the type encoding if skipImplicit is true
+	* (the argument list is then assumed to be a list of message arguments,
+	* rather than function arguments).
 	*/
 	void UnboxArgs(IRBuilder<> *B, Function *F,
 			llvm::SmallVectorImpl<llvm::Value*> &argv,
-			llvm::SmallVectorImpl<llvm::Value*> &args, const char *selTypes);
+			llvm::SmallVectorImpl<llvm::Value*> &args, 
+			const char *selTypes,
+			bool skipImplicit=true);
 
 	/**
 	* Send a message to the superclass.
@@ -131,6 +136,11 @@ public:
   Value *MessageSend(Value *receiver, const char *selName, const char
       *selTypes, SmallVectorImpl<Value*> &boxedArgs);
 
+  /**
+   * Call a C function.
+   */
+  Value *CallFunction(const char *functionName, const char *argTypes,
+      SmallVectorImpl<Value*> &boxedArgs);
   /**
    * Set the return value for this method / block.
    */

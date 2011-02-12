@@ -1,6 +1,7 @@
 #include "CodeGenLexicalScope.h"
 #include "CodeGenBlock.h"
 #include "CodeGenModule.h"
+#include "ABI.h"
 #include <llvm/Module.h>
 #include <llvm/Intrinsics.h>
 #include <llvm/LLVMContext.h>
@@ -742,7 +743,8 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
                                     Function *F,
                                     llvm::SmallVectorImpl<llvm::Value*> &argv,
                                     llvm::SmallVectorImpl<llvm::Value*> &args,
-                                    const char *selTypes) 
+                                    const char *selTypes,
+                                    bool skipImplicit)
 {
 	if (NULL == selTypes) 
 	{
@@ -756,8 +758,11 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
 	{
 		SkipTypeQualifiers(&selTypes);
 		//Skip return, self, cmd
-		NEXT(selTypes);
-		NEXT(selTypes);
+		if (skipImplicit)
+		{
+			NEXT(selTypes);
+			NEXT(selTypes);
+		}
 		for (unsigned i=0 ; i<argv.size() ; ++i) 
 		{
 			NEXT(selTypes);
@@ -1116,6 +1121,81 @@ Value *CodeGenLexicalScope::MessageSendId(Value *receiver,
 	LOG("Generating object message send %s\n", selName);
 	return BoxValue(&Builder, MessageSendId(&Builder, receiver, selName,
 		selTypes, args), selTypes);
+}
+Value *CodeGenLexicalScope::CallFunction(const char *functionName,
+                                         const char *argTypes,
+                                         SmallVectorImpl<Value*> &argv)
+{
+	SmallVector<Value*, 8> args;
+	UnboxArgs(&Builder, CurrentFunction, argv, args, argTypes, false);
+
+	bool isSRet = false;
+	const Type *realReturnType = NULL;
+
+	FunctionType *functionTy = CGM->LLVMFunctionTypeFromString(argTypes,
+			isSRet, realReturnType);
+
+	Function *f =
+		static_cast<Function*>(CGM->getModule()->getOrInsertFunction(functionName,
+					functionTy));
+
+	// Construct the call
+	llvm::SmallVector<llvm::Value*, 8> callArgs;
+	llvm::Value *sret = 0;
+	if (isSRet)
+	{
+		sret = Builder.CreateAlloca(realReturnType);
+		callArgs.push_back(sret);
+	}
+	if (PASS_STRUCTS_AS_POINTER)
+	{
+		llvm::Value* callArg;
+		for (unsigned int i = 0; i < args.size() ; i++) {
+			callArg = args[i];
+			if (isa<StructType>(callArg->getType()))
+			{
+				llvm::AllocaInst *StructPointer =
+					Builder.CreateAlloca(callArg->getType());
+				Builder.CreateStore(callArg, StructPointer);
+				callArgs.push_back(StructPointer);
+			}
+			else
+			{
+				callArgs.push_back(callArg);
+			}
+		}
+	}
+	else
+	{
+		callArgs.insert(callArgs.end(), args.begin(), args.end());
+	}
+	llvm::Instruction *ret = 0;
+	if (0 != CleanupBB)
+	{
+		llvm::BasicBlock *continueBB =
+			llvm::BasicBlock::Create(CGM->Context, "invoke_continue",
+					Builder.GetInsertBlock()->getParent());
+		ret = Builder.CreateInvoke(f, continueBB, CleanupBB,
+			callArgs.begin(), callArgs.end());
+		Builder.SetInsertPoint(continueBB);
+		if (isSRet)
+		{
+			cast<llvm::InvokeInst>(ret)->addAttribute(1, Attribute::StructRet);
+		}
+	}
+	else
+	{
+		ret = Builder.CreateCall(f, callArgs.begin(), callArgs.end());
+		if (isSRet)
+		{
+			cast<llvm::CallInst>(ret)->addAttribute(1, Attribute::StructRet);
+		}
+	}
+	if (isSRet)
+	{
+		ret = Builder.CreateLoad(sret);
+	}
+	return BoxValue(&Builder, ret, argTypes);
 }
 
 Value *CodeGenLexicalScope::MessageSendSuper(const char *selName,

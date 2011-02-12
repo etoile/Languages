@@ -17,6 +17,7 @@
 #include <llvm/Support/IRBuilder.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Target/TargetData.h>
+#include <llvm/Support/system_error.h>
 
 #include <string>
 #include <algorithm>
@@ -82,9 +83,9 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit,
 	// inline them.
 	if (NULL == SmallIntMessages)
 	{
-		SmallIntMessages = ParseBitcodeFile(
-				MemoryBuffer::getFile(MsgSendSmallIntFilename), 
-				Context);
+		OwningPtr<MemoryBuffer> buffer;
+		MemoryBuffer::getFile(MsgSendSmallIntFilename, buffer);
+		SmallIntMessages = ParseBitcodeFile(buffer.get(), Context);
 	}
 
 	TheModule = new Module(ModuleName, Context);
@@ -413,10 +414,10 @@ void CodeGenModule::EndModule(void)
 void CodeGenModule::compile(void)
 {
 	EndModule();
-	llvm::Linker::LinkModules(TheModule, 
-		ParseBitcodeFile(
-				MemoryBuffer::getFile(MsgSendSmallIntFilename), 
-				Context), 0);
+	OwningPtr<MemoryBuffer> buffer;
+	MemoryBuffer::getFile(MsgSendSmallIntFilename, buffer);
+	Module *smallIntModule = ParseBitcodeFile(buffer.get(), Context);
+	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	PassManager pm;
