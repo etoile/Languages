@@ -9,11 +9,16 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 -include ../modules.make
 
+export sourcecodekit ?= yes
 export smalltalk ?= yes
 
 #
 # Projects (listed by dependency order, then alphabetical order)
 #
+
+ifeq ($(sourcecodekit), yes)
+	SUBPROJECTS += SourceCodeKit
+endif
 
 ifeq ($(smalltalk), yes)
 	SUBPROJECTS += LanguageKit 
