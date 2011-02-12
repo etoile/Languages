@@ -1,7 +1,6 @@
 #import "LKModule.h"
 #import "LKSubclass.h"
 #import <EtoileFoundation/runtime.h>
-#import <SourceCodeKit/SourceCodeKit.h>
 #import "Runtime/LKObject.h"
 
 /**
@@ -52,20 +51,14 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 	return simplified;
 }
 
-static SCKSourceCollection *Sources;
 
 @implementation LKModule 
-+ (SCKSourceCollection*)sourceCollection
-{
-	return Sources;
-}
 + (void) initialize
 {
 	if (self != [LKModule class])
 	{
 		return;
 	}
-	Sources = [SCKSourceCollection new];
 	// Look up potential selector conflicts.
 	Types = [NSMutableDictionary new];
 	SelectorConflicts = [NSMutableDictionary new];

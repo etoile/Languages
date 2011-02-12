@@ -1,6 +1,5 @@
 #import "LKSymbolTable.h"
 #import <EtoileFoundation/runtime.h>
-#import <SourceCodeKit/SourceCodeKit.h>
 
 static NSMutableDictionary *NewClasses;
 
@@ -13,9 +12,9 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	{
 		return LKSymbolScopeBuiltin;
 	}
-	if (NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName])
+	if(NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName])
 	{
-		return LKSymbolScopeClassName;
+		return LKSymbolScopeGlobal;
 	}
 	return LKSymbolScopeInvalid;
 }
@@ -299,6 +298,7 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 		[NewClasses setObject: [NSNull null] forKey: className];
 	}
 }
+//TODO You can't insert LKSymbolScopeGlobal symbols yet.
 - (void) addSymbol:(NSString*)aSymbol {}
 - (void) setScope:(LKSymbolTable*)scope
 {
@@ -327,16 +327,16 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	}
 	return lookupUnscopedSymbol(aName);
 }
-- (NSString*)typeOfSymbol:(NSString*)aName
+- (NSString*) typeOfSymbol:(NSString*)aName
 {
-	NSString * type = [types objectForKey: aName];
+	NSString * type = [types objectForKey:aName];
 	if (nil != type)
 	{
 		return type;
 	}
 	if (nil != enclosingScope)
 	{
-		return [enclosingScope typeOfSymbol: aName];
+		return [enclosingScope typeOfSymbol:aName];
 	}
 	// Untyped objects are untyped objects.
 	return @"@";
@@ -358,41 +358,5 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	[enclosingScope release];
 	[types release];
 	[super dealloc];
-}
-@end
-
-@implementation LKGlobalSymbolTable : LKSymbolTable
-- (LKGlobalSymbolTable*)initWithSourceCollection: (SCKSourceCollection*)collection
-{
-	SUPERINIT;
-	ASSIGN(sources, collection);
-	return self;
-}
-+ (LKGlobalSymbolTable*)symbolTableWithSourceCollection: (SCKSourceCollection*)collection;
-{
-	return [[[self alloc] initWithSourceCollection: collection] autorelease];
-}
-
-- (LKSymbolScope)scopeOfSymbolNonrecursive: (NSString*)aName
-{
-	if ([sources.globals objectForKey: aName] != nil)
-	{
-		return LKSymbolScopeGlobal;
-	}
-	return LKSymbolScopeInvalid;
-}
-- (NSString*)typeOfSymbol: (NSString*)aName
-{
-	SCKGlobal *global = [sources.globals objectForKey: aName];
-	if (global != nil)
-	{
-		return global.type;
-	}
-	if (nil != enclosingScope)
-	{
-		return [enclosingScope typeOfSymbol: aName];
-	}
-	// Untyped objects are untyped objects.
-	return @"@";
 }
 @end

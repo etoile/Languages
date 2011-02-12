@@ -39,11 +39,10 @@
 	{
 		symbols =
 			[LKObjectSymbolTable symbolTableForNewClassNamed: superclass];
-		[symbols setScope: [parent symbols]];
 		if (symbols == nil)
 		{
 			NSDictionary *errorDetails = D([NSString stringWithFormat:
-				_(@"Unable to find superclass %@ for %@"),  superclass, classname],
+				@"Unable to find superclass %@ for %@",  superclass, classname],
 				kLKHumanReadableDescription,
 				superclass, kLKMissingSuperclassName,
 				self, kLKASTNode);
@@ -57,14 +56,13 @@
 	}
 	else
 	{
-		symbols = [[[LKObjectSymbolTable alloc] initForClass: SuperClass] autorelease];
-		[symbols setScope: [parent symbols]];
+		symbols = [[LKObjectSymbolTable alloc] initForClass: SuperClass];
 	}
 	ASSIGN(symbols, [(id)symbols symbolTableForSubclassNamed: classname]);
 	if (Nil != NSClassFromString(classname))
 	{
 		NSDictionary *errorDetails = D([NSString stringWithFormat:
-			_(@"Attempting to create class which already exists: %@"), classname],
+			@"Attempting to create class which already exists: %@", classname],
 			kLKHumanReadableDescription,
 			self, kLKASTNode);
 		success &= [LKCompiler reportWarning: LKRedefinedClassWarning
