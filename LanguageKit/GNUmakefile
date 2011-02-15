@@ -1,5 +1,8 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
+# Turn off warnings as errors until LK generates no warnings
+ERROR_FLAG = 
+
 # We reset PROJECT_DIR provided by etoile.make to match the subproject since 
 # etoile.make doesn't detect and handle such embedded project
 PROJECT_DIR = $(CURDIR)
