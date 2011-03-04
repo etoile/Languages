@@ -10,12 +10,12 @@
  */
 
 #ifdef __linux__
-#define BRAINDEAD_ABI
+//#define BRAINDEAD_ABI
 #endif
 
 typedef NSInteger SmallInt;
 
-typedef union 
+typedef __attribute__ ((__transparent_union__)) union
 {
 	id object;
 	SmallInt smallInt;

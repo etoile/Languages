@@ -24,7 +24,7 @@
 + (id) subclassWithName:(NSString*)aName
         superclassNamed:(NSString*)aClass
                   cvars:(NSArray*)anIvarList
-                  ivars:(NSArray*)anIvarList
+                  ivars:(NSArray*)anotherIvarList
                 methods:(NSArray*)aMethodList;
 /**
  * Returns the class name for the represented class.
@@ -47,11 +47,11 @@
  */
 - (NSMutableArray*)ivars;
 /**
- * Adds an instance variable to this class definition. 
+ * Adds an instance variable to this class definition.
  */
 - (void)addInstanceVariable: (NSString*)aName;
 /**
- * Adds a class variable to this class definition. 
+ * Adds a class variable to this class definition.
  */
 - (void)addClassVariable: (NSString*)aName;
 @end
