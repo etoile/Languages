@@ -34,7 +34,7 @@ private:
   LLVMContext &Context;
   Module *TheModule;
 
-  DIFactory *Debug;
+  //DIFactory *Debug;
   DICompileUnit ModuleScopeDescriptor;
   DIFile ModuleSourceFile;
   llvm::StringMap<DIType> DebugTypeEncodings;
@@ -93,7 +93,7 @@ public:
 	const string& getClassName() { return ClassName; }
 	const string& getSuperClassName() { return SuperClassName; }
 	Module *getModule() { return TheModule; }
-	DIFactory *getDebugFactory() { return Debug; }
+	//DIFactory *getDebugFactory() { return Debug; }
 	CGObjCRuntime *getRuntime() { return Runtime; }
 	string getCategoryName() { return CategoryName; }
 	DICompileUnit getModuleDescriptor() { return ModuleScopeDescriptor; }

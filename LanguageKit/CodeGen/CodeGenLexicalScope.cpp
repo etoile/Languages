@@ -302,7 +302,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// up into more sensibly-sized chunks.
 	Module *TheModule = CGM->getModule();
 	
-	DIFactory *DebugFactory = CGM->getDebugFactory();
+	//DIFactory *DebugFactory = CGM->getDebugFactory();
 	DIDescriptor context = CGM->getModuleDescriptor();
 	if (CodeGenLexicalScope *parent = getParentScope())
 	{
@@ -312,15 +312,15 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	DICompileUnit ModuleScopeDescriptor  = CGM->getModuleDescriptor();
 	DIFile ModuleSourceFile  = CGM->getSourceFileDescriptor();
 	DIArray MethodArgDebugTypes = CGM->DebugTypeArrayForEncoding(MethodTypes);
-	DIType MethodDebugType =
-		DebugFactory->CreateCompositeType(llvm::dwarf::DW_TAG_subroutine_type,
-				ModuleScopeDescriptor, "", ModuleSourceFile, 0, 0, 0, 0, 0, DIType(),
-				MethodArgDebugTypes);
+	//DIType MethodDebugType =
+	//	DebugFactory->CreateCompositeType(llvm::dwarf::DW_TAG_subroutine_type,
+	//			ModuleScopeDescriptor, "", ModuleSourceFile, 0, 0, 0, 0, 0, DIType(),
+	//			MethodArgDebugTypes);
 
 	// FIXME: Line number info.
-	DIDescriptor ScopeDebugContext = DebugFactory->CreateSubprogram(context,
-			humanName, humanName, CurrentFunction->getName(), ModuleSourceFile, 0,
-			MethodDebugType, true, true);
+	//DIDescriptor ScopeDebugContext = DebugFactory->CreateSubprogram(context,
+	//		humanName, humanName, CurrentFunction->getName(), ModuleSourceFile, 0,
+	//		MethodDebugType, true, true);
 
 	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::getInt8Ty(CGM->Context));
 	ReturnType = MethodTypes;
@@ -442,7 +442,8 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	NEXT(MethodTypes);
 	NEXT(MethodTypes);
 
-	int argumentIndex = 0;
+	// NOTE: Commented out because only DebugFactory->CreateVariable() uses it
+	//int argumentIndex = 0;
 	for (Function::arg_iterator end = CurrentFunction->arg_end() ; 
 		AI != end ; ++AI) 
 	{
@@ -450,13 +451,13 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		// FIXME: Sensible line information
 		// FIXME: This can't be the correct way of casting a DIDescriptor to a
 		// DIType...
-		DIVariable DebugArg =
-			DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_arg_variable,
-					ScopeDebugContext, "Argument", ModuleSourceFile, 0,
-					DIType(MethodArgDebugTypes.getElement(argumentIndex++)));
+		//DIVariable DebugArg = 
+		//	DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_arg_variable,
+		//			ScopeDebugContext, "Argument", ModuleSourceFile, 0,
+		//			DIType(MethodArgDebugTypes.getElement(argumentIndex++)));
 		Value * arg = Builder.CreateStructGEP(Context, contextOffset++, "arg");
 		Args.push_back(arg);
-		DebugArgs.push_back(DebugArg);
+		//DebugArgs.push_back(DebugArg);
 		//DebugFactory->InsertDeclare(arg, DebugArg, Builder.GetInsertBlock());
 		Builder.CreateStore(BoxValue(&Builder, AI, MethodTypes), arg);
 		NEXT(MethodTypes);
@@ -473,11 +474,11 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 		if (0 != symbols)
 		{
-			DIVariable DebugLocal =
-				DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_auto_variable,
-						ScopeDebugContext, symbols[i], ModuleSourceFile, 0,
-						CGM->DebugTypeForEncoding("@"));
-			DebugLocals.push_back(DebugLocal);
+			//DIVariable DebugLocal =
+			//	DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_auto_variable,
+			//			ScopeDebugContext, symbols[i], ModuleSourceFile, 0,
+			//			CGM->DebugTypeForEncoding("@"));
+			//DebugLocals.push_back(DebugLocal);*/
 		}
 		//DebugFactory->InsertDeclare(local, DebugLocal, Builder.GetInsertBlock());
 	}

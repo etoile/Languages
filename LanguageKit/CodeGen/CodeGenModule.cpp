@@ -105,13 +105,13 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit,
 			IntegerType::get(Context, sizeof(long) * 8));
 
 	// FIXME: Leak
-	Debug = new DIFactory(*TheModule);
+	//Debug = new DIFactory(*TheModule);
 	// Create some metadata for this module.  Pretend that everything LK
 	// compiles is Objective-C.
-	ModuleScopeDescriptor = Debug->CreateCompileUnit(llvm::dwarf::DW_LANG_ObjC,
-			ModuleName, "path", "LanguageKit");
-	ModuleSourceFile = Debug->CreateFile(ModuleName, "path",
-			ModuleScopeDescriptor);
+	//ModuleScopeDescriptor = Debug->CreateCompileUnit(llvm::dwarf::DW_LANG_ObjC,
+	//		ModuleName, "path", "LanguageKit");
+	//ModuleSourceFile = Debug->CreateFile(ModuleName, "path",
+	//		ModuleScopeDescriptor);
 
 	// Store the class to be used for block closures in a global
 	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
@@ -462,6 +462,7 @@ void CodeGenModule::compile(void)
 // FIXME: This method is, basically, entirely nonsense.  It's a quick hack to
 // get SOMETHING working, but it needs a lot of work before it will provide
 // actually meaningful information.
+#if 0
 DIType CodeGenModule::DebugTypeForEncoding(const string &encoding)
 {
 	// Get the previously-created version, if it exists
@@ -585,3 +586,4 @@ DIArray CodeGenModule::DebugTypeArrayForEncoding(const string &encoding)
 	}
 	return Debug->GetOrCreateArray(types.data(), types.size());
 }
+#endif
