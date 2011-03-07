@@ -112,7 +112,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			}
 			return boxed;
 		}
-		case ':': 
+		case ':':
 		{
 			Value *SymbolCalss = B->CreateLoad(
 				CGM->getModule()->getGlobalVariable(
@@ -131,7 +131,7 @@ Value *CodeGenLexicalScope::BoxValue(IRBuilder<> *B, Value *V, const char *types
 			{
 				castSelName = "valueWithRect:";
 				passValue = true;
-			} 
+			}
 			else if (0 == strncmp(typestr, "{_NSRange", 9))
 			{
 				castSelName = "valueWithRange:";
@@ -301,7 +301,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
 	Module *TheModule = CGM->getModule();
-	
+
 	//DIFactory *DebugFactory = CGM->getDebugFactory();
 	DIDescriptor context = CGM->getModuleDescriptor();
 	if (CodeGenLexicalScope *parent = getParentScope())
@@ -337,9 +337,9 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// Flag indicating if we are in an exception handler.  Used for branching
 	// later - should be removed by mem2reg and subsequent passes.
 	Value *inException = Builder.CreateAlloca(Int1Ty, 0, "inException");
-	Value *is_catch = 
+	Value *is_catch =
 		Builder.CreateAlloca(Int1Ty, 0, "is_catch");
-	Value *exceptionPtr = 
+	Value *exceptionPtr =
 		Builder.CreateAlloca(Int8PtrTy, 0, "exception_pointer");
 
 	Builder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 0), inException);
@@ -367,7 +367,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// Space for self, the locals, and the args
 	unsigned contextSize = locals +
 		(CurrentFunction->getFunctionType()->getNumParams() - 2);
-	for (unsigned i = 0 ; i < contextSize ; i++) 
+	for (unsigned i = 0 ; i < contextSize ; i++)
 	{
 		contextTypes.push_back(IdTy);
 	}
@@ -382,14 +382,14 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	frameTypes.push_back(contextType);
 	StructType *frameType = StructType::get(CGM->Context, frameTypes);
 
-	// Create the frame 
+	// Create the frame
 	Value *frame = Builder.CreateAlloca(frameType, 0, "frame");
 	// Initialise the pointer to NULL
 	Builder.CreateStore(ConstantPointerNull::get(cast<PointerType>(PtrTy)),
 			Builder.CreateStructGEP(frame, 0));
 	// Set the context to be the real context
 	Context = Builder.CreateStructGEP(frame, 1);
-	
+
 	// Set the isa pointer
 	Builder.CreateStore(
 		Builder.CreateLoad(
@@ -408,7 +408,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			symbolTableInitialiser.push_back(symbol);
 		}
 		llvm::ArrayType *tableTy = llvm::ArrayType::get(PtrTy, locals);
-		llvm::Constant *initialiser = 
+		llvm::Constant *initialiser =
 			llvm::ConstantArray::get(tableTy, symbolTableInitialiser);
 		llvm::Value *symbolTable = new llvm::GlobalVariable(*TheModule,
 				tableTy, true, llvm::GlobalValue::InternalLinkage,
@@ -430,10 +430,10 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	Builder.CreateStore(
 		ConstantInt::get(IntTy, contextSize + 1),
 		Builder.CreateStructGEP(Context, 2, "context_argc"));
-	
+
 
 	// Store the self pointer in context 0
-	Builder.CreateStore(AI, 
+	Builder.CreateStore(AI,
 			Builder.CreateStructGEP(Context, contextOffset++, "self_ptr"));
 	++AI; ++AI; // Currently we don't expose _cmd / _call
 
@@ -444,14 +444,14 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	// NOTE: Commented out because only DebugFactory->CreateVariable() uses it
 	//int argumentIndex = 0;
-	for (Function::arg_iterator end = CurrentFunction->arg_end() ; 
-		AI != end ; ++AI) 
+	for (Function::arg_iterator end = CurrentFunction->arg_end() ;
+		AI != end ; ++AI)
 	{
 		// FIXME: Pass the names of arguments in from the front end.
 		// FIXME: Sensible line information
 		// FIXME: This can't be the correct way of casting a DIDescriptor to a
 		// DIType...
-		//DIVariable DebugArg = 
+		//DIVariable DebugArg =
 		//	DebugFactory->CreateVariable(llvm::dwarf::DW_TAG_arg_variable,
 		//			ScopeDebugContext, "Argument", ModuleSourceFile, 0,
 		//			DIType(MethodArgDebugTypes.getElement(argumentIndex++)));
@@ -463,9 +463,9 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		NEXT(MethodTypes);
 	}
 	// Create the locals and initialise them to nil
-	for (unsigned i = 0 ; i < locals ; i++) 
+	for (unsigned i = 0 ; i < locals ; i++)
 	{
-		Value * local = 
+		Value * local =
 			Builder.CreateStructGEP(Context, contextOffset++, "local");
 		Locals.push_back(local);
 		// Initialise the local to nil
@@ -482,7 +482,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		}
 		//DebugFactory->InsertDeclare(local, DebugLocal, Builder.GetInsertBlock());
 	}
-	
+
 	/// Put self in a register so we can easily get at it later.
 
 	// If this is the top-level scope then self is argument 0
@@ -496,7 +496,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	else
 	{
 		// Navigate up to the top scope and look for self.
-		
+
 		SetParentScope();
 		CodeGenLexicalScope *scope = this;
 		Value *context = Context;
@@ -539,13 +539,13 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		}
 	}
 	/// Handle returns
-	
+
 	// Create the real return handler
 	BasicBlock *realRetBB = llvm::BasicBlock::Create(CGM->Context, "return", CurrentFunction);
 	IRBuilder<> ReturnBuilder = IRBuilder<>(realRetBB);
 	const Type *functionRetTy =
 		CurrentFunction->getFunctionType()->getReturnType();
-	if (functionRetTy != llvm::Type::getVoidTy(CGM->Context)) 
+	if (functionRetTy != llvm::Type::getVoidTy(CGM->Context))
 	{
 		Value * R = ReturnBuilder.CreateLoad(RetVal);
 		if (functionRetTy != RetTy)
@@ -647,7 +647,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	//// Set up the exception landing pad.
 
-	ExceptionBB = 
+	ExceptionBB =
 		BasicBlock::Create(CGM->Context, "non_local_return_handler", CurrentFunction);
 	IRBuilder<> ExceptionBuilder = IRBuilder<>(ExceptionBB);
 	Value *exception = ExceptionBuilder.CreateCall(
@@ -662,7 +662,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	Value *eh_selector = ExceptionBuilder.CreateCall4(
 		llvm::Intrinsic::getDeclaration(TheModule,
 			llvm::Intrinsic::eh_selector, 0, 0),
-		exception, ehPersonality, 
+		exception, ehPersonality,
 		TheModule->getOrInsertGlobal("__LanguageKitNonLocalReturn", Type::getInt8Ty(CGM->Context)),
 		ConstantPointerNull::get(Int8PtrTy));
 
@@ -692,7 +692,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 
 	ExceptionBuilder.SetInsertPoint(CatchBlock);
 	// This function will rethrow if the frames do not match.  Otherwise it will
-	// insert the correct 
+	// insert the correct
 	Value *RetPtr = RetVal;
 	if (0 != RetVal)
 	{
@@ -710,7 +710,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	// stack past the current frame.  If it didn't, we'd get an infinite loop,
 	// with the function continually catching the non-local return exception
 	// and rethrowing it.
-	ExceptionBuilder.CreateCall3(EHFunction, 
+	ExceptionBuilder.CreateCall3(EHFunction,
 		ExceptionBuilder.CreateBitCast(Context, PtrTy),
 		ExceptionBuilder.CreateLoad(exceptionPtr),
 	   	RetPtr);
@@ -747,15 +747,15 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
                                     const char *selTypes,
                                     bool skipImplicit)
 {
-	if (NULL == selTypes) 
+	if (NULL == selTypes)
 	{
 		// All types are id
-		for (unsigned i=0 ; i<argv.size() ; ++i) 
+		for (unsigned i=0 ; i<argv.size() ; ++i)
 		{
 			args.push_back(Unbox(B, F, argv[i], "@"));
 		}
-	} 
-	else 
+	}
+	else
 	{
 		SkipTypeQualifiers(&selTypes);
 		//Skip return, self, cmd
@@ -764,7 +764,7 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
 			NEXT(selTypes);
 			NEXT(selTypes);
 		}
-		for (unsigned i=0 ; i<argv.size() ; ++i) 
+		for (unsigned i=0 ; i<argv.size() ; ++i)
 		{
 			NEXT(selTypes);
 			SkipTypeQualifiers(&selTypes);
@@ -775,7 +775,7 @@ void CodeGenLexicalScope::UnboxArgs(IRBuilder<> *B,
 
 Value *CodeGenLexicalScope::MessageSendSuper(IRBuilder<> *B, Function *F, const
 		char *selName, const char *selTypes,
-		llvm::SmallVectorImpl<llvm::Value*> &argv) 
+		llvm::SmallVectorImpl<llvm::Value*> &argv)
 {
 	Value *Sender = LoadSelf();
 	Value *SelfPtr = Sender;
@@ -872,7 +872,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	// a big int.
 	if (0 != SmallIntFunction)
 	{
-		smallIntContinueBB = 
+		smallIntContinueBB =
 			BasicBlock::Create(CGM->Context, "small_int_bitcast_result", CurrentFunction);
 		SmallVector<Value*, 8> Args;
 		Args.push_back(receiver);
@@ -917,12 +917,12 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	if ((Result->getType() != ObjResult->getType())
 			&& (ObjResult->getType() != Type::getVoidTy(CGM->Context)))
 	{
-		Result = SmallIntBuilder.CreateBitCast(Result, ObjResult->getType(), 
+		Result = SmallIntBuilder.CreateBitCast(Result, ObjResult->getType(),
 			"cast_small_int_result");
 	}
 	SmallIntBuilder.CreateBr(Continue);
 
-	
+
 	// Join the two paths together again:
 
 	RealObjectBuilder.CreateBr(Continue);
@@ -942,7 +942,7 @@ Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index, unsigned depth)
 {
 	if (0 == depth)
 	{
-		return Builder.CreateLoad(Args[index]); 
+		return Builder.CreateLoad(Args[index]);
 	}
 	Value *context = Context;
 	for (unsigned i=0 ; i<depth ; ++i)
@@ -956,13 +956,13 @@ Value *CodeGenLexicalScope::LoadArgumentAtIndex(unsigned index, unsigned depth)
 		Builder.CreateStructGEP(context, CONTEXT_VARIABLE_OFFSET + 1 + index));
 }
 
-Value *CodeGenLexicalScope::LoadLocalAtIndex(unsigned index, unsigned depth) 
-{ 
+Value *CodeGenLexicalScope::LoadLocalAtIndex(unsigned index, unsigned depth)
+{
 	LOG("Loading local %d, depth %d \n", index, depth);
 	if (0 == depth)
 	{
 		DUMP(Locals[index]);
-		return Builder.CreateLoad(Locals[index]); 
+		return Builder.CreateLoad(Locals[index]);
 	}
 	CodeGenLexicalScope *scope = this;
 	Value *context = Context;
@@ -974,11 +974,11 @@ Value *CodeGenLexicalScope::LoadLocalAtIndex(unsigned index, unsigned depth)
 		context = Builder.CreateLoad(context);
 		scope = scope->getParentScope();
 	}
-	return Builder.CreateLoad(Builder.CreateStructGEP(context, 
+	return Builder.CreateLoad(Builder.CreateStructGEP(context,
 				CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size()));
 }
 
-Value *CodeGenLexicalScope::LoadSelf(void) 
+Value *CodeGenLexicalScope::LoadSelf(void)
 {
 	return Builder.CreateLoad(Self, true);
 }
@@ -986,7 +986,7 @@ Value *CodeGenLexicalScope::LoadSelf(void)
 void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned
 		index, unsigned depth)
 {
-	if (value->getType() != IdTy) 
+	if (value->getType() != IdTy)
 	{
 		value = Builder.CreateBitCast(value, IdTy);
 	}
@@ -1006,7 +1006,7 @@ void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned
 		scope = scope->getParentScope();
 	}
 	LOG("Storing local at index %d, depth %d.  ", index, depth);
-	LOG("Offset is: %d\n", CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size());
+	LOG("Offset is: %lu\n", CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size());
 	DUMP(value);
 	// Locals go after args in the context
 	Builder.CreateStore(value, Builder.CreateStructGEP(context,
@@ -1026,7 +1026,7 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
 	unsigned offset,
 	Value *object)
 {
-	Value *Offset = 
+	Value *Offset =
 		CGM->getRuntime()->OffsetOfIvar(Builder, className, ivarName, offset);
 	Value *addr = Builder.CreatePtrToInt(object, IntTy);
 	addr = Builder.CreateAdd(addr, Offset);
@@ -1037,12 +1037,12 @@ Value *CodeGenLexicalScope::LoadValueOfTypeAtOffsetFromObject(
 // Generate a printf() call with the specified string and value.  Used for
 // debugging.
 void CodeGenLexicalScope::CreatePrintf(IRBuilder<> &Builder,
-                                       const char *str, 
+                                       const char *str,
                                        Value *val)
 {
 	std::vector<const Type*> Params;
 	Params.push_back(PointerType::getUnqual(Type::getInt8Ty(CGM->Context)));
-	Value *PrintF = CGM->getModule()->getOrInsertFunction("printf", 
+	Value *PrintF = CGM->getModule()->getOrInsertFunction("printf",
 			FunctionType::get(Type::getVoidTy(CGM->Context), Params, true));
 	Builder.CreateCall2(PrintF, CGM->MakeConstantString(str), val);
 }
@@ -1265,11 +1265,11 @@ void CodeGenLexicalScope::BranchOnCondition(Value *condition,
 	Builder.CreateCondBr(result, TrueBB, FalseBB);
 }
 
-void CodeGenLexicalScope::SetReturn(Value * Ret) 
+void CodeGenLexicalScope::SetReturn(Value * Ret)
 {
 	if (Ret != 0)
 	{
-		if (Ret->getType() != IdTy) 
+		if (Ret->getType() != IdTy)
 		{
 			Ret = Builder.CreateBitCast(Ret, IdTy);
 		}
