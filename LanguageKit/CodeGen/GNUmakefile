@@ -17,6 +17,11 @@ ${FRAMEWORK_NAME}_CC_FILES = \
 	CodeGenLexicalScope.cpp\
 	LLVMCodeGen.cpp
 
+ifeq ($(GNUSTEP_TARGET_CPU), x86_64)
+${FRAMEWORK_NAME}_CC_FILES += \
+	AMD64/AMD64ABIInfo.cpp
+endif
+
 ${FRAMEWORK_NAME}_OBJCC_FILES = \
 	LKCompiler+JTL.mm\
 	LLVMCodeGen.mm
