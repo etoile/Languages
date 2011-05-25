@@ -20,6 +20,8 @@
 #include <algorithm>
 #include <dlfcn.h>
 
+#include "LLVMCompat.h"
+
 using namespace llvm;
 using namespace std;
 
@@ -27,8 +29,6 @@ using namespace std;
 // in the runtime.
 static const int RuntimeVersion = 8;
 static const int ProtocolVersion = 2;
-
-static bool enable_sender_dispatch = false;
 
 namespace {
 class CGObjCGNU : public CGObjCRuntime {
@@ -247,7 +247,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	// Object type
 	llvm::PATypeHolder OpaqueObjTy = llvm::OpaqueType::get(Context);
 	llvm::Type *OpaqueIdTy = llvm::PointerType::getUnqual(OpaqueObjTy);
-	IdTy = llvm::StructType::get(Context, OpaqueIdTy, NULL);
+	IdTy = llvm::StructType::get(Context, OpaqueIdTy, NULL, NULL);
 	llvm::cast<llvm::OpaqueType>(OpaqueObjTy.get())->refineAbstractTypeTo(IdTy);
 	IdTy = llvm::cast<llvm::StructType>(OpaqueObjTy.get());
 	IdTy = llvm::PointerType::getUnqual(IdTy);
@@ -551,7 +551,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 		llvm::MDString::get(Context, SuperClassName),
 		llvm::ConstantInt::get(llvm::Type::getInt1Ty(Context), isClassMessage)
 		};
-	llvm::MDNode *node = llvm::MDNode::get(Context, impMD, 3);
+	llvm::MDNode *node = CreateMDNode(Context, impMD, 3);
 
 	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver,
 			Selector, ArgV, CleanupBlock, node);
@@ -620,7 +620,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 		llvm::MDString::get(Context, ReceiverClass),
 		llvm::ConstantInt::get(llvm::Type::getInt1Ty(Context), isClassMessage)
 		};
-	llvm::MDNode *node = llvm::MDNode::get(Context, impMD, 3);
+	llvm::MDNode *node = CreateMDNode(Context, impMD, 3);
 
 	// Call the method.
 	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver, Selector,

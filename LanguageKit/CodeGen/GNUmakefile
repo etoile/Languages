@@ -38,6 +38,10 @@ ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
+# LLVM doesn't provide its version in any header files, so define it here using
+# some ugly sed tricks to parse the output from llvm-config
+${FRAMEWORK_NAME}_CPPFLAGS =  `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/-DLLVM_MAJOR=\1 -DLLVM_MINOR=\2/'`
+
 # LLVM flags
 LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
 

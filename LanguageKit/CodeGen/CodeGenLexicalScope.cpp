@@ -600,8 +600,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			CleanupBuilder.CreateBr(continueBB);
 			CleanupBuilder.SetInsertPoint(continueBB);
 
-			PHINode *phi = CleanupBuilder.CreatePHI(retObj->getType(), "retained_return");
-			phi->reserveOperandSpace(2);
+			PHINode *phi = CleanupBuilder.CreatePHI(retObj->getType(), 2, "retained_return");
 			phi->addIncoming(retObj, CleanupBB);
 			phi->addIncoming(retained, retainBB);
 			retObj = phi;
@@ -929,8 +928,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	B->SetInsertPoint(Continue);
 	if (ObjResult->getType() != Type::getVoidTy(CGM->Context))
 	{
-		PHINode *Phi = B->CreatePHI(Result->getType(),	selName);
-		Phi->reserveOperandSpace(2);
+		PHINode *Phi = B->CreatePHI(Result->getType(), 2, selName);
 		Phi->addIncoming(Result, smallIntContinueBB);
 		Phi->addIncoming(ObjResult, RealObject);
 		return Phi;
