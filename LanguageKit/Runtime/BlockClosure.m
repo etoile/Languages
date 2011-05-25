@@ -157,14 +157,22 @@ NSString *LKSmalltalkBlockNonLocalReturnException =
 @end
 
 @implementation StackBlockClosure
-- (id) retain
+- (id)copyWithZone: (NSZone*)aZone
 {
-	BlockClosure *block = [[BlockClosure alloc] init];
+	BlockClosure *block = [BlockClosure allocWithZone: aZone];
 	block->function = function;
 	block->args = args;
 	block->context = context;
-	[context retainWithPointer:&(block->context)];
+	[context retainWithPointer: &(block->context)];
 	return block;
+}
+- (id)copy
+{
+	return [self copyWithZone: NSDefaultMallocZone()];
+}
+- (id)retain
+{
+	return [self copyWithZone: NSDefaultMallocZone()];
 }
 void __LanguageKitThrowNonLocalReturn(void *context, void *retval);
 - (void) nonLocalReturn:(id) anObject
