@@ -10,8 +10,8 @@ NSObject subclass: SmalltalkTool [
 	       		    show: ')'; cr.
 	       [
 		 ETTranscript show: 'Inner block called.'; cr.
-	       ].
-	     ].
+	       ] copy.
+	     ] copy.
 	     
 	     "Call outer"
 	     a value.
