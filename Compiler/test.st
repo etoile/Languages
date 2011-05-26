@@ -1,4 +1,4 @@
-<< types = '{"data" = "@8@0:4"}'>>
+<< types = '{"data" = "@8@0:4";}'>>
 NSObject subclass: TestBlock
 [
 	run: aBlock [
@@ -118,6 +118,7 @@ NSObject subclass: SmalltalkTool
 		nil == nil log.
 		'nil = nil' log.
 		nil = nil log.
+		NSGarbageCollector defaultCollector collectExhaustively.
 	]
 	objectAtIndex: i [
 		"This parameter will be passed as an unsigned int, because NSArray
