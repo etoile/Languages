@@ -43,18 +43,12 @@ ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 ${FRAMEWORK_NAME}_CPPFLAGS =  `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/-DLLVM_MAJOR=\1 -DLLVM_MINOR=\2/'`
 
 # LLVM flags
-LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
+#LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
+LLVM_LIBS=all
 
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 ${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
-
-# If the GNUObjCRuntime.so file exists, we want to link against it and use all
-# of the nice shiny passes.
-ifneq ($(wildcard $(shell echo `llvm-config --libdir`)/libGNUObjCRuntime.so),)
-	${FRAMEWORK_NAME}_CPPFLAGS += -DLIBOBJC2_PASSES
-	${FRAMEWORK_NAME}_LDFLAGS += -L`llvm-config --libdir` -lGNUObjCRuntime
-endif
 
 LD = g++
 CC = clang

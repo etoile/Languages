@@ -309,18 +309,20 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 		context = parent->getScopeDescriptor();
 	}
 
+	/*
 	DICompileUnit ModuleScopeDescriptor  = CGM->getModuleDescriptor();
 	DIFile ModuleSourceFile  = CGM->getSourceFileDescriptor();
 	DIArray MethodArgDebugTypes = CGM->DebugTypeArrayForEncoding(MethodTypes);
-	//DIType MethodDebugType =
-	//	DebugFactory->CreateCompositeType(llvm::dwarf::DW_TAG_subroutine_type,
-	//			ModuleScopeDescriptor, "", ModuleSourceFile, 0, 0, 0, 0, 0, DIType(),
-	//			MethodArgDebugTypes);
+	DIType MethodDebugType =
+		DebugFactory->CreateCompositeType(llvm::dwarf::DW_TAG_subroutine_type,
+				ModuleScopeDescriptor, "", ModuleSourceFile, 0, 0, 0, 0, 0, DIType(),
+				MethodArgDebugTypes);
 
 	// FIXME: Line number info.
-	//DIDescriptor ScopeDebugContext = DebugFactory->CreateSubprogram(context,
-	//		humanName, humanName, CurrentFunction->getName(), ModuleSourceFile, 0,
-	//		MethodDebugType, true, true);
+	DIDescriptor ScopeDebugContext = DebugFactory->CreateSubprogram(context,
+			humanName, humanName, CurrentFunction->getName(), ModuleSourceFile, 0,
+			MethodDebugType, true, true);
+			*/
 
 	const PointerType *Int8PtrTy = PointerType::getUnqual(Type::getInt8Ty(CGM->Context));
 	ReturnType = MethodTypes;
@@ -573,7 +575,8 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 	{
 		Value *retObj = CleanupBuilder.CreateLoad(RetVal);
 		CGObjCRuntime *Runtime = CGM->getRuntime();
-		if (isLKObject(ReturnType))
+		if (CGM->GC) {}
+		else if (isLKObject(ReturnType))
 		{
 			// Note: We can't use MessageSend() here, beucase it will try to
 			// set the current BB as the unwind destination and things get
@@ -1004,7 +1007,7 @@ void CodeGenLexicalScope::StoreValueInLocalAtIndex(Value * value, unsigned
 		scope = scope->getParentScope();
 	}
 	LOG("Storing local at index %d, depth %d.  ", index, depth);
-	LOG("Offset is: %lu\n", CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size());
+	LOG("Offset is: %lu\n", (unsigned long)(CONTEXT_VARIABLE_OFFSET + 1 + index + scope->Args.size()));
 	DUMP(value);
 	// Locals go after args in the context
 	Builder.CreateStore(value, Builder.CreateStructGEP(context,
@@ -1065,6 +1068,11 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 	// Do the ASSIGN() thing if it's an object.
 	if (type[0] == '@')
 	{
+		if (CGM->GC)
+		{
+			Builder.CreateCall3(CGM->AssignIvar, box, object, Offset);
+			return;
+		}
 	// Some objects may return a different object when retained.	Store that
 	// instead.
 		box = Runtime->GenerateMessageSend(Builder, IdTy, false, NULL, box,
@@ -1075,6 +1083,11 @@ void CodeGenLexicalScope::StoreValueOfTypeAtOffsetFromObject(
 	}
 	else if (isLKObject(type))
 	{
+		if (CGM->GC)
+		{
+			Builder.CreateCall3(CGM->AssignIvar, box, object, Offset);
+			return;
+		}
 		box = MessageSend(&Builder, CurrentFunction, box, "retain", 0);
 		Value *old = Builder.CreateLoad(addr);
 		MessageSend(&Builder, CurrentFunction, old, "autorelease", 0);
@@ -1222,10 +1235,14 @@ Value *CodeGenLexicalScope::LoadClassVariable(string className, string
 void CodeGenLexicalScope::StoreValueInClassVariable(string className, string
 		cVarName, Value *object)
 {
-	object = MessageSend(&Builder, CurrentFunction, object, "retain", 0);
-	Value *old = LoadClassVariable(className, cVarName);
-	MessageSend(&Builder, CurrentFunction, old, "autorelease", 0);
-	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object);
+	if (!CGM->GC)
+	{
+		object = MessageSend(&Builder, CurrentFunction, object, "retain", 0);
+		Value *old = LoadClassVariable(className, cVarName);
+		MessageSend(&Builder, CurrentFunction, old, "autorelease", 0);
+	}
+	CGM->getRuntime()->StoreClassVariable(Builder, className, cVarName, object, 
+			CGM->GC ? CGM->AssignGlobal : 0);
 }
 
 BasicBlock *CodeGenLexicalScope::StartBasicBlock(const char* BBName)

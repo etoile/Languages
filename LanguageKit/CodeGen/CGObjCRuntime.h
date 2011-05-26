@@ -150,7 +150,8 @@ public:
 			 std::string &ClassName, std::string &CvarName) = 0;
 	/// Store a value to a class variable
 	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, std::string
-		&ClassName, std::string &CvarName, llvm::Value* aValue) = 0;
+		&ClassName, std::string &CvarName, llvm::Value* aValue,
+				   llvm::Constant *assignFunction=0) = 0;
 	// Look up the offset of an instance variable.
 	virtual llvm::Value *OffsetOfIvar(llvm::IRBuilder<> &Builder,
 	                                  const char *className,
@@ -169,5 +170,6 @@ CGObjCRuntime *CreateObjCRuntime(
     llvm::Module &M,
 	llvm::LLVMContext &C,
     const llvm::Type *LLVMIntType,
-    const llvm::Type *LLVMLongType);
+    const llvm::Type *LLVMLongType,
+	bool enableGC);
 #endif

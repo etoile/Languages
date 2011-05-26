@@ -27,8 +27,8 @@ using namespace std;
 
 // The version of the runtime that this class targets.  Must match the version
 // in the runtime.
-static const int RuntimeVersion = 8;
-static const int ProtocolVersion = 2;
+static int RuntimeVersion = 8;
+static int ProtocolVersion = 2;
 
 namespace {
 class CGObjCGNU : public CGObjCRuntime {
@@ -57,6 +57,7 @@ private:
 	llvm::Constant *Zeros[2];
 	llvm::Constant *NULLPtr;
 	unsigned msgSendMDKind;
+	bool GC;
 private:
 	GlobalVariable *ObjCIvarOffsetVariable(const char *className,
 		const char *ivarName, uint64_t Offset);
@@ -110,7 +111,8 @@ public:
 	CGObjCGNU(llvm::Module &Mp,
 		llvm::LLVMContext &C,
 		const llvm::Type *LLVMIntType,
-		const llvm::Type *LLVMLongType);
+		const llvm::Type *LLVMLongType,
+		bool enableGC);
 	virtual llvm::Constant *GenerateConstantString(const char *String, 
 		const size_t length);
 	virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
@@ -196,7 +198,8 @@ public:
 	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, 
 	                                string &ClassName,
 	                                string &CvarName,
-	                                llvm::Value* aValue);
+	                                llvm::Value *aValue,
+	                                llvm::Constant *assignFunction);
 };
 } // end anonymous namespace
 
@@ -218,12 +221,18 @@ static std::string SymbolNameForMethod(const std::string &ClassName, const
 CGObjCGNU::CGObjCGNU(llvm::Module &M,
                      llvm::LLVMContext &C,
                       const llvm::Type *LLVMIntType,
-                      const llvm::Type *LLVMLongType) : 
+                      const llvm::Type *LLVMLongType,
+                      bool enableGC) :
                       Context(C),
                       TheModule(M),
                       IntTy(LLVMIntType),
                       LongTy(LLVMLongType)
 {
+	GC = enableGC;
+	if (GC)
+	{
+		RuntimeVersion = 10;
+	}
 	Zeros[0] = ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
 	Zeros[1] = Zeros[0];
 
@@ -245,12 +254,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	PtrTy = PtrToInt8Ty;
  
 	// Object type
-	llvm::PATypeHolder OpaqueObjTy = llvm::OpaqueType::get(Context);
-	llvm::Type *OpaqueIdTy = llvm::PointerType::getUnqual(OpaqueObjTy);
-	IdTy = llvm::StructType::get(Context, OpaqueIdTy, NULL, NULL);
-	llvm::cast<llvm::OpaqueType>(OpaqueObjTy.get())->refineAbstractTypeTo(IdTy);
-	IdTy = llvm::cast<llvm::StructType>(OpaqueObjTy.get());
-	IdTy = llvm::PointerType::getUnqual(IdTy);
+	IdTy = PtrTy;
 	// IMP type
 	std::vector<const llvm::Type*> IMPArgs;
 	IMPArgs.push_back(IdTy);
@@ -1181,7 +1185,8 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	// The symbol table is contained in a module which has some version-checking
 	// constants
 	llvm::StructType * ModuleTy = llvm::StructType::get(Context, LongTy, LongTy,
-		PtrToInt8Ty, llvm::PointerType::getUnqual(SymTabTy), NULL);
+		PtrToInt8Ty, llvm::PointerType::getUnqual(SymTabTy), 
+		GC ? IntTy : NULL, NULL);
 	Elements.clear();
 	// Runtime version used for compatibility checking.
 	Elements.push_back(ConstantInt::get(LongTy, RuntimeVersion));
@@ -1192,6 +1197,11 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	//FIXME: Should be the path to the file where this module was declared
 	Elements.push_back(NULLPtr);
 	Elements.push_back(SymTab);
+	if (GC)
+	{
+		// GC required.
+		Elements.push_back(ConstantInt::get(IntTy, 2));
+	}
 	llvm::Value *Module = MakeGlobal(ModuleTy, Elements);
 
 	// Create the load function calling the runtime entry point with the module
@@ -1285,11 +1295,16 @@ llvm::Value *CGObjCGNU::LoadClassVariable(llvm::IRBuilder<> &Builder,
 }
 
 void CGObjCGNU::StoreClassVariable(llvm::IRBuilder<> &Builder, string
-	&ClassName, string &CvarName, llvm::Value* aValue)
+	&ClassName, string &CvarName, llvm::Value* aValue, llvm::Constant
+	*assignFunction)
 {
 	string cvarname = ClassVariableName(ClassName, CvarName);
 	GlobalVariable *var = TheModule.getNamedGlobal(cvarname);
 	aValue = Builder.CreateBitCast(aValue, IdTy);
+	if (assignFunction)
+	{
+		Builder.CreateCall2(assignFunction, aValue, var);
+	}
 	Builder.CreateStore(aValue, var);
 }
 
@@ -1330,7 +1345,8 @@ llvm::Value *CGObjCGNU::OffsetOfIvar(llvm::IRBuilder<> &Builder,
 CGObjCRuntime *CreateObjCRuntime(llvm::Module &M,
                                  llvm::LLVMContext &C,
                                  const llvm::Type *LLVMIntType,
-                                 const llvm::Type *LLVMLongType)
+                                 const llvm::Type *LLVMLongType,
+                                 bool enableGC)
 {
-  return new CGObjCGNU(M, C, LLVMIntType, LLVMLongType);
+  return new CGObjCGNU(M, C, LLVMIntType, LLVMLongType, enableGC);
 }

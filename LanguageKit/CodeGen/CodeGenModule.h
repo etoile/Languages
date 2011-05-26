@@ -22,6 +22,7 @@ extern const PointerType *IMPTy;
 extern const char *MsgSendSmallIntFilename;
 extern Constant *Zeros[2];
 
+
 /**
  * This class implements a streaming code generation interface designed to be
  * called directly from an AST.  
@@ -63,7 +64,12 @@ private:
   llvm::SmallVector<string, 8> ClassMethodTypes;
   llvm::SmallVector<std::string, 8> Protocols;
 
+public:
+  bool GC;
   bool profilingEnabled;
+  llvm::Constant *AssignGlobal;
+  llvm::Constant *AssignIvar;
+private:
 
   /**
    * Returns a constant C string using Str as an initialiser.
@@ -107,18 +113,17 @@ public:
 	 * Returns an array of debug types representing the type encodings in a
 	 * string.
 	 */
-	DIArray DebugTypeArrayForEncoding(const string &encoding);
+	//DIArray DebugTypeArrayForEncoding(const string &encoding);
 
 	/**
 	 * Returns the code generator for the current scope
 	 */
 	CodeGenLexicalScope *getCurrentScope() { return ScopeStack.back(); }
 	/**
-	 * Initialise for the specified module.  The second argument specifies
-	 * whether the module should be used for static or JIT compilation.
+	 * Initialise for the specified module.  
 	 */
-	CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit=true,
-			bool profiling=false);
+	CodeGenModule(const char *ModuleName, LLVMContext &C, bool gc=false,
+			bool jit=true, bool profiling=false);
 
 	/**
 	 * Start generating code for a class.

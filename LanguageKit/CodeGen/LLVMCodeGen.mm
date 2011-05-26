@@ -4,6 +4,11 @@ extern "C"
 #import "LLVMCodeGen.h"
 #import "../Runtime/LKObject.h"
 #import "../LKSymbolTable.h"
+#if __OBJC_GC__
+BOOL objc_collecting_enabled(void);
+#else
+#	error Not compiling in GC mode!
+#endif
 //#include <objc/objc-api.h>
 }
 
@@ -46,7 +51,7 @@ const char * LKObjectEncoding = @encode(LKObjectPtr);
 		NSAssert(bcFilePath, 
 		         @"Unable to find the location of MsgSendSmallInt.bc."
 		         "This must be in either the current working directory or in"
-		         " the Resources directory of the Smalltalk language bundle "
+		         " the Resources directory of the LanguageKit bundle "
 		         "installed on your system.");
 		// These two functions don't do anything.  They must be called,
 		// however, to make sure that the linker doesn't optimise the JIT away.
@@ -84,7 +89,7 @@ const char * LKObjectEncoding = @encode(LKObjectPtr);
 {
 	const char *ModuleName = [fileName UTF8String];
 	if (NULL == ModuleName) ModuleName = "Anonymous";
-	Builder = new CodeGenModule(ModuleName, getGlobalContext());
+	Builder = new CodeGenModule(ModuleName, getGlobalContext(), objc_collecting_enabled());
 }
 
 - (void) endModule
@@ -375,7 +380,7 @@ lexicalScopeAtDepth: (unsigned) scope
 {
 	const char *ModuleName = [[outFile lastPathComponent] UTF8String];
 	if (NULL == ModuleName) { ModuleName = "Anonymous"; }
-	Builder = new CodeGenModule(ModuleName, getGlobalContext(), false);
+	Builder = new CodeGenModule(ModuleName, getGlobalContext(), false, false);
 }
 @end
 id <LKCodeGenerator> defaultJIT(void)

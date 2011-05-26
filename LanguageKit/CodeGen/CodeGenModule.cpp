@@ -40,10 +40,6 @@ ModulePass *createTypeFeedbackDrivenInlinerPass(void);
 
 using std::string;
 
-namespace llvm 
-{
-	extern bool JITExceptionHandling;
-}
 // A copy of the Small Int message module, used when static compiling.
 static Module *SmallIntMessages = NULL;
 
@@ -73,9 +69,9 @@ void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *
 					MakeConstantString(className)), IdTy), global);
 }
 
-CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit,
-		bool profiling) 
-	: Context(C), InitialiseBuilder(Context), profilingEnabled(profiling)
+CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool gc,
+		bool jit, bool profiling) 
+	: Context(C), InitialiseBuilder(Context), GC(gc), profilingEnabled(profiling)
 {
 	// When we JIT code, we put the Small Int message functions inside the
 	// module, to allow them to be inlined by module passes.  When static
@@ -102,7 +98,7 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit,
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 
 	Runtime = CreateObjCRuntime(*TheModule, Context, IntTy,
-			IntegerType::get(Context, sizeof(long) * 8));
+			IntegerType::get(Context, sizeof(long) * 8), GC);
 
 	// FIXME: Leak
 	//Debug = new DIFactory(*TheModule);
@@ -122,6 +118,15 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool jit,
 	CreateClassPointerGlobal("NSNumber", ".smalltalk_nsnumber_class");
 	CreateClassPointerGlobal("BigInt", ".smalltalk_bigint_class");
 	CreateClassPointerGlobal("BoxedFloat", ".smalltalk_boxedfloat_class");
+	Type *IdPtrTy = PointerType::getUnqual(IdTy);
+	if (gc)
+	{
+		AssignIvar = TheModule->getOrInsertFunction( "objc_assign_ivar",
+				IdTy, IdTy, IdTy, IntegerType::get(Context, sizeof(void*) * 8),
+				NULL);
+		AssignGlobal = TheModule->getOrInsertFunction("objc_assign_global",
+				IdTy, IdTy, IdPtrTy, NULL);
+	}
 }
 
 void CodeGenModule::BeginClass(const char *Class,
@@ -315,14 +320,21 @@ Value *CodeGenModule::GenericConstant(IRBuilder<> &Builder,
 
 	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
 		false,  NULL, Class, constructor.c_str(), 0, V);
-	// Retain it
-	S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
-		S, "retain", 0);
 	// Define a global variable and store it there.
 	GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
 			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
 			arg);
-	InitialiseBuilder.CreateStore(S, GS);
+	// Retain it
+	if (GC)
+	{
+		InitialiseBuilder.CreateCall2(AssignGlobal, S, GS);
+	}
+	else
+	{
+		S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
+				S, "retain", 0);
+		InitialiseBuilder.CreateStore(S, GS);
+	}
 	// Load the global.
 	return Builder.CreateLoad(GS);
 }
@@ -450,7 +462,6 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
-		JITExceptionHandling = true;
 		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
 	}
