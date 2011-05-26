@@ -69,11 +69,13 @@ NSObject subclass: SmalltalkTool
 	| a b c|
 		"Test array creation."
 		a := {NSObject new. NSString new. NSArray new}.
+		NSGarbageCollector defaultCollector collectExhaustively.
 		a log.
 		"Test passing Smalltalk blocks to Objective-C objects"
 		b := a map:[ :x | x log. x class. ].
 		b map:[ :x | x log. x. ].
 		a insertObject:'test' atIndex:2.
+		NSGarbageCollector defaultCollector collectExhaustively.
 		b := a objectAtIndex:2.
 		"You can't do this in Objective-C:"
 		(a objectAtIndex:'2') log.
@@ -83,6 +85,7 @@ NSObject subclass: SmalltalkTool
 		"Test SmallInt messaging"
 		b := 12.
 		c := b + 5.
+		NSGarbageCollector defaultCollector collectExhaustively.
 		b stringValue log.
 		'Comparison result:' log.
 		('wibble' == 'wible') log.
@@ -95,6 +98,7 @@ NSObject subclass: SmalltalkTool
 		b log.
 		a := NSMutableArray array. 
 		a log.
+		NSGarbageCollector defaultCollector collectExhaustively.
 		self objectAtIndex: 12.
 		"Test passing blocks to other bits of Smalltalk code"
 		r run:[ a log. ].
@@ -104,6 +108,7 @@ NSObject subclass: SmalltalkTool
 		@NSViewMaxYMargin log.
 		(1 < 2) ifTrue:[ '1 < 2' log. ].
 		self testNestedBlocks.
+		NSGarbageCollector defaultCollector collectExhaustively.
 		#symbol log.
 		'Testing if empty methods return self:' log.
 		self init log.
