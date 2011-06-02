@@ -29,6 +29,23 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 //#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
 #define CHARCASE(letter, token) case letter: CALL_PARSER(token, @"char"); break;
 
+/**
+ * Helper function so that Lemon can allocate GC-scanned memory.
+ */
+static void* allocParserMemory(size_t size)
+{
+	return NSAllocateCollectable(size, NSScannedOption);
+}
+
+/**
+ * Helper function so that Lemon can free memory.  This will be a no-op in GC
+ * mode.
+ */
+static void freeParser(void *memory)
+{
+	NSZoneFree(0, memory);
+}
+
 - (LKAST*) parse:(NSString*)s
 {
 	unsigned int sLength = [s length];
@@ -40,7 +57,7 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 	IMP substr = [LKToken methodForSelector:substrSel];
 	Class LKTokenClass = [LKToken class];
 	/* Set up the parser */
-	void * parser = SmalltalkParseAlloc( malloc );
+	void * parser = SmalltalkParseAlloc(allocParserMemory);
 
 	// SmalltalkParseTrace(stderr, "LEMON: ");
 
@@ -189,7 +206,7 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 		                       userInfo:userinfo] raise];
 	NS_ENDHANDLER
 	SmalltalkParse(parser, 0, nil, self);
-	SmalltalkParseFree(parser, free);
+	SmalltalkParseFree(parser, freeParser);
 	return ast;
 }
 
