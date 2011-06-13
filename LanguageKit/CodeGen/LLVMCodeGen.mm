@@ -5,11 +5,10 @@ extern "C"
 #import "../Runtime/LKObject.h"
 #import "../LKSymbolTable.h"
 #if __OBJC_GC__
-BOOL objc_collecting_enabled(void);
+#	include <objc/objc-api.h>
 #else
-#	error Not compiling in GC mode!
+BOOL objc_collecting_enabled(void) { return NO; }
 #endif
-//#include <objc/objc-api.h>
 }
 
 
