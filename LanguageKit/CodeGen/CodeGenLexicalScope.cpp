@@ -2,6 +2,7 @@
 #include "CodeGenBlock.h"
 #include "CodeGenModule.h"
 #include "ABI.h"
+#include "LLVMCompat.h"
 #include <llvm/Module.h>
 #include <llvm/Intrinsics.h>
 #include <llvm/LLVMContext.h>
@@ -603,7 +604,7 @@ void CodeGenLexicalScope::InitialiseFunction(SmallVectorImpl<Value*> &Args,
 			CleanupBuilder.CreateBr(continueBB);
 			CleanupBuilder.SetInsertPoint(continueBB);
 
-			PHINode *phi = CleanupBuilder.CreatePHI(retObj->getType(), 2, "retained_return");
+			PHINode *phi = IRBuilderCreatePHI(&CleanupBuilder, retObj->getType(), 2, "retained_return");
 			phi->addIncoming(retObj, CleanupBB);
 			phi->addIncoming(retained, retainBB);
 			retObj = phi;
@@ -931,7 +932,7 @@ Value *CodeGenLexicalScope::MessageSend(IRBuilder<> *B,
 	B->SetInsertPoint(Continue);
 	if (ObjResult->getType() != Type::getVoidTy(CGM->Context))
 	{
-		PHINode *Phi = B->CreatePHI(Result->getType(), 2, selName);
+		PHINode *Phi = IRBuilderCreatePHI(B, Result->getType(), 2, selName);
 		Phi->addIncoming(Result, smallIntContinueBB);
 		Phi->addIncoming(ObjResult, RealObject);
 		return Phi;

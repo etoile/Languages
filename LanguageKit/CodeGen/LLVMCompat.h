@@ -1,9 +1,12 @@
 /**
  * Compatibility header that wraps LLVM API breakage and lets us compile with
  * old and new versions of LLVM.
+ *
+ * First LLVM version supported is 2.9.
  */
 
 #include <llvm/Instructions.h>
+#include <llvm/Metadata.h>
 
 __attribute((unused)) static inline 
 llvm::PHINode* CreatePHI(const llvm::Type *Ty,
@@ -19,6 +22,20 @@ llvm::PHINode* CreatePHI(const llvm::Type *Ty,
 #endif
 }
 
+__attribute((unused)) static inline 
+llvm::PHINode* IRBuilderCreatePHI(llvm::IRBuilder<> *Builder,
+                                  const llvm::Type *Ty,
+                                  unsigned NumReservedValues,
+                                  const llvm::Twine &NameStr="")
+{
+#if LLVM_MAJOR < 3
+	llvm::PHINode *phi = Builder->CreatePHI(Ty, NameStr);
+	phi->reserveOperandSpace(NumReservedValues);
+	return phi;
+#else
+	return Builder->CreatePHI(Ty, NumReservedValues, NameStr);
+#endif
+}
 
 __attribute((unused)) static inline 
 llvm::MDNode* CreateMDNode(llvm::LLVMContext &C,
