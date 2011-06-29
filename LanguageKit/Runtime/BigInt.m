@@ -1,4 +1,3 @@
-#define class_pointer isa
 #import "BigInt.h"
 #import "BlockClosure.h"
 
@@ -64,8 +63,12 @@ static BigInt *BigIntNO;
 	mpz_init_set(b->v, aVal);
 	return b;
 }
+
+id objc_autoreleaseReturnValue(id);
+
+
 #define op2(name, func) \
-- (LKObjectPtr) name:(id)other\
+- (LKObject) name:(id)other\
 {\
 	if (nil == other)\
 	{\
@@ -74,7 +77,7 @@ static BigInt *BigIntNO;
 	}\
 	BigInt *b = [[BigInt alloc] init];\
 	mpz_init(b->v);\
-	if (other->isa == BigIntClass || [other isKindOfClass: BigIntClass])\
+	if (object_getClass(other) == BigIntClass || [other isKindOfClass: BigIntClass])\
 	{\
 		mpz_## func (b->v, v, ((BigInt*)other)->v);\
 	}\
@@ -93,11 +96,11 @@ static BigInt *BigIntNO;
 		{\
 			mpz_clear(b->v);\
 			ret.smallInt = (intValue << 1) | 1;\
-			return LKOBJECTPTR(ret);\
+			return ret;\
 		}\
 	}\
-	ret.object = [b autorelease];\
-	return LKOBJECTPTR(ret);\
+	ret.object = objc_autoreleaseReturnValue(b);\
+	return ret;\
 }
 
 #define op(name) op2(name, name)
@@ -148,7 +151,7 @@ CTYPE(isWhitespace, isspace)
 #define CMP(sel, op) \
 - (BOOL) sel:(id)other \
 {\
-	if ([other isKindOfClass:isa])\
+	if ([other isKindOfClass: BigIntClass])\
 	{\
 		BigInt *o = other;\
 		return mpz_cmp(v, o->v) op 0;\
@@ -219,7 +222,7 @@ CMP(isEqual, ==)
 - (id) to: (id) other by: (id) incr do: (id) aBlock
 {
 	id result = nil;
-	if ([other isKindOfClass: isa] && [incr isKindOfClass: isa])
+	if ([other isKindOfClass: object_getClass(self)] && [incr isKindOfClass: object_getClass(self)])
 	{
 		if (mpz_fits_sint_p(v) 
 			&& mpz_fits_sint_p(((BigInt*)other)->v)
@@ -252,7 +255,7 @@ CMP(isEqual, ==)
 		mpz_t i, max, inc;
 		mpz_init_set(i, v);
 
-		if ([other isKindOfClass: isa])
+		if ([other isKindOfClass: object_getClass(self)])
 		{
 			mpz_init_set(max, ((BigInt*)other)->v);
 		}
@@ -266,10 +269,10 @@ CMP(isEqual, ==)
 		}
 		else
 		{
-			return NO;
+			return nil;
 		}
 
-		if ([incr isKindOfClass: isa])
+		if ([incr isKindOfClass: object_getClass(self)])
 		{
 			mpz_init_set(inc, ((BigInt*)incr)->v);
 		}
@@ -283,7 +286,7 @@ CMP(isEqual, ==)
 		}
 		else
 		{
-			return NO;
+			return nil;
 		}
 		while (mpz_cmp(i, max)<=0)
 		{
@@ -341,7 +344,7 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 
 - (id)copyWithZone: (NSZone*)aZone
 {
-	BigInt *new = [isa allocWithZone: aZone];
+	BigInt *new = [object_getClass(self) allocWithZone: aZone];
 	mpz_init_set(new->v, v);
 	return new;
 }

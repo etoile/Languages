@@ -28,6 +28,10 @@
 	LKAST *postCondition;
 }
 /**
+ * List of statements executed after each iteration of the loop.
+ */
+@property (retain, nonatomic) NSMutableArray *initStatements;
+/**
  * Return a new loop with the specified statements.
  */
 + (id) loopWithStatements:(NSMutableArray*)statementList;
@@ -51,14 +55,6 @@
  * Return the list of statements in the loop body.
  */
 - (NSMutableArray*) statements;
-/**
- * Set the statements for the loop initializer.
- */
-- (void) setInitStatements:(NSMutableArray*)anArray;
-/**
- * Return the list of statements in the loop initializer.
- */
-- (NSMutableArray*) initStatements;
 /**
  * Set the statements executed after each iteration of the loop.
  */

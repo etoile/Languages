@@ -9,48 +9,43 @@
  * be modified to contain 62-bit integers, 32-bit floats, or pointers.
  */
 
-#ifdef __linux__
-//#define BRAINDEAD_ABI
-#endif
-
 typedef NSInteger SmallInt;
 
 typedef __attribute__ ((__transparent_union__)) union
 {
-	id object;
+	/**
+	 * The object value.  
+	 */
+	__unsafe_unretained id object;
 	SmallInt smallInt;
 } LKObject;
 
-/**
- * Some ABIs (*cough* Linux *cough*) are really stupid.  Rather than passing a
- * union of two register-sized values in a register, they pass it on the stack
- * via a pointer.  
- *
- * To hack around this, we define two types: LKObject and LKObjectPtr.  On sane
- * platforms, these are the same.  On braindead platforms, LKObjectPtr is
- * something different.  You should always declare parameters as LKObjectPtr
- * and then cast them to LKObject using the LKOBJECT() macro if you want to
- * interoperate with code compiled with LanguageKit.
- */
-#ifdef BRAINDEAD_ABI
-struct LKObject_hack { LKObject hack; };
-typedef struct LKObject_hack* LKObjectPtr;
-#else
-typedef LKObject LKObjectPtr;
-#endif
-#define LKOBJECT(x) (*(LKObject*)&x)
-#define LKOBJECTPTR(x) (*(LKObjectPtr*)&x)
 
+#define LKOBJECT(x) (*(__bridge LKObject*)&x)
+
+__attribute__((unused))
 static inline BOOL LKObjectIsSmallInt(LKObject obj)
 {
 	return (obj.smallInt & 1);
 }
 
+__attribute__((unused))
+static id LKObjectToId(LKObject obj)
+{
+	if (1 == (obj.smallInt & 1))
+	{
+		return nil;
+	}
+	return obj.object;
+}
+
+__attribute__((unused))
 static inline BOOL LKObjectIsObject(LKObject obj)
 {
 	return (obj.smallInt & 1) == 0;
 }
 
+__attribute__((unused))
 static inline NSInteger NSIntegerFromSmallInt(SmallInt smallInt)
 {
 	NSCAssert(smallInt & 1, @"Not a SmallInt!");

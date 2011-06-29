@@ -10,13 +10,13 @@ static id LKBlockFunction(id receiver, SEL cmd, ...)
 	            initWithSymbolTable: [blockAST symbols]
 	                         parent: [receiver blockContext]];
 	int count = [receiver argumentCount];
-	id params[count];
+	__unsafe_unretained id params[count];
 	
 	va_list arglist;
 	va_start(arglist, cmd);
 	for (int i = 0; i < count; i++)
 	{
-		params[i] = (id) va_arg(arglist, id);
+		params[i] = (id) va_arg(arglist, __unsafe_unretained id);
 	}
 	va_end(arglist);
 	

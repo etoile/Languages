@@ -8,6 +8,7 @@
 //Don't use @class because clang will complain if we send messages to a
 //forward-declared class.
 @interface LLVMStaticCodeGen : LLVMCodeGen {}
+- (id) initWithFile:(NSString*)file;
 @end
 
 /**
@@ -33,9 +34,9 @@ static NSString *pathForExecutable(NSString *exe)
 		[[[NSProcessInfo processInfo] environment] objectForKey: @"PATH"];
 	NSArray *paths = [pathString componentsSeparatedByString: @":"];
 	NSFileManager *fm = [NSFileManager defaultManager];
-	FOREACH(paths, path, NSString*)
+	FOREACH(paths, p, NSString*)
 	{
-		path = [path stringByAppendingPathComponent: exe];
+		NSString *path = [p stringByAppendingPathComponent: exe];
 		if ([fm fileExistsAtPath: path])
 		{
 			return path;
@@ -91,7 +92,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 @implementation LKCompiler (LLVM_JTL)
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle
 {
-	STACK_SCOPED NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	@autoreleasepool {
 	[NSThread setThreadPriority: 0];
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSString *tempDirectory = [fm tempDirectory];
@@ -101,9 +102,9 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 	// TODO: Specify a set of AST transforms to apply.
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
 	NSMutableArray *bitcodeFiles = [NSMutableArray array];
-	FOREACH(sourceFiles, source, NSString*)
+	FOREACH(sourceFiles, s, NSString*)
 	{
-		source = [aBundle pathForResource: source ofType: nil];
+		NSString *source = [aBundle pathForResource: s ofType: nil];
 		NSString *outFile = 
 			[tempDirectory stringByAppendingPathComponent: 
 				[source lastPathComponent]];
@@ -150,6 +151,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 		NSLog(@"Wrote cache to %@", userCache);
 		NSLog(@"Deleting %@", tempDirectory);
 		[fm removeFileAtPath: tempDirectory handler: nil];
+	}
 	}
 }
 @end

@@ -396,7 +396,7 @@ void CodeGenModule::EndModule(void)
 	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
-	llvm::StructType* CtorStructTy = llvm::StructType::get(Context,
+	llvm::StructType* CtorStructTy = llvm::StructType::get(
 		llvm::Type::getInt32Ty(Context), init->getType(), NULL);
 
 	std::vector<llvm::Constant*> Ctors;

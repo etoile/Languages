@@ -65,12 +65,12 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	SUPERINIT;
 	ASSIGN(parent, aParent);
 	ASSIGN(symbolTable, aTable);
-	objects = NSCreateMapTable(NSObjectMapKeyCallBacks, NSObjectMapValueCallBacks, 0);
+	objects = [NSMutableDictionary new];
 	return self;
 }
 - (void) dealloc
 {
-	NSFreeMapTable(objects);
+	[objects release];
 	[symbolTable release];
 	[parent release];
 	[super dealloc];
@@ -85,11 +85,11 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 }
 - (void) setValue: (id)value forSymbol: (NSString*)symbol
 {
-	NSMapInsert(objects, symbol, value);
+	[objects setObject: value forKey: symbol];
 }
 - (id) valueForSymbol: (NSString*)symbol
 {
-	return NSMapGet(objects, symbol);
+	return [objects objectForKey: symbol];
 }
 - (LKInterpreterVariableContext)contextForSymbol: (NSString*)symbol
 {
@@ -125,7 +125,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	{
 		return [parent selfObject];
 	}
-	return NSMapGet(objects, @"self");
+	return [objects objectForKey: @"self"];
 }
 @end
 
@@ -144,7 +144,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	unsigned int count = [elements count];
-	id interpretedElements[count];
+	__unsafe_unretained id interpretedElements[count];
 	for (unsigned int i=0; i<count; i++)
 	{
 		[[elements objectAtIndex: i] retain];
@@ -393,7 +393,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		receiverClassName = [(LKSubclass*)ast superclassname];
 	}
 	unsigned int argc = [arguments count];
-	id argv[argc];
+	__unsafe_unretained id argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
 		LKAST *arg = [arguments objectAtIndex: i];

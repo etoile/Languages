@@ -104,7 +104,7 @@ typedef	enum
 typedef struct
 {
 	int depth;
-	LKSymbolTable *scope;
+	__unsafe_unretained LKSymbolTable *scope;
 } LKExternalSymbolScope;
 /**
  * Symbol table for a block.

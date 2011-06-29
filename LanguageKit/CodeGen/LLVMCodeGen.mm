@@ -23,7 +23,7 @@ using llvm::Value;
 using llvm::BasicBlock;
 
 static NSString *SmallIntFile;
-const char * LKObjectEncoding = @encode(LKObjectPtr);
+const char * LKObjectEncoding = @encode(LKObject);
 
 @implementation LLVMCodeGen 
 + (void) initialize
@@ -342,21 +342,21 @@ lexicalScopeAtDepth: (unsigned) scope
 {
 	if (aBasicBlock)
 	{
-		NSMapInsert(labelledBasicBlocks, aLabel, aBasicBlock);
+		NSMapInsert(labelledBasicBlocks, (__bridge void*)aLabel, aBasicBlock);
 	}
 	else
 	{
-		NSMapRemove(labelledBasicBlocks, aLabel);
+		NSMapRemove(labelledBasicBlocks, (__bridge void*)aLabel);
 	}
 }
 - (void*) basicBlockForLabel:(NSString*)aLabel
 {
-	return NSMapGet(labelledBasicBlocks, aLabel);
+	return NSMapGet(labelledBasicBlocks, (__bridge void*)aLabel);
 }
 - (void) goToLabelledBasicBlock:(NSString*)aLabel
 {
 	Builder->getCurrentScope()->GoTo((BasicBlock*)NSMapGet(labelledBasicBlocks,
-				aLabel));
+				(__bridge void*)aLabel));
 }
 @end
 @interface LLVMStaticCodeGen : LLVMCodeGen {

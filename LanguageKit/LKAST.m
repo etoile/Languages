@@ -26,9 +26,10 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 
 - (LKModule*) module
 {
-	while (nil != self && ModuleClass != isa)
+	__unsafe_unretained LKAST *module = self;
+	while (nil != module && ModuleClass != object_getClass(module))
 	{
-		self = parent;
+		module = module->parent;
 	}
 	return (LKModule*)self;
 }

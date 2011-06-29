@@ -21,7 +21,7 @@ typedef struct
 	/**
 	 * The context where this variable can be accessed.
 	 */
-	LKInterpreterContext *context;
+	__unsafe_unretained LKInterpreterContext *context;
 } LKInterpreterVariableContext;
 
 /**
@@ -34,7 +34,7 @@ typedef struct
 	LKInterpreterContext *parent;
 	LKSymbolTable *symbolTable;
 @private
-	NSMapTable *objects;
+	NSMutableDictionary *objects;
 }
 - (id) initWithSymbolTable: (LKSymbolTable*)aTable
                     parent: (LKInterpreterContext*)aParent;
@@ -51,7 +51,7 @@ typedef struct
 
 @interface LKBlockExpr (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context;
-- (id)executeWithArguments: (id*)args count: (int)count inContext: (LKInterpreterContext*)context;
+- (id)executeWithArguments: (__unsafe_unretained id*)args count: (int)count inContext: (LKInterpreterContext*)context;
 @end
 
 @interface LKMethod (LKInterpreter)

@@ -23,10 +23,10 @@
 }
 
 #define op(name, op) \
-- (LKObjectPtr) name: (id)other\
+- (LKObject) name: (id)other\
 {\
 	BoxedFloat *b = [[[BoxedFloat alloc] init] autorelease];\
-	if (other->isa == isa)\
+	if (object_getClass(other) == object_getClass(self))\
 	{\
 		b->value = value op ((BoxedFloat*)other)->value;\
 	}\
@@ -34,13 +34,13 @@
 	{\
 		b->value = value op [other doubleValue];\
 	}\
-	return LKOBJECTPTR(b);\
+	return LKOBJECT(b);\
 }
 
 #define cmp(name, op) \
 - (BOOL) name:(id)other\
 {\
-	if (other->isa == isa || [other isKindOfClass: isa])\
+	if (object_getClass(other) == object_getClass(self))\
 	{\
 		return value op ((BoxedFloat*)other)->value;\
 	}\

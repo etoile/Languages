@@ -149,9 +149,9 @@ int DEBUG_DUMP_MODULES = 0;
 				stringByAppendingPathComponent:@"LanguageKit"];
 		// Check that the framework exists and is a directory.
 		NSArray *bundles = [fm directoryContentsAtPath:f];
-		FOREACH(bundles, bundle, NSString*)
+		FOREACH(bundles, b, NSString*)
 		{
-			bundle = [f stringByAppendingPathComponent:bundle];
+			NSString *bundle = [f stringByAppendingPathComponent: b];
 			BOOL isDir = NO;
 			if ([fm fileExistsAtPath:bundle isDirectory:&isDir]
 				&& isDir)
@@ -403,15 +403,15 @@ static NSString *loadFramework(NSString *framework)
 				stringByAppendingPathComponent:processName];
 		NSArray *plugins = [fm directoryContentsAtPath:pluginDir];
 		BOOL isDir = NO;
-		FOREACH(plugins, plugin, NSString*)
+		FOREACH(plugins, p, NSString*)
 		{
-			plugin = [pluginDir stringByAppendingPathComponent:plugin];
+			NSString *plugin = [pluginDir stringByAppendingPathComponent: p];
 			if ([fm fileExistsAtPath:plugin isDirectory:&isDir] && isDir &&
 			    [@"lkplugin" isEqualToString:[plugin pathExtension]])
 			{
 				Class newclass = [self loadLanguageKitBundle:
 					[NSBundle bundleWithPath:plugin]];
-				if (newclass == (Class)-1)
+				if (newclass == [NSNull class])
 				{
 					success = NO;
 				}
@@ -456,7 +456,7 @@ static NSString *loadFramework(NSString *framework)
 }
 + (void)setDefaultDelegate: (id<LKCompilerDelegate>)aDelegate
 {
-	ASSIGN(DefaultDelegate, [aDelegate retain]);
+	ASSIGN(DefaultDelegate, aDelegate);
 }
 - (void)setDelegate: (id<LKCompilerDelegate>)aDelegate
 {

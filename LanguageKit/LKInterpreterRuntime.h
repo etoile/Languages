@@ -16,7 +16,7 @@
  * required type for the message send.
  */
 id LKSendMessage(NSString *className, id receiver, NSString *selName,
-                 unsigned int argc, id *args);
+                 unsigned int argc, __unsafe_unretained id *args);
 
 /**
  * Gets the value of an instance variable, boxing it as necessary.

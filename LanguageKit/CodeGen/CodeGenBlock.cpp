@@ -20,7 +20,6 @@ CodeGenBlock::CodeGenBlock(int args, int locals, CodeGenLexicalScope
 	Value *enclosingContext = enclosingScope->getContext();
 	// Define the layout of a block
 	BlockTy = StructType::get(
-		Mod->Context,
 		IdTy,                          // 0 - isa.
 		IMPTy,                         // 1 - Function pointer.
 		Type::getInt32Ty(Mod->Context),// 2 - Number of args.

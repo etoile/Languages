@@ -173,24 +173,24 @@ static id BoxValue(void *value, const char *typestr)
 			[NSException raise: LKInterpreterException  
 			            format: @"Boxing arbitrary structures doesn't work yet."];
 		}
+		case '^': // FIXME: properly box pointers!
 			// Map void returns to nil
 		case 'v':
 			return nil;
 			// If it's already an object, we don't need to do anything
 		case '(': //FIXME: Hack
-		case '^':
 			if (strncmp(typestr, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) == 0)
 			{
-				LKObject v = LKOBJECT(*(id*)value);
+				LKObject v = *(LKObject*)value;
 				if (LKObjectIsSmallInt(v))
 				{
 					return [BigInt bigIntWithLongLong: NSIntegerFromSmallInt(v.smallInt)];
 				}
-				return *(id*)value;
+				return *(__bridge id*)value;
 			}
 		case '@':
 		case '#':
-			return *(id*)value;
+			return *(__unsafe_unretained id*)value;
 			// Other types, just wrap them up in an NSValue
 		default:
 			NSLog(@"Warning: using +[NSValue valueWithBytes:objCType:]");
@@ -290,7 +290,7 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 }
 
 id LKSendMessage(NSString *className, id receiver, NSString *selName,
-                 unsigned int argc, id *args)
+                 unsigned int argc, __unsafe_unretained id *args)
 {
 	if (receiver == nil)
 	{
