@@ -48,3 +48,10 @@ llvm::MDNode* CreateMDNode(llvm::LLVMContext &C,
 	return llvm::MDNode::get(C, val);
 #endif
 }
+
+#if LLVM_MAJOR < 3
+#define GetStructType(context, ...) StructType::get(context, __VA_ARGS__)
+#else
+#define GetStructType(context, ...) StructType::get(__VA_ARGS__)
+#endif
+
