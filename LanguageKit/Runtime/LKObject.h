@@ -1,3 +1,5 @@
+#import <EtoileFoundation/EtoileCompatibility.h>
+
 /**
  * LKObject.h defines the type used for LanguageKit object and some functions
  * for mapping these to and from Objective-C values.  Objects in LanguageKit
