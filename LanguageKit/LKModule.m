@@ -185,12 +185,12 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 		}
 		int offset = sizeof(id) + sizeof(SEL);
 		NSMutableString *ty = [NSMutableString stringWithFormat: @"%s%d@0:%d",
-			@encode(LKObjectPtr), sizeof(SEL) + sizeof(id) * (argCount + 2),
+			@encode(LKObject), sizeof(SEL) + sizeof(id) * (argCount + 2),
 			offset];
 		for (int i=0 ; i<argCount ; i++)
 		{
 			offset += sizeof(id);
-			[ty appendFormat: @"%s%d", @encode(LKObjectPtr), offset];
+			[ty appendFormat: @"%s%d", @encode(LKObject), offset];
 		}
 		types = [ty UTF8String];
 	}

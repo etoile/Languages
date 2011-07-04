@@ -15,18 +15,18 @@ void NSLog(NSString*, ...);
 // Dummy interfaces to make warnings go away
 @interface BigInt {}
 + (id)bigIntWithLongLong:(long long)a;
-- (LKObjectPtr)plus:(id)a;
-- (LKObjectPtr)sub:(id)a;
-- (LKObjectPtr)div:(id)a;
-- (LKObjectPtr)mul:(id)a;
-- (LKObjectPtr)mod:(id)a;
+- (LKObject)plus:(id)a;
+- (LKObject)sub:(id)a;
+- (LKObject)div:(id)a;
+- (LKObject)mul:(id)a;
+- (LKObject)mod:(id)a;
 - (id)to:(id)a by:(id)b do:(id)c;
 - (id)to:(id)a do:(id)c;
 - (id)and: (id)a;
 - (id)or: (id)a;
 - (id)not;
-- (LKObjectPtr)bitwiseAnd: (id)a;
-- (LKObjectPtr)bitwiseOr: (id)a;
+- (LKObject)bitwiseAnd: (id)a;
+- (LKObject)bitwiseOr: (id)a;
 - (BOOL)isLessThan: (id)a;
 - (BOOL)isGreaterThan: (id)a;
 - (BOOL)isLessThanOrEqualTo: (id)a;
@@ -192,7 +192,7 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 	if ((((intptr_t)other) & 1) == 0)\
 	{\
 		intptr_t val = (intptr_t)obj >> 1;\
-		LKObjectPtr ret = \
+		LKObject ret = \
 			[[BigInt bigIntWithLongLong:(long long)val] op:other];\
 		return *(void**)&ret;\
 	}

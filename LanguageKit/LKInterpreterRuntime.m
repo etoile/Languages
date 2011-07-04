@@ -106,7 +106,7 @@ static ffi_type *FFITypeForObjCType(const char *typestr)
 			return &ffi_type_void;
 		case '(':
 		case '^':
-			if (strncmp(typestr, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) != 0)
+			if (strncmp(typestr, @encode(LKObject), strlen(@encode(LKObject))) != 0)
 			{
 				break;
 			}
@@ -179,7 +179,7 @@ static id BoxValue(void *value, const char *typestr)
 			return nil;
 			// If it's already an object, we don't need to do anything
 		case '(': //FIXME: Hack
-			if (strncmp(typestr, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) == 0)
+			if (strncmp(typestr, @encode(LKObject), strlen(@encode(LKObject))) == 0)
 			{
 				LKObject v = *(LKObject*)value;
 				if (LKObjectIsSmallInt(v))
@@ -248,7 +248,7 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 			break;
 		case '(':
 		case '^':
-			if (strncmp(objctype, @encode(LKObjectPtr), strlen(@encode(LKObjectPtr))) != 0)
+			if (strncmp(objctype, @encode(LKObject), strlen(@encode(LKObject))) != 0)
 			{
 				break;
 			}

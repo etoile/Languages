@@ -1,8 +1,8 @@
 #import "BigInt.h"
 
 @interface BigInt (Private)
-- (LKObjectPtr)plus: (BigInt*)other;
-- (LKObjectPtr)mul: (BigInt*)other;
+- (LKObject)plus: (BigInt*)other;
+- (LKObject)mul: (BigInt*)other;
 @end
 
 static char *ops[] = {"add", "subtract", "multiply"};
@@ -14,14 +14,14 @@ long long smalltalk_overflow_handler(long long val, long long otherval, char op,
 	{
 		case 1:
 		{
-			LKObjectPtr bigInt = 
+			LKObject bigInt = 
 				[[BigInt bigIntWithLongLong:((long long)val) >> 1]
 				plus: [BigInt bigIntWithLongLong:((long long)otherval) >> 1]];
 			return (long long)*(intptr_t*)&bigInt;
 		}
 		case 3:
 		{
-			LKObjectPtr bigInt = [[BigInt bigIntWithLongLong:((long long)val) >> 1]
+			LKObject bigInt = [[BigInt bigIntWithLongLong:((long long)val) >> 1]
 				mul:[BigInt bigIntWithLongLong:((long long)otherval) >> 1]];
 			// We set the low bit here so that we can use XOR to set it in the 
 			return (long long)((*(intptr_t*)&bigInt) | 1);
