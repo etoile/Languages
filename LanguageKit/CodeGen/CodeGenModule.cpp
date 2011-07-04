@@ -1,5 +1,6 @@
 #include "CodeGenModule.h"
 #include "CodeGenBlock.h"
+#include "LLVMCompat.h"
 
 #include "llvm/LinkAllPasses.h"
 #include <llvm/Bitcode/ReaderWriter.h>
@@ -396,7 +397,7 @@ void CodeGenModule::EndModule(void)
 	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
-	llvm::StructType* CtorStructTy = llvm::StructType::get(
+	llvm::StructType* CtorStructTy = GetStructType(Context, 
 		llvm::Type::getInt32Ty(Context), init->getType(), NULL);
 
 	std::vector<llvm::Constant*> Ctors;

@@ -1,4 +1,5 @@
 #include "CodeGenModule.h"
+#include "LLVMCompat.h"
 
 #include "llvm/LinkAllPasses.h"
 #include <llvm/Bitcode/ReaderWriter.h>
@@ -213,7 +214,7 @@ FunctionType *CodeGenModule::LLVMFunctionTypeFromString(const char *typestr, boo
 	realRetTy = ReturnTy;
 	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ReturnTy)
 		&&                              
-		ReturnTy == StructType::get(Type::getFloatTy(Context), Type::getFloatTy(Context), NULL))
+		ReturnTy == GetStructType(Context, Type::getFloatTy(Context), Type::getFloatTy(Context), NULL))
 	{   
 		isSRet = false;
 		ReturnTy = Type::getInt64Ty(Context);
