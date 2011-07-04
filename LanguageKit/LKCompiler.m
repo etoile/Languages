@@ -1,5 +1,5 @@
 #include <dlfcn.h>
-#include <unistd.h>
+#include <EtoileFoundation/glibc_hack_unistd.h>
 #include <sys/resource.h>
 
 #import <EtoileFoundation/EtoileFoundation.h>
