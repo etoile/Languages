@@ -6,7 +6,7 @@ __thread void *unlabelledBreakBB;
 __thread void *unlabelledContinueBB;
 
 @implementation LKLoop
-@synthesize initializationStatements;
+@synthesize initStatements;
 + (id) loopWithStatements:(NSMutableArray*)statementList
 {
 	return AUTORELEASE([[self alloc] initWithStatements:statementList]);

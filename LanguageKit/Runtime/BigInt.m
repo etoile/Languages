@@ -66,6 +66,15 @@ static BigInt *BigIntNO;
 
 id objc_autoreleaseReturnValue(id);
 
+static inline id LKObjCAutoreleaseReturnValue(id object)
+{
+#if __has_feature(objc_arc)
+	return objc_autoreleaseReturnValue(object);
+#else
+
+	return [object autorelease];
+#endif
+}
 
 #define op2(name, func) \
 - (LKObject) name:(id)other\
@@ -99,7 +108,7 @@ id objc_autoreleaseReturnValue(id);
 			return ret;\
 		}\
 	}\
-	ret.object = objc_autoreleaseReturnValue(b);\
+	ret.object = LKObjCAutoreleaseReturnValue(b);\
 	return ret;\
 }
 
