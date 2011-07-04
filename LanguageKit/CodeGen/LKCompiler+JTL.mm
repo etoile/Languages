@@ -91,15 +91,9 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 
 @implementation LKCompiler (LLVM_JTL)
 
-#if __has_feature(objc_arc)
-#define AUTORELEASE_POOL @autoreleasepool
-#else
-#define AUTORELEASE_POOL STACK_SCOPED NSAutoreleasePool *pool = [NSAutoreleasePool new];
-#endif
-
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle
 {
-	AUTORELEASE_POOL {
+	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 	[NSThread setThreadPriority: 0];
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSString *tempDirectory = [fm tempDirectory];
@@ -159,6 +153,6 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 		NSLog(@"Deleting %@", tempDirectory);
 		[fm removeFileAtPath: tempDirectory handler: nil];
 	}
-	}
+	[pool drain];
 }
 @end
