@@ -282,6 +282,11 @@ FunctionType *CodeGenTypes::functionTypeFromString(NSString *type,
 		isSRet = false;
 		ReturnTy = Type::getInt64Ty(context);
 	}
+	if (isSRet)
+	{
+		ArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
+		ReturnTy = voidTy;
+	}
 	NEXT(typestr);
 	while(*typestr)
 	{
