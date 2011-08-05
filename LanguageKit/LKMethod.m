@@ -92,12 +92,22 @@
 		{
 			[[symbols symbolForName: arg] setTypeEncoding: [NSString stringWithUTF8String: [sig getArgumentTypeAtIndex: i++]]];
 		}
+		NSString *methodName = [signature selector];
 		[self beginMethodWithGenerator: aGenerator
-		              forSelectorNamed: [signature selector]
+		              forSelectorNamed: methodName
 		                  typeEncoding: type];
 		for (LKAST *statement in statements)
 		{
 			[statement compileWithGenerator: aGenerator];
+		}
+		// FIXME: Don't do this if we're a root class (we don't actually
+		// support root classes in Smalltalk at the moment).
+		if ([@"dealloc" isEqualToString: methodName])
+		{
+			[aGenerator sendSuperMessage: methodName
+			                       types: type
+			                    withArgs: NULL
+			                       count: 0];
 		}
 		[aGenerator endMethod];
 	}
