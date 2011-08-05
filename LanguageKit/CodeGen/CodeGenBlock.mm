@@ -92,8 +92,8 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 	llvm::StructType *descriptorTy = GetStructType(CGM->Context,
 	                                               types.intTy,         // reserved
 	                                               types.intTy,         // size
-	                                               copyFn->getType(),   // copy
-	                                               disposeFn->getType(),// dispose
+	                                               copy->getType(),   // copy
+	                                               dispose->getType(),// dispose
 	                                               types.ptrToVoidTy,   // signature
 	                                               NULL);
 	llvm::Constant *sig = CGM->MakeConstantString(signature);
@@ -106,8 +106,8 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 		llvm::ConstantStruct::get(descriptorTy, 
 			llvm::ConstantInt::get(types.intTy, 0),
 			size,
-			copyFn,
-			disposeFn,
+			copy,
+			dispose,
 			sig,
 			NULL);
 	return new GlobalVariable(descriptorTy, true,

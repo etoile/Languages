@@ -81,7 +81,6 @@
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	NSLog(@"Class name: %@", classname);
 	[aGenerator createSubclassWithName: classname
 	                   superclassNamed: superclass
 	                   withSymbolTable: symbols];
