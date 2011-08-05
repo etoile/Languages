@@ -4,13 +4,20 @@
 #import "LKCompilerErrors.h"
 
 
+static NSSet *ARCBannedMessages;
+
 @implementation NSString (Print)
 - (void) print
 {
   printf("%s", [self UTF8String]);
 }
 @end
+
 @implementation LKMessageSend 
++ (void)initialize
+{
+	ARCBannedMessages = [[NSSet alloc] initWithObjects: @"retain", @"release", @"autorelease", @"retainCount", @"dealloc", nil];
+}
 + (id) message
 {
 	return AUTORELEASE([[self alloc] init]);
@@ -44,6 +51,7 @@
 	[selector release];
 	[target release];
 	[arguments release];
+	[type release];
 	[super dealloc];
 }
 - (void) setTarget:(id)anObject
@@ -89,23 +97,29 @@
 - (BOOL)check
 {
 	[(LKAST*)target setParent:self];
+	if ([ARCBannedMessages containsObject: selector])
+	{
+		NSDictionary *errorDetails = D(
+			[NSString stringWithFormat: @"%@ may not be used in LanguageKit",
+				selector], kLKHumanReadableDescription,
+			self, kLKASTNode);
+		if ([LKCompiler reportError: LKInvalidSelectorError
+		                    details: errorDetails])
+		{
+			return [self check];
+		}
+	}
 
 	BOOL success = (target == nil) || [target check];
 
 	LKModule *module = [self module];
 
-	type = [[self module] typeForMethod:selector];
-	if ([module isSelectorPolymorphic: selector])
+	NSArray *possibleTypes = [module typesForMethod: selector];
+	ASSIGN(type, [possibleTypes objectAtIndex: 0]);
+	if ([possibleTypes count] > 1)
 	{
-		NSDictionary *errorDetails = D([NSString stringWithFormat:
-			@"Warning: Selector '%@' is polymorphic.  Assuming %s",
-				selector, type],
-			kLKHumanReadableDescription,
-			[NSString stringWithUTF8String: type],
-			kLKTypeEncoding,
-			self, kLKASTNode);
-		success &= [LKCompiler reportWarning: LKPolymorphicSelectorWarning
-		                             details: errorDetails];
+		// FIXME: Do run-time type checking of the method type.
+		NSLog(@"Selector %@ is polymorphic, assuming %@", selector, type);
 	}
 
 	FOREACH(arguments, arg, LKAST*)
@@ -121,7 +135,7 @@
 	NSMutableString *str = [NSMutableString string];
 	if (target)
 	{
-		[str appendString:[target description]];
+		[str appendString: [target description]];
 	}
 	[str appendString:@" "];
 	NSArray *sel = [selector componentsSeparatedByString:@":"];
@@ -156,18 +170,17 @@
 	{
 		argv[i] = [[arguments objectAtIndex:i] compileWithGenerator: aGenerator];
 	}
-	const char *sel = [selector UTF8String];
 	void *result = NULL;
 	// If the receiver is a global symbol, it is guaranteed to be an object.
 	// TODO: The same is arguments if their type is @
 	if ([target isKindOfClass:[LKDeclRef class]])
 	{
 		LKDeclRef *ref = SAFECAST(LKDeclRef, target);
-		NSString *symbol = ref->symbol;
-		LKSymbolScope scope = [symbols scopeOfSymbol:symbol];
+		LKSymbol *symbol = ref->symbol;
+		LKSymbolScope scope = [symbol scope];
 		if (scope == LKSymbolScopeGlobal)
 		{
-			result = [aGenerator sendMessage:sel
+			result = [aGenerator sendMessage:selector
 			                           types:type
 			                        toObject:receiver
 			                        withArgs:argv
@@ -175,17 +188,18 @@
 		}
 		else if (scope == LKSymbolScopeBuiltin)
 		{
-			if ([symbol isEqualToString:@"self"])
+			NSString *symbolName = [symbol name];
+			if ([symbolName isEqualToString:@"self"])
 			{
-				result = [aGenerator sendMessage:sel
+				result = [aGenerator sendMessage:selector
 				                           types:type
 				                        toObject:receiver
 				                        withArgs:argv
 				                           count:argc];
 			}
-			else if ([symbol isEqualToString:@"super"])
+			else if ([symbolName isEqualToString:@"super"])
 			{
-				result = [aGenerator sendSuperMessage:sel
+				result = [aGenerator sendSuperMessage:selector
 				                                types:type
 				                             withArgs:argv
 				                                count:argc];
@@ -194,25 +208,11 @@
 	}
 	if (NULL == result)
 	{
-		result = [aGenerator sendMessage:sel
-	                               types:type
-	                                  to:receiver
-	                            withArgs:argv
-	                               count:argc];
-	}
-	// If an object is created with new then send it an autorelease message
-	// immediately after construction.  This ensures that any new object always
-	// has a retain count of 1 and an autorelease count of 1.
-	if ([selector isEqualToString:@"new"] 
-		|| [selector isEqualToString:@"alloc"])
-	{
-		sel = "autorelease";
-		const char *seltypes = [[self module] typeForMethod: @"autorelease"];
-		[aGenerator sendMessage:sel
-		                  types:seltypes
-		               toObject:result
-		               withArgs:NULL
-		                  count:0];
+		result = [aGenerator sendMessage: selector
+		                           types: type
+		                              to: receiver
+		                        withArgs: argv
+		                           count: argc];
 	}
 	return result;
 }

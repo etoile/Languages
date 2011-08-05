@@ -54,7 +54,9 @@ void NSLog(NSString*, ...);
 typedef struct
 {
 	void* isa;
-	id(*value)(void*, SEL,...);
+	int flags;
+	int reserved;
+	id(*invoke)(void*,...);
 } Block;
 
 /**
@@ -97,7 +99,7 @@ MSG1(ifTrue_)
 	else
 	{
 		Block *block = other;
-		return block->value(other, @selector(value));
+		return block->invoke(block);
 	}
 }
 MSG1(ifFalse_)
@@ -108,7 +110,7 @@ MSG1(ifFalse_)
 	else
 	{
 		Block *block = other;
-		return block->value(other, @selector(value));
+		return block->invoke(block);
 	}
 }
 id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f)
@@ -118,12 +120,12 @@ id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f)
 	if (val != 0)
 	{
 		Block *block = t;
-		return block->value(t, @selector(value));
+		return block->invoke(block);
 	}
 	else
 	{
 		Block *block = f;
-		return block->value(f, @selector(value));
+		return block->invoke(block);
 	}
 }
 MSG1(timesRepeat_)
@@ -131,7 +133,7 @@ MSG1(timesRepeat_)
 	void *ret = NULL;
 	for (intptr_t i=0 ; i<val ; i++)
 	{
-		ret = block->value(other, @selector(value));
+		ret = block->invoke(block);
 	}
 	return ret;
 }
@@ -165,7 +167,7 @@ id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
 	for (;val<=max;val+=inc)
 	{
 		Block *block = tdo;
-		result = block->value(tdo, @selector(value:), [BigInt bigIntWithLongLong:(long long)val]);
+		result = block->invoke(block, [BigInt bigIntWithLongLong:(long long)val]);
 	}
 	return result;
 }
@@ -356,4 +358,50 @@ CASTMSG(double, double)
 NSString *SmallIntMsgstringValue_(void *obj)
 {
 	return [NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
+}
+
+enum
+{
+	BLOCK_FIELD_IS_OBJECT   =  3,
+	BLOCK_FIELD_IS_BLOCK    =  7,
+	BLOCK_FIELD_IS_BYREF    =  8,
+	BLOCK_FIELD_IS_WEAK  = 16,
+	BLOCK_BYREF_CALLER    = 128,
+};
+
+
+void _Block_object_assign(void *destAddr, const void *object, const int flags);
+void _Block_object_dispose(const void *object, const int flags);
+
+struct _block_byref_object
+{
+	void *isa;
+	struct _block_byref_voidBlock *forwarding;
+	int flags;
+	int size;
+	void (*byref_keep)(struct _block_byref_object*, struct _block_byref_object*);
+	void (*byref_dispose)(struct _block_byref_object *);
+	void *captured;
+};
+
+
+// Helper functions called by the block byref copy /destroy functions.
+
+void LKByRefKeep(struct _block_byref_object *dst, struct _block_byref_object*src)
+{
+	dst->captured = src->captured;
+	if ((((intptr_t)dst->captured) & 1) != 1)
+	{
+		objc_retain(dst->captured);
+	}
+}
+
+void objc_release(id);
+
+void LKByRefDispose(struct _block_byref_object*src)
+{
+	if ((((intptr_t)src) & 1) != 1)
+	{
+		objc_release(src->captured);
+	}
 }

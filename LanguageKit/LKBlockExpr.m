@@ -1,5 +1,6 @@
 #import "LKBlockExpr.h"
 #import "LKDeclRef.h"
+#import "Runtime/LKObject.h"
 
 @implementation LKBlockExpr 
 + (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
@@ -8,11 +9,16 @@
 	                                 locals: locals
 	                             statements: statementList] autorelease];
 }
-- (id) initWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
+- (id) initWithArguments: (NSMutableArray*)arguments
+                  locals: (NSMutableArray*)locals
+              statements: (NSMutableArray*)statementList
 {
-	LKBlockSymbolTable *st = [[LKBlockSymbolTable alloc] initWithLocals:locals args:arguments];
-	self = [self initWithSymbolTable: st];
-	RELEASE(st);
+	LKSymbolTable *table = [LKSymbolTable new];
+	[table setDeclarationScope: self];
+	[table addSymbolsNamed: locals ofKind: LKSymbolScopeLocal];
+	[table addSymbolsNamed: arguments ofKind: LKSymbolScopeArgument];
+	self = [super initWithSymbolTable: table];
+	[table release];
 	if (self != nil)
 	{
 		ASSIGN(statements, statementList);
@@ -36,16 +42,12 @@
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
 	[str appendString:@"[ "];
-	if ([[st args] count] > 0)
+	for (LKSymbol *s in [symbols arguments])
 	{
-		FOREACH([st args], symbol, NSString*)
-		{
-			[str appendFormat:@":%@ ", symbol];
-		}
-		[str appendString:@"| "];
+		[str appendFormat:@":%@ ", s];
 	}
+	[str appendString:@"| "];
 	[str appendString:@"\n"];
 	FOREACH(statements, statement, LKAST*)
 	{
@@ -57,8 +59,19 @@
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	[aGenerator beginBlockWithArgs:[[(LKMethodSymbolTable*)symbols args] count]
-	                        locals:[[(LKMethodSymbolTable*)symbols locals] count]];
+	NSArray *args = [symbols arguments];
+	NSUInteger argCount = [args count];
+	// FIXME: We should be able to generate other block signatures
+	NSMutableString *sig = 
+		[NSMutableString stringWithFormat: @"%s%d@?", @encode(LKObject), sizeof(id) * (argCount+1)];
+	for (NSUInteger i=0 ; i<argCount ; i++)
+	{
+		[sig appendFormat: @"%d%s", sizeof(id)*i, @encode(LKObject)];
+	}
+	[aGenerator beginBlockWithArgs: args
+	                        locals: [symbols locals]
+	                     externals: [symbols byRefVariables]
+	                     signature: sig];
 	void * lastValue = NULL;
 	BOOL addBranch = YES;
 	FOREACH(statements, statement, LKAST*)
@@ -75,13 +88,13 @@
 	}
 	if (addBranch)
 	{
-		[aGenerator blockReturn:lastValue];
+		[aGenerator blockReturn: lastValue];
 	}
 	return [aGenerator endBlock];
 }
 - (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable
 {
-	[symbols setScope:aSymbolTable];
+	[symbols setEnclosingScope: aSymbolTable];
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {

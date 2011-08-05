@@ -2,6 +2,7 @@
 #import "LKModule.h"
 
 @implementation LKMethod
+@synthesize signature, statements;
 + (id) methodWithSignature:(LKMessageSend*)aSignature
                     locals:(NSMutableArray*)locals
                 statements:(NSMutableArray*)statementList
@@ -14,12 +15,13 @@
                   locals:(NSMutableArray*)locals
               statements:(NSMutableArray*)statementList
 {
-	LKMethodSymbolTable *st = 
-		[[LKMethodSymbolTable alloc] initWithLocals: locals
-		                                       args: [aSignature arguments]];
+	LKSymbolTable *st = [LKSymbolTable new];
+	[st setDeclarationScope: self];
+	[st addSymbolsNamed: locals ofKind: LKSymbolScopeLocal];
+	[st addSymbolsNamed: [aSignature arguments] ofKind: LKSymbolScopeArgument];
 	self = [self initWithSymbolTable: st];
+	[st release];
 	if (self == nil) { return nil; }
-	RELEASE(st);
 	ASSIGN(signature, aSignature);
 	ASSIGN(statements, statementList);
 	return self;
@@ -29,10 +31,6 @@
 	[signature release];
 	[statements release];
 	[super dealloc];
-}
-- (void) setSignature:(LKMessageSend*)aSignature
-{
-	ASSIGN(signature, aSignature);
 }
 - (BOOL)check
 {
@@ -47,17 +45,16 @@
 - (NSString*) methodBody
 {
 	NSMutableString *str = [NSMutableString string];
-	LKMethodSymbolTable *st = (LKMethodSymbolTable*)symbols;
-	if ([[st locals] count])
+	if ([[symbols locals] count])
 	{
 		[str appendString:@"| "];
-		FOREACH([st locals], symbol, NSString*)
+		for (NSString *symbol in [symbols locals])
 		{
 			[str appendFormat:@"%@ ", symbol];
 		}
 		[str appendString:@"|\n"];
 	}
-	FOREACH(statements, statement, LKAST*)
+	for (LKAST *statement in statements)
 	{
 		[str appendFormat:@"%@.\n", statement];
 	}
@@ -73,88 +70,68 @@
 	[str appendString:@"]"];
 	return str;
 }
-- (void) beginMethodWithGenerator:(id)aGenerator
-                 forSelectorNamed:(const char*)sel
-			            withTypes:(const char*)types
+- (void) beginMethodWithGenerator: (id)aGenerator
+                 forSelectorNamed: (NSString*)sel
+                     typeEncoding: (NSString*)typeEncoding
 {}
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	const char *sel = [[signature selector] UTF8String];
-	// FIXME: Should get method signature from superclass
-	const char *types = [[self module] typeForMethod:[signature selector]];
-	// If the types don't come from somewhere else, then assume all arguments
-	// are id and the return type is id
-	if (NULL == types) 
+	NSArray *types = [[self module] typesForMethod: [signature selector]];
+	// We emit one copy of the method for every possible type encoding.
+	// FIXME: We should only do this if we are not inheriting the method from a
+	// superclass.
+	for (NSString *type in types)
 	{
-		int argCount = [[signature arguments] count];
-		int offset = sizeof(id) + sizeof(SEL);
-		NSMutableString *ty = [NSMutableString stringWithFormat:@"@%d@0:%d",
-			sizeof(SEL) + sizeof(id) * (argCount + 2), offset];
-		for (int i=0 ; i<argCount ; i++)
+		// FIXME: This is really ugly.  It also means that the type is not
+		// intrinsic to the AST, it's not defined until run time, which is a
+		// bit horrible.
+		NSMethodSignature *sig = [NSMethodSignature signatureWithObjCTypes: [type UTF8String]];
+		// Skip implicit args
+		NSInteger i = 2;
+		for (NSString *arg in [signature arguments])
 		{
-			offset += sizeof(id);
-			[ty appendFormat:@"@%d", offset];
+			[[symbols symbolForName: arg] setTypeEncoding: [NSString stringWithUTF8String: [sig getArgumentTypeAtIndex: i++]]];
 		}
-		types = [ty UTF8String];
+		[self beginMethodWithGenerator: aGenerator
+		              forSelectorNamed: [signature selector]
+		                  typeEncoding: type];
+		for (LKAST *statement in statements)
+		{
+			[statement compileWithGenerator: aGenerator];
+		}
+		[aGenerator endMethod];
 	}
-	[self beginMethodWithGenerator:aGenerator forSelectorNamed:sel withTypes:types];
-	FOREACH(statements, statement, LKAST*)
-	{
-		[statement compileWithGenerator: aGenerator];
-	}
-	[aGenerator endMethod];
 	return NULL;
 }
 - (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable
 {
-	[symbols setScope:aSymbolTable];
+	[symbols setEnclosingScope: aSymbolTable];
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
 	[self visitArray: statements withVisitor: aVisitor];
 }
-- (LKMessageSend*) signature
-{
-	return signature;
-}
-- (NSMutableArray*) statements
-{
-	return statements;
-}
 @end
 @implementation LKInstanceMethod
-- (void) beginMethodWithGenerator:(id)aGenerator
-                 forSelectorNamed:(const char*)sel
-			            withTypes:(const char*)types
+- (void) beginMethodWithGenerator: (id)aGenerator
+                 forSelectorNamed: (NSString*)sel
+                     typeEncoding: (NSString*)typeEncoding
 {
-	NSArray *localNames = [(LKMethodSymbolTable*)symbols locals];
-	unsigned int count = [localNames count];
-	const char *locals[count];
-	for (unsigned int i=0 ; i<count ; i++)
-	{
-		locals[i] = [[localNames objectAtIndex: i] UTF8String];
-	}
+	NSArray *localNames = [symbols locals];
 	[aGenerator beginInstanceMethod: sel
-	                      withTypes: types
-	                         locals: locals
-	                          count: count];
+	               withTypeEncoding: typeEncoding
+	                      arguments: [symbols arguments]
+	                         locals: [symbols locals]];
 }
 @end
 @implementation LKClassMethod
-- (void) beginMethodWithGenerator:(id)aGenerator
-                 forSelectorNamed:(const char*)sel
-			            withTypes:(const char*)types
+- (void) beginMethodWithGenerator: (id)aGenerator
+                 forSelectorNamed: (NSString*)sel
+                     typeEncoding: (NSString*)typeEncoding
 {
-	NSArray *localNames = [(LKMethodSymbolTable*)symbols locals];
-	unsigned int count = [localNames count];
-	const char *locals[count];
-	for (unsigned int i=0 ; i<count ; i++)
-	{
-		locals[i] = [[localNames objectAtIndex: i] UTF8String];
-	}
 	[aGenerator beginClassMethod: sel
-	                   withTypes: types
-	                      locals: locals
-	                       count: count];
+	            withTypeEncoding: typeEncoding
+	                   arguments: [symbols arguments]
+	                      locals: [symbols locals]];
 }
 @end

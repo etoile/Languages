@@ -9,23 +9,62 @@ namespace llvm {
   class Module;
   class Type;
   class Value;
+  class StructureType;
+  class FunctionType;
 }
+
+namespace etoile
+{
+namespace languagekit
+{
 
 class CodeGenModule;
 
-class CodeGenBlock : public CodeGenLexicalScope {
-  const llvm::Type *BlockTy;
-  CodeGenLexicalScope *parentScope;
-	virtual void SetParentScope(void);
+/**
+ * Class responsible for emitting blocks.  The outer scope is responsible for
+ * generating any block byref structures for bound arguments, this will
+ * generate the types for the block and 
+ */
+class CodeGenBlock : public CodeGenSubroutine {
+	/**
+	 * The type of this block's structure.
+	 */
+	LLVMStructType *blockStructureTy;
+	/**
+	 * A pointer to the block object, in its own scope.
+	 */
+	llvm::Value *blockContext;
+	/**
+	 * A pointer to the block object, in the parent's scope.
+	 */
+	llvm::Value *block;
+	/**
+	 * Emits the descriptor for this block.  The descriptor contains the block
+	 * type encoding, along with the functions required to copy and dispose of
+	 * the block.
+	 */
+	llvm::Constant* emitBlockDescriptor(NSString *signature,
+	                                    llvm::StructType *blockType);
 public:
-  virtual CodeGenLexicalScope *getParentScope() { return parentScope; }
 	virtual void SetReturn(Value* RetVal);
-  llvm::Value *Block;
 
-  CodeGenBlock(int args, int locals, CodeGenLexicalScope *enclosingScope,
-		  CodeGenModule *Mod);
+	/**
+	 * Begins generating a block.  The arguments and locals contain an array of
+	 * LKSymbol objects representing the local and argument values in this
+	 * block.  Bound variables are passed in when the block is created.
+	 */
+	CodeGenBlock(NSArray *locals,
+	             NSArray *arguments,
+	             NSArray *bound,
+	             NSString *signature,
+	             CodeGenModule *Mod);
 
-  void SetBlockReturn(llvm::Value* RetVal);
+	void SetBlockReturn(llvm::Value* RetVal);
 
-  llvm::Value *EndBlock(void); 
+	/**
+	 * Creates an on-stack instance of the block, with all of the bound
+	 * variables attached.
+	 */
+	llvm::Value *EndBlock(void);
 };
+}}

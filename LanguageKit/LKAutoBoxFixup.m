@@ -35,7 +35,7 @@ static struct objc_slot* objc_method_type_fixup(Class cls, SEL
 	void *argv[argc];
 	for (int i=0 ; i<argc ; i++)
 	{
-		argv[i] = [jit loadArgumentAtIndex: i lexicalScopeAtDepth: 0];
+		argv[i] = [jit loadValueFromVariable: i lexicalScopeAtDepth: 0];
 	}
 	void *ret = [jit sendMessage: selName
 	                       types: result->types

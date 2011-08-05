@@ -21,7 +21,15 @@
 {
 	[expr setParent:self];
 	[target setParent:self];
-	return [target check] && [expr check];
+	BOOL check = [target check] && [expr check];
+	/*
+	if (check && [[target->symbol typeEncoding] characterAtIndex: 0] != '@')
+	{
+		[NSException raise: @"InvalidAssignmentException"
+					format: @"Can not yet generate code for assignment"];
+	}
+	*/
+	return check;
 }
 - (NSString*) description
 {
@@ -30,76 +38,20 @@
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	void * rval = [expr compileWithGenerator: aGenerator];
-	switch([symbols scopeOfSymbol:target->symbol])
+	LKSymbol *symbol = target->symbol;
+	switch([symbol scope])
 	{
 		case LKSymbolScopeLocal:
-			[aGenerator storeValue:rval
-			        inLocalAtIndex:[symbols offsetOfLocal:target->symbol]];
-			break;
-		case LKSymbolScopeObject:
-		{
-			// TODO: Move this to -check
-			if ([[symbols typeOfSymbol:target->symbol] characterAtIndex:0] != '@')
-			{
-				[NSException raise:@"InvalidAssignmentException"
-				            format:@"Can not yet generate code for assignment"];
-			}
-			// Assign
-			[aGenerator storeValue: rval
-			                inIvar: target->symbol
-			                ofType: @"@"
-			              atOffset: [symbols offsetOfIVar: target->symbol]
-			            fromObject: [aGenerator loadSelf]
-			               ofClass: [symbols classForIvar: target->symbol]];
-			break;
-		}
-		case LKSymbolScopeClass:
-		{
-			[aGenerator storeValue:rval inClassVariable:target->symbol];
-			break;
-		}
 		case LKSymbolScopeExternal:
-		{
-			LKExternalSymbolScope scope = [(LKBlockSymbolTable*)symbols
-				scopeOfExternalSymbol:target->symbol];
-			switch([scope.scope scopeOfSymbol:target->symbol])
-			{
-				case LKSymbolScopeArgument:
-					NSAssert(NO,
-						@"Storing values in arguments is not currently supported");
-				case LKSymbolScopeLocal:
-					[aGenerator storeValue:rval
-					        inLocalAtIndex:[scope.scope offsetOfLocal:target->symbol]
-			           lexicalScopeAtDepth:scope.depth];
-					break;
-				case LKSymbolScopeObject:
-					// TODO: Move this to -check
-					if ([[scope.scope typeOfSymbol:target->symbol] characterAtIndex:0] != '@')
-					{
-						[NSException raise:@"InvalidAssignmentException"
-									format:@"Can not yet generate code for assignment"];
-					}
-					// Assign
-					[aGenerator storeValue: rval
-					                inIvar: target->symbol
-					                ofType: @"@"
-					              atOffset: [scope.scope offsetOfIVar: target->symbol]
-					            fromObject: [aGenerator loadSelf]
-					               ofClass: [scope.scope classForIvar: target->symbol]];
-					break;
-				case LKSymbolScopeClass:
-					[aGenerator storeValue:rval inClassVariable:target->symbol];
-					break;
-				default:
-					NSAssert(NO, 
-						@"External symbols must be local or arguments.");
-			}	
+		case LKSymbolScopeArgument:
+		case LKSymbolScopeObject:
+		case LKSymbolScopeClass:
+			[aGenerator storeValue: rval inVariable: symbol];
 			break;
-		}
+		case LKSymbolScopeBuiltin:
+		case LKSymbolScopeGlobal:
 		default:
-			NSLog(@"Scope of %@ is %d.", target->symbol, [symbols scopeOfSymbol:target->symbol]);
-			// Throws exception
-			[super compileWithGenerator: aGenerator];
+			return [super compileWithGenerator: aGenerator];
 	}
 	// Assignments aren't expressions in Smalltalk, but they might be in some
 	// other language that wants to use this code and it doesn't cost more than

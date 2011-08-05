@@ -4,6 +4,8 @@
 // method branchOnCondition:true:false: in this class
 #undef true
 #undef false
+@class LKSymbolTable;
+@class LKSymbol;
 
 /**
  * Code generator protocol.  Each AST node calls methods in a class conforming
@@ -22,25 +24,21 @@
  */
 - (void) endModule;
 /**
- * Create a new class, with the specified superclass and instance variables.
- * The types should be Objective-C type encoding strings.
+ * Create a new class, with the specified superclass.  The symbol table should
+ * define all of the new instance and class variables.
  */
-- (void) createSubclassWithName:(NSString*)aClass
-                superclassNamed:(NSString*)aSuperclass
-                  withCvarNames:(const char**)cVarNames 
-                          types:(const char**)cVarTypes
-                  withIvarNames:(const char**)iVarNames 
-                          types:(const char**)iVarTypes
-                        offsets:(int*)offsets;
+- (void)createSubclassWithName: (NSString*)aClass
+               superclassNamed: (NSString*)aSuperclass
+               withSymbolTable: (LKSymbolTable*)symbolTable;
 /**
  * Finish the current class. 
  */
-- (void) endClass;
+- (void)endClass;
 /**
  * Create a new category with the specified name on the named class.
  */
-- (void) createCategoryWithName:(NSString*)aCategory
-                   onClassNamed:(NSString*)aClass;
+- (void)createCategoryWithName:(NSString*)aCategory
+                  onClassNamed:(NSString*)aClass;
 /**
  * Finish the current category. 
  */
@@ -50,33 +48,33 @@
  * variables.  Local variables and arguments are indexed by number, the symbol
  * table information is just for debugging.
  */
-- (void) beginClassMethod:(const char*) aName
-                withTypes:(const char*)types
-                   locals: (const char**)locals
-                    count:(unsigned int)localsCount;
+- (void) beginClassMethod: (NSString*)aName
+         withTypeEncoding: (NSString*)typeEncoding
+                arguments: (NSArray*)arguments
+                   locals: (NSArray*)locals;
 /**
  * Begin an instance method with the specified type encoding and number of local
  * variables.  Local variables and arguments are indexed by number, the symbol
  * table information is just for debugging.
  */
-- (void) beginInstanceMethod: (const char*) aName
-                   withTypes: (const char*)types
-                      locals: (const char**)locals
-                       count: (unsigned int)localsCount;
+- (void) beginInstanceMethod: (NSString*)aName
+            withTypeEncoding: (NSString*)typeEncoding
+                   arguments: (NSArray*)arguments
+                      locals: (NSArray*)locals;
 /**
  * Sends a message to a receiver which may be a SmallInt (a boxed Smalltalk
  * integer contained within an object pointer).
  */
-- (void*) sendMessage:(const char*)aMessage
-                types:(const char*)types
+- (void*) sendMessage:(NSString*)aMessage
+                types:(NSString*)types
                    to:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned int)argc;
 /**
  * Sends a message to the superclass.
  */
-- (void*) sendSuperMessage:(const char*)sel
-                     types:(const char*)seltypes
+- (void*) sendSuperMessage:(NSString*)sel
+                     types:(NSString*)seltypes
                   withArgs:(void**)argv
                      count:(unsigned int)argc;
 /**
@@ -84,59 +82,20 @@
  * sendMessage:type:to:withargs:count: but requires that receiver be an
  * Objective-C object, not a small integer.
  */
-- (void*) sendMessage:(const char*)aMessage
-                types:(const char*)types
+- (void*) sendMessage:(NSString*)aMessage
+                types:(NSString*)types
              toObject:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned int)argc;
-/**
- * Store the specified value in the named class variable.
- */
-- (void) storeValue:(void*)rval 
-    inClassVariable:(NSString*) aClassVar;
-/**
- * Stores a value in a local variable somewhere up the stack.
- */
-- (void) storeValue:(void*)aVal 
-     inLocalAtIndex:(unsigned int)index
-lexicalScopeAtDepth:(unsigned int) scope;
-/**
- * Load a local value from up the stack.
- */
-- (void*) loadLocalAtIndex:(unsigned int)index
-	   lexicalScopeAtDepth:(unsigned int) scope;
-/**
- * Load an argument from up the stack.
- */
-- (void*) loadArgumentAtIndex:(unsigned int) index
-		  lexicalScopeAtDepth:(unsigned int) scope;
-- (void*) loadClassVariable:(NSString*) aSymbol;
-/**
- * Stores a value at a specific offset from an object.  Used for instance
- * variables.  The type is an Objective-C type encoding.
- */
-- (void) storeValue: (void*)aValue
-             inIvar: (NSString*)anIvar
-             ofType: (NSString*)aType
-           atOffset: (unsigned)anOffset
-         fromObject: (void*)anObject
-            ofClass: (NSString*)className;
-/**
- * Loads a value at a specific offset from an object.  Used for instance
- * variables. The type is an Objective-C type encoding.  
- */
-- (void*) loadValueOfType: (NSString*)aType
-                 fromIvar: (NSString*)anIvar
-                 atOffset: (unsigned)anOffset
-               fromObject: (void*)anObject
-                 ofClass: (NSString*)className;
 /**
  * Begin generating a block expression with the specified number of arguments
  * and locals.  The bound variables are pointers to variables declared outside
  * the block's scope.
  */
-- (void) beginBlockWithArgs:(unsigned int)args
-					 locals:(unsigned int)locals;
+- (void) beginBlockWithArgs: (NSArray*)args
+                     locals: (NSArray*)locals
+                  externals: (NSArray*)externals
+                  signature: (NSString*)signature;
 /**
  * Returns 'self' in the current method.
  */
@@ -146,17 +105,13 @@ lexicalScopeAtDepth:(unsigned int) scope;
  */
 - (void*) loadClassNamed:(NSString*)aClass;
 /**
- * Stores a value in the specified local.
+ * Stores a value in the specified variable.
  */
-- (void) storeValue:(void*)aVal inLocalAtIndex:(unsigned int)index;
+- (void)storeValue:(void*)aVal inVariable: (LKSymbol*)aVariable;
 /**
  * Load the value of the specified local variable.
  */
-- (void*) loadLocalAtIndex:(unsigned int)index;
-/**
- * Load the value of the specified argument.
- */
-- (void*) loadArgumentAtIndex:(unsigned int)index;
+- (void*)loadVariable: (LKSymbol*)aVariable;
 /**
  * End the current method.
  */

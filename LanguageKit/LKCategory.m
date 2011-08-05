@@ -8,7 +8,7 @@
 	SUPERINIT;
 	ASSIGN(classname, aClass);
 	ASSIGN(categoryName, aName);
-	ASSIGN(methods, aMethodList);
+	ASSIGN(methods, [aMethodList mutableCopy]);
 	return self;
 }
 - (void)dealloc
@@ -34,17 +34,7 @@
 }
 - (BOOL)check
 {
-	Class class = NSClassFromString(classname);
-	//Construct symbol table.
-	if (Nil != class)
-	{
-		symbols = [[LKObjectSymbolTable alloc] initForClass:class];
-	}
-	else
-	{
-		ASSIGN(symbols,
-			   [LKObjectSymbolTable symbolTableForNewClassNamed:classname]);
-	}
+	symbols = [[LKSymbolTable symbolTableForClass: classname] retain];
 	BOOL success = YES;
 	FOREACH(methods, method, LKAST*)
 	{

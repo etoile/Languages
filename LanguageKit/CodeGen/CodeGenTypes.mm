@@ -9,6 +9,7 @@
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/GlobalVariable.h>
 #include <llvm/Module.h>
+#include <llvm/LLVMContext.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/IRBuilder.h>
@@ -20,31 +21,34 @@
 #include <errno.h>
 
 #include "ABI.h"
+#import <Foundation/Foundation.h>
+#import "../Runtime/LKObject.h"
 
-extern const char *LKObjectEncoding;
+using namespace etoile::languagekit;
 
-// C++ Implementation
-using namespace llvm;
-using std::string;
+static const char *LKObjectEncoding = @encode(LKObject);
+
+
+NSString *MsgSendSmallIntFilename;
+
+// TODO: This should be rewritten to use the encoding2 stuff in libobjc2
 
 void SkipTypeQualifiers(const char **typestr)
 {
-	if (*typestr == NULL) return;
-	while(**typestr == 'V' || **typestr == 'r')
+	while (1)
 	{
-		(*typestr)++;
+		switch (**typestr)
+		{
+			default: return;
+			case 'r': case 'n': case 'N': 
+			case 'o': case 'O': case 'V': 
+				(*typestr)++;
+		}
 	}
 }
-PointerType *IdTy;
-const Type *IntTy;
-const Type *IntPtrTy;
-const Type *SelTy;
-const PointerType *IMPTy;
-const char *MsgSendSmallIntFilename;
-Constant *Zeros[2];
 
 
-static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** typestr)
+static LLVMType *LLVMTypeFromString2(LLVMContext &Context, const char ** typestr)
 {
 	// FIXME: Other function type qualifiers
 	SkipTypeQualifiers(typestr);
@@ -88,16 +92,17 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 		case '^':
 		{
 			(*typestr)++;
-			const Type *pointeeType = LLVMTypeFromString2(Context, typestr);
+			LLVMType *pointeeType = LLVMTypeFromString2(Context, typestr);
 			if (pointeeType == Type::getVoidTy(Context))
 			{
 				pointeeType = Type::getInt8Ty(Context);
 			}
 			return PointerType::getUnqual(pointeeType);
 		}
-			//FIXME:
-		case ':':
 		case '@':
+			// Handle block encodings.
+			if (*((*typestr)+1) == '?') (*typestr)++;
+		case ':':
 		case '#':
 		case '*':
 			(*typestr)++;
@@ -112,7 +117,7 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 				(*typestr)++; 
 			}
 			(*typestr)++;
-			std::vector<const Type*> types;
+			std::vector<LLVMType*> types;
 			while (**typestr != '}')
 			{
 				// FIXME: Doesn't work with nested structs
@@ -127,16 +132,21 @@ static const Type *LLVMTypeFromString2(LLVMContext &Context, const char ** types
 	}
 }
 
-const Type *CodeGenModule::LLVMTypeFromString(const char * typestr)
+LLVMType *CodeGenTypes::typeFromString(NSString *typeEncoding)
 {
-	return LLVMTypeFromString2(Context, &typestr);
+	const char *typestr = [typeEncoding UTF8String];
+	if (NULL == typestr || '\0' == typestr[0])
+	{
+		typestr = @encode(LKObject);
+	}
+	return LLVMTypeFromString2(Mod.getContext(), &typestr);
 }
 
 #define NEXT(typestr) \
-	while (!isdigit(*typestr)) { typestr++; }\
+	while ((*typestr) && !isdigit(*typestr)) { typestr++; }\
 	while (isdigit(*typestr)) { typestr++; }
 
-static void const countIntsAndFloats(const Type *ty,
+static void const countIntsAndFloats(LLVMType *ty,
                                      unsigned &ints,
                                      unsigned &floats)
 {
@@ -162,7 +172,7 @@ static void const countIntsAndFloats(const Type *ty,
 		for (Type::subtype_iterator i=ty->subtype_begin(), end=ty->subtype_end()
 		     ; i!=end ; ++i)
 		{
-			countIntsAndFloats(i->get(), ints, floats);
+			countIntsAndFloats(*i, ints, floats);
 		}
 	}
 	else
@@ -178,7 +188,7 @@ static void const countIntsAndFloats(const Type *ty,
  * Note that this is not expressive enough for all ABIs - we will eventually
  * need to have it handle complex and structure types differently.
  */
-static inline bool shouldReturnValueOnStack(const Type *sTy)
+static inline bool shouldReturnValueOnStack(LLVMType *sTy)
 {
 	unsigned ints = 0;
 	unsigned floats = 0;
@@ -195,37 +205,91 @@ static inline bool shouldReturnValueOnStack(const Type *sTy)
 	}
 	return false;
 }
-
-FunctionType *CodeGenModule::LLVMFunctionTypeFromString(const char *typestr, bool &isSRet,
-		const Type *&realRetTy)
+namespace etoile
 {
-	std::vector<const Type*> ArgTypes;
-	if (NULL == typestr)
+namespace languagekit
+{
+
+CodeGenTypes::CodeGenTypes(llvm::Module &M) : Mod(M)
+{
+	llvm::LLVMContext &context = M.getContext();
+	voidTy = llvm::Type::getVoidTy(context);
+	idTy = llvm::Type::getInt8PtrTy(context);
+	ptrToIdTy = llvm::PointerType::getUnqual(idTy);
+	switch (Mod.getPointerSize())
 	{
-		ArgTypes.push_back(LLVMTypeFromString("@"));
-		ArgTypes.push_back(LLVMTypeFromString(":"));
-		return FunctionType::get(LLVMTypeFromString("@"), ArgTypes, true);
+		case llvm::Module::Pointer32:
+			intPtrTy = llvm::Type::getInt32Ty(context);
+			break;
+		case llvm::Module::Pointer64:
+			intPtrTy = llvm::Type::getInt64Ty(context);
+			break;
+		case llvm::Module::AnyPointerSize:
+			intPtrTy = llvm::Type::getIntNTy(context, sizeof(void*) * 8);
 	}
+	// Is this ever wrong?  Segmented architectures, with 64-bit address space
+	// of 2^32 x 2^32 segments?
+	ptrDiffTy = intPtrTy;
+	ptrToVoidTy = idTy;
+	selTy = ptrToVoidTy;
+	charTy = IntegerType::get(context, sizeof(char) * 8);
+	shortTy = IntegerType::get(context, sizeof(short) * 8);
+	intTy = IntegerType::get(context, sizeof(int) * 8);
+	longTy = IntegerType::get(context, sizeof(long) * 8);
+	longLongTy = IntegerType::get(context, sizeof(long long) * 8);
+	zeros[0] = llvm::Constant::getNullValue(intTy);
+	zeros[1] = zeros[0];
+	genericByRefType = GetStructType(CGM->Context,
+	                                 idTy,         // 0 isa 
+	                                 ptrToVoidTy,  // 1 forwarding
+	                                 intTy,        // 2 flags
+	                                 intTy,        // 3 size
+	                                 ptrToVoidTy,  // 4 keep 
+	                                 ptrToVoidTy,  // 5 dispose
+	                                 idTy,         // 6 value
+	                                 NULL);
+}
+
+
+
+FunctionType *CodeGenTypes::functionTypeFromString(NSString *type,
+                                                   bool &isSRet,
+                                                   LLVMType *&realRetTy)
+{
+	std::vector<LLVMType*> ArgTypes;
+	llvm::FunctionType *functionType;
+	if (NULL == type)
+	{
+		ArgTypes.push_back(idTy);
+		ArgTypes.push_back(selTy);
+		isSRet = false;
+		realRetTy = idTy;
+		functionType = FunctionType::get(idTy, ArgTypes, true);
+		return functionType;
+	}
+	const char *typestr = [type UTF8String];
+	llvm::LLVMContext &context = Mod.getContext();
 	// Function encodings look like this:
 	// v12@0:4@8 - void f(id, SEL, id)
-	const Type * ReturnTy = LLVMTypeFromString(typestr);
+	LLVMType * ReturnTy = LLVMTypeFromString2(context, &typestr);
 	isSRet = shouldReturnValueOnStack(ReturnTy);
 	
 	realRetTy = ReturnTy;
 	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ReturnTy)
 		&&                              
-		ReturnTy == GetStructType(Context, Type::getFloatTy(Context), Type::getFloatTy(Context), NULL))
+		ReturnTy == GetStructType(context, Type::getFloatTy(context), Type::getFloatTy(context), NULL))
 	{   
 		isSRet = false;
-		ReturnTy = Type::getInt64Ty(Context);
+		ReturnTy = Type::getInt64Ty(context);
 	}
 	NEXT(typestr);
 	while(*typestr)
 	{
-		ArgTypes.push_back(LLVMTypeFromString(typestr));
+		ArgTypes.push_back(LLVMTypeFromString2(context, &typestr));
 		NEXT(typestr);
 	}
-	return FunctionType::get(ReturnTy, ArgTypes, false);
+	functionType = FunctionType::get(ReturnTy, ArgTypes, false);
+	return functionType;
 }
 
-CGObjCRuntime::~CGObjCRuntime() {}
+}}

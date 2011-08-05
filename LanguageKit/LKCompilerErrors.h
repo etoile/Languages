@@ -41,6 +41,10 @@ EMIT_STRING(kLKTypeEncoding)
  */
 EMIT_STRING(LKUndefinedSymbolError)
 /**
+ * The selector may not be used in LanguageKit code.
+ */
+EMIT_STRING(LKInvalidSelectorError)
+/**
  * An attempt was made to subclass a nonexistent class.  This error is usually
  * fatal, but can be recovered by adding the superclass to the runtime.  The
  * name of the missing superclass will be stored in the dictionary with the

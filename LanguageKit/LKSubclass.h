@@ -37,21 +37,5 @@
 /**
  * Returns the methods
  */
-- (NSMutableArray*)methods;
-/**
- * Returns the class variables
- */
-- (NSMutableArray*)cvars;
-/**
- * Returns the instance variables
- */
-- (NSMutableArray*)ivars;
-/**
- * Adds an instance variable to this class definition.
- */
-- (void)addInstanceVariable: (NSString*)aName;
-/**
- * Adds a class variable to this class definition.
- */
-- (void)addClassVariable: (NSString*)aName;
+- (NSArray*)methods;
 @end

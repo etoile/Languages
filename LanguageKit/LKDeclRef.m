@@ -17,115 +17,64 @@
 }
 - (BOOL)check
 {
+	// If we've already done this check, reset the symbol and do it again
+	if (![symbol isKindOfClass: [NSString class]])
+	{
+		ASSIGN(symbol, [symbol name]);
+	}
 	if ([symbol characterAtIndex: 0] == '#') { return YES; }
 
-
-	switch ([symbols scopeOfSymbol:symbol])
+	LKSymbol *s = [symbols symbolForName: symbol];
+	if (nil == s)
 	{
-		case LKSymbolScopeInvalid:
+		NSDictionary *errorDetails = D(
+			[NSString stringWithFormat: @"Unrecognised symbol: %@",
+				symbol], kLKHumanReadableDescription,
+			self, kLKASTNode);
+		if ([LKCompiler reportError: LKUndefinedSymbolError
+		                    details: errorDetails])
 		{
-			NSDictionary *errorDetails = D(
-				[NSString stringWithFormat: @"Unrecognised symbol: %@",
-					symbol], kLKHumanReadableDescription,
-				self, kLKASTNode);
-			if ([LKCompiler reportError: LKUndefinedSymbolError
-			                    details: errorDetails])
-			{
-				return [self check];
-			}
-			return NO;
+			return [self check];
 		}
-		case LKSymbolScopeExternal:
-		{
-			LKExternalSymbolScope s = 
-				[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol:symbol];
-			if (nil == s.scope)
-			{
-				NSDictionary *errorDetails = D(
-					[NSString stringWithFormat: @"Unrecognised symbol: %@",
-						symbol], kLKHumanReadableDescription,
-					self, kLKASTNode);
-				if ([LKCompiler reportError: LKUndefinedSymbolError
-				                    details: errorDetails])
-				{
-					return [self check];
-				}
-				return NO;
-			}
-		}
-		default:
-			break;
+		return NO;
 	}
-
+	else
+	{
+		ASSIGN(symbol, s);
+	}
 	return YES;
 }
 - (NSString*) description
 {
-	return symbol;
+	return [symbol name];
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	switch([symbols scopeOfSymbol:symbol])
+	NSString *symbolName = [symbol name];
+	switch([symbol scope])
 	{
 		case LKSymbolScopeLocal:
-			return [aGenerator loadLocalAtIndex:[symbols offsetOfLocal:symbol]];
+		case LKSymbolScopeExternal:
+		case LKSymbolScopeArgument:
+		case LKSymbolScopeObject:
+		case LKSymbolScopeClass:
+			return [aGenerator loadVariable: symbol];
 		case LKSymbolScopeBuiltin:
-			if ([symbol isEqual:@"self"] || [symbol isEqual:@"super"])
+			// FIXME: It's ugly hard-coding language-specific names into the
+			// symbol table.  
+			if ([symbolName isEqual:@"self"] || [symbolName isEqual:@"super"])
 			{
 				return [aGenerator loadSelf];
 			}
-			else if ([symbol isEqual:@"nil"] || [symbol isEqual:@"Nil"])
+			else if ([symbolName isEqual:@"nil"] || [symbolName isEqual:@"Nil"])
 			{
 				return [aGenerator nilConstant];
 			}
 		case LKSymbolScopeGlobal:
-			return [aGenerator loadClassNamed:symbol];
-		case LKSymbolScopeArgument:
-	   		return [aGenerator loadArgumentAtIndex:
-						  [symbols indexOfArgument:symbol]];
-		case LKSymbolScopeExternal:
-		{
-			LKExternalSymbolScope s = 
-				[(LKBlockSymbolTable*)symbols scopeOfExternalSymbol: symbol];
-			switch([s.scope scopeOfSymbol: symbol])
-			{
-				case LKSymbolScopeLocal:
-					return [aGenerator loadLocalAtIndex: [s.scope offsetOfLocal:symbol]
-					                lexicalScopeAtDepth: s.depth];
-				case LKSymbolScopeArgument:
-					return [aGenerator loadArgumentAtIndex: [s.scope indexOfArgument:symbol]
-					                   lexicalScopeAtDepth: s.depth];
-				case LKSymbolScopeObject:
-				{
-					return [aGenerator loadValueOfType: [s.scope typeOfSymbol: symbol]
-					                          fromIvar: symbol
-					                          atOffset: [s.scope offsetOfIVar: symbol]
-					                        fromObject: [aGenerator loadSelf]
-					                           ofClass: [s.scope classForIvar: symbol]];
-				}
-				case LKSymbolScopeClass:
-				{
-					return [aGenerator loadClassVariable: symbol];
-				}
-				default:
-					NSAssert(NO, @"Invalid scope for external");
-			}
-		}
-		case LKSymbolScopeObject:
-		{
-			return [aGenerator loadValueOfType: [symbols typeOfSymbol: symbol]
-			                          fromIvar: symbol
-			                          atOffset: [symbols offsetOfIVar: symbol]
-			                        fromObject: [aGenerator loadSelf]
-			                           ofClass: [symbols classForIvar: symbol]];
-		}
-		case LKSymbolScopeClass:
-		{
-			return [aGenerator loadClassVariable: symbol];
-		}
+			return [aGenerator loadClassNamed: symbolName];
 		default:
 			NSLog(@"Compiling declref to symbol %@ of type %d",
-					symbol, [symbols scopeOfSymbol:symbol]);
+					symbol, [symbol scope]);
 			return [super compileWithGenerator: aGenerator];
 	}
 }

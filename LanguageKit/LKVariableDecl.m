@@ -20,7 +20,7 @@
 - (void) setParent:(LKAST*)aParent
 {
 	[super setParent:aParent];
-	[symbols addSymbol:variableName];
+	[symbols addSymbolsNamed: variableName];
 }
 - (NSString*)name
 {

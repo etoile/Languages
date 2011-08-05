@@ -1,4 +1,5 @@
 #import "LKSymbolTable.h"
+#import "Runtime/LKObject.h"
 #import <EtoileFoundation/runtime.h>
 
 static NSMutableDictionary *NewClasses;
@@ -19,344 +20,219 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	return LKSymbolScopeInvalid;
 }
 
-@interface LKSymbolTable (Private)
-- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName;
-@end
-
-@implementation LKObjectSymbolTable
-+ (LKSymbolTable*) symbolTableForNewClassNamed:(NSString*)aClass
+/**
+ * Creates an NSString from a string returned by the runtime.  These strings
+ * are guaranteed to persist for the duration of the program, so there's no
+ * need to copy the data.
+ */
+static NSString *NSStringFromRuntimeString(const char *cString)
 {
-	return [NewClasses objectForKey: aClass];
+	return [[[NSString alloc] initWithBytesNoCopy: (char*)cString
+	                                       length: strlen(cString)
+	                                     encoding: NSUTF8StringEncoding
+	                                 freeWhenDone: NO] autorelease];
 }
 
-- (LKObjectSymbolTable*) initEmptyTable
+@implementation LKSymbolTable
+@synthesize enclosingScope, tableScope, symbols, declarationScope;
+- (void)dealloc
 {
-	SELFINIT;
-	classVariables = [[NSMutableArray alloc] init];
-	instanceVariables = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 10);
-	nextOffset = 0;
-	types = [NSMutableDictionary new];
+	[symbols release];
+	[super dealloc];
+}
++ (void)initialize
+{
+	NewClasses = [NSMutableDictionary new];
+}
+- (LKSymbolTable*)initInScope: (LKSymbolTable*)aTable
+{
+	SUPERINIT;
+	enclosingScope = aTable;
+	symbols = [NSMutableDictionary new];
 	return self;
 }
-+ (LKObjectSymbolTable*)symbolTable
+- (id)init
 {
-	return [[[self alloc] initEmptyTable] autorelease];
+	return [self initInScope: nil];
 }
-- (int) instanceSize
++ (LKSymbolTable*) symbolTableForClass: (NSString*)aClassName
 {
-	// Check for nil in case nil messaging does not return zero
-	if (nil != enclosingScope)
+	LKSymbolTable *table = [NewClasses objectForKey: aClassName];
+	if (nil != table) { return table; }
+
+	table = [self new];
+	if (nil == table) { return nil; }
+
+	[NewClasses setObject: table forKey: aClassName];
+
+	Class class = NSClassFromString(aClassName);
+	if (class)
 	{
-		return [(id)enclosingScope instanceSize] + nextOffset;
+		unsigned int ivarcount = 0;
+		Ivar* ivarlist = class_copyIvarList(class, &ivarcount);
+		if(ivarlist != NULL) 
+		{
+			for (int i = 0 ; i < ivarcount ; i++)
+			{
+				LKSymbol *sym = [LKSymbol new];
+				NSString *name = NSStringFromRuntimeString(ivar_getName(ivarlist[i]));
+				[sym setName: name];
+				[sym setTypeEncoding: NSStringFromRuntimeString(ivar_getTypeEncoding(ivarlist[i]))];
+				[sym setScope: LKSymbolScopeObject];
+				[sym setOwner: class];
+				[table addSymbol: sym];
+				[sym release];
+				[name release];
+			}
+			free(ivarlist);
+		}
+		class = class_getSuperclass(class);
+		if (Nil != class)
+		{
+			[table setEnclosingScope: [self symbolTableForClass: [class className]]];
+		}
 	}
-	else
+	return table;
+}
+- (void)addSymbol: (LKSymbol*)aSymbol
+{
+	[symbols setObject: aSymbol forKey: [aSymbol name]];
+}
+- (LKSymbol*)symbolForName: (NSString*)aName
+{
+	LKSymbol *s = [symbols objectForKey: aName];
+	if (nil == s)
 	{
-		return nextOffset;
+		if (nil != enclosingScope)
+		{
+			LKSymbol *sym = [enclosingScope symbolForName: aName];
+			// If this is an argument or local from the enclosing scope, then
+			// bind it into this symbol table as an external symbol.
+			switch ([sym scope])
+			{
+				case LKSymbolScopeExternal:
+				case LKSymbolScopeArgument:
+				case LKSymbolScopeLocal:
+					[sym setReferencingScopes: [sym referencingScopes] + 1];
+					sym = [sym copy];
+					[sym setReferencingScopes: 0];
+					[sym setScope: LKSymbolScopeExternal];
+					[self addSymbol: sym];
+					[sym release];
+				default:
+					return sym;
+			}
+		}
+		LKSymbolScope scope = lookupUnscopedSymbol(aName);
+		if (scope != LKSymbolScopeInvalid)
+		{
+			LKSymbol *sym = [LKSymbol new];
+			[sym setName: aName];
+			[sym setTypeEncoding: @"@"];
+			[sym setScope: scope];
+			[self addSymbol: sym];
+			[sym release];
+			return sym;
+		}
+	}
+	return s;
+}
+static inline NSMutableArray* collectSymbolsOfType(NSDictionary *symbols,
+                                            LKSymbolScope scope)
+{
+	NSMutableArray *args = nil;
+	for (LKSymbol *s in [symbols objectEnumerator])
+	{
+		if ([s scope] == scope)
+		{
+			if (nil == args)
+			{
+				args = [NSMutableArray new];
+			}
+			[args addObject: s];
+		}
+	}
+	return [args autorelease];
+}
+
+static NSInteger compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
+{
+	NSInteger i1 = [a index];
+	NSInteger i2 = [b index];
+	if (i1 < i2) { return NSOrderedAscending; }
+	if (i1 > i2) { return NSOrderedDescending; }
+	return NSOrderedSame;
+}
+
+- (NSArray*)arguments
+{
+	return collectSymbolsOfType(symbols, LKSymbolScopeArgument);
+}
+- (NSArray*)locals
+{
+	NSMutableArray *locals = collectSymbolsOfType(symbols, LKSymbolScopeLocal);
+	[locals sortUsingFunction: compareSymbolOrder context: NULL];
+	return locals;
+}
+- (NSArray*)byRefVariables;
+{
+	return collectSymbolsOfType(symbols, LKSymbolScopeExternal);
+}
+- (NSArray*)classVariables
+{
+	return collectSymbolsOfType(symbols, LKSymbolScopeClass);
+}
+- (NSArray*)instanceVariables
+{
+	return collectSymbolsOfType(symbols, LKSymbolScopeObject);
+}
+- (void)addSymbolsNamed: (NSArray*)anArray ofKind: (LKSymbolScope)kind;
+{
+	NSUInteger i = 0;
+	for (NSString *symbol in anArray)
+	{
+		LKSymbol *sym = [LKSymbol new];
+		[sym setName: symbol];
+		[sym setTypeEncoding: NSStringFromRuntimeString(@encode(LKObject))];
+		[sym setScope: kind];
+		[sym setIndex: i++];
+		[self addSymbol: sym];
+		[sym release];
 	}
 }
-- (void) registerNewClassNamed: (NSString*)aClass
+@end
+
+@implementation LKSymbol
+@synthesize name, typeEncoding, owner, scope, index, referencingScopes;
+- (id)init
 {
-	ASSIGN(className, aClass);
-	[NewClasses setObject: self forKey: aClass];
+	SUPERINIT;
+	index = -1;
+	return self;
 }
 - (void)dealloc
 {
-	NSFreeMapTable(instanceVariables);
-	[classVariables release];
-	[className release];
+	[name release];
+	[typeEncoding release];
 	[super dealloc];
 }
-- (void) addClassVariable: (NSString*) aClassVar
+- (NSUInteger)hash
 {
-	[classVariables addObject:aClassVar];
+	return [name hash];
 }
-- (void)setClassName: (NSString*)aName
+- (BOOL)isEqual: (id) other
 {
-	ASSIGN(className, aName);
+	return [name isEqualToString: [other name]];
 }
-- (LKObjectSymbolTable*)symbolTableForSubclassNamed: (NSString*)aString
+- (id)copyWithZone: (NSZone*)aZone
 {
-	LKObjectSymbolTable *symtab = [LKObjectSymbolTable symbolTable];
-	[symtab setClassName: aString];
-	[symtab setScope: self];
-	return symtab;
-}
-- (int)nextOffset
-{
-	return nextOffset;
-}
-- (void)setScope:(LKSymbolTable*)scope
-{
-	[super setScope: scope];
-}
-- (LKSymbolTable*) initForClass:(Class)aClass 
-{
-	SELFINIT;
-	Class aSuperClass;
-	classVariables = [[NSMutableArray alloc] init];
-	instanceVariables = NSCreateMapTable(NSObjectMapKeyCallBacks, NSIntMapValueCallBacks, 10);
-	// nextOffset = class_getInstanceSize(aClass);
-	NSMutableDictionary *ivarTypes = [NSMutableDictionary new];
-	className = [[NSString alloc] initWithUTF8String: class_getName(aClass)];
-	
-	unsigned int ivarcount = 0;
-	Ivar* ivarlist = class_copyIvarList(aClass, &ivarcount);
-	if(ivarlist != NULL) 
-	{
-		for (int i = 0 ; i < ivarcount ; i++)
-		{
-			int offset = ivar_getOffset(ivarlist[i]);
-			NSString * name = [NSString stringWithUTF8String:
-				(char*)ivar_getName(ivarlist[i])];
-			NSMapInsert(instanceVariables, (void*)name,
-					(void*)(uintptr_t)offset);
-			NSString * type = [NSString stringWithUTF8String:
-				(char*)ivar_getTypeEncoding(ivarlist[i])];
-			[ivarTypes setObject:type forKey:name];
-		}
-		free(ivarlist);
-	}
-	types = ivarTypes;
-	if (Nil != (aSuperClass = class_getSuperclass(aClass)))
-	{
-		NSString *superName = [[NSString alloc] initWithUTF8String: class_getName(aSuperClass)];
-		id parentScope = [NewClasses objectForKey: superName];
-		[superName release];
-		if (nil == parentScope)
-		{
-			parentScope = [[LKObjectSymbolTable alloc] initForClass: aSuperClass];
-		}
-		[self setScope: parentScope];
-	}
-
-	// Calculate the next offset for adding instance variables
-	// based on the class size and superclass size.
-	nextOffset = class_getInstanceSize(aClass);
-	if (aSuperClass != nil)
-		nextOffset -= class_getInstanceSize(aSuperClass);
-
-	[NewClasses setObject: self forKey: className];
-	return self;
-}
-
-- (int) offsetOfIVar:(NSString*)aName
-{
-	int offset;
-
-	if (YES == NSMapMember(instanceVariables, aName, NULL, (void**)&offset))
-	{
-		return [(id)enclosingScope instanceSize] + offset;
-	}
-	else
-	{
-		return [enclosingScope offsetOfIVar: aName];
-	}
-}
-- (NSString*)classForIvar: (NSString*)aName
-{
-	int offset;
-
-	if (YES == NSMapMember(instanceVariables, aName, NULL, (void**)&offset))
-	{
-		return className;
-	}
-	else
-	{
-		return [enclosingScope classForIvar: aName];
-	}
-}
-
-- (void) addSymbol:(NSString*)aSymbol
-{
-	NSMapInsert(instanceVariables, (void*)aSymbol, (void*)(intptr_t)nextOffset);
-	nextOffset += sizeof(id);
-}
-
-- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
-{
-	if (YES == NSMapMember(instanceVariables, aName, 0, 0))
-	{
-		return LKSymbolScopeObject;
-	}
-	if ([classVariables containsObject:aName])
-	{
-		return LKSymbolScopeClass;
-	}
-	return LKSymbolScopeInvalid;
-}
-- (NSString*)className
-{
-	return className;
-}
-@end
-@implementation LKMethodSymbolTable
-- (id) initWithLocals:(NSArray*)locals
-                 args:(NSArray*)args
-{
-	SELFINIT;
-	if (locals == nil)
-	{
-		localVariables = [[NSMutableArray alloc] init];
-	}
-	else
-	{
-		localVariables = [locals mutableCopy];
-	}
-	if (args == nil)
-	{
-		arguments = [[NSMutableArray alloc] init];
-	}
-	else
-	{
-		arguments = [args mutableCopy];
-	}
-	return self;
-}
-- (int) indexOfArgument:(NSString*)aName
-{
-	return [arguments indexOfObject:aName];
-}
-- (int) offsetOfLocal:(NSString*)aName
-{
-	return [localVariables indexOfObject:aName];
-}
-
-- (void) addSymbol:(NSString*)aSymbol
-{
-	[localVariables addObject:aSymbol];
-}
-
-- (NSMutableArray*)locals
-{
-	return localVariables;
-}
-- (NSMutableArray*) args
-{
-	return arguments;
-}
-- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
-{
-	if ([localVariables containsObject:aName])
-	{
-		return LKSymbolScopeLocal;
-	}
-	if ([arguments containsObject:aName])
-	{
-		return LKSymbolScopeArgument;
-	}
-	return LKSymbolScopeInvalid;
-}
-- (void) dealloc
-{
-	[localVariables release];
-	[arguments release];
-	[super dealloc];
-}
-@end
-@implementation LKBlockSymbolTable
-- (LKExternalSymbolScope) scopeOfExternalSymbol:(NSString*)aSymbol
-{
-	LKExternalSymbolScope scope = {0, nil};
-	LKSymbolTable *nextscope = enclosingScope;
-	while (nil != nextscope) 
-	{
-		scope.depth++;
-		LKSymbolScope result = [nextscope scopeOfSymbolNonrecursive:aSymbol];
-		if (result != LKSymbolScopeInvalid && result != LKSymbolScopeExternal)
-		{
-			scope.scope = nextscope;
-			break;
-		}
-		nextscope = nextscope->enclosingScope;
-	}
-	return scope;
-}
-
-- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
-{
-	LKSymbolScope scope = lookupUnscopedSymbol(aName);
-	if (scope == LKSymbolScopeInvalid)
-	{
-		scope = [super scopeOfSymbolNonrecursive:aName];
-		if (scope == LKSymbolScopeInvalid)
-		{
-			return LKSymbolScopeExternal;
-		}
-	}
-	return scope;
-}
-@end
-@implementation LKSymbolTable
-+ (void) initialize
-{
-	NewClasses = [[NSMutableDictionary alloc] init];
-}
-+ (void) forwardDeclareNewClass: (NSString*) className
-{
-	if (![NewClasses objectForKey: className])
-	{
-		[NewClasses setObject: [NSNull null] forKey: className];
-	}
-}
-//TODO You can't insert LKSymbolScopeGlobal symbols yet.
-- (void) addSymbol:(NSString*)aSymbol {}
-- (void) setScope:(LKSymbolTable*)scope
-{
-	ASSIGN(enclosingScope, scope);
-}
-- (int) indexOfArgument:(NSString*)aName
-{
-	return [enclosingScope indexOfArgument:aName];
-}
-- (LKSymbolScope) scopeOfSymbolNonrecursive:(NSString*)aName
-{
-	return lookupUnscopedSymbol(aName);
-}
-
-- (LKSymbolScope) scopeOfSymbol:(NSString*)aName
-{
-	LKSymbolTable *scope = self;
-	while (nil != scope) 
-	{
-		LKSymbolScope result = [scope scopeOfSymbolNonrecursive:aName];
-		if (result != LKSymbolScopeInvalid)
-		{
-			return result;
-		}
-		scope = scope->enclosingScope;
-	}
-	return lookupUnscopedSymbol(aName);
-}
-- (NSString*) typeOfSymbol:(NSString*)aName
-{
-	NSString * type = [types objectForKey:aName];
-	if (nil != type)
-	{
-		return type;
-	}
-	if (nil != enclosingScope)
-	{
-		return [enclosingScope typeOfSymbol:aName];
-	}
-	// Untyped objects are untyped objects.
-	return @"@";
-}
-- (int) offsetOfLocal:(NSString*)aName
-{
-	return [enclosingScope offsetOfLocal:aName];
-}
-- (int) offsetOfIVar:(NSString*)aName
-{
-	return [enclosingScope offsetOfIVar:aName];
-}
-- (NSString*)classForIvar: (NSString*)aName
-{
-	return [enclosingScope classForIvar: aName];
-}
-- (void) dealloc
-{
-	[enclosingScope release];
-	[types release];
-	[super dealloc];
+	LKSymbol *c = [LKSymbol allocWithZone: aZone];
+	[c setName: name];
+	[c setTypeEncoding: typeEncoding];
+	[c setOwner: owner];
+	[c setScope: scope];
+	[c setIndex: index];
+	[c setReferencingScopes: referencingScopes];
+	return c;
 }
 @end

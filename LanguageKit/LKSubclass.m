@@ -34,31 +34,9 @@
 {
 	Class SuperClass = NSClassFromString(superclass);
 	BOOL success = YES;
+	ASSIGN(symbols, [LKSymbolTable symbolTableForClass: classname]);
+	[symbols setEnclosingScope: [LKSymbolTable symbolTableForClass: superclass]];
 	//Construct symbol table.
-	if (Nil == SuperClass)
-	{
-		symbols =
-			[LKObjectSymbolTable symbolTableForNewClassNamed: superclass];
-		if (symbols == nil)
-		{
-			NSDictionary *errorDetails = D([NSString stringWithFormat:
-				@"Unable to find superclass %@ for %@",  superclass, classname],
-				kLKHumanReadableDescription,
-				superclass, kLKMissingSuperclassName,
-				self, kLKASTNode);
-			if ([LKCompiler reportError: LKUndefinedSuperclassError
-			                    details: errorDetails])
-			{
-				return [self check];
-			}
-			return NO;
-		}
-	}
-	else
-	{
-		symbols = [[LKObjectSymbolTable alloc] initForClass: SuperClass];
-	}
-	ASSIGN(symbols, [(id)symbols symbolTableForSubclassNamed: classname]);
 	if (Nil != NSClassFromString(classname))
 	{
 		NSDictionary *errorDetails = D([NSString stringWithFormat:
@@ -69,15 +47,9 @@
 		                             details: errorDetails];
 	}
 	//Construct symbol table.
-	FOREACH(ivars, ivar, NSString*)
-	{
-		[symbols addSymbol:ivar];
-	}
-	FOREACH(cvars, cvar, NSString*)
-	{
-		[(LKObjectSymbolTable*)symbols addClassVariable:cvar];
-	}
-    [(LKObjectSymbolTable*)symbols registerNewClassNamed: classname];
+	[symbols addSymbolsNamed: ivars ofKind: LKSymbolScopeObject];
+	[symbols addSymbolsNamed: cvars ofKind: LKSymbolScopeClass];
+	// Check the methods
 	FOREACH(methods, method, LKAST*)
 	{
 		[method setParent:self];
@@ -109,70 +81,27 @@
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	const char *ivarNames[[ivars count] + 1];
-	const char *ivarTypes[[ivars count] + 1];
-	int ivarOffsets[[ivars count] + 1];
-	for (int i=0; i<[ivars count]; i++)
-	{
-		ivarNames[i] = [[ivars objectAtIndex: i] UTF8String];
-		ivarTypes[i] = "@";
-		ivarOffsets[i] = [symbols offsetOfIVar: [ivars objectAtIndex: i]];
-	}
-	ivarNames[[ivars count]] = NULL;
-	ivarTypes[[ivars count]] = NULL;
-	ivarOffsets[[ivars count]] = 0;
-
-	const char *cvarNames[[cvars count] + 1];
-	const char *cvarTypes[[cvars count] + 1];
-	for (int i=0; i<[cvars count]; i++)
-	{
-		cvarNames[i] = [[cvars objectAtIndex: i] UTF8String];
-		cvarTypes[i] = "@";
-	}
-	cvarNames[[cvars count]] = NULL;
-	cvarTypes[[cvars count]] = NULL;
-
-	[aGenerator createSubclassWithName:classname
-                       superclassNamed:superclass
-                         withCvarNames:cvarNames
-                                 types:cvarTypes
-                         withIvarNames:ivarNames
-                                 types:ivarTypes
-                               offsets:ivarOffsets];
+	NSLog(@"Class name: %@", classname);
+	[aGenerator createSubclassWithName: classname
+	                   superclassNamed: superclass
+	                   withSymbolTable: symbols];
 	FOREACH(methods, method, LKAST*)
 	{
 		[method compileWithGenerator: aGenerator];
 	}
-	// Create dealloc method
-	if ([ivars count] > 0)
+	// Emit the .cxx_destruct method that cleans up ivars
+	NSString *type = [[[self module] typesForMethod: @".cxx_destruct"] objectAtIndex: 0];
+	[aGenerator beginInstanceMethod: @".cxx_destruct"
+	               withTypeEncoding: type
+	                      arguments: nil
+	                         locals: nil];
+	void *nilValue = [aGenerator nilConstant];
+	for (NSString *ivarName in ivars)
 	{
-		const char* deallocty = [[self module] typeForMethod: @"dealloc"];
-
-		[aGenerator beginInstanceMethod: "dealloc"
-		                      withTypes: deallocty
-		                         locals: NULL
-		                          count: 0];
-		void *selfptr = [aGenerator loadSelf];
-		const char* releasety = [[self module] typeForMethod: @"release"];
-		for (unsigned i=0 ; i<[ivars count] ; i++)
-		{
-			void *ivar = [aGenerator loadValueOfType: @"@"
-			                                fromIvar: [ivars objectAtIndex: i]
-			                                atOffset: ivarOffsets[i]
-			                              fromObject: selfptr
-			                                 ofClass: classname];
-			[aGenerator sendMessage:"release"
-			                  types:releasety
-			               toObject:ivar
-						   withArgs:NULL
-							  count:0];
-		}
-		[aGenerator sendSuperMessage:"dealloc"
-							   types:deallocty
-							withArgs:NULL
-							   count:0];
-		[aGenerator endMethod];
+		LKSymbol *ivar = [symbols symbolForName: ivarName];
+		[aGenerator storeValue: nilValue inVariable: ivar];
 	}
+	[aGenerator endMethod];
 	[aGenerator endClass];
 	if ([[LKAST code] objectForKey: classname] == nil)
 	{
@@ -196,24 +125,6 @@
 - (NSMutableArray*)methods
 {
 	return methods;
-}
-- (NSMutableArray*)cvars
-{
-	return cvars;
-}
-- (NSMutableArray*)ivars
-{
-	return ivars;
-}
-- (void)addInstanceVariable: (NSString*)aName
-{
-	[ivars addObject: aName];
-	[symbols addSymbol: aName];
-}
-- (void)addClassVariable: (NSString*)aName
-{
-	[cvars addObject: aName];
-	[(LKObjectSymbolTable*)symbols addClassVariable: aName];
 }
 - (void)dealloc
 {

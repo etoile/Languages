@@ -36,13 +36,9 @@
  */
 - (void) addCategory: (LKCategory*)aCategory;
 /**
- * Returns YES if this selector is used with two or more types.
+ * Returns an array of the types for a given selector name.
  */
-- (BOOL)isSelectorPolymorphic: (NSString*)methodName;
-/**
- * Returns the type that should be used for a given selector.
- */
-- (const char*) typeForMethod:(NSString*)methodName;
+- (NSArray*) typesForMethod:(NSString*)methodName;
 /**
  * Returns the classes in this module
  */

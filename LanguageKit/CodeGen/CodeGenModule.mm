@@ -20,12 +20,21 @@
 #include <llvm/Target/TargetData.h>
 #include <llvm/Support/system_error.h>
 
+
 #include <string>
 #include <algorithm>
 #include <errno.h>
 #include <iostream>
 #include <fstream>
 #include <dlfcn.h>
+#include <stdlib.h>
+
+#import <Foundation/Foundation.h>
+#import "../LanguageKit.h"
+
+
+
+using namespace etoile::languagekit;
 
 // If we have the libobjc opts, use them
 #ifdef LIBOBJC2_PASSES
@@ -47,33 +56,28 @@ static Module *SmallIntMessages = NULL;
 // Remove unrequired box-then-unbox pass.
 FunctionPass *createUnboxPass(void);
 
-Constant *CodeGenModule::MakeConstantString(const string &Str,
-                                            const string &Name,
+Constant *CodeGenModule::MakeConstantString(NSString *Str,
+                                            const std::string &Name,
                                             unsigned GEPs)
 {
-	Constant * ConstStr = llvm::ConstantArray::get(Context, Str);
-	ConstStr = new GlobalVariable(*TheModule, ConstStr->getType(), true,
-		GlobalValue::InternalLinkage, ConstStr, Name);
-	return ConstantExpr::getGetElementPtr(ConstStr, Zeros, GEPs);
+	Constant *ConstStr = constantStrings[Str];
+	if (0 == ConstStr)
+	{
+		ConstStr = llvm::ConstantArray::get(Context, [Str UTF8String]);
+		ConstStr = new GlobalVariable(*TheModule, ConstStr->getType(), true,
+			GlobalValue::InternalLinkage, ConstStr, Name);
+		constantStrings[Str] = ConstStr;
+	}
+	return ConstantExpr::getGetElementPtr(ConstStr, types->zeros, GEPs);
 }
 
-void CodeGenModule::CreateClassPointerGlobal(const char *className, const char *globalName)
-{
-	// Create the global
-	Value *global = new GlobalVariable(*TheModule, IdTy, false,
-			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			globalName);
 
-	// Initialise it in the module load function
-	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
-				Runtime->LookupClass(InitialiseBuilder,
-					MakeConstantString(className)), IdTy), global);
-}
-
-CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool gc,
+CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 		bool jit, bool profiling) 
-	: Context(C), InitialiseBuilder(Context), GC(gc), profilingEnabled(profiling)
+	: Context(C), InitialiseBuilder(Context), profilingEnabled(profiling)
 {
+	ClassName = nil;
+	SuperClassName = nil;
 	// When we JIT code, we put the Small Int message functions inside the
 	// module, to allow them to be inlined by module passes.  When static
 	// compiling, we reference them externally and let the link-time optimiser
@@ -81,25 +85,27 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool gc,
 	if (NULL == SmallIntMessages)
 	{
 		OwningPtr<MemoryBuffer> buffer;
-		MemoryBuffer::getFile(MsgSendSmallIntFilename, buffer);
+		llvm::MemoryBuffer::getFile([MsgSendSmallIntFilename UTF8String], buffer);
 		SmallIntMessages = ParseBitcodeFile(buffer.get(), Context);
 	}
 
-	TheModule = new Module(ModuleName, Context);
+	TheModule = new Module([ModuleName UTF8String], Context);
 	SmallIntModule = SmallIntMessages;
 	TheModule->setDataLayout(SmallIntModule->getDataLayout());
+	types = new CodeGenTypes(*TheModule);
+	assign = CodeGenAssignments::Create(*types, gc);
 
-	std::vector<const llvm::Type*> VoidArgs;
+	std::vector<LLVMType*> VoidArgs;
 	LiteralInitFunction = llvm::Function::Create(
 		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), VoidArgs, false),
-		llvm::GlobalValue::ExternalLinkage, string("__languagekit_constants_") +
-		ModuleName, TheModule);
+		llvm::GlobalValue::PrivateLinkage, string("__languagekit_constants_") +
+		[ModuleName UTF8String], TheModule);
 	BasicBlock *EntryBB = 
 		llvm::BasicBlock::Create(Context, "entry", LiteralInitFunction);
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 
-	Runtime = CreateObjCRuntime(*TheModule, Context, IntTy,
-			IntegerType::get(Context, sizeof(long) * 8), GC);
+	Runtime = CreateObjCRuntime(types, *TheModule, Context, types->intTy,
+			IntegerType::get(Context, sizeof(long) * 8), gc);
 
 	// FIXME: Leak
 	//Debug = new DIFactory(*TheModule);
@@ -109,174 +115,170 @@ CodeGenModule::CodeGenModule(const char *ModuleName, LLVMContext &C, bool gc,
 	//		ModuleName, "path", "LanguageKit");
 	//ModuleSourceFile = Debug->CreateFile(ModuleName, "path",
 	//		ModuleScopeDescriptor);
-
-	// Store the class to be used for block closures in a global
-	CreateClassPointerGlobal("StackBlockClosure", ".smalltalk_block_stack_class");
-	CreateClassPointerGlobal("StackContext", ".smalltalk_context_stack_class");
-	CreateClassPointerGlobal("RetainedStackContext", ".smalltalk_context_retained_class");
-	CreateClassPointerGlobal("Symbol", ".smalltalk_symbol_class");
-	CreateClassPointerGlobal("NSValue", ".smalltalk_nsvalue_class");
-	CreateClassPointerGlobal("NSNumber", ".smalltalk_nsnumber_class");
-	CreateClassPointerGlobal("BigInt", ".smalltalk_bigint_class");
-	CreateClassPointerGlobal("BoxedFloat", ".smalltalk_boxedfloat_class");
-	Type *IdPtrTy = PointerType::getUnqual(IdTy);
-	if (gc)
-	{
-		AssignIvar = TheModule->getOrInsertFunction( "objc_assign_ivar",
-				IdTy, IdTy, IdTy, IntegerType::get(Context, sizeof(void*) * 8),
-				NULL);
-		AssignGlobal = TheModule->getOrInsertFunction("objc_assign_global",
-				IdTy, IdTy, IdPtrTy, NULL);
-	}
 }
 
-void CodeGenModule::BeginClass(const char *Class,
-                               const char *Super,
-                               const char ** cVarNames,
-                               const char ** cVarTypes,
-                               const char ** iVarNames,
-                               const char ** iVarTypes,
-                               int *iVarOffsets,
-                               int SuperclassSize) 
+void CodeGenModule::CreateClassPointerGlobal(NSString *className, const char *globalName)
 {
-	ClassName = string(Class);
-	SuperClassName = string(Super);
-	CategoryName = "";
+	// Create the global
+	Value *global = new GlobalVariable(*TheModule, types->idTy, false,
+			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(types->idTy),
+			globalName);
+
+	// Initialise it in the module load function
+	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
+				Runtime->LookupClass(InitialiseBuilder,
+					MakeConstantString(className)), types->idTy), global);
+}
+
+
+void CodeGenModule::BeginClass(NSString *aClassName,
+                               NSString *aSuperClassName,
+                               LKSymbolTable *symbolTable)
+{
+	ASSIGN(ClassName, aClassName);
+	ASSIGN(SuperClassName, aSuperClassName);
+	CategoryName = @"";
 	InstanceMethodNames.clear();
 	InstanceMethodTypes.clear();
 	ClassMethodNames.clear();
 	ClassMethodTypes.clear();
+	CvarNames.clear();
+	CvarTypes.clear();
 	IvarNames.clear();
-	while (*iVarNames)
-	{
-		IvarNames.push_back(*iVarNames);
-		iVarNames++;
-	}
 	IvarTypes.clear();
-	while (*iVarTypes)
-	{
-		IvarTypes.push_back(*iVarTypes);
-		iVarTypes++;
-	}
 	IvarOffsets.clear();
-	while (*iVarOffsets)
+	NSUInteger nextOffset = 0;
+	for (LKSymbol *s in [[symbolTable symbols] objectEnumerator])
 	{
-		IvarOffsets.push_back(*iVarOffsets - SuperclassSize);
-		iVarOffsets++;
+		switch ([s scope])
+		{
+			default: continue;
+			case LKSymbolScopeObject:
+			{
+				NSUInteger size, alignment;
+				NSGetSizeAndAlignment([[s typeEncoding] UTF8String], &size, &alignment);
+				nextOffset += nextOffset % alignment;
+				IvarNames.push_back([s name]);
+				IvarTypes.push_back([s typeEncoding]);
+				IvarOffsets.push_back(nextOffset);
+				nextOffset += size;
+			}
+			case LKSymbolScopeClass:
+			{
+				CvarNames.push_back([s name]);
+				CvarTypes.push_back([s typeEncoding]);
+			}
+		}
 	}
-	SmallVector<string, 8> cvarnames, cvartypes;
-	while(*cVarNames)
-	{
-		cvarnames.push_back(*cVarNames);
-		cvartypes.push_back(*cVarTypes);
-		cVarTypes++;
-		cVarNames++;
-	}
-	Runtime->DefineClassVariables(ClassName, cvarnames, cvartypes);
-	
+	Runtime->DefineClassVariables(ClassName, CvarNames, CvarTypes);
 	InstanceSize = sizeof(void*) * IvarNames.size();
-	CurrentClassTy = IdTy;
+	CurrentClassTy = types->idTy;
+
+	CreateClassPointerGlobal(@"Symbol", ".smalltalk_symbol_class");
+	CreateClassPointerGlobal(@"NSValue", ".smalltalk_nsvalue_class");
+	CreateClassPointerGlobal(@"NSNumber", ".smalltalk_nsnumber_class");
+	CreateClassPointerGlobal(@"BigInt", ".smalltalk_bigint_class");
+	CreateClassPointerGlobal(@"BoxedFloat", ".smalltalk_boxedfloat_class");
+
 }
 
 void CodeGenModule::EndClass(void)
 {
-	Runtime->GenerateClass(ClassName.c_str(), SuperClassName.c_str(),
+	Runtime->GenerateClass(ClassName, SuperClassName,
 		InstanceSize, IvarNames, IvarTypes, IvarOffsets, InstanceMethodNames,
 		InstanceMethodTypes, ClassMethodNames, ClassMethodTypes, Protocols);
 }
 
-void CodeGenModule::BeginCategory(const char *Class, const char *Category)
+void CodeGenModule::BeginCategory(NSString *aClass, NSString *Category)
 {
-	ClassName = string(Class);
-	SuperClassName = "";
-	CategoryName = string(CategoryName); 
+	ASSIGN(ClassName, aClass);
+	SuperClassName = @"";
+	ASSIGN(CategoryName, CategoryName);
 	InstanceMethodNames.clear();
 	InstanceMethodTypes.clear();
 	IvarNames.clear();
-	CurrentClassTy = IdTy;
+	CurrentClassTy = types->idTy;
 }
 
 void CodeGenModule::EndCategory(void)
 {
-	Runtime->GenerateCategory(ClassName.c_str(), CategoryName.c_str(),
+	Runtime->GenerateCategory(ClassName, CategoryName,
 		InstanceMethodNames, InstanceMethodTypes, ClassMethodNames,
 		ClassMethodTypes, Protocols);
 }
 
-CodeGenMethod::CodeGenMethod(CodeGenModule *Mod,
-                             const char *MethodName,
-                             const char *MethodTypes,
-                             int locals,
+CodeGenMethod::CodeGenMethod(NSString *methodName,
+                             NSArray *locals,
+                             NSArray *arguments,
+                             NSString *signature,
                              bool isClass,
-                             const char **localNames)
-                             : CodeGenLexicalScope(Mod) 
+                             CodeGenModule *Mod)
+                             : CodeGenSubroutine(Mod) 
 {
-	// Generate the method function
-	bool isSRet;
-	const Type *realReturnType = NULL;
-	FunctionType *MethodTy = CGM->LLVMFunctionTypeFromString(MethodTypes, isSRet,
-		realReturnType);
-	unsigned argc = MethodTy->getNumParams() - 2;
-	llvm::SmallVector<const Type *, 8> argTypes;
-	FunctionType::param_iterator arg = MethodTy->param_begin();
-	++arg; ++arg;
-	for (unsigned i=0 ; i<argc ; ++i)
+	LKSymbol *selfSymbol = [LKSymbol new];
+	[selfSymbol setName: @"self"];
+	[selfSymbol setTypeEncoding: @"@"];
+	LKSymbol *cmdSymbol = [LKSymbol new];
+	[cmdSymbol setName: @"_cmd"];
+	// FIXME: This is technically wrong, but since we don't actually expose
+	// _cmd to front ends yet it's better than boxing them here.
+	// Eventually we should make the AST emit the hidden arguments and allow
+	// front ends to name self, rather than have it magic (so EScript, for
+	// example, could use this instead of self)
+	[cmdSymbol setTypeEncoding: @"@"];
+	// TODO: Add a mechanism for front ends to expose this to the language.
+	NSMutableArray *realArguments =
+		[NSMutableArray arrayWithObjects: selfSymbol, cmdSymbol, nil];
+	[realArguments addObjectsFromArray: arguments];
+	CleanupBB = 0;
+	InitialiseFunction(methodName, realArguments, locals, signature);
+	// FIXME: self and _cmd should be implicit arguments and they should be
+	// handled as special things.
+	Self = variables[@"self"];
+	assert(Self);
+	// If the return type is an object it defaults to self.  If it's something
+	// else, it's NULL.
+	if (RetVal && (RetVal->getType() == types.ptrToIdTy))
 	{
-		argTypes.push_back(MethodTy->getParamType(i+2));
+		Builder.CreateStore(Builder.CreateLoad(Self), RetVal);
 	}
-
-
-	CurrentFunction = CGM->getRuntime()->MethodPreamble(CGM->getClassName(),
-		CGM->getCategoryName(), MethodName, MethodTy->getReturnType(),
-		CGM->getCurrentClassTy(), argTypes, isClass, isSRet);
-
-	InitialiseFunction(Args, Locals, locals, MethodTypes, isSRet, localNames,
-			MethodName);
 }
 
-void CodeGenModule::BeginInstanceMethod(const char *MethodName,
-                                        const char *MethodTypes,
-                                        int locals,
-                                        const char **localNames)
+void CodeGenModule::BeginInstanceMethod(NSString *methodName,
+                                        NSString *methodTypes,
+                                        NSArray *locals,
+                                        NSArray *arguments)
 {
 	// Log the method name and types so that we can use it to set up the class
 	// structure.
-	InstanceMethodNames.push_back(MethodName);
-	InstanceMethodTypes.push_back(MethodTypes);
+	InstanceMethodNames.push_back(methodName);
+	InstanceMethodTypes.push_back(methodTypes);
 	inClassMethod = false;
+	methodName = [methodName stringByReplacingOccurrencesOfString: @":" withString: @"_"];
+	methodName = [NSString stringWithFormat: @"_i_%@_%@_%@", ClassName, CategoryName, methodName];
 	assert(ScopeStack.empty()
 		&& "Creating a method inside something is not sensible");
-	ScopeStack.push_back(new CodeGenMethod(this, MethodName, MethodTypes,
-				locals, false, localNames));
+	ScopeStack.push_back(new CodeGenMethod(methodName, locals, arguments,
+				methodTypes, false, this));
 }
 
-void CodeGenModule::BeginClassMethod(const char *MethodName,
-                                     const char *MethodTypes,
-                                     int locals,
-									 const char **localNames)
+void CodeGenModule::BeginClassMethod(NSString *methodName,
+                                     NSString *methodTypes,
+                                     NSArray *locals,
+                                     NSArray *arguments)
 {
 	// Log the method name and types so that we can use it to set up the class
 	// structure.
-	ClassMethodNames.push_back(MethodName);
-	ClassMethodTypes.push_back(MethodTypes);
+	ClassMethodNames.push_back(methodName);
+	ClassMethodTypes.push_back(methodTypes);
+	methodName = [methodName stringByReplacingOccurrencesOfString: @":" withString: @"_"];
+	methodName = [NSString stringWithFormat: @"_c_%@_%@_%@", ClassName, CategoryName, methodName];
 	assert(ScopeStack.empty() 
 		&& "Creating a method inside something is not sensible");
-	ScopeStack.push_back(new CodeGenMethod(this, MethodName, MethodTypes,
-				locals, true, localNames));
+	ScopeStack.push_back(new CodeGenMethod(methodName, locals, arguments,
+				methodTypes, true, this));
 	inClassMethod = true;
 }
-
-/*
-void CodeGenModule::BeginFreestandingMethod(const char *MethodName, const char *MethodTypes, int locals)
-{
-  assert(ScopeStack.empty() 
-		  && "Creating a method inside something is not sensible");
-  inClassMethod = false;
-  string name = string("Freestanding_Method") + MethodName;
-  ScopeStack.push_back(
-		  new CodeGenMethod(this, name, MethodTypes, locals, true));
-}
-*/
 
 void CodeGenModule::EndMethod()
 {
@@ -286,10 +288,13 @@ void CodeGenModule::EndMethod()
 	ScopeStack.pop_back();
 }
 
-void CodeGenModule::BeginBlock(unsigned args, unsigned locals)
+void CodeGenModule::BeginBlock(NSArray *locals,
+                               NSArray *arguments,
+                               NSArray *bound,
+                               NSString *signature)
 {
-	ScopeStack.push_back(new CodeGenBlock(args, locals, ScopeStack.back(),
-		this));
+	ScopeStack.push_back(new CodeGenBlock(locals, arguments, bound, signature,
+				this));
 }
 
 void CodeGenModule::SetBlockReturn(Value *value)
@@ -301,88 +306,107 @@ Value *CodeGenModule::EndBlock(void)
 {
 	CodeGenBlock *block = (CodeGenBlock*)(ScopeStack.back());
 	ScopeStack.pop_back();
-	block->EndBlock();
-	return block->Block;
+	llvm::Value *b = block->EndBlock();
+	delete block;
+	return b;
 }
 
-Value *CodeGenModule::StringConstant(const char *value)
+Value *CodeGenModule::StringConstant(NSString *value)
 {
-	return Runtime->GenerateConstantString(value, strlen(value));
+	return Runtime->GenerateConstantString(value);
 }
 
-Value *CodeGenModule::GenericConstant(IRBuilder<> &Builder, 
-		const string className, const string constructor, 
-		const char *arg)
+Value *CodeGenModule::GenericConstant(CGBuilder &Builder, 
+		NSString *className, NSString *constructor, 
+		NSString *arg)
 {
-	GlobalVariable *ClassPtr = TheModule->getGlobalVariable(className, true);
+	GlobalVariable *ClassPtr =
+		TheModule->getGlobalVariable([className UTF8String], true);
 	Value *Class = InitialiseBuilder.CreateLoad(ClassPtr);
 
 	Value *V = MakeConstantString(arg);
 
-	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy,
-		false,  NULL, Class, constructor.c_str(), 0, V);
+	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, types->idTy,
+		false,  NULL, Class, constructor, 0, V);
 	// Define a global variable and store it there.
-	GlobalVariable *GS = new GlobalVariable(*TheModule, IdTy, false,
-			GlobalValue::InternalLinkage, ConstantPointerNull::get(IdTy),
-			arg);
-	// Retain it
-	if (GC)
-	{
-		InitialiseBuilder.CreateCall2(AssignGlobal, S, GS);
-	}
-	else
-	{
-		S = Runtime->GenerateMessageSend(InitialiseBuilder, IdTy, false,  NULL,
-				S, "retain", 0);
-		InitialiseBuilder.CreateStore(S, GS);
-	}
+	GlobalVariable *GS = new GlobalVariable(*TheModule, types->idTy, false,
+			GlobalValue::InternalLinkage, ConstantPointerNull::get(types->idTy),
+			[arg UTF8String]);
+	assign->storeGlobal(InitialiseBuilder, GS, S);
 	// Load the global.
 	return Builder.CreateLoad(GS);
 }
 
-Value *CodeGenModule::SymbolConstant(IRBuilder<> &Builder, const char *symbol)
+Value *CodeGenModule::SymbolConstant(CGBuilder &Builder, NSString *symbol)
 {
-	return GenericConstant(Builder, ".smalltalk_symbol_class",
-			"SymbolForCString:", symbol);
+	return GenericConstant(Builder, @".smalltalk_symbol_class",
+			@"SymbolForCString:", symbol);
 }
 
-Value *CodeGenModule::IntConstant(IRBuilder<> &Builder, const char *value)
+Value *CodeGenModule::IntConstant(CGBuilder &Builder, NSString *value)
 {
 	errno = 0;
-	long long val = strtoll(value, NULL, 10);
+	long long val = strtoll([value UTF8String], NULL, 10);
 	intptr_t ptrVal = (val << 1);
 	if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val))
 	{
-		return GenericConstant(Builder, ".smalltalk_bigint_class",
-				"bigIntWithCString:", value);
+		return GenericConstant(Builder, @".smalltalk_bigint_class",
+				@"bigIntWithCString:", value);
 	}
 	ptrVal |= 1;
-	Constant *Val = ConstantInt::get(IntPtrTy, ptrVal);
-	Val = ConstantExpr::getIntToPtr(Val, IdTy);
+	Constant *Val = ConstantInt::get(types->intPtrTy, ptrVal);
+	Val = ConstantExpr::getIntToPtr(Val, types->idTy);
 	Val->setName("SmallIntConstant");
 	return Val;
 }
-Value *CodeGenModule::FloatConstant(IRBuilder<> &Builder, const char *value)
+Value *CodeGenModule::FloatConstant(CGBuilder &Builder, NSString *value)
 {
-	return GenericConstant(Builder, ".smalltalk_boxedfloat_class",
-			"boxedFloatWithCString:", value);
+	return GenericConstant(Builder, @".smalltalk_boxedfloat_class",
+			@"boxedFloatWithCString:", value);
 }
 
-void CodeGenModule::writeBitcodeToFile(char* filename, bool isAsm)
+void CodeGenModule::writeBitcodeToFile(NSString *filename, bool isAsm)
 {
 	EndModule();
 	string err;
-	llvm::raw_fd_ostream os(filename, err);
+	llvm::raw_fd_ostream os([filename UTF8String], err);
 	WriteBitcodeToFile(TheModule, os);
 }
 
-void CodeGenModule::StoreClassVar(const char *cVarName, Value *value)
+void CodeGenModule::StoreCVar(NSString *cVarName, Value *value)
 {
 	getCurrentScope()->StoreValueInClassVariable(ClassName, cVarName, value);
 }
-Value *CodeGenModule::LoadClassVar(const char *cVarName)
+Value *CodeGenModule::LoadCvar(NSString *cVarName)
 {
 	return getCurrentScope()->LoadClassVariable(ClassName, cVarName);
+}
+void CodeGenModule::StoreIVar(NSString *iVarName, NSString *typeEncoding, Value *value)
+{
+	CodeGenSubroutine *scope = getCurrentScope();
+	scope->StoreValueOfTypeAtOffsetFromObject(value,
+	                                          ClassName,
+	                                          iVarName,
+	                                          typeEncoding,
+	                                          0,
+	                                          scope->LoadSelf());
+}
+void CodeGenModule::StoreScopedValue(NSString *variable, Value *value)
+{
+	getCurrentScope()->storeValueInVariable(value, variable);
+}
+llvm::Value *CodeGenModule::LoadIvar(NSString *typeEncoding, NSString *iVarName)
+{
+	CodeGenSubroutine *scope = getCurrentScope();
+	return scope->LoadValueOfTypeAtOffsetFromObject(ClassName,
+	                                                iVarName,
+	                                                typeEncoding,
+	                                                0,
+	                                                scope->LoadSelf());
+}
+llvm::Value *CodeGenModule::LoadScopedValue(NSString *variable)
+{
+	return getCurrentScope()->loadVariable(variable);
 }
 
 static ExecutionEngine *EE = NULL;
@@ -428,7 +452,7 @@ void CodeGenModule::compile(void)
 {
 	EndModule();
 	OwningPtr<MemoryBuffer> buffer;
-	MemoryBuffer::getFile(MsgSendSmallIntFilename, buffer);
+	MemoryBuffer::getFile([MsgSendSmallIntFilename UTF8String], buffer);
 	Module *smallIntModule = ParseBitcodeFile(buffer.get(), Context);
 	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	DUMP(TheModule);
@@ -471,6 +495,7 @@ void CodeGenModule::compile(void)
 	LOG("Loaded.\n");
 }
 
+
 // FIXME: This method is, basically, entirely nonsense.  It's a quick hack to
 // get SOMETHING working, but it needs a lot of work before it will provide
 // actually meaningful information.
@@ -486,7 +511,7 @@ DIType CodeGenModule::DebugTypeForEncoding(const string &encoding)
 	uint64_t size;
 	uint64_t align;
 	unsigned dwarfEncoding;
-	// FIXME: This is rubbish at the moment, fix it to work with nontrivial types.
+	// FIXME: This is rubbish at the moment, fix it to work with nontrivial types->
 	switch(encoding[0])
 	{
 		case '{':
@@ -594,8 +619,8 @@ DIArray CodeGenModule::DebugTypeArrayForEncoding(const string &encoding)
 		}
 		const string subEncoding = string(b, typeEnd);
 		b = typeEnd;
-		types.push_back(DebugTypeForEncoding(subEncoding));
+		types->push_back(DebugTypeForEncoding(subEncoding));
 	}
-	return Debug->GetOrCreateArray(types.data(), types.size());
+	return Debug->GetOrCreateArray(types->data(), types->size());
 }
 #endif

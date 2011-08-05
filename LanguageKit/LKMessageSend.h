@@ -11,7 +11,7 @@
 	/** Array of AST nodes which evaluate to the message arguments. */
 	NSMutableArray * arguments;
 	/** Types for the method */
-	const char *type;
+	NSString *type;
 }
 /**
  * Return a new message send.

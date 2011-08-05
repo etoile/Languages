@@ -31,7 +31,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 	{
 		module = module->parent;
 	}
-	return (LKModule*)self;
+	return (LKModule*)module;
 }
 
 

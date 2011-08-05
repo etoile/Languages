@@ -10,12 +10,6 @@ PROJECT_NAME = LanguageKitCodeGen
 VERSION = 0.6
 FRAMEWORK_NAME = ${PROJECT_NAME}
 
-${FRAMEWORK_NAME}_CC_FILES = \
-	CGObjCGNU.cpp\
-	CodeGenBlock.cpp\
-	CodeGenModule.cpp\
-	CodeGenLexicalScope.cpp\
-	LLVMCodeGen.cpp
 
 ifeq ($(GNUSTEP_TARGET_CPU), x86_64)
 ${FRAMEWORK_NAME}_CC_FILES += \
@@ -23,6 +17,13 @@ ${FRAMEWORK_NAME}_CC_FILES += \
 endif
 
 ${FRAMEWORK_NAME}_OBJCC_FILES = \
+	CGObjCGNU.mm\
+	CodeGenAssignments.mm\
+	CodeGenBlock.mm\
+	CodeGenHelpers.mm\
+	CodeGenLexicalScope.mm\
+	CodeGenModule.mm\
+	CodeGenTypes.mm\
 	LKCompiler+JTL.mm\
 	LLVMCodeGen.mm
 
@@ -33,10 +34,11 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 # uncomment this line when debugging if you have problems with over-aggressive
 # inlining throwing away useful debugging info.
 ${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
+${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
-${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
+${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions
 ${FRAMEWORK_NAME}_CXXFLAGS = -Wno-variadic-macros
-${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++
+${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++ -lobjcxx
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM doesn't provide its version in any header files, so define it here using
@@ -51,9 +53,9 @@ ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 ${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
 
-LD = g++
 CC = clang
 CXX = clang++
+LD = $(CXX)
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc 
 

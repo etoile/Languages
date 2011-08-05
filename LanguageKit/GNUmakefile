@@ -20,7 +20,6 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKASTVisitor.m\
 	LKArrayExpr.m\
 	LKAssignExpr.m\
-	LKAutoBoxFixup.m\
 	LKBlockExpr.m\
 	LKCategory.m\
 	LKCodeGen.m\
@@ -29,9 +28,6 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKCompiler.m\
 	LKCompilerErrors.m\
 	LKDeclRef.m\
-	LKInterpretedBlockClosure.m\
-	LKInterpreter.m\
-	LKInterpreterRuntime.m\
 	LKIfStatement.m\
 	LKLiteral.m\
 	LKLoop.m\
@@ -44,6 +40,10 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKSymbolTable.m\
 	LKToken.m\
 	LKTypeHelpers.m\
+
+#	LKInterpretedBlockClosure.m\
+	LKInterpreter.m\
+	LKInterpreterRuntime.m\
 	LKVariableDecl.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
@@ -76,7 +76,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LanguageKit.h
 
 #FIXME: -fno-inline is just for debugging and will make stuff very slow.  Remove it before committing.
-${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE -fno-inline
+${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE -fno-inline -Werror
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value `pkg-config --cflags libffi`
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lEtoileFoundation -lstdc++ -lLanguageKitRuntime
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g

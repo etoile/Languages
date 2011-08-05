@@ -18,6 +18,11 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/IRBuilder.h"
 #include <string>
+#import "CodeGenTypes.h"
+#import "objc_pointers.h"
+
+
+@class NSString;
 
 namespace llvm {
   class Constant;
@@ -27,42 +32,44 @@ namespace llvm {
   class Function;
 }
 
+typedef const llvm::SmallVectorImpl<strong_id<NSString *> > StringVector;
+
 /// Implements runtime-specific code generation functions.
 class CGObjCRuntime {
 public:
   virtual ~CGObjCRuntime();
   
   /// Generate an Objective-C message send operation
-  virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
-                                           const llvm::Type *ReturnTy,
+  virtual llvm::Value *GenerateMessageSend(CGBuilder &Builder,
+                                           LLVMType *ReturnTy,
 	                                       bool isSRet,
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
-	                                       const char *selName,
-	                                       const char *selTypes,
+	                                       NSString *selName,
+	                                       NSString *selTypes,
 	                                       llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                            llvm::BasicBlock *CleanupBlock=0,
-                                           const char *ReceiverClass=0,
+                                           NSString *ReceiverClass=0,
 										   bool isClassMessage=false)=0;
-	llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
-	                                const llvm::Type *ReturnTy,
+	llvm::Value *GenerateMessageSend(CGBuilder &Builder,
+	                                LLVMType *ReturnTy,
 	                                bool isSRet,
 	                                llvm::Value *Sender,
 	                                llvm::Value *Receiver,
-	                                const char *selName,
-	                                const char *selTypes)
+	                                NSString *selName,
+	                                NSString *selTypes)
 	{
 		llvm::SmallVector<llvm::Value*,0> noArgs;
 		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
 				selName, selTypes, noArgs);
 	}
-	llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
-	                                const llvm::Type *ReturnTy,
+	llvm::Value *GenerateMessageSend(CGBuilder &Builder,
+	                                LLVMType *ReturnTy,
 	                                bool isSRet,
 	                                llvm::Value *Sender,
 	                                llvm::Value *Receiver,
-	                                const char *selName,
-	                                const char *selTypes,
+	                                NSString *selName,
+	                                NSString *selTypes,
 	                                llvm::Value *Value)
 	{
 		llvm::SmallVector<llvm::Value*,1> arg = llvm::SmallVector<llvm::Value*,1>(1, Value);
@@ -73,89 +80,85 @@ public:
   /// this compilation unit with the runtime library.
   virtual llvm::Function *ModuleInitFunction() =0;
   /// Get a selector for the specified name and type values
-  virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder, 
+  virtual llvm::Value *GetSelector(CGBuilder &Builder, 
                                    llvm::Value *SelName, 
                                    llvm::Value *SelTypes) = 0;
   /// Get a selector whose names and types are known at compile time
-  virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
-      const char *SelName,
-      const char *SelTypes) =0;
+  virtual llvm::Value *GetSelector(CGBuilder &Builder,
+      NSString *SelName,
+      NSString *SelTypes) =0;
   /// Generate a constant string object
-  virtual llvm::Constant *GenerateConstantString(const char *String,
-                                                 const size_t Length) = 0;
+  virtual llvm::Constant *GenerateConstantString(NSString *String) = 0;
   /// Generate a category.  A category contains a list of methods (and
   /// accompanying metadata) and a list of protocols.
-  virtual void GenerateCategory(const char *ClassName, const char *CategoryName,
-           const llvm::SmallVectorImpl<std::string>  &InstanceMethodNames,
-           const llvm::SmallVectorImpl<std::string>  &InstanceMethodTypes,
-           const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
-           const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
-           const llvm::SmallVectorImpl<std::string> &Protocols) = 0;
+  virtual void GenerateCategory(NSString *ClassName, NSString *CategoryName,
+           StringVector  &InstanceMethodNames,
+           StringVector  &InstanceMethodTypes,
+           StringVector  &ClassMethodNames,
+           StringVector  &ClassMethodTypes,
+           StringVector &Protocols) = 0;
   /// Generate a class stucture for this class.
   virtual void GenerateClass(
-             const char *ClassName,
-             const char *SuperClassName,
+             NSString *ClassName,
+             NSString *SuperClassName,
              const int instanceSize,
-             const llvm::SmallVectorImpl<std::string>  &IvarNames,
-             const llvm::SmallVectorImpl<std::string>  &IvarTypes,
+             StringVector  &IvarNames,
+             StringVector  &IvarTypes,
              const llvm::SmallVectorImpl<int>  &IvarOffsets,
-             const llvm::SmallVectorImpl<std::string>  &InstanceMethodNames,
-             const llvm::SmallVectorImpl<std::string>  &InstanceMethodTypes,
-             const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
-             const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
-             const llvm::SmallVectorImpl<std::string> &Protocols) =0;
+             StringVector  &InstanceMethodNames,
+             StringVector  &InstanceMethodTypes,
+             StringVector  &ClassMethodNames,
+             StringVector  &ClassMethodTypes,
+             StringVector &Protocols) =0;
   /// Generate a reference to the named protocol.
-  virtual llvm::Value *GenerateProtocolRef(llvm::IRBuilder<> &Builder, const char
+  virtual llvm::Value *GenerateProtocolRef(CGBuilder &Builder, NSString
       *ProtocolName) =0;
-  virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
-                                                const llvm::Type *ReturnTy,
+  virtual llvm::Value *GenerateMessageSendSuper(CGBuilder &Builder,
+                                                LLVMType *ReturnTy,
 	                                            bool isSRet,
                                                 llvm::Value *Sender,
-                                                const char *SuperClassName,
+                                                NSString *SuperClassName,
                                                 llvm::Value *Receiver,
-	                                            const char *selName,
-	                                            const char *selTypes,
+	                                            NSString *selName,
+	                                            NSString *selTypes,
                                                 llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 												bool isClassMessage,
 											    llvm::BasicBlock *CleanupBlock=0)=0;
   /// Generate the named protocol.  Protocols contain method metadata but no 
   /// implementations. 
-  virtual void GenerateProtocol(const char *ProtocolName,
-    const llvm::SmallVectorImpl<std::string> &Protocols,
+  virtual void GenerateProtocol(NSString *ProtocolName,
+    StringVector &Protocols,
     const llvm::SmallVectorImpl<llvm::Constant *>  &InstanceMethodNames,
     const llvm::SmallVectorImpl<llvm::Constant *>  &InstanceMethodTypes,
     const llvm::SmallVectorImpl<llvm::Constant *>  &ClassMethodNames,
     const llvm::SmallVectorImpl<llvm::Constant *>  &ClassMethodTypes) =0;
   /// Generate a function preamble for a method with the specified types
   virtual llvm::Function *MethodPreamble(
-                                         const std::string &ClassName,
-                                         const std::string &CategoryName,
-                                         const std::string &MethodName,
-                                         const llvm::Type *ReturnTy,
-                                         const llvm::Type *SelfTy,
-                                         const llvm::SmallVectorImpl<const llvm::Type*> &ArgTy,
+                                         const NSString* ClassName,
+                                         const NSString* CategoryName,
+                                         const NSString* MethodName,
+                                         LLVMType *ReturnTy,
+                                         LLVMType *SelfTy,
+                                         const llvm::SmallVectorImpl<LLVMType*> &ArgTy,
                                          bool isClassMethod=false,
 	                                     bool isSRet=false,
                                          bool isVarArg=false) = 0;
   /// Look up the class for the specified name
-  virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder, llvm::Value
+  virtual llvm::Value *LookupClass(CGBuilder &Builder, llvm::Value
       *ClassName) =0;
 	// Define class variables for a specific class
 	virtual void DefineClassVariables(
-			const std::string &ClassName,
-			const llvm::SmallVectorImpl<std::string>  &CvarNames,
-			const llvm::SmallVectorImpl<std::string>  &CvarTypes) = 0;
-	/// Load a value from a class variable
-	virtual llvm::Value *LoadClassVariable(llvm::IRBuilder<> &Builder,
-			 std::string &ClassName, std::string &CvarName) = 0;
+			NSString* ClassName,
+			StringVector  &CvarNames,
+			StringVector  &CvarTypes) = 0;
+	/// Returns the address used to store a specific class variable
+	virtual llvm::Value *AddressOfClassVariable(CGBuilder &Builder,
+			 NSString* ClassName, NSString* CvarName) = 0;
 	/// Store a value to a class variable
-	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, std::string
-		&ClassName, std::string &CvarName, llvm::Value* aValue,
-				   llvm::Constant *assignFunction=0) = 0;
 	// Look up the offset of an instance variable.
-	virtual llvm::Value *OffsetOfIvar(llvm::IRBuilder<> &Builder,
-	                                  const char *className,
-	                                  const char *ivarName,
+	virtual llvm::Value *OffsetOfIvar(CGBuilder &Builder,
+	                                  NSString *className,
+	                                  NSString *ivarName,
 	                                  int offsetGuess) = 0;
   /// If instance variable addresses are determined at runtime then this should
   /// return true, otherwise instance variables will be accessed directly from
@@ -167,9 +170,10 @@ public:
 /// Creates an instance of an Objective-C runtime class.  
 //TODO: This should include some way of selecting which runtime to target.
 CGObjCRuntime *CreateObjCRuntime(
+    etoile::languagekit::CodeGenTypes *types,
     llvm::Module &M,
 	llvm::LLVMContext &C,
-    const llvm::Type *LLVMIntType,
-    const llvm::Type *LLVMLongType,
+    LLVMType *LLVMIntType,
+    LLVMType *LLVMLongType,
 	bool enableGC);
 #endif

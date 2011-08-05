@@ -4,37 +4,31 @@
 /**
  * AST node representing a method.
  */
-@interface LKMethod : LKAST {
-  /** Method signature - selector and names of arguments. */
-  LKMessageSend *signature;
-@public
-  /** List of statements in this method. */
-  NSMutableArray * statements;
-}
+@interface LKMethod : LKAST 
+/** Method signature - selector and names of arguments. */
+@property (retain, nonatomic) LKMessageSend *signature;
+/** List of statements in this method. */
+@property (retain, nonatomic) NSMutableArray *statements;
 /**
  * Return a new Method with the specified signature, locals and statements.
  */
-+ (id) methodWithSignature:(LKMessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
++ (id) methodWithSignature: (LKMessageSend*)aSignature
+                    locals: (NSMutableArray*)locals
+                statements: (NSMutableArray*)statementList;
 /**
  * Initialise a new Method with the specified signature, locals and statements.
  */
-- (id) initWithSignature:(LKMessageSend*)aSignature locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList;
+- (id) initWithSignature: (LKMessageSend*)aSignature
+                  locals: (NSMutableArray*)localss
+              statements: (NSMutableArray*)statementList;
 /**
  * Set the method signature for this method.
  */
 - (void) setSignature:(LKMessageSend*)aSignature;
 /**
- * Returns the signature
- */
-- (LKMessageSend*) signature;
-/**
  * Returns the method's body
  */
 - (NSString*) methodBody;
-/**
- * Returns the list of statements in the method
- */
-- (NSMutableArray*) statements;
 @end
 @interface LKInstanceMethod : LKMethod {}
 @end

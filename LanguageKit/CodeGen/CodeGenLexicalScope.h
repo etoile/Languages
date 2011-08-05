@@ -1,67 +1,83 @@
 #ifndef __CODE_GEN_LEXICAL_SCOPE__INCLUDED__
 #define __CODE_GEN_LEXICAL_SCOPE__INCLUDED__
 
-#include "llvm/Support/IRBuilder.h"
+#include "CodeGenTypes.h"
 #include "CodeGenModule.h"
 #include <string>
+#include <tr1/unordered_map>
+#include "objc_pointers.h"
+
 
 namespace llvm {
-  class BasicBlock;
-  class PointerType;
-  class FunctionType;
-  class Value;
+	class BasicBlock;
+	class PointerType;
+	class FunctionType;
+	class Value;
 }
-class CodeGenBlock;
-using std::string;
-using namespace::llvm;
-class CodeGenModule;
+@class LKSymbol;
 
-class CodeGenLexicalScope {
+namespace etoile
+{
+namespace languagekit
+{
+
+class CodeGenModule;
+class CodeGenBlock;
+
+class CodeGenSubroutine
+{
+	friend class CodeGenModule;
+	friend class CodeGenBlock;
 protected:
 	CodeGenModule *CGM;
 	Value *Context;
 	DIDescriptor ScopeDescriptor;
-	SmallVector<Value*, 8> Locals;
-	SmallVector<Value*, 8> Args;
-	SmallVector<DIVariable, 8> DebugLocals;
-	SmallVector<DIVariable, 8> DebugArgs;
-	Value * RetVal;
-	BasicBlock * CleanupBB;
-	BasicBlock * CleanupEndBB;
-	BasicBlock * ExceptionBB;
-	BasicBlock * PromoteBB;
-	BasicBlock * RetBB;
-	Function *CurrentFunction;
-	IRBuilder<> Builder;
-	Value *Self;
-	Value *ScopeSelf;
 
-	const char *ReturnType;
+	typedef std::tr1::unordered_map<strong_id<id>,
+	                                llvm::Value*,
+	                                object_hash<strong_id<id> >,
+	                                object_equal<strong_id<id> > > variable_map;
+	variable_map variables;
+	variable_map indirect_variables;
+
+	Value* RetVal;
+	BasicBlock* CleanupBB;
+	BasicBlock* CleanupEndBB;
+	BasicBlock* ExceptionBB;
+	BasicBlock* RetBB;
+	Function* CurrentFunction;
+	CGBuilder Builder;
+	Value* Self;
+	Value* ScopeSelf;
+
+	CodeGenTypes &types;
+
+	NSString *ReturnType;
 	bool containsBlocks;
 
 	virtual void SetParentScope(void) {};
-  /**
-   * Intialises a Function object to be used as a Smalltalk method or block
-   * function.
-   */
-  void InitialiseFunction( SmallVectorImpl<Value*> &Args,
-     SmallVectorImpl<Value*> &Locals, unsigned locals, 
-	 const char *MethodTypes="@", bool isSRet=false,
-	 const char **symbols=0, const std::string &humanName="AnonymousBlock");
-  /**
-   * Maps a selector to a SmallInt function name.
-   */
-  string FunctionNameFromSelector(const char *sel);
+	/**
+	 * Intialises a Function object to be used as a Smalltalk method or block
+	 * function.
+	 */
+	void InitialiseFunction(NSString *functionName,
+	                        NSArray *arguments,
+	                        NSArray *locals,
+	                        NSString *typeEncoding=@"@@:");
+	/**
+	* Maps a selector to a SmallInt function name.
+	*/
+	string FunctionNameFromSelector(NSString *sel);
 
-  /**
-   * Constructs a Smalltalk object from the specified Objective-C type.
-   */
-  Value *BoxValue(IRBuilder<> *B, Value *V, const char *typestr);
+	/**
+	* Constructs a Smalltalk object from the specified Objective-C type.
+	*/
+	Value *BoxValue(CGBuilder *B, Value *V, NSString *typestr);
 
-  /**
-   * Constructs a C primitive from a Smalltalk object.
-   */
-  Value *Unbox(IRBuilder<> *B, Function *F, Value *val, const char *Type);
+	/**
+	* Constructs a C primitive from a Smalltalk object.
+	*/
+	Value *Unbox(CGBuilder *B, Function *F, Value *val, NSString *Type);
 
 	/**
 	* Construct C primitives from Smalltalk objects in an argument list.  Skips
@@ -69,157 +85,172 @@ protected:
 	* (the argument list is then assumed to be a list of message arguments,
 	* rather than function arguments).
 	*/
-	void UnboxArgs(IRBuilder<> *B, Function *F,
-			llvm::SmallVectorImpl<llvm::Value*> &argv,
-			llvm::SmallVectorImpl<llvm::Value*> &args, 
-			const char *selTypes,
-			bool skipImplicit=true);
+	void UnboxArgs(CGBuilder *B, Function *F,
+	               llvm::SmallVectorImpl<llvm::Value*> &argv,
+	               llvm::SmallVectorImpl<llvm::Value*> &args, 
+	               NSString *selTypes,
+	               bool skipImplicit=true);
 
+	/**
+	 * Loads a value from a byref structure.
+	 */
+	llvm::Value *loadByRefPointer(llvm::Value *byRefPointer);
+	/**
+	 * Creates an on-stack byref structure pointing to an LKObject value.
+	 */
+	llvm::Value* emitByRefStructure(void);
+	/**
+	 * Creates and initializes a new local variable with the specified value,
+	 * or with zero if there is no specified value.
+	 */
+	void initializeVariableWithValue(LKSymbol *aSym, llvm::Value *val);
 	/**
 	* Send a message to the superclass.
 	*/
-	Value *MessageSendSuper(IRBuilder<> *B, Function *F, const char *selName,
-			const char *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
+	Value *MessageSendSuper(CGBuilder *B, Function *F, NSString *selName,
+			NSString *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
 	/**
 	* Preform a real message send.  Reveicer must be a real object, not a
 	* SmallInt.
 	*/
-	Value *MessageSendId(IRBuilder<> *B, Value *receiver, const char *selName,
-		const char *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
-  /**
-   * Send a message to something that may be a SmallInt or an Objective-C
-   * object.
-   */
-  Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
-      *selName, const char *selTypes, SmallVectorImpl<Value*> &boxedArgs);
-  /**
-   * Send a message with no arguments to something that is either a SmallInt or
-   * an Objective-C object.
-   */
-  Value *MessageSend(IRBuilder<> *B, Function *F, Value *receiver, const char
-      *selName, const char *selTypes);
-  /**
-   * Debugging function - emits a printf statement with the string and the
-   * extra argument.
-   */
-	void CreatePrintf(IRBuilder<> &Builder, const char *str, Value *val);
+	Value *MessageSendId(CGBuilder *B, Value *receiver, NSString *selName,
+		NSString *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
+	/**
+	 * Send a message to something that may be a SmallInt or an Objective-C
+	 * object.
+	 */
+	Value *MessageSend(CGBuilder *B, Function *F, Value *receiver, NSString 
+	    *selName, NSString *selTypes, SmallVectorImpl<Value*> &boxedArgs);
+	/**
+	 * Send a message with no arguments to something that is either a SmallInt or
+	 * an Objective-C object.
+	 */
+	Value *MessageSend(CGBuilder *B, Function *F, Value *receiver, NSString 
+	    *selName, NSString *selTypes);
+	/**
+	 * Cleans up a variable at the end of a method.
+	 */
+	void releaseVariable(llvm::Value *val);
+	/**
+	 * Debugging function - emits a printf statement with the string and the
+	 * extra argument.
+	 */
+	void CreatePrintf(CGBuilder &Builder, NSString *str, Value *val);
 public:
 	/**
 	 * Ends the current lexical scope.
 	 */
 	void EndScope(void);
-  CodeGenLexicalScope(CodeGenModule *Mod) : CGM(Mod),
-	Builder(Mod->Context), containsBlocks(false) {}
-  IRBuilder<> *getBuilder() { return &Builder; }
-  Value *getContext() { return Context; }
-  DIDescriptor getScopeDescriptor() { return ScopeDescriptor; }
-  /**
-   * Load an argument at the specified index.
-   */
-  Value *LoadArgumentAtIndex(unsigned index, unsigned depth);
+	CodeGenSubroutine(CodeGenModule *Mod) : CGM(Mod),
+	Builder(Mod->Context), Self(0), ScopeSelf(0), types(*Mod->types),
+	containsBlocks(false) {}
+	/**
+	 * Load an argument at the specified index.
+	 */
+	Value *LoadArgumentAtIndex(unsigned index, unsigned depth);
 
-  /**
-   * Send a message to the superclass.
-   */
-  Value *MessageSendSuper(const char *selName, const char *selTypes, 
-		  SmallVectorImpl<Value*> &argv);
+	/**
+	 * Send a message to the superclass.
+	 */
+	Value *MessageSendSuper(NSString *selName, NSString *selTypes, 
+			SmallVectorImpl<Value*> &argv);
 
-  /**
-   * Send a message to an Objective-C object.
-   */
-  Value *MessageSendId(Value *receiver, const char *selName, const char
-      *selTypes, SmallVectorImpl<Value*> &argv);
+	/**
+	 * Send a message to an Objective-C object.
+	 */
+	Value *MessageSendId(Value *receiver, NSString *selName, NSString 
+	    *selTypes, SmallVectorImpl<Value*> &argv);
 
-  /**
-   * Send a message to a Smalltalk object.
-   */
-  Value *MessageSend(Value *receiver, const char *selName, const char
-      *selTypes, SmallVectorImpl<Value*> &boxedArgs);
+	/**
+	 * Send a message to a Smalltalk object.
+	 */
+	Value *MessageSend(Value *receiver, NSString *selName, NSString 
+	    *selTypes, SmallVectorImpl<Value*> &boxedArgs);
 
-  /**
-   * Call a C function.
-   */
-  Value *CallFunction(const char *functionName, const char *argTypes,
-      SmallVectorImpl<Value*> &boxedArgs);
-  /**
-   * Set the return value for this method / block.
-   */
-  virtual void SetReturn(Value * Ret = 0);
+	/**
+	 * Call a C function.
+	 */
+	Value *CallFunction(NSString *functionName, NSString *argTypes,
+	    SmallVectorImpl<Value*> &boxedArgs);
+	/**
+	 * Set the return value for this method / block.
+	 */
+	virtual void SetReturn(Value * Ret = 0);
 
-  /**
-   * Load the value of self in the current context.
-   */
-  virtual Value *LoadSelf(void);
-  
-  /**
-   * Load a local in the current contest.
-   */
-  Value *LoadLocalAtIndex(unsigned index, unsigned depth);
+	/**
+	 * Load the value of self in the current context.
+	 */
+	virtual Value *LoadSelf(void);
+	
+	/**
+	 * Get a pointer to the class object for a specified name.
+	 */
+	Value *LoadClass(NSString *classname);
 
-  /**
-   * Store a value in a local.
-   */
-  void StoreValueInLocalAtIndex(Value * value, unsigned index, unsigned depth);
+	/**
+	 * Load a class variable.
+	 */
+	Value *LoadClassVariable(NSString *className, NSString *cVarName);
+	/**
+	 * Store a value in a class variable.
+	 */
+	void StoreValueInClassVariable(NSString *className, NSString *cVarName, Value
+			*object);
 
-  /**
-   * Get a pointer to the class object for a specified name.
-   */
-  Value *LoadClass(const char *classname);
+	/**
+	 * Load an instance variable.
+	 */
+	Value *LoadValueOfTypeAtOffsetFromObject(NSString *className, NSString 
+			*ivarName, NSString* type, unsigned offset, Value *object);
 
-  /**
-   * Load a class variable.
-   */
-  Value *LoadClassVariable(string className, string cVarName);
-  /**
-   * Store a value in a class variable.
-   */
-  void StoreValueInClassVariable(string className, string cVarName, Value
-		  *object);
 
-  /**
-   * Load an instance variable.
-   */
-  Value *LoadValueOfTypeAtOffsetFromObject(const char *className, const char
-		  *ivarName, const char* type, unsigned offset, Value *object);
+	/**
+	 * Store an instance value.
+	 */
+	void StoreValueOfTypeAtOffsetFromObject(Value *value, NSString *className,
+			NSString *ivarName, NSString *type, unsigned offset, Value
+			*object);
 
-  /**
-   * Store an instance value.
-   */
-  void StoreValueOfTypeAtOffsetFromObject(Value *value, const char *className,
-		  const char *ivarName, const char* type, unsigned offset, Value
-		  *object);
-  /**
-   * Clean up after a block.
-   */
-  void EndChildBlock(CodeGenBlock *block);
-  /**
-   * Create a symbol object.
-   */
-  Value *SymbolConstant(const char *symbol);
-  /**
-   * Create a floating point constant.
-   */
-  Value *FloatConstant(const char *value);
-  /**
-   * Create an integer constant.
-   */
-  Value *IntConstant(const char *value);
-  /**
-   * Returns the parent lexical scope.
-   */
-  virtual CodeGenLexicalScope *getParentScope() { return 0; }
+	/**
+	 * Stores a value in a local variable.
+	 */
+	void storeValueInVariable(llvm::Value *value, NSString *aVariable);
+	/**
+	 * Returns the value in the named variable.
+	 */
+	llvm::Value* loadVariable(NSString *aVariable);
+	/**
+	 * Clean up after a block.
+	 */
+	void EndChildBlock(CodeGenBlock *block);
+	/**
+	 * Create a symbol object.
+	 */
+	Value *SymbolConstant(NSString *symbol);
+	/**
+	 * Create a floating point constant.
+	 */
+	Value *FloatConstant(NSString *value);
+	/**
+	 * Create an integer constant.
+	 */
+	Value *IntConstant(NSString *value);
+	/**
+	 * Returns the parent lexical scope.
+	 */
+	virtual CodeGenSubroutine *getParentScope() { return 0; }
 
-  /**
-   * Compare two pointers for equality.
-   */
-  Value *ComparePointers(Value *lhs, Value *rhs);
+	/**
+	 * Compare two pointers for equality.
+	 */
+	Value *ComparePointers(Value *lhs, Value *rhs);
 
 
 	/**
 	 * Creates a new basic block with the specified name and returns a pointer
 	 * to the block.
 	 */
-	BasicBlock *StartBasicBlock(const char* BBName);
+	BasicBlock *StartBasicBlock(NSString* BBName);
 	/**
 	 * Returns the current basic block.
 	 */
@@ -240,18 +271,40 @@ public:
 	 */
 	void BranchOnCondition(Value *condition, BasicBlock *TrueBB, BasicBlock
 		*FalseBB);
-	virtual ~CodeGenLexicalScope();
+	/**
+	 * Split code flow depending on whether an object is a real object or a
+	 * small integer.  Sets the insert point for aBuilder to the new basic
+	 * block for the object cast, and sets the insert point for smallIntBuilder
+	 * to the basic block for the small integer case.
+	 */
+	void splitSmallIntCase(llvm::Value *anObject,
+	                       CGBuilder &aBuilder,
+	                       CGBuilder &smallIntBuilder);
+	/**
+	 * Combines two basic blocks, one for an object case and one for a small
+	 * int case.  If anObject is not NULL, then a PHI node will be created in
+	 * the basic block combining the two cases and will be set to the object /
+	 * small int.
+	 *
+	 * This function sets the insert point of the object builder to the start
+	 * of the continuation block, after the PHI nodes.
+	 */
+	void combineSmallIntCase(llvm::Value *anObject,
+	                         llvm::Value *aSmallInt,
+	                         llvm::PHINode *&phi,
+	                         CGBuilder &objectBuilder,
+	                         CGBuilder &smallIntBuilder);
+	virtual ~CodeGenSubroutine();
 };
 
-class CodeGenMethod : public CodeGenLexicalScope {
+class CodeGenMethod : public CodeGenSubroutine {
 public:
-  CodeGenMethod(CodeGenModule *Mod, const char *MethodName, const char
-      *MethodTypes, int locals, bool isClass, const char **localNames);
+	CodeGenMethod(NSString *methodName,
+	              NSArray *locals,
+	              NSArray *arguments,
+	              NSString *signature,
+	              bool isClass,
+	              CodeGenModule *Mod);
 };
-/**
- * Offset of the variables in the context from the object start.
- * CHANGE THIS IF YOU MODIFY THE CONTEXT OBJECT!
- */
-static const int CONTEXT_VARIABLE_OFFSET = 4;
-
+}}
 #endif 

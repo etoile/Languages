@@ -12,45 +12,49 @@ static NSMutableDictionary *Types = nil;
 static NSMutableDictionary *SelectorConflicts = nil;
 NSString *LKCompilerDidCompileNewClassesNotification = 
 	@"LKCompilerDidCompileNewClassesNotification";
+/**
+ * Creates an NSString from a string returned by the runtime.  These strings
+ * are guaranteed to persist for the duration of the program, so there's no
+ * need to copy the data.
+ */
+static NSString *NSStringFromRuntimeString(const char *cString)
+{
+	return [[[NSString alloc] initWithBytesNoCopy: (char*)cString
+	                                       length: strlen(cString)
+	                                     encoding: NSUTF8StringEncoding
+	                                 freeWhenDone: NO] autorelease];
+}
 
 SEL sel_get_any_typed_uid(const char *name);
 
-#if defined(GNU_RUNTIME)
-static const char *TypesForMethodName(NSString *methodName)
+#if defined(__GNUSTEP_RUNTIME__)
+static NSArray *TypesForMethodName(NSString *methodName)
 {
-	return sel_getType_np(sel_get_any_typed_uid([methodName UTF8String]));
+	const char *buffer[16];
+	unsigned int count = sel_copyTypes_np([methodName UTF8String], buffer, 16);
+	const char **types = buffer;
+	if (count > 16)
+	{
+		types = calloc(count, sizeof(char*));
+		sel_copyTypes_np([methodName UTF8String], buffer, count);
+	}
+	NSMutableArray *typeStrings = [NSMutableArray new];
+	for (unsigned int i=0 ; i<count ; i++)
+	{
+		[typeStrings addObject: NSStringFromRuntimeString(types[i])];
+	}
+	if (buffer != types)
+	{
+		free(types);
+	}
+	return [typeStrings autorelease];
 }
 #else
-static const char *TypesForMethodName(NSString *methodName)
+static NSArray* TypesForMethodName(NSString *methodName)
 {
-	return [[Types objectForKey:methodName] UTF8String];
+	return [Types objectForKey: methodName];
 }
 #endif
-
-static NSString *typeEncodingRemovingQualifiers(NSString *str)
-{
-	NSMutableString *simplified = [[str mutableCopy] autorelease];
-	NSRange r = {0,1};
-	while(r.location < [simplified length])
-	{
-		switch ([simplified characterAtIndex: r.location])
-		{
-			case 'r':
-			case 'n':
-			case 'N':
-			case 'o':
-			case 'O':
-			case 'R':
-			case 'V':
-				[simplified deleteCharactersInRange: r];
-				break;
-			default:
-				r.location++;
-		}
-	}
-	return simplified;
-}
-
 
 @implementation LKModule 
 + (void) initialize
@@ -79,22 +83,9 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 		{
 			Method m = methods[i];
 
-			NSString *name =
-				[NSString stringWithCString: sel_getName(method_getName(m))];
-			NSString *type =
-				[NSString stringWithCString: method_getTypeEncoding(m)];
-			NSString *oldType = [Types objectForKey:name];
-			if (oldType == nil)
-			{
-				[Types setObject: typeEncodingRemovingQualifiers(type) forKey:name];
-			}
-			else
-			{
-				if (![typeEncodingRemovingQualifiers(type) isEqualToString:oldType])
-				{
-					[SelectorConflicts setObject:oldType forKey:name];
-				}
-			}
+			NSString *name = NSStringFromRuntimeString(sel_getName(method_getName(m)));
+			NSString *type = NSStringFromRuntimeString(method_getTypeEncoding(m));
+			[Types addObject: type forKey: name];
 		}
 	}
 	
@@ -102,10 +93,6 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 	{
 		free(classes);
 	}
-	
-	// Little hack to make the default sensible for count.  Should really be
-	// loaded from a plist.
-	[SelectorConflicts setObject:@"I8@0:4" forKey:@"count"];
 }
 + (id) module
 {
@@ -124,10 +111,8 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 	NSEnumerator *e = [aDict keyEnumerator];
 	for (id key = [e nextObject] ; nil != key ; key = [e nextObject])
 	{
-		id value = [NSPropertyListSerialization propertyListFromData:
-			[[aDict objectForKey:key] dataUsingEncoding:NSUTF8StringEncoding]
-		                                            mutabilityOption:
-			NSPropertyListMutableContainersAndLeaves	
+		id value = [NSPropertyListSerialization propertyListFromData: [[aDict objectForKey:key] dataUsingEncoding:NSUTF8StringEncoding]
+		                                            mutabilityOption: NSPropertyListMutableContainersAndLeaves
 		                                                      format: NULL
 		                                            errorDescription: NULL];
 		id oldValue = [pragmas objectForKey: key];
@@ -155,25 +140,11 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 		&&
 		(nil != [SelectorConflicts objectForKey:methodName]);
 }
-- (const char*) typeForMethod:(NSString*)methodName
+- (NSArray*) typesForMethod:(NSString*)methodName
 {
-	NSString *type = [typeOverrides objectForKey:methodName];
-	// First see if this is an overridden type
-	if (nil != type)
-	{
-		return [type UTF8String];
-	}
-	// If it's a conflicted type, pick the default and log a warning
-	if (nil != (type = [SelectorConflicts objectForKey:methodName]))
-	{
-		return [type UTF8String];
-	}
-	// Otherwise, grab the type from the runtime (for the GNU runtime)
-	// or from the mapping set up in +initialize (for the Mac runtime)
+	NSArray *types = TypesForMethodName(methodName);
 	
-	const char *types = TypesForMethodName(methodName);
-	
-	if (NULL == types) 
+	if ([types count] == 0)
 	{
 		int argCount = 0;
 		for (unsigned i=0, len = [methodName length] ; i<len ; i++)
@@ -192,7 +163,7 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 			offset += sizeof(id);
 			[ty appendFormat: @"%s%d", @encode(LKObject), offset];
 		}
-		types = [ty UTF8String];
+		types = [NSArray arrayWithObject: ty];
 	}
 	return types;
 }
@@ -203,7 +174,7 @@ static NSString *typeEncodingRemovingQualifiers(NSString *str)
 	BOOL success = YES;
 	FOREACH(classes, forwardClass, LKSubclass*)
 	{
-		[LKSymbolTable forwardDeclareNewClass: [forwardClass classname]];
+		[LKSymbolTable symbolTableForClass: [forwardClass classname]];
 	}
 	FOREACH(classes, class, LKAST*)
 	{

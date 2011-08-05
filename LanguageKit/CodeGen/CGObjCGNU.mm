@@ -7,14 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ABI.h"
-#include "CGObjCRuntime.h"
+#import "ABI.h"
+#import "CGObjCRuntime.h"
+#import "CodeGenTypes.h"
 #include "llvm/Module.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Target/TargetData.h"
 #include "llvm/LLVMContext.h"
+#include "objc_pointers.h"
 #include <map>
 #include <string>
 #include <algorithm>
@@ -22,8 +24,11 @@
 
 #include "LLVMCompat.h"
 
+#import <Foundation/NSString.h>
+
 using namespace llvm;
 using namespace std;
+using namespace etoile::languagekit;
 
 // The version of the runtime that this class targets.  Must match the version
 // in the runtime.
@@ -34,60 +39,59 @@ namespace {
 class CGObjCGNU : public CGObjCRuntime {
 private:
 	llvm::LLVMContext &Context;
+	CodeGenTypes *types;
 	llvm::Module &TheModule;
-	const llvm::StructType *SelStructTy;
-	const llvm::Type *SelectorTy;
-	const llvm::Type *PtrToInt8Ty;
-	const llvm::Type *IMPTy;
-	const llvm::Type *IdTy;
-	const llvm::Type *IntTy;
-	const llvm::Type *PtrTy;
-	const llvm::Type *LongTy;
-	const llvm::Type *PtrToIntTy;
+	LLVMStructType *SelStructTy;
+	LLVMType *SelectorTy;
+	LLVMType *PtrToInt8Ty;
+	LLVMType *IMPTy;
+	LLVMType *IdTy;
+	LLVMType *IntTy;
+	LLVMType *PtrTy;
+	LLVMType *LongTy;
+	LLVMType *PtrToIntTy;
 	std::vector<llvm::Constant*> Classes;
 	std::vector<llvm::Constant*> Categories;
 	std::vector<llvm::Constant*> ConstantStrings;
 	llvm::Function *LoadFunction;
-	llvm::StringMap<llvm::Constant*> ExistingProtocols;
-	typedef std::pair<std::string, std::string> TypedSelector;
-	std::map<TypedSelector, llvm::GlobalAlias*> TypedSelectors;
-	llvm::StringMap<llvm::GlobalAlias*> UntypedSelectors;
-	std::map<llvm::Value*, const char*> SelectorNames;
+	object_map<NSString*, llvm::Constant*> ExistingProtocols;
+	typedef std::pair<NSString*, llvm::GlobalAlias*> TypedSelector;
+	typedef object_map<NSString*, SmallVector<TypedSelector, 2> > SelectorMap;
+	SelectorMap SelectorTable;
 	// Some zeros used for GEPs in lots of places.
 	llvm::Constant *Zeros[2];
 	llvm::Constant *NULLPtr;
 	unsigned msgSendMDKind;
 	bool GC;
 private:
-	GlobalVariable *ObjCIvarOffsetVariable(const char *className,
-		const char *ivarName, uint64_t Offset);
-	llvm::Value *callIMP(llvm::IRBuilder<> &Builder,
+	GlobalVariable *ObjCIvarOffsetVariable(NSString *className,
+		NSString *ivarName, uint64_t Offset);
+	llvm::Value *callIMP(CGBuilder &Builder,
 	                     llvm::Value *imp,
-	                     const llvm::Type *ReturnTy,
-	                     bool isSRet,
+	                     NSString *typeEncoding,
 	                     llvm::Value *Receiver,
 	                     llvm::Value *Selector,
 	                     llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                     llvm::BasicBlock *CleanupBlock,
 	                     llvm::MDNode *metadata);
 	llvm::Constant *GenerateIvarList(
-		const char *ClassName,
-		const llvm::SmallVectorImpl<std::string> &IvarNames,
-		const llvm::SmallVectorImpl<std::string> &IvarTypes,
+		NSString *ClassName,
+		StringVector &IvarNames,
+		StringVector &IvarTypes,
 		const llvm::SmallVectorImpl<int> &IvarOffsets,
 		llvm::Constant *&IvarOffsetArray);
-	llvm::Constant *GenerateMethodList(const std::string &ClassName,
-		const std::string &CategoryName,
-		const llvm::SmallVectorImpl<std::string> &MethodNames, 
-		const llvm::SmallVectorImpl<std::string> &MethodTypes, 
-		bool isClassMethodList);
+	llvm::Constant *GenerateMethodList(NSString *ClassName,
+	                                   NSString *CategoryName,
+	                                   StringVector &MethodNames, 
+	                                   StringVector &MethodTypes, 
+	                                   bool isClassMethodList);
 	llvm::Constant *GenerateProtocolList(
-		const llvm::SmallVectorImpl<std::string> &Protocols);
+		StringVector &Protocols);
 	llvm::Constant *GenerateClassStructure(
 		llvm::Constant *MetaClass,
 		llvm::Constant *SuperClass,
 		unsigned info,
-		const char *Name,
+		NSString *Name,
 		llvm::Constant *Version,
 		llvm::Constant *InstanceSize,
 		llvm::Constant *IVars,
@@ -98,131 +102,129 @@ private:
 	llvm::Constant *GenerateProtocolMethodList(
 		const llvm::SmallVectorImpl<llvm::Constant *> &MethodNames,
 		const llvm::SmallVectorImpl<llvm::Constant *> &MethodTypes);
-	llvm::Constant *MakeConstantString(const std::string &Str, const std::string
+	llvm::Constant *MakeConstantString(NSString *Str, const std::string
 		&Name="");
-	llvm::Constant *MakeGlobal(const llvm::StructType *Ty,
+	llvm::Constant *MakeGlobal(LLVMStructType *Ty,
 		std::vector<llvm::Constant*> &V, const std::string &Name="",
 		bool isPublic=false);
-	llvm::Constant *MakeGlobal(const llvm::ArrayType *Ty,
+	llvm::Constant *MakeGlobal(LLVMArrayType *Ty,
 		std::vector<llvm::Constant*> &V, const std::string &Name="");
 	llvm::Value *GetWeakSymbol(const std::string &Name,
-                               llvm::Type *Type);
+                               LLVMType *Type);
 public:
-	CGObjCGNU(llvm::Module &Mp,
+	CGObjCGNU(
+		CodeGenTypes *cgTypes,
+		llvm::Module &Mp,
 		llvm::LLVMContext &C,
-		const llvm::Type *LLVMIntType,
-		const llvm::Type *LLVMLongType,
+		LLVMType *LLVMIntType,
+		LLVMType *LLVMLongType,
 		bool enableGC);
-	virtual llvm::Constant *GenerateConstantString(const char *String, 
-		const size_t length);
-	virtual llvm::Value *GenerateMessageSend(llvm::IRBuilder<> &Builder,
-	                                         const llvm::Type *ReturnTy,
+	virtual llvm::Constant *GenerateConstantString(NSString *String);
+	virtual llvm::Value *GenerateMessageSend(CGBuilder &Builder,
+	                                         LLVMType *ReturnTy,
 	                                         bool isSRet,
 	                                         llvm::Value *Sender,
 	                                         llvm::Value *Receiver,
-	                                         const char *selName,
-	                                         const char *selTypes,
+	                                         NSString *selName,
+	                                         NSString *selTypes,
 	                                         llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                         llvm::BasicBlock *CleanupBlock,
-	                                         const char *ReceiverClass,
+	                                         NSString *ReceiverClass,
 	                                         bool isClassMessage);
-	virtual llvm::Value *GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
-	                                              const llvm::Type *ReturnTy,
+	virtual llvm::Value *GenerateMessageSendSuper(CGBuilder &Builder,
+	                                              LLVMType *ReturnTy,
 	                                              bool isSRet,
 	                                              llvm::Value *Sender,
-	                                              const char *SuperClassName,
+	                                              NSString *SuperClassName,
 	                                              llvm::Value *Receiver,
-	                                              const char *selName,
-	                                              const char *selTypes,
+	                                              NSString *selName,
+	                                              NSString *selTypes,
 	                                              llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
-	virtual llvm::Value *LookupClass(llvm::IRBuilder<> &Builder,
+	virtual llvm::Value *LookupClass(CGBuilder &Builder,
 	                                 llvm::Value *ClassName);
-	virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
+	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
 	                                 llvm::Value *SelTypes);
-	virtual llvm::Value *GetSelector(llvm::IRBuilder<> &Builder,
-	                                 const char *SelName,
-	                                 const char *SelTypes);
+	virtual llvm::Value *GetSelector(CGBuilder &Builder,
+	                                 NSString *SelName,
+	                                 NSString *SelTypes);
 
-	virtual llvm::Function *MethodPreamble(const std::string &ClassName,
-	                                       const std::string &CategoryName,
-	                                       const std::string &MethodName,
-	                                       const llvm::Type *ReturnTy,
-	                                       const llvm::Type *SelfTy,
-	                                       const SmallVectorImpl<const llvm::Type*> &ArgTy,
+	virtual llvm::Function *MethodPreamble(NSString *ClassName,
+	                                       NSString *CategoryName,
+	                                       NSString *MethodName,
+	                                       LLVMType *ReturnTy,
+	                                       LLVMType *SelfTy,
+	                                       const SmallVectorImpl<LLVMType*> &ArgTy,
 	                                       bool isClassMethod,
 	                                       bool isSRet,
 	                                       bool isVarArg);
-	virtual llvm::Value *OffsetOfIvar(llvm::IRBuilder<> &Builder,
-	                                  const char *className,
-	                                  const char *ivarName,
+	virtual llvm::Value *OffsetOfIvar(CGBuilder &Builder,
+	                                  NSString *className,
+	                                  NSString *ivarName,
 	                                  int offsetGuess);
 	virtual void GenerateCategory(
-		const char *ClassName, const char *CategoryName,
-		const llvm::SmallVectorImpl<std::string>  &InstanceMethodNames,
-		const llvm::SmallVectorImpl<std::string>  &InstanceMethodTypes,
-		const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
-		const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
-		const llvm::SmallVectorImpl<std::string> &Protocols);
+		NSString *ClassName, NSString *CategoryName,
+		StringVector  &InstanceMethodNames,
+		StringVector  &InstanceMethodTypes,
+		StringVector  &ClassMethodNames,
+		StringVector  &ClassMethodTypes,
+		StringVector &Protocols);
 	virtual void DefineClassVariables(
-		const string &ClassName,
-		const llvm::SmallVectorImpl<std::string> &CvarNames,
-		const llvm::SmallVectorImpl<std::string> &CvarTypes);
+		NSString *ClassName,
+		StringVector &CvarNames,
+		StringVector &CvarTypes);
 	virtual void GenerateClass(
-		const char *ClassName,
-		const char *SuperClassName,
+		NSString *ClassName,
+		NSString *SuperClassName,
 		const int instanceSize,
-		const llvm::SmallVectorImpl<std::string> &IvarNames,
-		const llvm::SmallVectorImpl<std::string> &IvarTypes,
+		StringVector &IvarNames,
+		StringVector &IvarTypes,
 		const llvm::SmallVectorImpl<int> &IvarOffsets,
-		const llvm::SmallVectorImpl<std::string> &InstanceMethodNames,
-		const llvm::SmallVectorImpl<std::string> &InstanceMethodTypes,
-		const llvm::SmallVectorImpl<std::string> &ClassMethodNames,
-		const llvm::SmallVectorImpl<std::string> &ClassMethodTypes,
-		const llvm::SmallVectorImpl<std::string> &Protocols);
-	virtual llvm::Value *GenerateProtocolRef(llvm::IRBuilder<> &Builder,
-	                                         const char *ProtocolName);
+		StringVector &InstanceMethodNames,
+		StringVector &InstanceMethodTypes,
+		StringVector &ClassMethodNames,
+		StringVector &ClassMethodTypes,
+		StringVector &Protocols);
+	virtual llvm::Value *GenerateProtocolRef(CGBuilder &Builder,
+	                                         NSString *ProtocolName);
 	virtual void GenerateProtocol(
-		const char *ProtocolName,
-		const llvm::SmallVectorImpl<std::string> &Protocols,
+		NSString *ProtocolName,
+		StringVector &Protocols,
 		const llvm::SmallVectorImpl<llvm::Constant *> &InstanceMethodNames,
 		const llvm::SmallVectorImpl<llvm::Constant *> &InstanceMethodTypes,
 		const llvm::SmallVectorImpl<llvm::Constant *> &ClassMethodNames,
 		const llvm::SmallVectorImpl<llvm::Constant *> &ClassMethodTypes);
 	virtual llvm::Function *ModuleInitFunction();
-	virtual llvm::Value *LoadClassVariable(llvm::IRBuilder<> &Builder, 
-	                                       string &ClassName,
-	                                       string &CvarName);
-	virtual void StoreClassVariable(llvm::IRBuilder<> &Builder, 
-	                                string &ClassName,
-	                                string &CvarName,
-	                                llvm::Value *aValue,
-	                                llvm::Constant *assignFunction);
+	virtual llvm::Value *AddressOfClassVariable(CGBuilder &Builder, 
+	                                            NSString *ClassName,
+	                                            NSString *CvarName);
 };
 } // end anonymous namespace
 
 
-static std::string SymbolNameForSelector(const std::string &MethodName)
+static std::string SymbolNameForSelector(NSString *MethodName)
 {
-	string MethodNameColonStripped = MethodName;
+	string MethodNameColonStripped([MethodName UTF8String], [MethodName length]);
 	std::replace(MethodNameColonStripped.begin(), MethodNameColonStripped.end(), ':', '_');
 	return MethodNameColonStripped;
 }
 
-static std::string SymbolNameForMethod(const std::string &ClassName, const
-	std::string &CategoryName, const std::string &MethodName, bool isClassMethod)
+static std::string SymbolNameForMethod(NSString *ClassName, 
+	NSString *CategoryName, NSString *MethodName, bool isClassMethod)
 {
-	return std::string(isClassMethod ? "_c_" : "_i_") + ClassName + "_" +
-		CategoryName + "_" + SymbolNameForSelector(MethodName);
+	return std::string(isClassMethod ? "_c_" : "_i_") + [ClassName UTF8String]
+		+ "_" + [CategoryName UTF8String]+ "_" +
+		SymbolNameForSelector(MethodName);
 }
 
-CGObjCGNU::CGObjCGNU(llvm::Module &M,
+CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
+                     llvm::Module &M,
                      llvm::LLVMContext &C,
-                      const llvm::Type *LLVMIntType,
-                      const llvm::Type *LLVMLongType,
-                      bool enableGC) :
+                     LLVMType *LLVMIntType,
+                     LLVMType *LLVMLongType,
+                     bool enableGC) :
                       Context(C),
                       TheModule(M),
                       IntTy(LLVMIntType),
@@ -233,16 +235,17 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	{
 		RuntimeVersion = 10;
 	}
-	Zeros[0] = ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
+	types = cgTypes;
+	Zeros[0] = ConstantInt::get(LLVMType::getInt32Ty(Context), 0);
 	Zeros[1] = Zeros[0];
 
 	msgSendMDKind = Context.getMDKindID("GNUObjCMessageSend");
 
 	NULLPtr = llvm::ConstantPointerNull::get(
-		llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(Context)));
+		llvm::PointerType::getUnqual(LLVMType::getInt8Ty(Context)));
 	// C string type.  Used in lots of places.
 	PtrToInt8Ty = 
-		llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(Context));
+		llvm::PointerType::getUnqual(LLVMType::getInt8Ty(Context));
 	// Get the selector Type.
 	SelStructTy = GetStructType(
 		  Context,
@@ -256,7 +259,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 	// Object type
 	IdTy = PtrTy;
 	// IMP type
-	std::vector<const llvm::Type*> IMPArgs;
+	std::vector<LLVMType*> IMPArgs;
 	IMPArgs.push_back(IdTy);
 	IMPArgs.push_back(SelectorTy);
 	IMPTy = llvm::FunctionType::get(IdTy, IMPArgs, true);
@@ -265,7 +268,7 @@ CGObjCGNU::CGObjCGNU(llvm::Module &M,
 
 // This has to perform the lookup every time, since posing and related
 // techniques can modify the name -> class mapping.
-llvm::Value *CGObjCGNU::LookupClass(llvm::IRBuilder<> &Builder,
+llvm::Value *CGObjCGNU::LookupClass(CGBuilder &Builder,
                                     llvm::Value *ClassName) 
 {
 	llvm::Constant *ClassLookupFn =
@@ -275,55 +278,46 @@ llvm::Value *CGObjCGNU::LookupClass(llvm::IRBuilder<> &Builder,
 }
 
 /// Statically looks up the selector for the specified name / type pair.
-llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
-                                    const char *SelName,
-                                    const char *SelTypes) 
+llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
+                                    NSString *SelName,
+                                    NSString *SelTypes) 
 {
 	// For static selectors, we return an alias for now then store them all in
 	// a list that the runtime will initialise later.
 
-	// Untyped selector
-	if (SelTypes == 0) 
+	SmallVector<TypedSelector, 2> &Types = SelectorTable[SelName];
+	llvm::GlobalAlias *SelValue = 0;
+
+	// Check if we've already cached this selector
+	for (SmallVectorImpl<TypedSelector>::iterator i = Types.begin(),
+	     e = Types.end() ; i!=e ; i++)
 	{
-		// If it's already cached, return it.
-		if (UntypedSelectors[SelName]) 
+		if ([i->first isEqualToString: SelTypes])
 		{
-			return Builder.CreateLoad(UntypedSelectors[SelName]);
+			SelValue = i->second;
+			break;
 		}
-		// If it isn't, cache it.
-		llvm::GlobalAlias *Sel = new llvm::GlobalAlias(
-				llvm::PointerType::getUnqual(SelectorTy),
-				llvm::GlobalValue::InternalLinkage, SymbolNameForSelector(SelName),
-				NULL, &TheModule);
-		SelectorNames[Sel] = SelName;
-		UntypedSelectors[SelName] = Sel;
-		return Builder.CreateLoad(Sel);
 	}
 
-	// Typed selectors
-	TypedSelector Selector = TypedSelector(SelName,
-			SelTypes);
-
-	// If it's already cached, return it.
-	if (TypedSelectors[Selector]) 
-	{
-		return Builder.CreateLoad(TypedSelectors[Selector]);
+	// If not, create a new one.
+	if (0 == SelValue) {
+		SelValue = new llvm::GlobalAlias(SelectorTy,
+		                                 llvm::GlobalValue::PrivateLinkage,
+		                                 string(".objc_selector_")+[SelName UTF8String], NULL,
+		                                 &TheModule);
+		Types.push_back(TypedSelector(SelTypes, SelValue));
 	}
 
-	// If it isn't, cache it.
-	llvm::GlobalAlias *Sel = new llvm::GlobalAlias(
-			llvm::PointerType::getUnqual(SelectorTy),
-			llvm::GlobalValue::InternalLinkage, SymbolNameForSelector(SelName),
-				NULL, &TheModule);
-	SelectorNames[Sel] = SelName;
-	TypedSelectors[Selector] = Sel;
-	return Builder.CreateLoad(Sel);
+
+	return SelValue;
 }
 /// Dynamically looks up the selector for the specified name / type pair.
-llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
+llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
                                     llvm::Value *SelName,
                                     llvm::Value *SelTypes) 
 {
+// Dead code?
+assert(0);
 	// Dynamically look up selectors from non-constant sources
 	llvm::Value *cmd;
 	if (SelTypes == 0) 
@@ -348,16 +342,17 @@ llvm::Value *CGObjCGNU::GetSelector(llvm::IRBuilder<> &Builder,
 	return cmd;
 }
 
-llvm::Constant *CGObjCGNU::MakeConstantString(const std::string &Str,
+llvm::Constant *CGObjCGNU::MakeConstantString(NSString *Str,
                                               const std::string &Name) 
 {
-	llvm::Constant * ConstStr = llvm::ConstantArray::get(Context, Str);
+	std::string str([Str UTF8String], [Str length]);
+	llvm::Constant * ConstStr = llvm::ConstantArray::get(Context, str);
 	ConstStr = new llvm::GlobalVariable(TheModule, ConstStr->getType(), true,
 		llvm::GlobalValue::InternalLinkage, ConstStr, Name);
 	return llvm::ConstantExpr::getGetElementPtr(ConstStr, Zeros, 2);
 }
 
-llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::StructType *Ty,
+llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructType *Ty,
                                       std::vector<llvm::Constant*> &V,
                                       const std::string &Name,
                                       bool isPublic)
@@ -368,7 +363,7 @@ llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::StructType *Ty,
 		llvm::GlobalValue::InternalLinkage), C, Name);
 }
 
-llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::ArrayType *Ty,
+llvm::Constant *CGObjCGNU::MakeGlobal(LLVMArrayType *Ty,
                                       std::vector<llvm::Constant*> &V,
                                       const std::string &Name) 
 {
@@ -377,7 +372,7 @@ llvm::Constant *CGObjCGNU::MakeGlobal(const llvm::ArrayType *Ty,
 		llvm::GlobalValue::InternalLinkage, C, Name);
 }
 llvm::Value *CGObjCGNU::GetWeakSymbol(const std::string &Name,
-                                               llvm::Type *Type)
+                                               LLVMType *Type)
 {
 	llvm::Constant *value;
 	if(0 != (value = TheModule.getNamedGlobal(Name)))
@@ -393,13 +388,12 @@ llvm::Value *CGObjCGNU::GetWeakSymbol(const std::string &Name,
 }
 
 /// Generate an NSConstantString object.
-llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
-		const size_t length)
+llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 {
-	std::string Str(String, String +length);
+	NSUInteger length = [String length];
 	std::vector<llvm::Constant*> Ivars;
 	Ivars.push_back(NULLPtr);
-	Ivars.push_back(MakeConstantString(Str));
+	Ivars.push_back(MakeConstantString(String));
 	Ivars.push_back(ConstantInt::get(IntTy, length));
 	llvm::Constant *ObjCStr = MakeGlobal(
 		GetStructType(Context, PtrToInt8Ty, PtrToInt8Ty, IntTy,
@@ -409,23 +403,29 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(const char *String,
 	return ObjCStr;
 }
 llvm::Value *CGObjCGNU::callIMP(
-                            llvm::IRBuilder<> &Builder,
+                            CGBuilder &Builder,
                             llvm::Value *imp,
-                            const llvm::Type *ReturnTy,
-                            bool isSRet,
+                            NSString *typeEncoding,
                             llvm::Value *Receiver,
                             llvm::Value *Selector,
                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                             llvm::BasicBlock *CleanupBlock,
                             llvm::MDNode *metadata)
 {
+	bool isSRet;
+	LLVMType *ReturnTy;
+	llvm::FunctionType *fTy = types->functionTypeFromString(typeEncoding, isSRet, ReturnTy);
+	imp = Builder.CreateBitCast(imp, llvm::PointerType::getUnqual(fTy));
+
 	// Call the method
 	llvm::SmallVector<llvm::Value*, 8> callArgs;
 	llvm::Value *sret = 0;
+	unsigned param = 0;
 	if (isSRet)
 	{
 		sret = Builder.CreateAlloca(ReturnTy);
 		callArgs.push_back(sret);
+		param++;
 	}
 	callArgs.push_back(Receiver);
 	callArgs.push_back(Selector);
@@ -451,14 +451,22 @@ llvm::Value *CGObjCGNU::callIMP(
 	{
 		callArgs.insert(callArgs.end(), ArgV.begin(), ArgV.end());
 	}
+	for (int i=0 ; i<fTy->getNumParams() ; i++)
+	{
+		LLVMType *argTy = fTy->getParamType(i);
+		if (callArgs[i]->getType() != argTy)
+		{
+			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
+		}
+	}
 	llvm::Instruction *ret = 0;
 	if (0 != CleanupBlock)
 	{
 		llvm::BasicBlock *continueBB =
 			llvm::BasicBlock::Create(Context, "invoke_continue",
 					Builder.GetInsertBlock()->getParent());
-		ret = Builder.CreateInvoke(imp, continueBB, CleanupBlock,
-			callArgs.begin(), callArgs.end());
+		ret = IRBuilderCreateInvoke(&Builder, imp, continueBB, CleanupBlock,
+			callArgs);
 		ret->setMetadata(msgSendMDKind, metadata);
 		Builder.SetInsertPoint(continueBB);
 		if (isSRet)
@@ -468,7 +476,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	}
 	else
 	{
-		ret = Builder.CreateCall(imp, callArgs.begin(), callArgs.end());
+		ret = IRBuilderCreateCall(&Builder, imp, callArgs);
 		ret->setMetadata(msgSendMDKind, metadata);
 		if (isSRet)
 		{
@@ -485,14 +493,14 @@ llvm::Value *CGObjCGNU::callIMP(
 ///Generates a message send where the super is the receiver.  This is a message
 ///send to self with special delivery semantics indicating which class's method
 ///should be called.
-llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
-                                            const llvm::Type *ReturnTy,
+llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
+                                            LLVMType *ReturnTy,
                                             bool isSRet,
                                             llvm::Value *Sender,
-                                            const char *SuperClassName,
+                                            NSString *SuperClassName,
                                             llvm::Value *Receiver,
-                                            const char *selName,
-                                            const char *selTypes,
+                                            NSString *selName,
+                                            NSString *selTypes,
                                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                             bool isClassMessage,
                                             llvm::BasicBlock *CleanupBlock)
@@ -508,7 +516,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 				PointerType::getUnqual(IdTy));
 		ReceiverClass = Builder.CreateLoad(ReceiverClass);
 	}
-	std::vector<const llvm::Type*> impArgTypes;
+	std::vector<LLVMType*> impArgTypes;
 	if (isSRet)
 	{
 		impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
@@ -519,7 +527,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	// Avoid an explicit cast on the IMP by getting a version that has the right
 	// return type.
 	llvm::FunctionType *impType = isSRet ?
-		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), impArgTypes, true) :
+		llvm::FunctionType::get(LLVMType::getVoidTy(Context), impArgTypes, true) :
 		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	// Construct the structure used to look up the IMP
 	llvm::StructType *ObjCSuperTy = GetStructType(Context, 
@@ -528,15 +536,13 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 	Builder.CreateStore(Receiver, Builder.CreateStructGEP(ObjCSuper, 0));
 	Builder.CreateStore(ReceiverClass, Builder.CreateStructGEP(ObjCSuper, 1));
 
-	std::vector<const llvm::Type*> Params;
+	std::vector<LLVMType*> Params;
 	Params.push_back(llvm::PointerType::getUnqual(ObjCSuperTy));
 	Params.push_back(SelectorTy);
 
-	llvm::Value *lookupArgs[] = {ObjCSuper, Selector};
-	llvm::Value *imp;
 
 	// The lookup function returns a slot, which can be safely cached.
-	llvm::Type *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
+	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
 		IntTy, llvm::PointerType::getUnqual(impType), NULL);
 
 	llvm::Constant *lookupFunction =
@@ -544,40 +550,42 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(llvm::IRBuilder<> &Builder,
 			llvm::FunctionType::get( llvm::PointerType::getUnqual(SlotTy),
 				Params, true));
 
-	llvm::CallInst *slot = Builder.CreateCall(lookupFunction, lookupArgs,
-	lookupArgs+2);
+	llvm::SmallVector<llvm::Value*, 2> lookupArgs;
+	lookupArgs.push_back(ObjCSuper);
+	lookupArgs.push_back(Selector);
+	llvm::CallInst *slot = IRBuilderCreateCall(&Builder, lookupFunction, lookupArgs);
 	slot->setOnlyReadsMemory();
 
-	imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
+	llvm::Value *imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
 
 	llvm::Value *impMD[] = {
-		llvm::MDString::get(Context, selName), 
-		llvm::MDString::get(Context, SuperClassName),
-		llvm::ConstantInt::get(llvm::Type::getInt1Ty(Context), isClassMessage)
+		llvm::MDString::get(Context, [selName UTF8String]), 
+		llvm::MDString::get(Context, [SuperClassName UTF8String]),
+		llvm::ConstantInt::get(LLVMType::getInt1Ty(Context), isClassMessage)
 		};
 	llvm::MDNode *node = CreateMDNode(Context, impMD, 3);
 
-	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver,
+	return callIMP(Builder, imp, selTypes, Receiver,
 			Selector, ArgV, CleanupBlock, node);
 }
 
 /// Generate code for a message send expression.
-llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
-                                            const llvm::Type *ReturnTy,
+llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
+                                            LLVMType *ReturnTy,
                                             bool isSRet,
                                             llvm::Value *Sender,
                                             llvm::Value *Receiver,
-                                            const char *selName,
-                                            const char *selTypes,
+                                            NSString *selName,
+                                            NSString *selTypes,
                                             llvm::SmallVectorImpl<llvm::Value*> &ArgV,
                                             llvm::BasicBlock *CleanupBlock,
-                                            const char *ReceiverClass,
+                                            NSString *ReceiverClass,
                                             bool isClassMessage)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 
 	// Look up the method implementation.
-	std::vector<const llvm::Type*> impArgTypes;
+	std::vector<LLVMType*> impArgTypes;
 	if (isSRet)
 	{
 		impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
@@ -588,7 +596,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 	// Avoid an explicit cast on the IMP by getting a version that has the right
 	// return type.
 	llvm::FunctionType *impType = isSRet ?
-		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), impArgTypes, true) :
+		llvm::FunctionType::get(LLVMType::getVoidTy(Context), impArgTypes, true) :
 		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	
 	if (0 == Sender)
@@ -596,9 +604,9 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 		Sender = NULLPtr;
 	}
 	llvm::Value *ReceiverPtr = Builder.CreateAlloca(Receiver->getType());
-	Builder.CreateStore(Receiver, ReceiverPtr);
+	Builder.CreateStore(Receiver, ReceiverPtr, true);
 
-	llvm::Type *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
+	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
 			IntTy, llvm::PointerType::getUnqual(impType), NULL);
 
 	llvm::Constant *lookupFunction = 
@@ -618,26 +626,26 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(llvm::IRBuilder<> &Builder,
 
 	llvm::Value *imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
 
-	Receiver = Builder.CreateLoad(ReceiverPtr);
+	Receiver = Builder.CreateLoad(ReceiverPtr, true);
 	llvm::Value *impMD[] = {
-		llvm::MDString::get(Context, selName),
-		llvm::MDString::get(Context, ReceiverClass),
-		llvm::ConstantInt::get(llvm::Type::getInt1Ty(Context), isClassMessage)
+		llvm::MDString::get(Context, [selName UTF8String]),
+		llvm::MDString::get(Context, [ReceiverClass UTF8String]),
+		llvm::ConstantInt::get(LLVMType::getInt1Ty(Context), isClassMessage)
 		};
 	llvm::MDNode *node = CreateMDNode(Context, impMD, 3);
 
 	// Call the method.
-	return callIMP(Builder, imp, ReturnTy, isSRet, Receiver, Selector,
+	return callIMP(Builder, imp, selTypes, Receiver, Selector,
 				ArgV, CleanupBlock, node);
 }
 
 /// Generates a MethodList.  Used in construction of a objc_class and 
 /// objc_category structures.
 llvm::Constant *CGObjCGNU::GenerateMethodList(
-	const std::string &ClassName,
-	const std::string &CategoryName, 
-	const llvm::SmallVectorImpl<std::string>  &MethodNames, 
-	const llvm::SmallVectorImpl<std::string>  &MethodTypes, 
+	NSString *ClassName,
+	NSString *CategoryName, 
+	StringVector  &MethodNames, 
+	StringVector  &MethodTypes, 
 	bool isClassMethodList) 
 {
 	// Get the method structure type.  
@@ -670,24 +678,19 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 			Methods);
 
 	// Structure containing list pointer, array and array count
-	llvm::SmallVector<const llvm::Type*, 16> ObjCMethodListFields;
-	llvm::PATypeHolder OpaqueNextTy = llvm::OpaqueType::get(Context);
-	llvm::Type *NextPtrTy = llvm::PointerType::getUnqual(OpaqueNextTy);
+	llvm::SmallVector<LLVMType*, 16> ObjCMethodListFields;
+	LLVMType *OpaqueNextTy = PtrTy;
+	LLVMType *NextPtrTy = llvm::PointerType::getUnqual(OpaqueNextTy);
 	llvm::StructType *ObjCMethodListTy = GetStructType(
 		Context,
 		NextPtrTy, 
 		IntTy, 
 		ObjCMethodArrayTy,
 		NULL);
-	// Refine next pointer type to concrete type
-	llvm::cast<llvm::OpaqueType>(
-		OpaqueNextTy.get())->refineAbstractTypeTo(ObjCMethodListTy);
-	ObjCMethodListTy = llvm::cast<llvm::StructType>(OpaqueNextTy.get());
 
 	Methods.clear();
-	Methods.push_back(llvm::ConstantPointerNull::get(
-		llvm::PointerType::getUnqual(ObjCMethodListTy)));
-	Methods.push_back(ConstantInt::get(llvm::Type::getInt32Ty(Context),
+	Methods.push_back(llvm::Constant::getNullValue(NextPtrTy));
+	Methods.push_back(ConstantInt::get(LLVMType::getInt32Ty(Context),
 		MethodTypes.size()));
 	Methods.push_back(MethodArray);
 	
@@ -697,9 +700,9 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 
 /// Generates an IvarList.  Used in construction of a objc_class.
 llvm::Constant *CGObjCGNU::GenerateIvarList(
-	const char *ClassName,
-	const llvm::SmallVectorImpl<std::string>  &IvarNames, const
-	llvm::SmallVectorImpl<std::string>  &IvarTypes, const
+	NSString *ClassName,
+	StringVector  &IvarNames, const
+	llvm::SmallVectorImpl<strong_id<NSString*> >  &IvarTypes, const
 	llvm::SmallVectorImpl<int>  &IvarOffsets, 
 	llvm::Constant *&IvarOffsetArray)
 {
@@ -744,17 +747,18 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		MakeGlobal(ObjCIvarListTy, Elements, ".objc_ivar_list");
 
 	// Generate the non-fragile ABI offset variables.
-	const llvm::Type *IndexTy = llvm::Type::getInt32Ty(Context);
+	LLVMType *IndexTy = LLVMType::getInt32Ty(Context);
 	llvm::Constant *offsetPointerIndexes[] = {Zeros[0],
 		llvm::ConstantInt::get(IndexTy, 1), 0,
 		llvm::ConstantInt::get(IndexTy, 2) };
 
 	std::vector<llvm::Constant*> IvarOffsetValues;
+	const char *className = [ClassName UTF8String];
 
 	for (unsigned int i = 0, e = IvarNames.size() ; i < e ; i++)
 	{
-		const std::string Name = std::string("__objc_ivar_offset_") + ClassName
-			+ '.' + IvarNames[i];
+		const std::string Name = std::string("__objc_ivar_offset_") + className
+			+ '.' + [IvarNames[i] UTF8String];
 		offsetPointerIndexes[2] = llvm::ConstantInt::get(IndexTy, i);
 		// Get the correct ivar field
 		llvm::Constant *offsetValue = llvm::ConstantExpr::getGetElementPtr(
@@ -779,8 +783,8 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		IvarOffsetValues.push_back(new llvm::GlobalVariable(TheModule, IntTy,
 					false, llvm::GlobalValue::ExternalLinkage,
 					llvm::ConstantInt::get(IntTy, IvarOffsets[i]),
-					std::string("__objc_ivar_offset_value_") + ClassName +'.' +
-					IvarNames[i]));
+					std::string("__objc_ivar_offset_value_") + className +'.' +
+					[IvarNames[i] UTF8String]));
 	}
 
 	if (IvarOffsetArray)
@@ -802,7 +806,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	llvm::Constant *MetaClass,
 	llvm::Constant *SuperClass,
 	unsigned info,
-	const char *Name,
+	NSString *Name,
 	llvm::Constant *Version,
 	llvm::Constant *InstanceSize,
 	llvm::Constant *IVars,
@@ -844,7 +848,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	Elements.push_back(SuperClass);
 	if (NULL == Name)
 	{
-		Name = "AnonymousClass";
+		Name = @"AnonymousClass";
 	}
 	Elements.push_back(MakeConstantString(Name));
 	Elements.push_back(Zero);
@@ -862,7 +866,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	Elements.push_back(NullP);
 	// Create an instance of the structure
 	return MakeGlobal(ClassTy, Elements, 
-			(isMeta ? "_OBJC_METACLASS_": "_OBJC_CLASS_") + std::string(Name),
+			std::string(isMeta ? "_OBJC_METACLASS_": "_OBJC_CLASS_") + [Name UTF8String],
 			true);
 }
 
@@ -899,7 +903,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 
 // Create the protocol list structure used in classes, categories and so on
 llvm::Constant *CGObjCGNU::GenerateProtocolList(
-	const llvm::SmallVectorImpl<std::string> &Protocols)
+	StringVector &Protocols)
 {
 	llvm::ArrayType *ProtocolArrayTy = llvm::ArrayType::get(PtrToInt8Ty,
 		Protocols.size());
@@ -910,7 +914,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 		ProtocolArrayTy,
 		NULL);
 	std::vector<llvm::Constant*> Elements; 
-	for (const std::string *iter=Protocols.begin(), *endIter=Protocols.end();
+	for (StringVector::const_iterator iter=Protocols.begin(), endIter=Protocols.end();
 	    iter != endIter ; iter++) 
 	{
 		llvm::Constant *Ptr = llvm::ConstantExpr::getBitCast(
@@ -927,15 +931,15 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 	return MakeGlobal(ProtocolListTy, Elements, ".objc_protocol_list");
 }
 
-llvm::Value *CGObjCGNU::GenerateProtocolRef(llvm::IRBuilder<> &Builder,
-	const char *ProtocolName) 
+llvm::Value *CGObjCGNU::GenerateProtocolRef(CGBuilder &Builder,
+	NSString *ProtocolName) 
 {
 	return ExistingProtocols[ProtocolName];
 }
 
 void CGObjCGNU::GenerateProtocol(
-	const char *ProtocolName,
-	const llvm::SmallVectorImpl<std::string> &Protocols,
+	NSString *ProtocolName,
+	StringVector &Protocols,
 	const llvm::SmallVectorImpl<llvm::Constant *> &InstanceMethodNames,
 	const llvm::SmallVectorImpl<llvm::Constant *> &InstanceMethodTypes,
 	const llvm::SmallVectorImpl<llvm::Constant *> &ClassMethodNames,
@@ -960,7 +964,7 @@ void CGObjCGNU::GenerateProtocol(
 	// The isa pointer must be set to a magic number so the runtime knows it's
 	// the correct layout.
 	Elements.push_back(llvm::ConstantExpr::getIntToPtr(
-		ConstantInt::get(llvm::Type::getInt32Ty(Context), ProtocolVersion), IdTy));
+		ConstantInt::get(LLVMType::getInt32Ty(Context), ProtocolVersion), IdTy));
 	Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
 	Elements.push_back(ProtocolList);
 	Elements.push_back(InstanceMethodList);
@@ -971,13 +975,13 @@ void CGObjCGNU::GenerateProtocol(
 }
 
 void CGObjCGNU::GenerateCategory(
-	const char *ClassName,
-	const char *CategoryName,
-	const llvm::SmallVectorImpl<std::string> &InstanceMethodNames,
-	const llvm::SmallVectorImpl<std::string> &InstanceMethodTypes,
-	const llvm::SmallVectorImpl<std::string> &ClassMethodNames,
-	const llvm::SmallVectorImpl<std::string> &ClassMethodTypes,
-	const llvm::SmallVectorImpl<std::string> &Protocols)
+	NSString *ClassName,
+	NSString *CategoryName,
+	StringVector &InstanceMethodNames,
+	StringVector &InstanceMethodTypes,
+	StringVector &ClassMethodNames,
+	StringVector &ClassMethodTypes,
+	StringVector &Protocols)
 {
 	std::vector<llvm::Constant*> Elements;
 	Elements.push_back(MakeConstantString(CategoryName));
@@ -998,17 +1002,17 @@ void CGObjCGNU::GenerateCategory(
 			  PtrTy, PtrTy, NULL), Elements), PtrTy));
 }
 void CGObjCGNU::GenerateClass(
-	const char *ClassName,
-	const char *SuperClassName,
+	NSString *ClassName,
+	NSString *SuperClassName,
 	const int instanceSize,
-	const llvm::SmallVectorImpl<std::string>  &IvarNames,
-	const llvm::SmallVectorImpl<std::string>  &IvarTypes,
+	StringVector  &IvarNames,
+	StringVector  &IvarTypes,
 	const llvm::SmallVectorImpl<int>  &IvarOffsets,
-	const llvm::SmallVectorImpl<std::string>  &InstanceMethodNames,
-	const llvm::SmallVectorImpl<std::string>  &InstanceMethodTypes,
-	const llvm::SmallVectorImpl<std::string>  &ClassMethodNames,
-	const llvm::SmallVectorImpl<std::string>  &ClassMethodTypes,
-	const llvm::SmallVectorImpl<std::string> &Protocols) 
+	StringVector  &InstanceMethodNames,
+	StringVector  &InstanceMethodTypes,
+	StringVector  &ClassMethodNames,
+	StringVector  &ClassMethodTypes,
+	StringVector &Protocols) 
 {
 	// Get the superclass pointer.
 	llvm::Constant *SuperClass;
@@ -1021,16 +1025,16 @@ void CGObjCGNU::GenerateClass(
 		SuperClass = llvm::ConstantPointerNull::get(
 			llvm::cast<llvm::PointerType>(PtrToInt8Ty));
 	}
-	llvm::Constant * Name = llvm::ConstantArray::get(Context, ClassName);
+	llvm::Constant * Name = llvm::ConstantArray::get(Context, [ClassName UTF8String]);
 	Name = new llvm::GlobalVariable(TheModule, Name->getType(), true,
 		llvm::GlobalValue::InternalLinkage, Name, ".class_name");
 	// Empty vector used to construct empty method lists
-	llvm::SmallVector<std::string, 1> empty;
+	llvm::SmallVector<strong_id<NSString*>, 1> empty;
 	llvm::SmallVector<int, 1> empty2;
 	// Generate the method and instance variable lists
-	llvm::Constant *MethodList = GenerateMethodList(ClassName, "",
+	llvm::Constant *MethodList = GenerateMethodList(ClassName, @"",
 		InstanceMethodNames, InstanceMethodTypes, false);
-	llvm::Constant *ClassMethodList = GenerateMethodList(ClassName, "",
+	llvm::Constant *ClassMethodList = GenerateMethodList(ClassName, @"",
 		ClassMethodNames, ClassMethodTypes, true);
 	llvm::Constant *IvarOffsetValues=NULLPtr, *ignored;
 	llvm::Constant *IvarList = GenerateIvarList(ClassName, IvarNames,
@@ -1055,16 +1059,10 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 { 
 	// Only emit an ObjC load function if no Objective-C stuff has been called
 	if (Classes.empty() && Categories.empty() && ConstantStrings.empty() &&
-	    ExistingProtocols.empty() && TypedSelectors.empty() &&
-	    UntypedSelectors.empty())
+	    ExistingProtocols.empty() && SelectorTable.empty())
 	{
 		return NULL;
 	}
-
-	// Name the ObjC types to make the IR a bit easier to read
-	TheModule.addTypeName(".objc_selector", SelectorTy);
-	TheModule.addTypeName(".objc_id", IdTy);
-	TheModule.addTypeName(".objc_imp", IMPTy);
 
 	std::vector<llvm::Constant*> Elements;
 	// Generate statics list:
@@ -1073,7 +1071,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		llvm::ArrayType *StaticsArrayTy = llvm::ArrayType::get(PtrToInt8Ty,
 			ConstantStrings.size() + 1);
 		ConstantStrings.push_back(NULLPtr);
-		Elements.push_back(MakeConstantString("NSConstantString",
+		Elements.push_back(MakeConstantString(@"NSConstantString",
 			".objc_static_class_name"));
 		Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
 		llvm::StructType *StaticsListTy = 
@@ -1096,81 +1094,71 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		Context,
 		LongTy,
 		SelectorTy,
-		llvm::Type::getInt16Ty(Context),
-		llvm::Type::getInt16Ty(Context),
+		LLVMType::getInt16Ty(Context),
+		LLVMType::getInt16Ty(Context),
 		ClassListTy,
 		NULL);
 
 	Elements.clear();
 	// Pointer to an array of selectors used in this module.
 	std::vector<llvm::Constant*> Selectors;
-	for (std::map<TypedSelector, llvm::GlobalAlias*>::iterator
-	     iter = TypedSelectors.begin(), iterEnd = TypedSelectors.end();
-	     iter != iterEnd ; ++iter) 
+	std::vector<llvm::GlobalAlias*> SelectorAliases;
+
+	for (SelectorMap::iterator iter = SelectorTable.begin(),
+	     iterEnd = SelectorTable.end(); iter != iterEnd ; ++iter)
 	{
-		Elements.push_back(MakeConstantString(iter->first.first, ".objc_sel_name"));
-		Elements.push_back(MakeConstantString(iter->first.second,
-			".objc_sel_types"));
-		Selectors.push_back(llvm::ConstantStruct::get(SelStructTy, Elements));
-		Elements.clear();
+		llvm::Constant *SelName = MakeConstantString(iter->first, "objc_sel_name");
+		SmallVectorImpl<TypedSelector> &Types = iter->second;
+		for (SmallVectorImpl<TypedSelector>::iterator i = Types.begin(),
+		     e = Types.end() ; i!=e ; i++)
+		{
+			llvm::Constant *SelectorTypeEncoding = NULLPtr;
+			if ([i->first length] != 0)
+			{
+				SelectorTypeEncoding = MakeConstantString(i->first, ".objc_sel_types");
+			}
+			Elements.push_back(SelName);
+			Elements.push_back(SelectorTypeEncoding);
+			Selectors.push_back(llvm::ConstantStruct::get(SelStructTy, Elements));
+			Elements.clear();
+			// Store the selector alias for later replacement
+			SelectorAliases.push_back(i->second);
+		}
 	}
-	for (llvm::StringMap<llvm::GlobalAlias*>::iterator
-	     iter = UntypedSelectors.begin(), iterEnd = UntypedSelectors.end();
-	     iter != iterEnd; ++iter)
-	{
-		Elements.push_back(
-			MakeConstantString(iter->getKeyData(), ".objc_sel_name"));
-		Elements.push_back(NULLPtr);
-		Selectors.push_back(llvm::ConstantStruct::get(SelStructTy, Elements));
-		Elements.clear();
-	}
+	// Number of static selectors, not including the NULL terminator
+	unsigned SelectorCount = Selectors.size();
+	// Add a NULL terminator to the list
 	Elements.push_back(NULLPtr);
 	Elements.push_back(NULLPtr);
 	Selectors.push_back(llvm::ConstantStruct::get(SelStructTy, Elements));
 	Elements.clear();
-	// Number of static selectors
-	Elements.push_back(ConstantInt::get(LongTy, Selectors.size() ));
+	Elements.push_back(ConstantInt::get(LongTy, SelectorCount));
 	llvm::Constant *SelectorList = MakeGlobal(
 		llvm::ArrayType::get(SelStructTy, Selectors.size()), Selectors,
 		".objc_selector_list");
 	Elements.push_back(llvm::ConstantExpr::getBitCast(SelectorList, SelectorTy));
 
 	// Now that all of the static selectors exist, create pointers to them.
-	int index = 0;
-	for (std::map<TypedSelector, llvm::GlobalAlias*>::iterator
-	     iter=TypedSelectors.begin(), iterEnd =TypedSelectors.end();
-	     iter != iterEnd; ++iter)
+	for (unsigned int i=0 ; i<SelectorCount ; i++)
 	{
 		llvm::Constant *Idxs[] = {Zeros[0],
-		ConstantInt::get(llvm::Type::getInt32Ty(Context), index++), Zeros[0]};
-
-		llvm::GlobalVariable *SelPtr = new llvm::GlobalVariable(TheModule,
-				SelectorTy, true, llvm::GlobalValue::InternalLinkage,
-				llvm::ConstantExpr::getGetElementPtr(SelectorList, Idxs, 2),
-				".objc_sel_ptr");
-
-		(*iter).second->setAliasee(SelPtr);
+			llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), i),
+			Zeros[0]};
+		llvm::Constant *SelPtr = llvm::ConstantExpr::getGetElementPtr(SelectorList,
+			llvm::makeArrayRef(Idxs, 2));
+		// If selectors are defined as an opaque type, cast the pointer to this
+		// type.
+		SelPtr = llvm::ConstantExpr::getBitCast(SelPtr, SelectorTy);
+		SelectorAliases[i]->replaceAllUsesWith(SelPtr);
+		SelectorAliases[i]->eraseFromParent();
 	}
 
-	for (llvm::StringMap<llvm::GlobalAlias*>::iterator
-	     iter=UntypedSelectors.begin(), iterEnd = UntypedSelectors.end();
-	     iter != iterEnd; iter++)
-	{
-		llvm::Constant *Idxs[] = {Zeros[0],
-		ConstantInt::get(llvm::Type::getInt32Ty(Context), index++), Zeros[0]};
 
-		llvm::GlobalVariable *SelPtr = new llvm::GlobalVariable(TheModule,
-				SelectorTy, true, llvm::GlobalValue::InternalLinkage,
-				llvm::ConstantExpr::getGetElementPtr(SelectorList, Idxs, 2),
-				".objc_sel_ptr");
-		
-		(*iter).second->setAliasee(SelPtr);
-	}
 	// Number of classes defined.
-	Elements.push_back(ConstantInt::get(llvm::Type::getInt16Ty(Context), 
+	Elements.push_back(ConstantInt::get(LLVMType::getInt16Ty(Context), 
 		Classes.size()));
 	// Number of categories defined
-	Elements.push_back(ConstantInt::get(llvm::Type::getInt16Ty(Context), 
+	Elements.push_back(ConstantInt::get(LLVMType::getInt16Ty(Context), 
 		Categories.size()));
 	// Create an array of classes, then categories, then static object instances
 	Classes.insert(Classes.end(), Categories.begin(), Categories.end());
@@ -1206,35 +1194,37 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 
 	// Create the load function calling the runtime entry point with the module
 	// structure
-	std::vector<const llvm::Type*> VoidArgs;
+	std::vector<LLVMType*> VoidArgs;
 	llvm::Function * LoadFunction = llvm::Function::Create(
-		llvm::FunctionType::get(llvm::Type::getVoidTy(Context), VoidArgs, false),
+		llvm::FunctionType::get(LLVMType::getVoidTy(Context), VoidArgs, false),
 		llvm::GlobalValue::InternalLinkage, ".objc_load_function",
 		&TheModule);
 
 	llvm::BasicBlock *EntryBB = llvm::BasicBlock::Create(Context, "entry", LoadFunction);
-	llvm::IRBuilder<> Builder(Context);
+	CGBuilder Builder(Context);
 	Builder.SetInsertPoint(EntryBB);
 
 	llvm::Value *Register = TheModule.getOrInsertFunction("__objc_exec_class",
-		llvm::Type::getVoidTy(Context), llvm::PointerType::getUnqual(ModuleTy), NULL);
+		LLVMType::getVoidTy(Context), llvm::PointerType::getUnqual(ModuleTy), NULL);
 
 	Builder.CreateCall(Register, Module);
 	Builder.CreateRetVoid();
 	return LoadFunction;
 }
+
 llvm::Function *CGObjCGNU::MethodPreamble(
-	const std::string &ClassName,
-	const std::string &CategoryName,
-	const std::string &MethodName,
-	const llvm::Type *ReturnTy,
-	const llvm::Type *SelfTy,
-	const SmallVectorImpl<const llvm::Type*> &ArgTy,
+	NSString *ClassName,
+	NSString *CategoryName,
+	NSString *MethodName,
+	LLVMType *ReturnTy,
+	LLVMType *SelfTy,
+	const SmallVectorImpl<LLVMType*> &ArgTy,
 	bool isClassMethod,
 	bool isSRet,
 	bool isVarArg)
 {
-	std::vector<const llvm::Type*> Args;
+	assert(0);
+	std::vector<LLVMType*> Args;
 	Args.push_back(SelfTy);
 	Args.push_back(SelectorTy);
 	Args.insert(Args.end(), ArgTy.begin(), ArgTy.end());
@@ -1262,16 +1252,16 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 	return Method;
 }
 
-static string ClassVariableName(const string &ClassName, const string
-		&CvarName)
+static string ClassVariableName(NSString *ClassName, NSString *CvarName)
 {
-	return string(".class_variable_") + ClassName + "_" + CvarName;
+	return string(".class_variable_") + [ClassName UTF8String] + "_" +
+		[CvarName UTF8String];
 }
 
 void CGObjCGNU::DefineClassVariables(
-	const string &ClassName,
-	const llvm::SmallVectorImpl<std::string>  &CvarNames,
-	const llvm::SmallVectorImpl<std::string>  &CvarTypes)
+	NSString *ClassName,
+	StringVector &CvarNames,
+	StringVector &CvarTypes)
 {
 	// TODO: Store class variable metadata somewhere.
 	// FIXME: Support non-object cvars
@@ -1285,34 +1275,21 @@ void CGObjCGNU::DefineClassVariables(
 	}
 }
 
-llvm::Value *CGObjCGNU::LoadClassVariable(llvm::IRBuilder<> &Builder,
-                                          string &ClassName,
-                                          string &CvarName)
+llvm::Value *CGObjCGNU::AddressOfClassVariable(CGBuilder &Builder,
+                                               NSString *ClassName,
+                                               NSString *CvarName)
 {
 	string cvarname = ClassVariableName(ClassName, CvarName);
 	GlobalVariable *var = TheModule.getNamedGlobal(cvarname);
-	return Builder.CreateLoad(var);
+	return var;
 }
 
-void CGObjCGNU::StoreClassVariable(llvm::IRBuilder<> &Builder, string
-	&ClassName, string &CvarName, llvm::Value* aValue, llvm::Constant
-	*assignFunction)
-{
-	string cvarname = ClassVariableName(ClassName, CvarName);
-	GlobalVariable *var = TheModule.getNamedGlobal(cvarname);
-	aValue = Builder.CreateBitCast(aValue, IdTy);
-	if (assignFunction)
-	{
-		Builder.CreateCall2(assignFunction, aValue, var);
-	}
-	Builder.CreateStore(aValue, var);
-}
 
-GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(const char *className,
-		const char *ivarName, uint64_t Offset)
+GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(NSString *className,
+		NSString *ivarName, uint64_t Offset)
 {
-	const std::string Name = std::string("__objc_ivar_offset_") + className +
-		'.' + ivarName;
+	const std::string Name = std::string("__objc_ivar_offset_") +
+		[className UTF8String] + '.' + [ivarName UTF8String];
 	// Emit the variable and initialize it with what we think the correct value
 	// is.  This allows code compiled with non-fragile ivars to work correctly
 	// when linked against code which isn't (most of the time).
@@ -1320,10 +1297,10 @@ GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(const char *className,
 	if (!IvarOffsetPointer)
 	{
 		llvm::ConstantInt *OffsetGuess =
-			llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), Offset,
+			llvm::ConstantInt::get(LLVMType::getInt32Ty(Context), Offset,
 					"ivar");
 		llvm::GlobalVariable *IvarOffsetGV = new
-			llvm::GlobalVariable(TheModule, llvm::Type::getInt32Ty(Context),
+			llvm::GlobalVariable(TheModule, LLVMType::getInt32Ty(Context),
 					false, llvm::GlobalValue::PrivateLinkage, OffsetGuess,
 					Name+".guess");
 		IvarOffsetPointer = new llvm::GlobalVariable(TheModule,
@@ -1332,9 +1309,9 @@ GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(const char *className,
 	}
 	return IvarOffsetPointer;
 }
-llvm::Value *CGObjCGNU::OffsetOfIvar(llvm::IRBuilder<> &Builder,
-                                     const char *className,
-                                     const char *ivarName,
+llvm::Value *CGObjCGNU::OffsetOfIvar(CGBuilder &Builder,
+                                     NSString *className,
+                                     NSString *ivarName,
                                      int offsetGuess)
 {
 	return Builder.CreateLoad(Builder.CreateLoad(
@@ -1342,11 +1319,13 @@ llvm::Value *CGObjCGNU::OffsetOfIvar(llvm::IRBuilder<> &Builder,
 		"ivar"));
 }
 
-CGObjCRuntime *CreateObjCRuntime(llvm::Module &M,
+CGObjCRuntime *CreateObjCRuntime(CodeGenTypes *types,
+                                 llvm::Module &M,
                                  llvm::LLVMContext &C,
-                                 const llvm::Type *LLVMIntType,
-                                 const llvm::Type *LLVMLongType,
+                                 LLVMType *LLVMIntType,
+                                 LLVMType *LLVMLongType,
                                  bool enableGC)
 {
-  return new CGObjCGNU(M, C, LLVMIntType, LLVMLongType, enableGC);
+  return new CGObjCGNU(types, M, C, LLVMIntType, LLVMLongType, enableGC);
 }
+CGObjCRuntime::~CGObjCRuntime() {}

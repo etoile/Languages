@@ -1,28 +1,31 @@
 #ifndef __CODE_GEN_MODULE__INCLUDED__
 #define __CODE_GEN_MODULE__INCLUDED__
-#include "CGObjCRuntime.h"
+#import "CGObjCRuntime.h"
+#import "CodeGenTypes.h"
+#import "CodeGenAssignments.h"
 #include <llvm/Analysis/DebugInfo.h>
 #include "llvm/ADT/StringMap.h"
 #include <stdio.h>
+#import "objc_pointers.h"
 
 namespace llvm {
   class BasicBlock;
   class PointerType;
   class FunctionType;
 }
-class CodeGenLexicalScope;
 using std::string;
 using namespace::llvm;
 
-extern PointerType *IdTy;
-extern const Type *IntTy;
-extern const Type *IntPtrTy;
-extern const Type *SelTy;
-extern const PointerType *IMPTy;
-extern const char *MsgSendSmallIntFilename;
-extern Constant *Zeros[2];
+@class NSString;
+@class LKSymbolTable;
 
+extern NSString *MsgSendSmallIntFilename;
 
+namespace etoile
+{
+namespace languagekit
+{
+class CodeGenSubroutine;
 /**
  * This class implements a streaming code generation interface designed to be
  * called directly from an AST.  
@@ -30,10 +33,15 @@ extern Constant *Zeros[2];
 class CodeGenModule {
 private:
   friend class CodeGenBlock;
-  friend class CodeGenLexicalScope;
+  friend class CodeGenSubroutine;
+  friend class CodeGenMethod;
 
   LLVMContext &Context;
   Module *TheModule;
+
+public:
+  CodeGenTypes *types;
+private:
 
   //DIFactory *Debug;
   DICompileUnit ModuleScopeDescriptor;
@@ -42,51 +50,50 @@ private:
 
   Module *SmallIntModule;
   Function *LiteralInitFunction;
-  IRBuilder<>InitialiseBuilder;
+  CGBuilder InitialiseBuilder;
   CGObjCRuntime * Runtime;
+  CodeGenAssignments *assign;
   bool inClassMethod;
-  const Type *CurrentClassTy;
-  IRBuilder<> *MethodBuilder;
-  string ClassName;
-  string SuperClassName;
-  string CategoryName;
+  LLVMType *CurrentClassTy;
+  CGBuilder *MethodBuilder;
+  NSString *ClassName;
+  NSString *SuperClassName;
+  NSString *CategoryName;
   int InstanceSize;
-  SmallVector<CodeGenLexicalScope*, 8> ScopeStack;
-  llvm::SmallVector<string, 8> IvarNames;
-  llvm::SmallVector<string, 8> CvarNames;
+  SmallVector<CodeGenSubroutine*, 8> ScopeStack;
+  llvm::SmallVector<strong_id<NSString*>, 8> IvarNames;
+  llvm::SmallVector<strong_id<NSString*>, 8> CvarNames;
   // All will be "@" for now.
-  llvm::SmallVector<string, 8> IvarTypes;
-  llvm::SmallVector<string, 8> CvarTypes;
+  llvm::SmallVector<strong_id<NSString*>, 8> IvarTypes;
+  llvm::SmallVector<strong_id<NSString*>, 8> CvarTypes;
   llvm::SmallVector<int, 8> IvarOffsets;
-  llvm::SmallVector<string, 8> InstanceMethodNames;
-  llvm::SmallVector<string, 8> InstanceMethodTypes;
-  llvm::SmallVector<string, 8> ClassMethodNames;
-  llvm::SmallVector<string, 8> ClassMethodTypes;
-  llvm::SmallVector<std::string, 8> Protocols;
+  llvm::SmallVector<strong_id<NSString*>, 8> InstanceMethodNames;
+  llvm::SmallVector<strong_id<NSString*>, 8> InstanceMethodTypes;
+  llvm::SmallVector<strong_id<NSString*>, 8> ClassMethodNames;
+  llvm::SmallVector<strong_id<NSString*>, 8> ClassMethodTypes;
+  llvm::SmallVector<strong_id<NSString*>, 8> Protocols;
 
 public:
-  bool GC;
   bool profilingEnabled;
-  llvm::Constant *AssignGlobal;
-  llvm::Constant *AssignIvar;
 private:
 
+  object_map<NSString*, llvm::Constant*> constantStrings;
   /**
    * Returns a constant C string using Str as an initialiser.
    */
-  Constant *MakeConstantString(const std::string &Str, const
+  Constant *MakeConstantString(NSString *Str, const
           std::string &Name="", unsigned GEPs=2);
 
   /**
    * Creates a generic constant.  This will be defined in the module load
    * function by sending a message to the specified class.
    */
-	Value *GenericConstant(IRBuilder<> &Builder, const std::string className,
-			const std::string constructor, const char *argument);
+	Value *GenericConstant(CGBuilder &Builder, NSString *className,
+			NSString *constructor, NSString *argument);
 	/**
 	 * Creates a global value containing a pointer to a class.
 	 */
-	void CreateClassPointerGlobal(const char *className, const char *globalName);
+	void CreateClassPointerGlobal(NSString *className, NSString *globalName);
 
 	/**
 	 * Finishes IR generation and prepares the module for code generation.
@@ -94,17 +101,15 @@ private:
 	void EndModule(void);
 
 public:
-	const Type *getCurrentClassTy() { return CurrentClassTy; }
-	IRBuilder<> *getInitBuilder() { return &InitialiseBuilder; }
-	const string& getClassName() { return ClassName; }
-	const string& getSuperClassName() { return SuperClassName; }
+	LLVMType *getCurrentClassTy() { return CurrentClassTy; }
+	CGBuilder *getInitBuilder() { return &InitialiseBuilder; }
 	Module *getModule() { return TheModule; }
 	//DIFactory *getDebugFactory() { return Debug; }
 	CGObjCRuntime *getRuntime() { return Runtime; }
-	string getCategoryName() { return CategoryName; }
 	DICompileUnit getModuleDescriptor() { return ModuleScopeDescriptor; }
 	DIFile getSourceFileDescriptor() { return ModuleSourceFile; }
 
+	
 	/**
 	 * Returns the debug info node for an Objective-C type encoding.
 	 */
@@ -118,117 +123,129 @@ public:
 	/**
 	 * Returns the code generator for the current scope
 	 */
-	CodeGenLexicalScope *getCurrentScope() { return ScopeStack.back(); }
+	CodeGenSubroutine *getCurrentScope() { return ScopeStack.back(); }
 	/**
 	 * Initialise for the specified module.  
 	 */
-	CodeGenModule(const char *ModuleName, LLVMContext &C, bool gc=false,
+	CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc=false,
 			bool jit=true, bool profiling=false);
 
 	/**
 	 * Start generating code for a class.
 	 */
-	void BeginClass(const char *Class, const char *Super, const
-		char ** cVarNames, const char ** cVarTypes, const char ** iVarNames,
-		const char ** iVarTypes, int *iVarOffsets, int SuperclassSize);
+	void BeginClass(NSString *className,
+	                NSString *superclassName,
+	                LKSymbolTable *symbolTable);
 
-  /**
-   * End a class.
-   */
-  void EndClass(void);
+	/**
+	 * End a class.
+	 */
+	void EndClass(void);
 
-  /**
-   * Start generating code for a category.
-   */
-  void BeginCategory(const char *Class, const char *CategoryName);
+	/**
+	 * Start generating code for a category.
+	 */
+	void BeginCategory(NSString *Class, NSString *CategoryName);
 
-  /**
-   * Finish generating a category.
-   */
-  void EndCategory(void);
+	/**
+	 * Finish generating a category.
+	 */
+	void EndCategory(void);
 
-  /**
-   * Start a class method.
-   */
-  void BeginClassMethod(const char *MethodName, const char *MethodTypes, int
-		  locals, const char **localNames);
+	/**
+	 * Start a class method.
+	 */
+	void BeginClassMethod(NSString *methodName,
+	                      NSString *methodTypes,
+	                      NSArray *locals,
+	                      NSArray *arguments);
+	/**
+	 * Start a method.
+	 */
+	void BeginInstanceMethod(NSString *methodName,
+	                         NSString *methodTypes,
+	                         NSArray *locals,
+	                         NSArray *arguments);
+	
+	/**
+	 * End the current method.
+	 */
+	void EndMethod();
 
-  /**
-   * Start a method.
-   */
-  void BeginInstanceMethod(const char *MethodName, const char *MethodTypes, int
-		  locals, const char **localNames);
-
-  /**
-   * End the current method.
-   */
-  void EndMethod();
-
-  /**
-   * Begin a BlockClosure.
-   */
-  void BeginBlock(unsigned args, unsigned locals);
-  
-  /**
-   * End the current block.  Returns a pointer to the block object.
-   */
-  Value *EndBlock(void);
+	/**
+	 * Begin a BlockClosure.
+	 */
+	void BeginBlock(NSArray *locals,
+	                NSArray *arguments,
+	                NSArray *bound,
+	                NSString *signature);
+	/**
+	 * End the current block.  Returns a pointer to the block object.
+	 */
+	Value *EndBlock(void);
 	/**
 	 * Store the class variable for the current class.
 	 */
-	void StoreClassVar(const char *cVarName, Value *value);
+	void StoreCVar(NSString *cVarName, Value *value);
+	/**
+	 * Stores the instance variable for the current class.
+	 */
+	void StoreIVar(NSString *iVarName, NSString *typeEncoding, Value *value);
+	/**
+	 * Stores a variable in the specified local value.
+	 */
+	void StoreScopedValue(NSString *varialbe, Value *value);
 	/**
 	 * Load the class variable for the current class.
 	 */
-	Value *LoadClassVar(const char *cVarName);
-
-  /**
-   * Set the (local) return value for a block.
-   */
-  void SetBlockReturn(Value *value);
+	Value *LoadCvar(NSString *cVarName);
 	/**
-	* Create an integer constant.  Either a SmallInt or a BigInt, depending on
-	* the size.  
-	*/
-	Value *IntConstant(IRBuilder<> &Builder, const char *value);
+	 * Loads the instance variable from the current class.
+	 */
+	llvm::Value * LoadIvar(NSString *typeEncoding, NSString *iVarName);
+	/**
+	 * Loads a variable in the specified local value.
+	 */
+	llvm::Value *LoadScopedValue(NSString *variable);
+
+	/**
+	 * Set the (local) return value for a block.
+	 */
+	void SetBlockReturn(Value *value);
+	/**
+	 * Create an integer constant.  Either a SmallInt or a BigInt, depending on
+	 * the size.  
+	 */
+	Value *IntConstant(CGBuilder &Builder, NSString *value);
 	/**
 	 * Creates a floating point constant.
 	 */
-	Value *FloatConstant(IRBuilder<> &Builder, const char *value);
+	Value *FloatConstant(CGBuilder &Builder, NSString *value);
 	/**
 	 * Create a symbol (selector) constant.
 	 */
-	Value *SymbolConstant(IRBuilder<> &Builder, const char *symbol);
-  /**
-   * Create a string (object) constant.
-   */
-  Value *StringConstant(const char *value);
+	Value *SymbolConstant(CGBuilder &Builder, NSString *symbol);
+	/**
+	 * Create a string (object) constant.
+	 */
+	Value *StringConstant(NSString *value);
 
-  /**
-   * Get the module which provides static definitions of small int messages.
-   */
-  Module *getSmallIntModule() { return SmallIntModule; };
+	/**
+	 * Get the module which provides static definitions of small int messages.
+	 */
+	Module *getSmallIntModule() { return SmallIntModule; };
 
-  /**
-   * Compile and load this module.
-   */
-  void compile(void);
-  /**
-   * Write the module as a bitcode file.  If isAsm is true then this writes
-   * LLVM 'assembly language' instead of bitcode.
-   */
-	void writeBitcodeToFile(char* filename, bool isAsm=false);
-   /**
-   * Returns an LLVM type from a type string.
-   */
-   const Type *LLVMTypeFromString(const char * typestr);
-   /**
-   * Returns an LLVM function type from a string.  Sets isSRet if the function
-   * contains a structure which should be returned on the stack.  
-   */
-   llvm::FunctionType *LLVMFunctionTypeFromString(const char *typestr,
-   												bool &isSRet,
-   												const Type *&realRetTy);
+	/**
+	 * Compile and load this module.
+	 */
+	void compile(void);
+	/**
+	 * Write the module as a bitcode file.  If isAsm is true then this writes
+	 * LLVM 'assembly language' instead of bitcode.
+	 */
+	void writeBitcodeToFile(NSString* filename, bool isAsm=false);
+	void CreateClassPointerGlobal(NSString *className, const char *globalName);
+
 };
 // Debugging macros:
 extern "C" {
@@ -241,12 +258,7 @@ extern "C" {
 /** Debugging macro: logs an error message to stderr if the debug flag is set. */
 #define LOG(x,...) \
 	do { if (DEBUG_DUMP_MODULES) fprintf(stderr, x,##__VA_ARGS__); } while(0)
-/**
- * Skip method type qualifiers.  Increments typestr to skip past qualifiers
- * that are not needed by LanguageKit (e.g. oneway).
- */
-void SkipTypeQualifiers(const char **typestr);
-
+}}
 
 
 #endif // __CODE_GEN_MODULE__INCLUDED__

@@ -42,11 +42,11 @@
 	}
 	values[i++] = [aGenerator nilConstant];
 	void *arrayClass = [aGenerator loadClassNamed:@"NSMutableArray"];
-	return [aGenerator sendMessage:"arrayWithObjects:"
-							 types:NULL
-						  toObject:arrayClass
-						  withArgs:values
-							 count:i];
+	return [aGenerator sendMessage: @"arrayWithObjects:"
+	                         types: NULL
+	                      toObject: arrayClass
+	                      withArgs: values
+	                         count: i];
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
