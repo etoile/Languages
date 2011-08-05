@@ -459,33 +459,50 @@ llvm::Value *CGObjCGNU::callIMP(
 			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
 		}
 	}
-	llvm::Instruction *ret = 0;
+	llvm::Value *ret = 0;
 	if (0 != CleanupBlock)
 	{
 		llvm::BasicBlock *continueBB =
 			llvm::BasicBlock::Create(Context, "invoke_continue",
 					Builder.GetInsertBlock()->getParent());
-		ret = IRBuilderCreateInvoke(&Builder, imp, continueBB, CleanupBlock,
+		llvm::InvokeInst *inv = IRBuilderCreateInvoke(&Builder, imp, continueBB, CleanupBlock,
 			callArgs);
-		ret->setMetadata(msgSendMDKind, metadata);
+		inv->setMetadata(msgSendMDKind, metadata);
 		Builder.SetInsertPoint(continueBB);
 		if (isSRet)
 		{
-			cast<llvm::InvokeInst>(ret)->addAttribute(1, Attribute::StructRet);
+			inv->addAttribute(1, Attribute::StructRet);
 		}
+		ret = inv;
 	}
 	else
 	{
-		ret = IRBuilderCreateCall(&Builder, imp, callArgs);
-		ret->setMetadata(msgSendMDKind, metadata);
+		llvm::CallInst *call = IRBuilderCreateCall(&Builder, imp, callArgs);
+		call->setMetadata(msgSendMDKind, metadata);
 		if (isSRet)
 		{
-			cast<llvm::CallInst>(ret)->addAttribute(1, Attribute::StructRet);
+			call->addAttribute(1, Attribute::StructRet);
 		}
+		ret = call;
 	}
 	if (isSRet)
 	{
 		ret = Builder.CreateLoad(sret);
+	}
+	if (ret->getType() != ReturnTy)
+	{
+		if (ret->getType()->canLosslesslyBitCastTo(ReturnTy))
+		{
+			ret = Builder.CreateBitCast(ret, ReturnTy);
+		}
+		else
+		{
+			llvm::Value *tmp = Builder.CreateAlloca(ReturnTy);
+			llvm::Value *storePtr =
+				Builder.CreateBitCast(tmp, llvm::PointerType::getUnqual(ret->getType()));
+			Builder.CreateStore(ret, storePtr);
+			ret = Builder.CreateLoad(tmp);
+		}
 	}
 	return ret;
 }

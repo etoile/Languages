@@ -515,6 +515,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	// If this is returning an object, autorelease it.
 	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
 	{
+/*
 		Value *retObj = ReturnBuilder.CreateLoad(RetVal);
 		if (isLKObject(ReturnType))
 		{
@@ -529,9 +530,10 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		}
 		else
 		{
-			//retObj = CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
+			retObj = CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
 		}
 		ReturnBuilder.CreateStore(retObj, RetVal);
+*/
 	}
 	LLVMType *functionRetTy =
 		CurrentFunction->getFunctionType()->getReturnType();
