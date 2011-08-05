@@ -193,7 +193,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 		case LKSymbolScopeLocal:
 			return Builder->LoadScopedValue([aVariable name]);
 		case LKSymbolScopeObject:
-			return Builder->LoadIvar([aVariable name], [aVariable typeEncoding]);
+			return Builder->LoadIvar([aVariable typeEncoding], [aVariable name]);
 		case LKSymbolScopeClass:
 			return Builder->LoadCvar([aVariable name]);
 		default:
