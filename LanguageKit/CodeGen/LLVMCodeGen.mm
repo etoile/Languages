@@ -193,9 +193,9 @@ const char * LKObjectEncoding = @encode(LKObject);
 		case LKSymbolScopeLocal:
 			return Builder->LoadScopedValue([aVariable name]);
 		case LKSymbolScopeObject:
-			return Builder->LoadIvar([aVariable typeEncoding], [aVariable name]);
+			return Builder->LoadIvar(aVariable);
 		case LKSymbolScopeClass:
-			return Builder->LoadCvar([aVariable name]);
+			return Builder->LoadCvar(aVariable);
 		default:
 			assert(0 && "Storing in unsupported variable type");
 			return NULL;

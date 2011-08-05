@@ -49,6 +49,14 @@
 	//Construct symbol table.
 	[symbols addSymbolsNamed: ivars ofKind: LKSymbolScopeObject];
 	[symbols addSymbolsNamed: cvars ofKind: LKSymbolScopeClass];
+	for (LKSymbol *s in [symbols classVariables])
+	{
+		[s setOwner: self];
+	}
+	for (LKSymbol *s in [symbols instanceVariables])
+	{
+		[s setOwner: self];
+	}
 	// Check the methods
 	FOREACH(methods, method, LKAST*)
 	{

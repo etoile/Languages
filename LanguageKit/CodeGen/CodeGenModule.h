@@ -18,6 +18,7 @@ using namespace::llvm;
 
 @class NSString;
 @class LKSymbolTable;
+@class LKSymbol;
 
 extern NSString *MsgSendSmallIntFilename;
 
@@ -198,11 +199,11 @@ public:
 	/**
 	 * Load the class variable for the current class.
 	 */
-	Value *LoadCvar(NSString *cVarName);
+	Value *LoadCvar(LKSymbol *cvar);
 	/**
 	 * Loads the instance variable from the current class.
 	 */
-	llvm::Value * LoadIvar(NSString *typeEncoding, NSString *iVarName);
+	llvm::Value * LoadIvar(LKSymbol *ivar);
 	/**
 	 * Loads a variable in the specified local value.
 	 */
