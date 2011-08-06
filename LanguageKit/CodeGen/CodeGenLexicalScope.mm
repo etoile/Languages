@@ -759,6 +759,8 @@ Value *CodeGenSubroutine::MessageSendSuper(CGBuilder *B, Function *F,
 	FunctionType *MethodTy = types.functionTypeFromString(selTypes,
 		isSRet, realReturnType);
 
+	MethodFamily family = MethodFamilyForSelector(selName);
+
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 
 	llvm::Value *msg = Runtime->GenerateMessageSendSuper(*B,
@@ -768,6 +770,13 @@ Value *CodeGenSubroutine::MessageSendSuper(CGBuilder *B, Function *F,
 	if (MethodTy->getReturnType() == realReturnType)
 	{
 		msg = Builder.CreateBitCast(msg, realReturnType);
+	}
+	// If we send a super message in the init family, it may consume self and
+	// generate a new self.  We store this to self, because no other use is
+	// valid.
+	if (family == Init)
+	{
+		CGM->assign->storeLocal(*B, Self, msg);
 	}
 	if (isObject(selTypes))
 	{
@@ -795,6 +804,10 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder *B,
 			realReturnType);
 
 	CGObjCRuntime *Runtime = CGM->getRuntime();
+	if (MethodFamilyForSelector(selName) == Init)
+	{
+		CGM->assign->retainValue(*B, receiver);
+	}
 
 	llvm::Value *msg = Runtime->GenerateMessageSend(*B,
 			MethodTy->getReturnType(), isSRet, SelfPtr, receiver, selName,
