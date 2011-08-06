@@ -63,7 +63,8 @@ protected:
 	void InitialiseFunction(NSString *functionName,
 	                        NSArray *arguments,
 	                        NSArray *locals,
-	                        NSString *typeEncoding=@"@@:");
+	                        NSString *typeEncoding=@"@@:",
+	                        BOOL returnsRetained=false);
 	/**
 	* Maps a selector to a SmallInt function name.
 	*/
@@ -300,6 +301,7 @@ public:
 class CodeGenMethod : public CodeGenSubroutine {
 public:
 	CodeGenMethod(NSString *methodName,
+	              NSString *functionName,
 	              NSArray *locals,
 	              NSArray *arguments,
 	              NSString *signature,

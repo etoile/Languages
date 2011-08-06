@@ -128,9 +128,13 @@ namespace etoile
 			                                  NSString* aSelector,
 			                                  llvm::Value *aValue) = 0;
 			/**
-			 * Releases a temporary value that was retained with retainResult().
+			 * Releases a temporary value.
 			 */
 			virtual void releaseValue(CGBuilder &aBuilder, llvm::Value *aValue) = 0;
+			/**
+			 * Retains a temporary value.
+			 */
+			virtual llvm::Value* retainValue(CGBuilder &aBuilder, llvm::Value *aValue) = 0;
 			virtual ~CodeGenAssignments();
 		};
 	}

@@ -109,17 +109,27 @@ struct ARCAssignments : public CodeGenAssignments
 	  */
 	llvm::Constant *retainAutoreleasedRV;
 	/**
+	 * Retains a value.
+	 *
+	 * id objc_retain(id)
+	 */
+	llvm::Constant *retain;
+	/**
 	 * Release a value.
 	 *
 	 * void objc_release(id)
 	 */
 	llvm::Constant *release;
+	/**
+	 * Autorelease a value.
+	 *
+	 * id objc_autorelease(id)
+	 */
+	llvm::Constant *autorelease;
 
 
 	ARCAssignments(CodeGenTypes &T) : CodeGenAssignments(T)
 	{
-		storeStrong =
-			Mod.getOrInsertFunction("objc_storeStrong", Types.idTy, Types.ptrToIdTy, Types.idTy, NULL);
 		storeWeak = 
 			Mod.getOrInsertFunction("objc_storeWeak", Types.idTy, Types.ptrToIdTy, Types.idTy, NULL);
 		loadWeak = 
@@ -128,15 +138,20 @@ struct ARCAssignments : public CodeGenAssignments
 			Mod.getOrInsertFunction("objc_autoreleaseReturnValue", Types.idTy, Types.idTy, NULL);
 		retainAutoreleasedRV = 
 			Mod.getOrInsertFunction("objc_retainAutoreleasedReturnValue", Types.idTy, Types.idTy, NULL);
+		retain = 
+			Mod.getOrInsertFunction("objc_retain", Types.idTy, Types.idTy, NULL);
 		release = 
 			Mod.getOrInsertFunction("objc_release", Types.voidTy, Types.idTy, NULL);
+		autorelease = 
+			Mod.getOrInsertFunction("objc_autorelease", Types.idTy, Types.idTy, NULL);
 		// None of the ARC functions can throw.
-		llvm::cast<llvm::Function>(storeStrong->stripPointerCasts())->setDoesNotThrow();
 		llvm::cast<llvm::Function>(storeWeak->stripPointerCasts())->setDoesNotThrow();
 		llvm::cast<llvm::Function>(loadWeak->stripPointerCasts())->setDoesNotThrow();
 		llvm::cast<llvm::Function>(autoreleaseRV->stripPointerCasts())->setDoesNotThrow();
 		llvm::cast<llvm::Function>(retainAutoreleasedRV->stripPointerCasts())->setDoesNotThrow();
 		llvm::cast<llvm::Function>(release->stripPointerCasts())->setDoesNotThrow();
+		llvm::cast<llvm::Function>(autorelease->stripPointerCasts())->setDoesNotThrow();
+		llvm::cast<llvm::Function>(retain->stripPointerCasts())->setDoesNotThrow();
 	}
 	void storeValue(CGBuilder &aBuilder,
 	                llvm::Value *anAddr,
@@ -145,8 +160,20 @@ struct ARCAssignments : public CodeGenAssignments
 	{
 		anAddr = ensureType(aBuilder, anAddr, Types.ptrToIdTy);
 		aValue = ensureType(aBuilder, aValue, Types.idTy);
-		llvm::Constant *writeBarrier = isWeak ? storeWeak : storeStrong;
-		aBuilder.CreateCall2(writeBarrier, anAddr, aValue);
+		if (isWeak)
+		{
+			aBuilder.CreateCall2(storeWeak, anAddr, aValue);
+		}
+		else
+		{
+			// We could use objc_storeStrong() here, but the ARC optimiser will
+			// generate that when it makes sense.  It is easier for the
+			// optimiser to spot and remove balanced retain / release
+			// operations if they are separate.
+			llvm::Value *retained = aBuilder.CreateCall(retain, aValue);
+			aBuilder.CreateCall(release, aBuilder.CreateLoad(anAddr));
+			aBuilder.CreateStore(retained, anAddr);
+		}
 	}
 	llvm::Value* loadValue(CGBuilder &aBuilder,
 	                       llvm::Value *anAddr,
@@ -221,17 +248,24 @@ struct ARCAssignments : public CodeGenAssignments
 	                                  NSString* aSelector,
 	                                  llvm::Value *aValue)
 	{
-		if (SelectorReturnsRetained(aSelector))
+		if (!SelectorReturnsRetained(aSelector))
 		{
 			ensureType(aBuilder, aValue, Types.idTy);
 			aValue = aBuilder.CreateCall(retainAutoreleasedRV, aValue);
 		}
+		ensureType(aBuilder, aValue, Types.idTy);
+		aValue = aBuilder.CreateCall(autorelease, aValue);
 		return aValue;
 	}
 	virtual void releaseValue(CGBuilder &aBuilder, llvm::Value *aValue)
 	{
-		ensureType(aBuilder, aValue, Types.idTy),
+		ensureType(aBuilder, aValue, Types.idTy);
 		aBuilder.CreateCall(release, aValue);
+	}
+	virtual llvm::Value* retainValue(CGBuilder &aBuilder, llvm::Value *aValue)
+	{
+		ensureType(aBuilder, aValue, Types.idTy);
+		return aBuilder.CreateCall(retain, aValue);
 	}
 };
 /**
@@ -372,6 +406,10 @@ struct GCAssignments : public CodeGenAssignments
 		return aValue;
 	}
 	virtual void releaseValue(CGBuilder &aBuilder, llvm::Value *aValue) {}
+	virtual llvm::Value* retainValue(CGBuilder &aBuilder, llvm::Value *aValue)
+	{
+		return aValue;
+	}
 };
 }
 CodeGenAssignments*

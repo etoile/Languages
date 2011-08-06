@@ -208,6 +208,7 @@ void CodeGenModule::EndCategory(void)
 }
 
 CodeGenMethod::CodeGenMethod(NSString *methodName,
+                             NSString *functionName,
                              NSArray *locals,
                              NSArray *arguments,
                              NSString *signature,
@@ -231,16 +232,24 @@ CodeGenMethod::CodeGenMethod(NSString *methodName,
 		[NSMutableArray arrayWithObjects: selfSymbol, cmdSymbol, nil];
 	[realArguments addObjectsFromArray: arguments];
 	CleanupBB = 0;
-	InitialiseFunction(methodName, realArguments, locals, signature);
+	bool returnsRetained = SelectorReturnsRetained(methodName);
+	InitialiseFunction(functionName, realArguments, locals, signature, returnsRetained);
 	// FIXME: self and _cmd should be implicit arguments and they should be
 	// handled as special things.
 	Self = variables[@"self"];
 	assert(Self);
 	// If the return type is an object it defaults to self.  If it's something
 	// else, it's NULL.
+	// FIXME: This retain of self is superfluous.  If the optimiser doesn't
+	// make it go away then we should move this up to the AST which knows that
+	// this is redundant
 	if (RetVal && (RetVal->getType() == types.ptrToIdTy))
 	{
-		Builder.CreateStore(Builder.CreateLoad(Self), RetVal);
+		// Methods in the -init family are passed an owning reference to self
+		// that they consume and then return a new owning reference.
+		llvm::Value *selfRet = Builder.CreateLoad(Self);
+		selfRet = CGM->assign->retainValue(Builder, selfRet);
+		Builder.CreateStore(selfRet, RetVal);
 	}
 }
 
@@ -254,12 +263,12 @@ void CodeGenModule::BeginInstanceMethod(NSString *methodName,
 	InstanceMethodNames.push_back(methodName);
 	InstanceMethodTypes.push_back(methodTypes);
 	inClassMethod = false;
-	methodName = [methodName stringByReplacingOccurrencesOfString: @":" withString: @"_"];
-	methodName = [NSString stringWithFormat: @"_i_%@_%@_%@", ClassName, CategoryName, methodName];
+	NSString *functionName = [methodName stringByReplacingOccurrencesOfString: @":" withString: @"_"];
+	functionName = [NSString stringWithFormat: @"_i_%@_%@_%@", ClassName, CategoryName, functionName];
 	assert(ScopeStack.empty()
 		&& "Creating a method inside something is not sensible");
-	ScopeStack.push_back(new CodeGenMethod(methodName, locals, arguments,
-				methodTypes, false, this));
+	ScopeStack.push_back(new CodeGenMethod(methodName, functionName, locals,
+		arguments, methodTypes, false, this));
 }
 
 void CodeGenModule::BeginClassMethod(NSString *methodName,
@@ -271,13 +280,13 @@ void CodeGenModule::BeginClassMethod(NSString *methodName,
 	// structure.
 	ClassMethodNames.push_back(methodName);
 	ClassMethodTypes.push_back(methodTypes);
-	methodName = [methodName stringByReplacingOccurrencesOfString: @":" withString: @"_"];
-	methodName = [NSString stringWithFormat: @"_c_%@_%@_%@", ClassName, CategoryName, methodName];
+	inClassMethod = true;
+	NSString *functionName = [methodName stringByReplacingOccurrencesOfString: @":" withString: @"_"];
+	functionName = [NSString stringWithFormat: @"_c_%@_%@_%@", ClassName, CategoryName, functionName];
 	assert(ScopeStack.empty() 
 		&& "Creating a method inside something is not sensible");
-	ScopeStack.push_back(new CodeGenMethod(methodName, locals, arguments,
-				methodTypes, true, this));
-	inClassMethod = true;
+	ScopeStack.push_back(new CodeGenMethod(methodName, functionName, locals,
+		arguments, methodTypes, true, this));
 }
 
 void CodeGenModule::EndMethod()

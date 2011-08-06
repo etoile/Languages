@@ -431,7 +431,8 @@ void CodeGenSubroutine::releaseVariable(llvm::Value *val)
 void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
                                            NSArray *arguments,
                                            NSArray *locals,
-                                           NSString *typeEncoding)
+                                           NSString *typeEncoding,
+                                           BOOL returnsRetained)
 {
 	ReturnType = [typeEncoding retain];
 	// FIXME: This is a very long function and difficult to follow.  Split it
@@ -513,9 +514,8 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	CGBuilder ReturnBuilder(realRetBB);
 
 	// If this is returning an object, autorelease it.
-	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
+	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType) && !returnsRetained)
 	{
-/*
 		Value *retObj = ReturnBuilder.CreateLoad(RetVal);
 		if (isLKObject(ReturnType))
 		{
@@ -533,7 +533,6 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 			retObj = CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
 		}
 		ReturnBuilder.CreateStore(retObj, RetVal);
-*/
 	}
 	LLVMType *functionRetTy =
 		CurrentFunction->getFunctionType()->getReturnType();
@@ -774,7 +773,6 @@ Value *CodeGenSubroutine::MessageSendSuper(CGBuilder *B, Function *F,
 	{
 		// Retain the result, and then release it at the end.
 		msg = CGM->assign->retainResult(*B, selName, msg);
-		//releaseVariable(cleanupBuilder.CreateLoad(tmp));
 	}
 	return msg;
 }
@@ -809,7 +807,6 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder *B,
 	{
 		// Retain the result, and then release it at the end.
 		msg = CGM->assign->retainResult(*B, selName, msg);
-		//releaseVariable(cleanupBuilder.CreateLoad(tmp));
 	}
 	return msg;
 }

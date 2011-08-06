@@ -2,6 +2,7 @@
 #import "LKSubclass.h"
 #import <EtoileFoundation/runtime.h>
 #import "Runtime/LKObject.h"
+#import <objc/runtime.h>
 
 /**
  * Maps method names to type encodings, gathered by iterating through all

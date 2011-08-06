@@ -96,19 +96,26 @@
 	{
 		[method compileWithGenerator: aGenerator];
 	}
-	// Emit the .cxx_destruct method that cleans up ivars
-	NSString *type = [[[self module] typesForMethod: @".cxx_destruct"] objectAtIndex: 0];
-	[aGenerator beginInstanceMethod: @".cxx_destruct"
-	               withTypeEncoding: type
-	                      arguments: nil
-	                         locals: nil];
-	void *nilValue = [aGenerator nilConstant];
-	for (NSString *ivarName in ivars)
+	if ([ivars count] > 0)
 	{
-		LKSymbol *ivar = [symbols symbolForName: ivarName];
-		[aGenerator storeValue: nilValue inVariable: ivar];
+		// Emit the .cxx_destruct method that cleans up ivars
+		// -.cxx_destruct has the same types as -dealloc, but if we're not
+		// linking against any ARC code then it's quite likely that we don't
+		// actually have any classes implementing -.cxx_destruct, so we can't
+		// ask for the types from the runtime and get a sensible answer.
+		NSString *type = [[[self module] typesForMethod: @"dealloc"] objectAtIndex: 0];
+		[aGenerator beginInstanceMethod: @".cxx_destruct"
+					   withTypeEncoding: type
+							  arguments: nil
+								 locals: nil];
+		void *nilValue = [aGenerator nilConstant];
+		for (NSString *ivarName in ivars)
+		{
+			LKSymbol *ivar = [symbols symbolForName: ivarName];
+			[aGenerator storeValue: nilValue inVariable: ivar];
+		}
+		[aGenerator endMethod];
 	}
-	[aGenerator endMethod];
 	[aGenerator endClass];
 	if ([[LKAST code] objectForKey: classname] == nil)
 	{
