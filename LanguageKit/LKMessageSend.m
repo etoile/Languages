@@ -108,6 +108,7 @@ static NSSet *ARCBannedMessages;
 		{
 			return [self check];
 		}
+		return NO;
 	}
 
 	BOOL success = (target == nil) || [target check];

@@ -1,8 +1,15 @@
 #import "LKMethod.h"
 #import "LKModule.h"
+#import "LKCompilerErrors.h"
+static NSSet *ARCBannedMessages;
+
 
 @implementation LKMethod
 @synthesize signature, statements;
++ (void)initialize
+{
+	ARCBannedMessages = [[NSSet alloc] initWithObjects: @"retain", @"release", @"autorelease", @"retainCount", nil];
+}
 + (id) methodWithSignature:(LKMessageSend*)aSignature
                     locals:(NSMutableArray*)locals
                 statements:(NSMutableArray*)statementList
@@ -34,6 +41,20 @@
 }
 - (BOOL)check
 {
+	NSString *selector = [signature selector];
+	if ([ARCBannedMessages containsObject: selector])
+	{
+		NSDictionary *errorDetails = D(
+			[NSString stringWithFormat: @"%@ may not be implemented in LanguageKit",
+				selector], kLKHumanReadableDescription,
+			self, kLKASTNode);
+		if ([LKCompiler reportError: LKInvalidSelectorError
+		                    details: errorDetails])
+		{
+			return [self check];
+		}
+		return NO;
+	}
 	BOOL success = YES;
 	FOREACH(statements, statement, LKAST*)
 	{
