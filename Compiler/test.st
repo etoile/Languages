@@ -10,7 +10,7 @@ NSObject subclass: TestBlock
 NSObject subclass: SmalltalkTool
 [
 	| +foo i |
-	init []
+	init [ super init. ]
 	+alloc [
 		foo := 'Class variable value set in class method'.
 		'Class method alloc called' log.
@@ -43,11 +43,13 @@ NSObject subclass: SmalltalkTool
 	]
 	run [
 	| task |
+		[ :x :y :z | x log. y log. z log.] value: '1' value: '2' value: '3'.
 		"Test cascade messages:"
 		self cascade1; cascade2 ; cascade1; cascade2.
 		(TestBlock new) log.
 		(NSObject new) log.
 		(NSString new) log.
+		i := 'ivar'.
 		"Test that messages with two arguments are parsed correctly"
 		self log:'a' and:'b'.
 		nil data.
@@ -65,15 +67,23 @@ NSObject subclass: SmalltalkTool
 		b log.
 	]
 
+	callBlock: x [
+		x log.
+		(x value: 'foo') log.
+	]
 	test: r [
 	| a b c|
 		"Test array creation."
 		a := {NSObject new. NSString new. NSArray new}.
 		NSGarbageCollector defaultCollector collectExhaustively.
 		a log.
+		'calling map' log.
+		self callBlock: [ :x | '1-arg block' log. x log. x ].
+		b map: [ :x | x log. x. ].
+		([ :x | x class ] value: foo) log.
 		"Test passing Smalltalk blocks to Objective-C objects"
-		b := a map:[ :x | x log. x class. ].
-		b map:[ :x | x log. x. ].
+		b := a map: [ :x | x log. x class. ].
+		'calling map again' log.
 		a insertObject:'test' atIndex:2.
 		NSGarbageCollector defaultCollector collectExhaustively.
 		b := a objectAtIndex:2.
@@ -130,6 +140,9 @@ NSObject subclass: SmalltalkTool
 		defines the type of this selector."
 		'Boxed then unboxed value: ' log.
 		i log.
+	]
+	dealloc [
+		'destroying Smalltalk tool.' log.
 	]
 
 	wibble: a [
