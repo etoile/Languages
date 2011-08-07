@@ -533,19 +533,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 				PointerType::getUnqual(IdTy));
 		ReceiverClass = Builder.CreateLoad(ReceiverClass);
 	}
-	std::vector<LLVMType*> impArgTypes;
-	if (isSRet)
-	{
-		impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
-	}
-	impArgTypes.push_back(Receiver->getType());
-	impArgTypes.push_back(SelectorTy);
-	
-	// Avoid an explicit cast on the IMP by getting a version that has the right
-	// return type.
-	llvm::FunctionType *impType = isSRet ?
-		llvm::FunctionType::get(LLVMType::getVoidTy(Context), impArgTypes, true) :
-		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
 	// Construct the structure used to look up the IMP
 	llvm::StructType *ObjCSuperTy = GetStructType(Context, 
 		Receiver->getType(), IdTy, NULL);
@@ -560,7 +547,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 
 	// The lookup function returns a slot, which can be safely cached.
 	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
-		IntTy, llvm::PointerType::getUnqual(impType), NULL);
+		IntTy, PtrTy, NULL);
 
 	llvm::Constant *lookupFunction =
 	TheModule.getOrInsertFunction("objc_slot_lookup_super",
@@ -601,21 +588,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 
-	// Look up the method implementation.
-	std::vector<LLVMType*> impArgTypes;
-	if (isSRet)
-	{
-		impArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
-	}
-	impArgTypes.push_back(Receiver->getType());
-	impArgTypes.push_back(SelectorTy);
-	
-	// Avoid an explicit cast on the IMP by getting a version that has the right
-	// return type.
-	llvm::FunctionType *impType = isSRet ?
-		llvm::FunctionType::get(LLVMType::getVoidTy(Context), impArgTypes, true) :
-		llvm::FunctionType::get(ReturnTy, impArgTypes, true);
-	
 	if (0 == Sender)
 	{
 		Sender = NULLPtr;
@@ -624,7 +596,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 	Builder.CreateStore(Receiver, ReceiverPtr, true);
 
 	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
-			IntTy, llvm::PointerType::getUnqual(impType), NULL);
+			IntTy, PtrTy, NULL);
 
 	llvm::Constant *lookupFunction = 
 		TheModule.getOrInsertFunction("objc_msg_lookup_sender",
