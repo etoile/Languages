@@ -1,5 +1,6 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSString.h>
+#import <Foundation/NSException.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -156,12 +157,26 @@ static void LKCleanupException(_Unwind_Reason_Code reason, void *exc)
 	free(exc);
 }
 
+typedef struct
+{
+	void* isa;
+	int flags;
+	int reserved;
+	id(*invoke)(void*,...);
+	void* descriptor;
+	void* context;
+} Block;
 /**
  * Create an exception object that will be unwound to the frame containing
  * context, return retval.
  */
-void __LanguageKitThrowNonLocalReturn(void *context, void *retval)
+void __LanguageKitThrowNonLocalReturn(Block *context, void *retval)
 {
+	//if (context->context != context)
+	{
+		[NSException raise: @"LKInvalidReturnException"
+		            format: @"Can not return from a block after the enclosing scope returned"];
+	}
 	LKException *exception = calloc(1, sizeof(LKException));
 	exception->exception.exception_class = LKEXCEPTION_TYPE;
 	exception->context = context;
@@ -189,6 +204,7 @@ void __LanguageKitTestNonLocalReturn(void *context,
                                     struct _Unwind_Exception *exception,
                                     void **retval)
 {
+	NSLog(@"Testing exeption for %@", context);
 	// This must only be called with a LanguageKit exception
 	assert(NULL != exception && exception->exception_class == LKEXCEPTION_TYPE);
 

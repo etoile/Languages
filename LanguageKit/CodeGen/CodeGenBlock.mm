@@ -204,6 +204,11 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 	// the frame where the block was created.  We can probably do that by just
 	// having a NULL object that's always bound into blocks as a non-byref
 	// construct
+	llvm::Value *returnFn = CGM->TheModule->getOrInsertFunction("__LanguageKitThrowNonLocalReturn",
+		types.voidTy, types.idTy, types.idTy, NULL);
+	Builder.CreateCall2(returnFn, 
+		Builder.CreateBitCast(blockContext, types.idTy),
+		Builder.CreateBitCast(RetVal, types.idTy));
 }
 
 void CodeGenBlock::SetBlockReturn(Value* RetVal) 

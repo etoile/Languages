@@ -477,6 +477,14 @@ void CodeGenModule::EndModule(void)
 	DUMP(TheModule);
 }
 
+extern "C" void __register_frame(void*);
+static void register_frame(void* f)
+{
+	NSLog(@"Registering frame");
+	__register_frame(f);
+}
+
+
 void CodeGenModule::compile(void)
 {
 	EndModule();
@@ -486,18 +494,8 @@ void CodeGenModule::compile(void)
 	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
+	//FIXME: Use PassManagerBuilder here
 	PassManager pm;
-#ifdef LIBOBJC2_PASSES
-	if (profilingEnabled)
-	{
-		pm.add(createTypeFeedbackDrivenInlinerPass());
-	}
-	pm.add(createClassIMPCachePass());
-	pm.add(createClassLookupCachePass());
-	pm.add(createClassMethodInliner());
-	pm.add(createGNUNonfragileIvarPass());
-	pm.add(createGNULoopIMPCachePass());
-#endif
 	pm.add(createScalarReplAggregatesPass());
 	pm.add(createPromoteMemoryToRegisterPass());
 	pm.add(createStripSymbolsPass(true));
@@ -518,6 +516,7 @@ void CodeGenModule::compile(void)
 	{
 		EE = ExecutionEngine::create(TheModule);
 		EE->InstallLazyFunctionCreator(findSymbol);
+		EE->InstallExceptionTableRegister(register_frame);
 	}
 	LOG("Compiling...\n");
 	EE->runStaticConstructorsDestructors(TheModule, false);

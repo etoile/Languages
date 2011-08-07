@@ -579,6 +579,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 
 	ExceptionBuilder.CreateStore(ExceptionBuilder.CreateTrunc(eh_selector, Int1Ty), is_catch);
 	ExceptionBuilder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 1), inException);
+	CreatePrintf(ExceptionBuilder, @"Caught exeptioni %d\n", ExceptionBuilder.CreateTrunc(eh_selector, Int1Ty));
 	ExceptionBuilder.CreateBr(CleanupBB);
 	ExceptionBuilder.ClearInsertionPoint();
 
@@ -766,7 +767,7 @@ Value *CodeGenSubroutine::MessageSendSuper(CGBuilder *B, Function *F,
 	llvm::Value *msg = Runtime->GenerateMessageSendSuper(*B,
 		MethodTy->getReturnType(), isSRet, Sender,
 		CGM->SuperClassName, SelfPtr, selName, selTypes, args,
-		CGM->inClassMethod, CleanupBB);
+		CGM->inClassMethod, ExceptionBB);
 	if (MethodTy->getReturnType() == realReturnType)
 	{
 		msg = Builder.CreateBitCast(msg, realReturnType);
