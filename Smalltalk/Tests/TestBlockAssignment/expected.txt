@@ -1,5 +1,3 @@
-The aBlock object is a BlockClosure: 1
-The aBlock object should not be a StackBlockClosure: 0
 block called with the secret string in the withBlock: method
 block called with the first string
 block called with the second string
