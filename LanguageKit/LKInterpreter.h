@@ -41,7 +41,7 @@ typedef struct
 - (void) dealloc;
 - (void) setValue: (id)value forSymbol: (NSString*)symbol;
 - (id) valueForSymbol: (NSString*)symbol;
-- (LKInterpreterVariableContext)contextForSymbol: (NSString*)symbol;
+- (LKInterpreterVariableContext)contextForSymbol: (LKSymbol*)symbol;
 @end
 
 

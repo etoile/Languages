@@ -4,7 +4,6 @@
 #import "Runtime/Symbol.h"
 #import "LanguageKit/LanguageKit.h"
 #import "LKInterpreter.h"
-#import "LKInterpretedBlockClosure.h"
 #import "LKInterpreterRuntime.h"
 #import <EtoileFoundation/runtime.h>
 #include <math.h>
@@ -91,31 +90,14 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	return [objects objectForKey: symbol];
 }
-- (LKInterpreterVariableContext)contextForSymbol: (NSString*)symbol
+- (LKInterpreterVariableContext)contextForSymbol: (LKSymbol*)symbol
 {
 	LKInterpreterVariableContext context;
 	context.context = self;
 	context.scope = [symbol scope];
 	if (context.scope == LKSymbolScopeExternal)
 	{
-		LKExternalSymbolScope externalScope = 
-			[(LKBlockSymbolTable*)self->symbolTable 
-				scopeOfExternalSymbol: symbol];
-		context.scope = [externalScope.scope scopeOfSymbol: symbol];
-		if ((context.scope == LKSymbolScopeLocal) ||
-		    (context.scope == LKSymbolScopeArgument))
-		{
-			while (context.context->symbolTable != externalScope.scope)
-			{
-				if (nil == context.context->parent)
-				{
-					[NSException raise: LKInterpreterException
-					            format: @"Couldn't locate external symbol %@",
-					                    symbol];
-				}
-				context.context = context.context->parent;
-			}
-		}
+		return [parent contextForSymbol: symbol];
 	}
 	return context;
 }
@@ -167,17 +149,18 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 
 	LKInterpreterVariableContext context = [currentContext contextForSymbol: target->symbol];
 
+	NSString *symbolName = [target->symbol name];
 	switch (context.scope)
 	{
 		case LKSymbolScopeLocal:
 		{
 			[context.context setValue: rvalue
-			                forSymbol: target->symbol];
+			                forSymbol: symbolName];
 			break;
 		}
 		case LKSymbolScopeObject:
 		{
-			LKSetIvar([context.context selfObject], target->symbol, rvalue);
+			LKSetIvar([context.context selfObject], symbolName, rvalue);
 			break;
 		}
 		case LKSymbolScopeClass:
@@ -187,14 +170,14 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			{
 				p = [p parent];
 			}
-			[(LKSubclass*)p setValue: rvalue forClassVariable: target->symbol];
+			[(LKSubclass*)p setValue: rvalue forClassVariable: symbolName];
 			break;
 		}
 		default:
-			NSAssert1(NO, @"Don't know how to assign to %@", target->symbol);
+			NSAssert1(NO, @"Don't know how to assign to %@", symbolName);
 			break;
 	}
-	return rvalue;	
+	return rvalue;
 }
 @end
 
@@ -202,10 +185,11 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKBlockExpr (LKInterpreter)
 - (id)executeWithArguments: (id*)args count: (int)count inContext: (LKInterpreterContext*)context
 {
+	NSArray *arguments = [[self symbols] arguments];
 	for (int i=0; i<count; i++)
 	{
 		[context setValue: args[i]
-		        forSymbol: [[(LKBlockSymbolTable*)[self symbols] args] objectAtIndex: i]];
+		        forSymbol: [[arguments objectAtIndex: i] name]];
 	}
 
 	id result = nil;
@@ -218,14 +202,39 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	}
 	return result;
 }
-- (id)interpretInContext: (LKInterpreterContext*)context
+- (id)interpretInContext: (LKInterpreterContext*)parentContext
 {
-	NSArray *argNames = [(LKMethodSymbolTable*)symbols args];
-	BlockClosure *closure =
-		[[LKInterpretedBlockClosure alloc] initWithAST: self
-		                                 argumentNames: argNames
-	                                         parentContext: context];
-	return [closure autorelease];
+	int count = [[[self symbols] arguments] count];
+	return [Block_copy(^(id arg0, ...) {
+		LKInterpreterContext *context = [[LKInterpreterContext alloc]
+		            initWithSymbolTable: [self symbols]
+		                         parent: parentContext];
+		__unsafe_unretained id params[count];
+		
+		va_list arglist;
+		va_start(arglist, arg0);
+		if (count > 0)
+		{
+			params[0] = arg0;
+		}
+		for (int i = 1; i < count; i++)
+		{
+			params[i] = (id) va_arg(arglist, __unsafe_unretained id);
+		}
+		va_end(arglist);
+		
+		@try
+		{
+			return [self executeWithArguments: params
+			                            count: count
+			                        inContext: context];
+		}
+		@finally
+		{
+			[context release];
+		}
+		return nil;
+	}) autorelease];
 }
 @end
 
@@ -247,7 +256,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		NSString *methodName = [[method signature] selector];
 		SEL sel = NSSelectorFromString(methodName);
 		//FIXME: check the superclass type explicitly
-		const char *type = [(LKModule*)[self parent] typeForMethod: methodName];
+		const char *type = [[[(LKModule*)[self parent] typesForMethod: methodName] objectAtIndex: 0] UTF8String];
 		Class destClass = isClassMethod ? object_getClass(cls) : cls;
 		class_replaceMethod(destClass, sel, LKInterpreterMakeIMP(destClass, type), type);
 		StoreASTForMethod(classname, isClassMethod, methodName, method);
@@ -289,28 +298,29 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)currentContext
 {
 	LKInterpreterVariableContext context = [currentContext contextForSymbol: symbol];
+	NSString *symbolName = [symbol name];
 	switch (context.scope)
 	{
 		case LKSymbolScopeObject:
 		{
-			return LKGetIvar([currentContext selfObject], symbol); 
+			return LKGetIvar([currentContext selfObject], symbolName); 
 		}
 		case LKSymbolScopeLocal:
 		case LKSymbolScopeArgument:
 		{
-			return [context.context valueForSymbol: symbol];
+			return [context.context valueForSymbol: symbolName];
 		}
 		case LKSymbolScopeBuiltin:
-			if ([symbol isEqualToString: @"self"] || [symbol isEqualToString: @"super"])
+			if ([symbolName isEqualToString: @"self"] || [symbolName isEqualToString: @"super"])
 			{
 				return [context.context selfObject];
 			}
-			else if ([symbol isEqualToString: @"nil"] || [symbol isEqualToString: @"Nil"])
+			else if ([symbolName isEqualToString: @"nil"] || [symbolName isEqualToString: @"Nil"])
 			{
 				return nil;
 			}
 		case LKSymbolScopeGlobal:
-			return NSClassFromString(symbol);
+			return NSClassFromString(symbolName);
 		case LKSymbolScopeClass:
 		{
 			LKAST *p = [self parent];
@@ -318,7 +328,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			{
 				p = [p parent];
 			}
-			return [(LKSubclass*)p valueForClassVariable: symbol];
+			return [(LKSubclass*)p valueForClassVariable: symbolName];
 		}
 		default:
 			break;
@@ -383,7 +393,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	NSString *receiverClassName = nil;
 	if ([target isKindOfClass: [LKDeclRef class]] && 
-		[[target symbol] isEqualToString: @"super"])
+		[[((LKDeclRef*)target)->symbol name] isEqualToString: @"super"])
 	{
 		LKAST *ast = [self parent];
 		while (nil != ast && ![ast isKindOfClass: [LKSubclass class]])
@@ -446,7 +456,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id result = [context selfObject];
 	@try
 	{
-		FOREACH(statements, element, LKAST*)
+		FOREACH([self statements], element, LKAST*)
 		{
 			@try
 			{
@@ -468,11 +478,12 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)executeWithReciever: (id)receiver arguments: (id*)args count: (int)count
 {
 	NSMutableArray *symbolnames = [NSMutableArray array];
+	LKMessageSend *signature = [self signature];
 	if ([signature arguments])
 	{
 		[symbolnames addObjectsFromArray: [signature arguments]];
 	}
-	[symbolnames addObjectsFromArray: [(LKMethodSymbolTable*)symbols locals]];
+	[symbolnames addObjectsFromArray: [symbols locals]];
 	
 	LKInterpreterContext *context = [[LKInterpreterContext alloc]
 							initWithSymbolTable: symbols
@@ -630,7 +641,7 @@ static uint8_t logBase2(uint8_t x)
 		NSString *methodName = [[method signature] selector];
 		SEL sel = NSSelectorFromString(methodName);
 		//FIXME: If overriding, check the superclass type explicitly
-		const char *type = [(LKModule*)[self parent] typeForMethod: methodName];
+		const char *type = [[[(LKModule*)[self parent] typesForMethod: methodName] objectAtIndex: 0] UTF8String];
 		Class destClass = isClassMethod ? object_getClass(cls) : cls;
 		class_addMethod(destClass, sel, LKInterpreterMakeIMP(destClass, type), type);
 		StoreASTForMethod(classname, isClassMethod, methodName, method);
