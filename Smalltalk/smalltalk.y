@@ -408,13 +408,19 @@ block_local_list(L) ::= .
 	L = [NSMutableArray array];
 }
 */
-argument_list(A) ::= arguments(T) BAR.
+argument(A) ::= COLON WORD(W).
 {
-	A = T;
+	A = W;
+}
+
+argument_list(L) ::= argument(A) arguments(T) BAR.
+{
+	[T insertObject: A atIndex: 0];
+	L = T;
 }
 argument_list ::= .
 
-arguments(L) ::= arguments(T) COLON WORD(A).
+arguments(L) ::= arguments(T) argument(A).
 {
 	[T addObject:A];
 	L = T;
