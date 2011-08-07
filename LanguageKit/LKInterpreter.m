@@ -94,7 +94,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	LKInterpreterVariableContext context;
 	context.context = self;
-	context.scope = [symbol scope];
+	context.scope = [[symbolTable symbolForName: [symbol name]] scope];
 	if (context.scope == LKSymbolScopeExternal)
 	{
 		return [parent contextForSymbol: symbol];
