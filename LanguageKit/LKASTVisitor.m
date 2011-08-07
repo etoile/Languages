@@ -20,7 +20,7 @@ DEFCLASS(LKMethod);
 DEFCLASS(LKModule);
 DEFCLASS(LKReturn);
 DEFCLASS(LKSubclass);
-//DEFCLASS(LKVariableDecl);
+DEFCLASS(LKVariableDecl);
 
 @implementation LKASTVisitor
 #define SETCLASS(x) do {x ## Class = [x class];} while(0)
@@ -44,7 +44,7 @@ DEFCLASS(LKSubclass);
 		SETCLASS(LKModule);
 		SETCLASS(LKReturn);
 		SETCLASS(LKSubclass);
-		//SETCLASS(LKVariableDecl);
+		SETCLASS(LKVariableDecl);
 	}
 }
 
@@ -77,7 +77,7 @@ DEFCLASS(LKSubclass);
 		TRYCLASS(Module);
 		TRYCLASS(Return);
 		TRYCLASS(Subclass);
-		//TRYCLASS(VariableDecl);
+		TRYCLASS(VariableDecl);
 		NSLog(@"Unrecognised AST node type: %@", [aNode class]);
 		return aNode;
 }

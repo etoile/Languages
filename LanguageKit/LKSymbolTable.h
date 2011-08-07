@@ -113,3 +113,17 @@ typedef enum
  */
 - (NSArray*)byRefVariables;
 @end
+
+/**
+ * Creates an NSString from a string returned by the runtime.  These strings
+ * are guaranteed to persist for the duration of the program, so there's no
+ * need to copy the data.
+ */
+__attribute__((unused))
+static NSString *NSStringFromRuntimeString(const char *cString)
+{
+	return [[[NSString alloc] initWithBytesNoCopy: (char*)cString
+	                                       length: strlen(cString)
+	                                     encoding: NSUTF8StringEncoding
+	                                 freeWhenDone: NO] autorelease];
+}

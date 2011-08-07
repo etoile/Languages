@@ -20,19 +20,6 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	return LKSymbolScopeInvalid;
 }
 
-/**
- * Creates an NSString from a string returned by the runtime.  These strings
- * are guaranteed to persist for the duration of the program, so there's no
- * need to copy the data.
- */
-static NSString *NSStringFromRuntimeString(const char *cString)
-{
-	return [[[NSString alloc] initWithBytesNoCopy: (char*)cString
-	                                       length: strlen(cString)
-	                                     encoding: NSUTF8StringEncoding
-	                                 freeWhenDone: NO] autorelease];
-}
-
 @implementation LKSymbolTable
 @synthesize enclosingScope, tableScope, symbols, declarationScope;
 - (void)dealloc

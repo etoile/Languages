@@ -42,8 +42,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKTypeHelpers.m\
 	LKInterpreter.m\
 	LKInterpreterRuntime.m\
-
-	#LKVariableDecl.m
+	LKVariableDecl.m
 
 ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKAST.h\
