@@ -29,7 +29,7 @@ include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/bundle.make
 -include ../../etoile.make
 
-smalltalk.m: smalltalk.y
+smalltalk.m: smalltalk.y lempar.c
 	@echo Generating parser...
 	@lemon smalltalk.y ; mv smalltalk.c smalltalk.m
 
