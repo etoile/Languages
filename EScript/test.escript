@@ -15,7 +15,8 @@ function Test()
 {
 	ETTranscript.show('Running Test() function');
 	ETTranscript.cr();
-	self.print = 
+	this.log();
+	this.print = 
 		function()
 		{
 			ETTranscript.show('Running a method in an object constructed from EScript');
@@ -23,4 +24,8 @@ function Test()
 		};
 }
 var t = new Test();
+'Test returned new object'.log();
+t.log();
 t.print();
+
+var nsobj = new NSObject();

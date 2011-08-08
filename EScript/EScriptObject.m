@@ -3,29 +3,37 @@
 #import <LanguageKitRuntime/BlockContext.h>
 
 @implementation EScriptObject
-- (id) copyWithZone: (NSZone*)zone
-{
-	return [[[self class] allocWithZone: zone] init];
-}
-
 - (id) construct
 {
 	return self;
 }
 @end
-@implementation BlockClosure (EScript)
+@interface _NSBlock : NSObject
+- (id)value;
+@end
+
+@implementation _NSBlock (EScript)
 - (id)construct
 {
-	id prototype = [context valueForSymbol: @"prototype"];
+	id prototype = [[self slotValueForKey: @"prototype"] clone];
 	if (nil == prototype)
 	{
 		prototype = [EScriptObject new];
 	}
-	id clone = [prototype clone];
-	id oldSelf = [context valueForSymbol: @"self"];
-	[context setValue: clone forSymbol: @"self"];
+	[self setValue: prototype forKey: @"this"];
 	[self value];
-	[context setValue: oldSelf forSymbol: @"self"];
-	return clone;
+	[self setValue: nil forKey: @"this"];
+	return [prototype autorelease];
+}
+@end
+
+@implementation NSObject (EScript)
++ (id)construct
+{
+	return [[[self alloc] init] autorelease];
+}
+- (id)value
+{
+	return self;
 }
 @end

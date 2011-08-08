@@ -8,6 +8,7 @@ domain parser generator, to produce an Objective-C parser.
 #import <LanguageKit/LanguageKit.h>
 #import "EScriptParser.h"
 #import "EScriptPreamble.h"
+#import "EScriptTransform.h"
 }
 %name EScriptParse
 %token_prefix TOKEN_
@@ -29,7 +30,11 @@ file ::= module(M) script(S).
 	// NSLog(@"%@", S);
 	[M addClass:S];
 	[p setAST:M];
-	//NSLog(@"Parsed AST: %@", M);
+	NSLog(@"Parsed AST: %@", M);
+	[M check];
+	[M visitWithVisitor: [[EScriptHoistIvars new] autorelease]];
+	[M visitWithVisitor: [[EScriptHiddenClassTransform new] autorelease]];
+	NSLog(@"Parsed AST: %@", M);
 }
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
@@ -96,11 +101,25 @@ statement_list(L) ::= statement_list(T) FUNCTION ident(F)
 	   of the function. Simply reference nil to return that by default. */
 	[B addObject:[LKDeclRef referenceWithSymbol:@"nil"]];
 	[T addObject:[LKVariableDecl variableDeclWithName:F]];
+	LKMessageSend *this = [LKMessageSend messageWithSelectorName: @"slotValueForKey:"];
+	[this setTarget: [LKDeclRef referenceWithSymbol: @"blockContext"]];
+	[this addArgument: [LKStringLiteral literalFromString: @"this"]];
+	NSMutableArray *constructThis = [NSMutableArray array];
+	[constructThis addObject: [LKVariableDecl variableDeclWithName: (LKToken*)@"this"]];
+	[constructThis addObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
+	                                                    expr: this]];
+	NSArray *storeContext = [NSArray arrayWithObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
+	                                                                            expr: [LKDeclRef referenceWithSymbol: @"blockContext"]]];
+	[constructThis addObject: [LKIfStatement ifStatementWithCondition: [LKCompare comparisonWithLeftExpression: [LKDeclRef referenceWithSymbol: @"this"]
+	                                                                                           rightExpression: [LKDeclRef referenceWithSymbol: @"nil"]]
+	                                                             then: storeContext
+	                                                             else: nil]];
+	[constructThis addObjectsFromArray: B];
 	[T addObject:
 		[LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:F]
 		                          expr:[LKBlockExpr blockWithArguments:A
 		                                                        locals:nil
-		                                                    statements:B]]];
+		                                                    statements:constructThis]]];
 	L = T;
 }
 statement_list(L) ::= statement_list(T) VAR declarations(A) SEMI.
@@ -380,7 +399,21 @@ expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
 	/* LanguageKit uses the result of the last statement as the return value
 	   of the function. Simply reference nil to return that by default. */
 	[B addObject:[LKDeclRef referenceWithSymbol:@"nil"]];
-	E = [LKBlockExpr blockWithArguments:A locals:nil statements:B];
+	LKMessageSend *this = [LKMessageSend messageWithSelectorName: @"slotValueForKey:"];
+	[this setTarget: [LKDeclRef referenceWithSymbol: @"blockContext"]];
+	[this addArgument: [LKStringLiteral literalFromString: @"this"]];
+	NSMutableArray *constructThis = [NSMutableArray array];
+	[constructThis addObject: [LKVariableDecl variableDeclWithName: (LKToken*)@"this"]];
+	[constructThis addObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
+	                                                    expr: this]];
+	NSArray *storeContext = [NSArray arrayWithObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
+	                                                                            expr: [LKDeclRef referenceWithSymbol: @"blockContext"]]];
+	[constructThis addObject: [LKIfStatement ifStatementWithCondition: [LKCompare comparisonWithLeftExpression: [LKDeclRef referenceWithSymbol: @"this"]
+	                                                                                           rightExpression: [LKDeclRef referenceWithSymbol: @"nil"]]
+	                                                             then: storeContext
+	                                                             else: nil]];
+	[constructThis addObjectsFromArray: B];
+	E = [LKBlockExpr blockWithArguments:A locals:nil statements: constructThis];
 }
 expression(E) ::= expression(T) DOT ident(K).
 {

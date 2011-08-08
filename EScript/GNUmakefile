@@ -16,7 +16,8 @@ ${BUNDLE_NAME}_OBJC_FILES = \
 	EScriptCompiler.m\
 	EScriptObject.m\
 	EScriptParser.m\
-	EScriptPreamble.m
+	EScriptPreamble.m\
+	EScriptTransform.m
 
 ${BUNDLE_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
 ${BUNDLE_NAME}_LDFLAGS += -g -lEtoileFoundation -lLanguageKit
@@ -25,9 +26,13 @@ ${BUNDLE_NAME}_CFLAGS += -Wno-implicit -g
 include $(GNUSTEP_MAKEFILES)/bundle.make
 -include ../../etoile.make
 
-escript.m: escript.y
+escript.m: escript.y lempar.c lemon
 	@echo Generating parser...
-	@lemon escript.y ; mv escript.c escript.m
+	@./lemon escript.y ; mv escript.c escript.m
+
+lemon: lemon.c
+	@echo Compiling parser generator
+	@$(CC) lemon.c -o lemon
 
 clean::
 	@rm -f escript.h escript.m escript.out
