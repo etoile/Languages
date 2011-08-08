@@ -47,6 +47,10 @@ class CodeGenBlock : public CodeGenSubroutine {
 	                                    llvm::StructType *blockType);
 public:
 	virtual void SetReturn(Value* RetVal);
+	/**
+	 * Returns the block's object.
+	 */
+	virtual llvm::Value *LoadBlockContext(void);
 
 	/**
 	 * Begins generating a block.  The arguments and locals contain an array of

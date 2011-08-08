@@ -101,6 +101,11 @@
  */
 - (void*) loadSelf;
 /**
+ * Returns the block object for the current closure.  Calling this when not in
+ * a block has undefined behaviour.
+ */
+- (void*) loadBlockContext;
+/**
  * Load a pointer to the named class.
  */
 - (void*) loadClassNamed:(NSString*)aClass;

@@ -786,6 +786,10 @@ Value *CodeGenSubroutine::MessageSendSuper(CGBuilder *B, Function *F,
 	}
 	return msg;
 }
+llvm::Value* CodeGenSubroutine::LoadBlockContext()
+{
+	return ConstantPointerNull::get(types.idTy);
+}
 
 // Preform a real message send.  Reveicer must be a real object, not a
 // SmallInt.

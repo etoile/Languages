@@ -66,6 +66,11 @@
 			{
 				return [aGenerator loadSelf];
 			}
+			else if ([symbolName isEqual:@"blockContext"])
+			{
+				// FIXME! This should only be valid inside a block
+				return [aGenerator loadBlockContext];
+			}
 			else if ([symbolName isEqual:@"nil"] || [symbolName isEqual:@"Nil"])
 			{
 				return [aGenerator nilConstant];

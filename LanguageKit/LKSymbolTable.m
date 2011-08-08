@@ -6,8 +6,10 @@ static NSMutableDictionary *NewClasses;
 
 static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
+	// FIXME: Hard-coding the names of builtins is REALLY ugly!
 	if ([aName isEqualToString:@"nil"]
 	   || [aName isEqualToString:@"Nil"]
+	   || [aName isEqualToString:@"blockContext"]
 	   || [aName isEqualToString:@"self"]
 	   || [aName isEqualToString:@"super"])
 	{
@@ -206,6 +208,10 @@ static NSInteger compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
 - (NSString*)stringValue
 {
 	return name;
+}
+- (NSString*)description
+{
+	return [name description];
 }
 - (NSUInteger)hash
 {

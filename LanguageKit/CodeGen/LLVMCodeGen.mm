@@ -229,6 +229,10 @@ const char * LKObjectEncoding = @encode(LKObject);
 {
 	return Builder->getCurrentScope()->LoadSelf();
 }
+- (void*) loadBlockContext
+{
+	return Builder->getCurrentScope()->LoadBlockContext();
+}
 
 - (void*) loadClassNamed:(NSString*)aClass
 {

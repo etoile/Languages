@@ -197,6 +197,10 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 		i++;
 	}
 }
+llvm::Value* CodeGenBlock::LoadBlockContext(void)
+{
+	return Builder.CreateBitCast(blockContext, types.idTy);
+}
 
 void CodeGenBlock::SetReturn(Value* RetVal)
 {

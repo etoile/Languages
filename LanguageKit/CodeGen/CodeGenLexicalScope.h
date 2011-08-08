@@ -139,6 +139,10 @@ protected:
 	void CreatePrintf(CGBuilder &Builder, NSString *str, Value *val);
 public:
 	/**
+	 * Returns the block's object.
+	 */
+	virtual llvm::Value *LoadBlockContext(void);
+	/**
 	 * Ends the current lexical scope.
 	 */
 	void EndScope(void);
