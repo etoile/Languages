@@ -33,12 +33,12 @@
 }
 - (NSString*) description
 {
-	return [NSString stringWithFormat:@"%@ := %@", target->symbol, expr];
+	return [NSString stringWithFormat:@"%@ := %@", [target symbol], expr];
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	void * rval = [expr compileWithGenerator: aGenerator];
-	LKSymbol *symbol = target->symbol;
+	LKSymbol *symbol = [target symbol];
 	switch([symbol scope])
 	{
 		case LKSymbolScopeLocal:

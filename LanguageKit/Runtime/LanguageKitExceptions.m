@@ -89,6 +89,7 @@ _Unwind_Reason_Code __LanguageKitEHPersonalityRoutine(
 			struct _Unwind_Exception *exceptionObject,
 			struct _Unwind_Context *context)
 {
+	NSLog(@"Called Lk personality routine!");
 	// This personality function is for version 1 of the ABI.  If you use it
 	// with a future version of the ABI, it won't know what to do, so it
 	// reports a fatal error and give up before it breaks anything.
@@ -172,7 +173,7 @@ typedef struct
  */
 void __LanguageKitThrowNonLocalReturn(Block *context, void *retval)
 {
-	//if (context->context != context)
+	if (context->context != context)
 	{
 		[NSException raise: @"LKInvalidReturnException"
 		            format: @"Can not return from a block after the enclosing scope returned"];

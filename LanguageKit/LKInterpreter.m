@@ -147,9 +147,9 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	id rvalue = [expr interpretInContext: currentContext];
 	[expr release];
 
-	LKInterpreterVariableContext context = [currentContext contextForSymbol: target->symbol];
+	LKInterpreterVariableContext context = [currentContext contextForSymbol: [target symbol]];
 
-	NSString *symbolName = [target->symbol name];
+	NSString *symbolName = [[target symbol] name];
 	switch (context.scope)
 	{
 		case LKSymbolScopeLocal:
@@ -297,6 +297,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKDeclRef (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)currentContext
 {
+	LKSymbol *symbol = [self symbol];
 	LKInterpreterVariableContext context = [currentContext contextForSymbol: symbol];
 	NSString *symbolName = [symbol name];
 	switch (context.scope)
@@ -393,7 +394,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 {
 	NSString *receiverClassName = nil;
 	if ([target isKindOfClass: [LKDeclRef class]] && 
-		[[((LKDeclRef*)target)->symbol name] isEqualToString: @"super"])
+		[[[(LKDeclRef*)target symbol] name] isEqualToString: @"super"])
 	{
 		LKAST *ast = [self parent];
 		while (nil != ast && ![ast isKindOfClass: [LKSubclass class]])

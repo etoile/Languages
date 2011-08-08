@@ -177,7 +177,7 @@ static NSSet *ARCBannedMessages;
 	if ([target isKindOfClass:[LKDeclRef class]])
 	{
 		LKDeclRef *ref = SAFECAST(LKDeclRef, target);
-		LKSymbol *symbol = ref->symbol;
+		LKSymbol *symbol = [ref symbol];
 		LKSymbolScope scope = [symbol scope];
 		if (scope == LKSymbolScopeGlobal)
 		{

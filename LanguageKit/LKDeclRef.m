@@ -5,6 +5,7 @@
 
 
 @implementation LKDeclRef
+@synthesize symbol;
 - (id) initWithSymbol:(NSString*)sym
 {
 	SUPERINIT;
