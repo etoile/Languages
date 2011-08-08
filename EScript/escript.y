@@ -30,11 +30,11 @@ file ::= module(M) script(S).
 	// NSLog(@"%@", S);
 	[M addClass:S];
 	[p setAST:M];
-	NSLog(@"Parsed AST: %@", M);
+	//NSLog(@"Parsed AST: %@", M);
 	[M check];
 	[M visitWithVisitor: [[EScriptHoistIvars new] autorelease]];
 	[M visitWithVisitor: [[EScriptHiddenClassTransform new] autorelease]];
-	NSLog(@"Parsed AST: %@", M);
+	//NSLog(@"Parsed AST: %@", M);
 }
 
 module(M) ::= module(O) LT LT pragma_dict(P) GT GT.
@@ -68,7 +68,7 @@ script(S) ::= statement_list(L).
 	[L insertObject:[EScriptPreamble preamble] atIndex:0];
 	// Ugly hack.  The +load method is being given a BOOL return type because
 	// someone did something stupid somewhere, and we're crashing in the auto-unboxing.
-	//[L addObject: [LKReturn returnWithExpr: [LKDeclRef referenceWithSymbol:@"nil"]]];
+	//[L addObject: [LKReturn returnWithExpr: [LKNilRef referenceWithSymbol:@"nil"]]];
 
 	//id m = [LKClassMethod methodWithSignature:[LKMessageSend messageWithSelectorName:@"load"]
 	id m = [LKInstanceMethod methodWithSignature: [LKMessageSend messageWithSelectorName:@"run"]
@@ -99,19 +99,19 @@ statement_list(L) ::= statement_list(T) FUNCTION ident(F)
 {
 	/* LanguageKit uses the result of the last statement as the return value
 	   of the function. Simply reference nil to return that by default. */
-	[B addObject:[LKDeclRef referenceWithSymbol:@"nil"]];
+	[B addObject:[LKNilRef referenceWithSymbol:@"nil"]];
 	[T addObject:[LKVariableDecl variableDeclWithName:F]];
 	LKMessageSend *this = [LKMessageSend messageWithSelectorName: @"slotValueForKey:"];
-	[this setTarget: [LKDeclRef referenceWithSymbol: @"blockContext"]];
+	[this setTarget: [LKBlockSelfRef referenceWithSymbol: @"blockContext"]];
 	[this addArgument: [LKStringLiteral literalFromString: @"this"]];
 	NSMutableArray *constructThis = [NSMutableArray array];
 	[constructThis addObject: [LKVariableDecl variableDeclWithName: (LKToken*)@"this"]];
 	[constructThis addObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
 	                                                    expr: this]];
 	NSArray *storeContext = [NSArray arrayWithObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
-	                                                                            expr: [LKDeclRef referenceWithSymbol: @"blockContext"]]];
+	                                                                            expr: [LKBlockSelfRef referenceWithSymbol: @"blockContext"]]];
 	[constructThis addObject: [LKIfStatement ifStatementWithCondition: [LKCompare comparisonWithLeftExpression: [LKDeclRef referenceWithSymbol: @"this"]
-	                                                                                           rightExpression: [LKDeclRef referenceWithSymbol: @"nil"]]
+	                                                                                           rightExpression: [LKNilRef referenceWithSymbol: @"nil"]]
 	                                                             then: storeContext
 	                                                             else: nil]];
 	[constructThis addObjectsFromArray: B];
@@ -161,7 +161,7 @@ declarations(L) ::= ident(V) EQ expression(E).
 
 statement(S) ::= RETURN SEMI.
 {
-	S = [LKBlockReturn returnWithExpr:[LKDeclRef referenceWithSymbol:@"nil"]];
+	S = [LKBlockReturn returnWithExpr:[LKNilRef referenceWithSymbol:@"nil"]];
 }
 statement(S) ::= RETURN expression(E) SEMI.
 {
@@ -398,18 +398,18 @@ expression(E) ::= FUNCTION LPAREN  argument_list(A) RPAREN
 {
 	/* LanguageKit uses the result of the last statement as the return value
 	   of the function. Simply reference nil to return that by default. */
-	[B addObject:[LKDeclRef referenceWithSymbol:@"nil"]];
+	[B addObject:[LKNilRef referenceWithSymbol:@"nil"]];
 	LKMessageSend *this = [LKMessageSend messageWithSelectorName: @"slotValueForKey:"];
-	[this setTarget: [LKDeclRef referenceWithSymbol: @"blockContext"]];
+	[this setTarget: [LKBlockSelfRef referenceWithSymbol: @"blockContext"]];
 	[this addArgument: [LKStringLiteral literalFromString: @"this"]];
 	NSMutableArray *constructThis = [NSMutableArray array];
 	[constructThis addObject: [LKVariableDecl variableDeclWithName: (LKToken*)@"this"]];
 	[constructThis addObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
 	                                                    expr: this]];
 	NSArray *storeContext = [NSArray arrayWithObject: [LKAssignExpr assignWithTarget: [LKDeclRef referenceWithSymbol: @"this"]
-	                                                                            expr: [LKDeclRef referenceWithSymbol: @"blockContext"]]];
+	                                                                            expr: [LKBlockSelfRef referenceWithSymbol: @"blockContext"]]];
 	[constructThis addObject: [LKIfStatement ifStatementWithCondition: [LKCompare comparisonWithLeftExpression: [LKDeclRef referenceWithSymbol: @"this"]
-	                                                                                           rightExpression: [LKDeclRef referenceWithSymbol: @"nil"]]
+	                                                                                           rightExpression: [LKNilRef referenceWithSymbol: @"nil"]]
 	                                                             then: storeContext
 	                                                             else: nil]];
 	[constructThis addObjectsFromArray: B];
@@ -443,7 +443,7 @@ expression(E) ::= FALSE.
 }
 expression(E) ::= NULL.
 {
-	E = [LKDeclRef referenceWithSymbol:@"nil"];
+	E = [LKNilRef referenceWithSymbol:@"nil"];
 }
 expression(E) ::= ident(V).
 {
