@@ -203,6 +203,10 @@ static NSInteger compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
 	[typeEncoding release];
 	[super dealloc];
 }
+- (NSString*)stringValue
+{
+	return name;
+}
 - (NSUInteger)hash
 {
 	return [name hash];

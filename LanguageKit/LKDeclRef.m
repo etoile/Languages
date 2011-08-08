@@ -46,7 +46,7 @@
 }
 - (NSString*) description
 {
-	return [symbol name];
+	return [symbol description];
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {

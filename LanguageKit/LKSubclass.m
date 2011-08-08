@@ -140,6 +140,10 @@
 {
 	return methods;
 }
+- (void)addInstanceVariable: (NSString*)anIvar
+{
+	[ivars addObject: anIvar];
+}
 - (void)dealloc
 {
   [classname release];

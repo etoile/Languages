@@ -38,4 +38,8 @@
  * Returns the methods
  */
 - (NSArray*)methods;
+/**
+ * Adds a new instance variable.
+ */
+- (void)addInstanceVariable: (NSString*)anIvar;
 @end
