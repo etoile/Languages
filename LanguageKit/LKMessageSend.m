@@ -176,34 +176,38 @@ static NSSet *ARCBannedMessages;
 	// TODO: The same is arguments if their type is @
 	if ([target isKindOfClass:[LKDeclRef class]])
 	{
-		LKDeclRef *ref = SAFECAST(LKDeclRef, target);
-		LKSymbol *symbol = [ref symbol];
-		LKSymbolScope scope = [symbol scope];
-		if (scope == LKSymbolScopeGlobal)
+		if ([target isKindOfClass:[LKSelfRef class]] ||
+		    [target isKindOfClass:[LKBlockSelfRef class]])
 		{
 			result = [aGenerator sendMessage:selector
-			                           types:type
-			                        toObject:receiver
-			                        withArgs:argv
-			                           count:argc];
+									   types:type
+									toObject:receiver
+									withArgs:argv
+									   count:argc];
 		}
-		else if (scope == LKSymbolScopeBuiltin)
+		else if ([target isKindOfClass: [LKSuperRef class]])
 		{
-			NSString *symbolName = [symbol name];
-			if ([symbolName isEqualToString:@"self"])
+			result = [aGenerator sendSuperMessage:selector
+											types:type
+										 withArgs:argv
+											count:argc];
+		}
+		else if ([target isKindOfClass:[LKNilRef class]])
+		{
+			return [aGenerator nilConstant];
+		}
+		else
+		{
+			LKDeclRef *ref = SAFECAST(LKDeclRef, target);
+			LKSymbol *symbol = [ref symbol];
+			LKSymbolScope scope = [symbol scope];
+			if (scope == LKSymbolScopeGlobal)
 			{
 				result = [aGenerator sendMessage:selector
-				                           types:type
-				                        toObject:receiver
-				                        withArgs:argv
-				                           count:argc];
-			}
-			else if ([symbolName isEqualToString:@"super"])
-			{
-				result = [aGenerator sendSuperMessage:selector
-				                                types:type
-				                             withArgs:argv
-				                                count:argc];
+										   types:type
+										toObject:receiver
+										withArgs:argv
+										   count:argc];
 			}
 		}
 	}

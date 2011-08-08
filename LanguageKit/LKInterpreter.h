@@ -36,6 +36,8 @@ typedef struct
 @private
 	NSMutableDictionary *objects;
 }
+@property (retain, nonatomic) id selfObject;
+@property (retain, nonatomic) id blockContextObject;
 - (id) initWithSymbolTable: (LKSymbolTable*)aTable
                     parent: (LKInterpreterContext*)aParent;
 - (void) dealloc;

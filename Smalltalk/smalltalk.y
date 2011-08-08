@@ -7,6 +7,30 @@ domain parser generator, to produce an Objective-C parser.
 #import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LanguageKit.h>
 #import "SmalltalkParser.h"
+
+static NSDictionary *DeclRefClasses;
+
+static LKDeclRef *RefForSymbol(NSString *aSymbol)
+{
+	if (nil == DeclRefClasses)
+	{
+		DeclRefClasses = [[NSDictionary dictionaryWithObjectsAndKeys:
+			[LKSelfRef class], @"self",
+			[LKSuperRef class], @"super",
+			[LKBlockSelfRef class], @"blockContext",
+			[LKNilRef class], @"nil",
+			[LKNilRef class], @"Nil",
+			nil] retain];
+	}
+	Class cls = [DeclRefClasses objectForKey: aSymbol];
+	LKDeclRef *ref = nil;
+	if (nil == cls)
+	{
+		cls = [LKDeclRef class];
+	}
+	return [cls referenceWithSymbol: aSymbol];
+}
+
 }
 %name SmalltalkParse
 %token_prefix TOKEN_
@@ -220,8 +244,8 @@ statement(S) ::= RETURN expression(E).
 }
 statement(S) ::= WORD(T) COLON EQ expression(E).
 {
-	S = [LKAssignExpr assignWithTarget:[LKDeclRef referenceWithSymbol:T] 
-	                              expr:E];
+	S = [LKAssignExpr assignWithTarget: RefForSymbol(T)
+	                              expr: E];
 }
 
 %syntax_error 
@@ -343,7 +367,7 @@ simple_expression(E) ::= WORD(V).
 	}
 	else
 	{
-		E = [LKDeclRef referenceWithSymbol: V];
+		E = RefForSymbol(V);
 	}
 }
 simple_expression(E) ::= SYMBOL(S).

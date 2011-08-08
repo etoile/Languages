@@ -58,12 +58,15 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @end
 
 @implementation LKInterpreterContext
+@synthesize selfObject, blockContextObject;
 - (id) initWithSymbolTable: (LKSymbolTable*)aTable
                     parent: (LKInterpreterContext*)aParent
 {
 	SUPERINIT;
 	ASSIGN(parent, aParent);
 	ASSIGN(symbolTable, aTable);
+	ASSIGN(selfObject, [aParent selfObject]);
+	ASSIGN(blockContextObject, [aParent blockContextObject]);
 	objects = [NSMutableDictionary new];
 	return self;
 }
@@ -72,6 +75,8 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	[objects release];
 	[symbolTable release];
 	[parent release];
+	[selfObject release];
+	[blockContextObject release];
 	[super dealloc];
 }
 - (LKInterpreterContext *) parent
@@ -100,14 +105,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		return [parent contextForSymbol: symbol];
 	}
 	return context;
-}
-- (id)selfObject
-{
-	if (nil != parent)
-	{
-		return [parent selfObject];
-	}
-	return [objects objectForKey: @"self"];
 }
 @end
 
@@ -311,15 +308,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		{
 			return [context.context valueForSymbol: symbolName];
 		}
-		case LKSymbolScopeBuiltin:
-			if ([symbolName isEqualToString: @"self"] || [symbolName isEqualToString: @"super"])
-			{
-				return [context.context selfObject];
-			}
-			else if ([symbolName isEqualToString: @"nil"] || [symbolName isEqualToString: @"Nil"])
-			{
-				return nil;
-			}
 		case LKSymbolScopeGlobal:
 			return NSClassFromString(symbolName);
 		case LKSymbolScopeClass:
@@ -336,6 +324,30 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	}
 	NSAssert(NO, @"Can't interpret decl ref");
 	return nil;
+}
+@end
+@implementation LKNilRef (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)currentContext
+{
+	return nil;
+}
+@end
+@implementation LKSelfRef (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)currentContext
+{
+	return [currentContext selfObject];
+}
+@end
+@implementation LKSuperRef (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)currentContext
+{
+	return [currentContext selfObject];
+}
+@end
+@implementation LKBlockSelfRef (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)currentContext
+{
+	return [currentContext blockContextObject];
 }
 @end
 

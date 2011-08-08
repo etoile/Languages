@@ -60,22 +60,6 @@
 		case LKSymbolScopeObject:
 		case LKSymbolScopeClass:
 			return [aGenerator loadVariable: symbol];
-		case LKSymbolScopeBuiltin:
-			// FIXME: It's ugly hard-coding language-specific names into the
-			// symbol table.  
-			if ([symbolName isEqual:@"self"] || [symbolName isEqual:@"super"])
-			{
-				return [aGenerator loadSelf];
-			}
-			else if ([symbolName isEqual:@"blockContext"])
-			{
-				// FIXME! This should only be valid inside a block
-				return [aGenerator loadBlockContext];
-			}
-			else if ([symbolName isEqual:@"nil"] || [symbolName isEqual:@"Nil"])
-			{
-				return [aGenerator nilConstant];
-			}
 		case LKSymbolScopeGlobal:
 			return [aGenerator loadClassNamed: symbolName];
 		default:
@@ -92,5 +76,40 @@
 {
 	[symbol release];
 	[super dealloc];
+}
+@end
+
+@implementation LKBuiltinSymbol
++ (LKBuiltinSymbol*)builtin
+{
+	return [[[self alloc] init] autorelease];
+}
+- (BOOL)check { return YES; }
+@end
+
+@implementation LKNilRef
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
+{
+	return [aGenerator nilConstant];
+}
+@end
+@implementation LKSelfRef
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
+{
+	return [aGenerator loadSelf];
+}
+@end
+@implementation LKSuperRef
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
+{
+	return [aGenerator loadSelf];
+}
+// TODO: Reject super as anything other than the target of a message expression
+@end
+@implementation LKBlockSelfRef
+// TODO: Reject blockContext when not in a block scope
+- (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
+{
+	return [aGenerator loadBlockContext];
 }
 @end

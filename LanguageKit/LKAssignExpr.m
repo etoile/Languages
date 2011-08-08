@@ -22,6 +22,7 @@
 	[expr setParent:self];
 	[target setParent:self];
 	BOOL check = [target check] && [expr check];
+	check &= ![target isKindOfClass: [LKBuiltinSymbol class]];
 	/*
 	if (check && [[target->symbol typeEncoding] characterAtIndex: 0] != '@')
 	{
@@ -48,7 +49,6 @@
 		case LKSymbolScopeClass:
 			[aGenerator storeValue: rval inVariable: symbol];
 			break;
-		case LKSymbolScopeBuiltin:
 		case LKSymbolScopeGlobal:
 		default:
 			return [super compileWithGenerator: aGenerator];

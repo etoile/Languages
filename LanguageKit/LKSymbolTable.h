@@ -14,8 +14,6 @@ typedef	enum
 	LKSymbolScopeObject,   /** Instance variable */
 	LKSymbolScopeClass,    /** Class variable */
 	LKSymbolScopeGlobal,   /** Global (only class names) */
-	LKSymbolScopeBuiltin   /** Variable with special semantics 
-							 (e.g. self / super) */
 } LKSymbolScope;
 
 /**

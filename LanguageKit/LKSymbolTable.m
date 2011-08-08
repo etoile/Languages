@@ -6,15 +6,6 @@ static NSMutableDictionary *NewClasses;
 
 static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
-	// FIXME: Hard-coding the names of builtins is REALLY ugly!
-	if ([aName isEqualToString:@"nil"]
-	   || [aName isEqualToString:@"Nil"]
-	   || [aName isEqualToString:@"blockContext"]
-	   || [aName isEqualToString:@"self"]
-	   || [aName isEqualToString:@"super"])
-	{
-		return LKSymbolScopeBuiltin;
-	}
 	if(NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName])
 	{
 		return LKSymbolScopeGlobal;
