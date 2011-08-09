@@ -193,7 +193,7 @@ void CodeGenModule::BeginCategory(NSString *aClass, NSString *Category)
 {
 	ASSIGN(ClassName, aClass);
 	SuperClassName = @"";
-	ASSIGN(CategoryName, CategoryName);
+	ASSIGN(CategoryName, Category);
 	InstanceMethodNames.clear();
 	InstanceMethodTypes.clear();
 	IvarNames.clear();
