@@ -31,6 +31,8 @@ NSObject subclass: SmalltalkTool
 		1 ifTrue:[
 			1 ifTrue:[
 				1 ifTrue:[
+					'Block context: ' log.
+					blockContext log.
 					a log.
 					a := 'Set local in nested block'.
 					i log.
@@ -77,6 +79,7 @@ NSObject subclass: SmalltalkTool
 		a := {NSObject new. NSString new. NSArray new}.
 		NSGarbageCollector defaultCollector collectExhaustively.
 		a log.
+		(a objectAtIndex: 0) flibble.
 		'calling map' log.
 		self callBlock: [ :x | '1-arg block' log. x log. x ].
 		b map: [ :x | x log. x. ].
@@ -150,4 +153,7 @@ NSObject subclass: SmalltalkTool
 		a log.
 		^a.
 	]
+]
+NSObject extend [
+	flibble [ 'category method called' log. ]
 ]
