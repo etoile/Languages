@@ -196,6 +196,8 @@ void CodeGenModule::BeginCategory(NSString *aClass, NSString *Category)
 	ASSIGN(CategoryName, Category);
 	InstanceMethodNames.clear();
 	InstanceMethodTypes.clear();
+	ClassMethodNames.clear();
+	ClassMethodTypes.clear();
 	IvarNames.clear();
 	CurrentClassTy = types->idTy;
 }
