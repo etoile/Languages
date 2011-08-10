@@ -124,7 +124,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 }
 
 - (void*) sendMessage:(NSString*)aMessage
-                types:(NSString*)types
+                types:(NSArray*)types
              toObject:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned)argc
@@ -145,7 +145,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 		Builder->getCurrentScope()->MessageSendSuper(sel, selTypes, args);
 }
 - (void*) sendMessage:(NSString*)aMessage
-                types:(NSString*)types
+                types:(NSArray*)types
                    to:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned)argc

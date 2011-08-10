@@ -115,13 +115,7 @@ static NSSet *ARCBannedMessages;
 
 	LKModule *module = [self module];
 
-	NSArray *possibleTypes = [module typesForMethod: selector];
-	ASSIGN(type, [possibleTypes objectAtIndex: 0]);
-	if ([possibleTypes count] > 1)
-	{
-		// FIXME: Do run-time type checking of the method type.
-		NSLog(@"Selector %@ is polymorphic, assuming %@", selector, type);
-	}
+	ASSIGN(type, [module typesForMethod: selector]);
 
 	FOREACH(arguments, arg, LKAST*)
 	{
@@ -187,8 +181,10 @@ static NSSet *ARCBannedMessages;
 		}
 		else if ([target isKindOfClass: [LKSuperRef class]])
 		{
+			// FIXME: We know the superclass, so we should be looking up the
+			// type encoding properly!
 			result = [aGenerator sendSuperMessage:selector
-											types:type
+											types: [type objectAtIndex: 0]
 										 withArgs:argv
 											count:argc];
 		}

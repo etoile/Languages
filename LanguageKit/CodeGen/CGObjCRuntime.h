@@ -32,17 +32,47 @@ namespace llvm {
   class Function;
 }
 
+namespace etoile {
+namespace languagekit {
 typedef const llvm::SmallVectorImpl<strong_id<NSString *> > StringVector;
 
 /// Implements runtime-specific code generation functions.
 class CGObjCRuntime {
+protected:
+	CodeGenTypes *types;
+	/**
+	 * LLVM context
+	 */
+	llvm::LLVMContext &Context;
+	/**
+	 * Metadata kind used to indicate message sends.
+	 */
+	unsigned msgSendMDKind;
 public:
-  virtual ~CGObjCRuntime();
-  
+	CGObjCRuntime(CodeGenTypes *T, llvm::LLVMContext &C) : types(T), Context(C) {};
+	virtual ~CGObjCRuntime();
+	/**
+	 * Looks up the IMP for a specific method and the type encoding.
+	 */
+	virtual void lookupIMPAndTypes(CGBuilder &Builder,
+	                               llvm::Value *Sender,
+	                               llvm::Value *&Receiver,
+	                               NSString *selName,
+	                               llvm::Value *&imp,
+	                               llvm::Value *&typeEncoding) = 0;
+	/**
+	 * Calls an Objective-C method via its pointer.
+	 */
+	llvm::Value *callIMP(CGBuilder &Builder,
+	                     llvm::Value *imp,
+	                     NSString *typeEncoding,
+	                     llvm::Value *Receiver,
+	                     llvm::Value *Selector,
+	                     llvm::SmallVectorImpl<llvm::Value*> &ArgV,
+	                     llvm::BasicBlock *CleanupBlock,
+	                     llvm::MDNode *metadata);
   /// Generate an Objective-C message send operation
   virtual llvm::Value *GenerateMessageSend(CGBuilder &Builder,
-                                           LLVMType *ReturnTy,
-	                                       bool isSRet,
                                            llvm::Value *Sender,
                                            llvm::Value *Receiver,
 	                                       NSString *selName,
@@ -52,20 +82,16 @@ public:
                                            NSString *ReceiverClass=0,
 										   bool isClassMessage=false)=0;
 	llvm::Value *GenerateMessageSend(CGBuilder &Builder,
-	                                LLVMType *ReturnTy,
-	                                bool isSRet,
 	                                llvm::Value *Sender,
 	                                llvm::Value *Receiver,
 	                                NSString *selName,
 	                                NSString *selTypes)
 	{
 		llvm::SmallVector<llvm::Value*,0> noArgs;
-		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
+		return GenerateMessageSend(Builder, Sender, Receiver,
 				selName, selTypes, noArgs);
 	}
 	llvm::Value *GenerateMessageSend(CGBuilder &Builder,
-	                                LLVMType *ReturnTy,
-	                                bool isSRet,
 	                                llvm::Value *Sender,
 	                                llvm::Value *Receiver,
 	                                NSString *selName,
@@ -73,7 +99,7 @@ public:
 	                                llvm::Value *Value)
 	{
 		llvm::SmallVector<llvm::Value*,1> arg = llvm::SmallVector<llvm::Value*,1>(1, Value);
-		return GenerateMessageSend(Builder, ReturnTy, isSRet, Sender, Receiver,
+		return GenerateMessageSend(Builder, Sender, Receiver,
 				selName, selTypes, arg);
 	}
   /// Generate the function required to register all Objective-C components in
@@ -114,8 +140,6 @@ public:
   virtual llvm::Value *GenerateProtocolRef(CGBuilder &Builder, NSString
       *ProtocolName) =0;
   virtual llvm::Value *GenerateMessageSendSuper(CGBuilder &Builder,
-                                                LLVMType *ReturnTy,
-	                                            bool isSRet,
                                                 llvm::Value *Sender,
                                                 NSString *SuperClassName,
                                                 llvm::Value *Receiver,
@@ -170,11 +194,10 @@ public:
 /// Creates an instance of an Objective-C runtime class.  
 //TODO: This should include some way of selecting which runtime to target.
 CGObjCRuntime *CreateObjCRuntime(
-    etoile::languagekit::CodeGenTypes *types,
+    CodeGenTypes *types,
     llvm::Module &M,
     llvm::LLVMContext &C,
-    LLVMType *LLVMIntType,
-    LLVMType *LLVMLongType,
     bool enableGC,
     bool isJit);
+}}
 #endif

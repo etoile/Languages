@@ -105,8 +105,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 		llvm::BasicBlock::Create(Context, "entry", LiteralInitFunction);
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 
-	Runtime = CreateObjCRuntime(types, *TheModule, Context, types->intTy,
-			IntegerType::get(Context, sizeof(long) * 8), gc, jit);
+	Runtime = CreateObjCRuntime(types, *TheModule, Context, gc, jit);
 
 	// FIXME: Leak
 	//Debug = new DIFactory(*TheModule);
@@ -342,8 +341,8 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 
 	Value *V = MakeConstantString(arg);
 
-	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, types->idTy,
-		false,  NULL, Class, constructor, 0, V);
+	Value *S = Runtime->GenerateMessageSend(InitialiseBuilder, 
+		NULL, Class, constructor, 0, V);
 	// Define a global variable and store it there.
 	GlobalVariable *GS = new GlobalVariable(*TheModule, types->idTy, false,
 			GlobalValue::InternalLinkage, ConstantPointerNull::get(types->idTy),

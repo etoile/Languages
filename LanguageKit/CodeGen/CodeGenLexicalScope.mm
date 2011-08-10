@@ -132,7 +132,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			{
 				castSelName = @"boxedFloatWithDouble:";
 			}
-			Value *boxed = Runtime->GenerateMessageSend(*B, types.idTy, false,
+			Value *boxed = Runtime->GenerateMessageSend(*B,
 					NULL, BoxedFloatClass, castSelName, NULL, V);
 			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 			{
@@ -142,11 +142,11 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 		}
 		case ':':
 		{
-			Value *SymbolCalss = B->CreateLoad(
+			Value *SymbolClass = B->CreateLoad(
 				CGM->getModule()->getGlobalVariable(
 					".smalltalk_symbol_class", true));
-			return Runtime->GenerateMessageSend(*B, types.idTy, false, NULL,
-					SymbolCalss, @"SymbolForSelector:", NULL, V);
+			return Runtime->GenerateMessageSend(*B, NULL,
+					SymbolClass, @"SymbolForSelector:", NULL, V);
 		}
 		case '{':
 		{
@@ -177,7 +177,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			}
 			if (passValue)
 			{
-				Value *boxed = Runtime->GenerateMessageSend(*B, types.idTy, false,
+				Value *boxed = Runtime->GenerateMessageSend(*B,
 						NULL, NSValueClass, castSelName, NULL, V);
 				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 				{
@@ -200,7 +200,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			SmallVector<Value*,2> args;
 			args.push_back(V);
 			args.push_back(CGM->MakeConstantString([typestr substringToIndex: end]));
-			return Runtime->GenerateMessageSend(*B, types.idTy, false, LoadSelf(),
+			return Runtime->GenerateMessageSend(*B, LoadSelf(),
 					NSValueClass, @"valueWithBytesOrNil:objCType:", NULL, args);
 		}
 		// Map void returns to nil
@@ -333,7 +333,7 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 	//TODO: We don't actually use the size numbers for anything, but someone else
 	//does, so make these sensible:
 	returnTypeString = [returnTypeString stringByAppendingString: @"12@0:4"];
-	return MessageSend(B, F, val, castSelName, returnTypeString);
+	return CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName, returnTypeString);
 }
 
 llvm::Value *CodeGenSubroutine::loadByRefPointer(llvm::Value *byRefPointer)
@@ -745,47 +745,6 @@ void CodeGenSubroutine::UnboxArgs(CGBuilder *B,
 	}
 }
 
-Value *CodeGenSubroutine::MessageSendSuper(CGBuilder *B, Function *F,
-		NSString *selName, NSString *selTypes,
-		llvm::SmallVectorImpl<llvm::Value*> &argv)
-{
-	Value *Sender = LoadSelf();
-	Value *SelfPtr = Sender;
-
-	llvm::SmallVector<Value*, 8> args;
-	UnboxArgs(B, F, argv, args, selTypes);
-
-	bool isSRet = false;
-	LLVMType *realReturnType = NULL;
-	FunctionType *MethodTy = types.functionTypeFromString(selTypes,
-		isSRet, realReturnType);
-
-	MethodFamily family = MethodFamilyForSelector(selName);
-
-	CGObjCRuntime *Runtime = CGM->getRuntime();
-
-	llvm::Value *msg = Runtime->GenerateMessageSendSuper(*B,
-		MethodTy->getReturnType(), isSRet, Sender,
-		CGM->SuperClassName, SelfPtr, selName, selTypes, args,
-		CGM->inClassMethod, ExceptionBB);
-	if (MethodTy->getReturnType() == realReturnType)
-	{
-		msg = Builder.CreateBitCast(msg, realReturnType);
-	}
-	// If we send a super message in the init family, it may consume self and
-	// generate a new self.  We store this to self, because no other use is
-	// valid.
-	if (family == Init)
-	{
-		CGM->assign->storeLocal(*B, Self, msg);
-	}
-	if (isObject(selTypes))
-	{
-		// Retain the result, and then release it at the end.
-		msg = CGM->assign->retainResult(*B, selName, msg);
-	}
-	return msg;
-}
 llvm::Value* CodeGenSubroutine::LoadBlockContext()
 {
 	return ConstantPointerNull::get(types.idTy);
@@ -802,25 +761,14 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder *B,
 	//FIXME: Find out why this crashes.
 	Value *SelfPtr = NULL;//LoadSelf();
 
-	bool isSRet = false;
-	LLVMType *realReturnType = NULL;
-	FunctionType *MethodTy =
-		types.functionTypeFromString(selTypes, isSRet,
-			realReturnType);
-
 	CGObjCRuntime *Runtime = CGM->getRuntime();
 	if (MethodFamilyForSelector(selName) == Init)
 	{
 		CGM->assign->retainValue(*B, receiver);
 	}
-
 	llvm::Value *msg = Runtime->GenerateMessageSend(*B,
-			MethodTy->getReturnType(), isSRet, SelfPtr, receiver, selName,
+			SelfPtr, receiver, selName,
 			selTypes, argv, ExceptionBB);
-	if (MethodTy->getReturnType() == realReturnType)
-	{
-		msg = B->CreateBitCast(msg, realReturnType);
-	}
 	if (isObject(selTypes))
 	{
 		// Retain the result, and then release it at the end.
@@ -830,20 +778,18 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder *B,
 }
 
 Value *CodeGenSubroutine::MessageSend(CGBuilder *B, Function *F, Value
-		*receiver, NSString *selName, NSString *selTypes)
+		*receiver, NSString *selName, NSArray *selTypes)
 {
 	SmallVector<Value*,0> noArgs;
 	return MessageSend(B, F, receiver, selName, selTypes, noArgs);
 }
 Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
-                                        Function *F,
-                                        Value *receiver,
-                                        NSString *selName,
-                                        NSString *selTypes,
-                                        SmallVectorImpl<Value*> &boxedArgs)
+                                      Function *F,
+                                      Value *receiver,
+                                      NSString *selName,
+                                      NSArray *possibleSelTypes,
+                                      SmallVectorImpl<Value*> &boxedArgs)
 {
-	//LOG("Sending message to %s", selName);
-	//LOG(" (%s)\n", selTypes);
 	Value *Int = B->CreatePtrToInt(receiver, types.intPtrTy);
 	Value *IsSmallInt = B->CreateTrunc(Int, Type::getInt1Ty(CGM->Context), "is_small_int");
 
@@ -890,6 +836,7 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 		Result = IRBuilderCreateInvoke(&SmallIntBuilder, SmallIntFunction,
 				smallIntContinueBB, ExceptionBB, Args,
 				"small_int_message_result");
+		SmallIntBuilder.SetInsertPoint(smallIntContinueBB);
 		SmallIntBuilder.ClearInsertionPoint();
 	}
 	else
@@ -899,18 +846,14 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 		Result = SmallIntBuilder.CreateBitCast(receiver, types.idTy);
 		Result = SmallIntBuilder.CreateCall(BoxFunction, Result,
 			"boxed_small_int");
-		SmallVector<Value*, 8> unboxedArgs;
-		UnboxArgs(&SmallIntBuilder, F, boxedArgs, unboxedArgs, selTypes);
-		Result = MessageSendId(&SmallIntBuilder, Result, selName, selTypes,
-				unboxedArgs);
+		Result = MessageSendId(SmallIntBuilder, Result, selName, possibleSelTypes,
+				boxedArgs);
 		smallIntContinueBB = SmallIntBuilder.GetInsertBlock();
 	}
 	SmallInt = 0;
 
-	SmallVector<Value*, 8> unboxedArgs;
-	UnboxArgs(&RealObjectBuilder, F, boxedArgs, unboxedArgs, selTypes);
-	Value *ObjResult = MessageSendId(&RealObjectBuilder, receiver, selName,
-		selTypes, unboxedArgs);
+	Value *ObjResult = MessageSendId(RealObjectBuilder, receiver, selName,
+		possibleSelTypes, boxedArgs);
 	// This will create some branches - get the new basic block.
 	RealObject = RealObjectBuilder.GetInsertBlock();
 
@@ -918,8 +861,23 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 	if ((Result->getType() != ObjResult->getType())
 			&& (ObjResult->getType() != Type::getVoidTy(CGM->Context)))
 	{
-		Result = SmallIntBuilder.CreateBitCast(Result, ObjResult->getType(),
-			"cast_small_int_result");
+		if (Result->getType() == types.charTy)
+		{
+			Result = BoxValue(&SmallIntBuilder, Result, @"C");
+		}
+		if (Result->getType()->isFloatTy())
+		{
+			Result = BoxValue(&SmallIntBuilder, Result, @"f");
+		}
+		if (Result->getType()->isDoubleTy())
+		{
+			Result = BoxValue(&SmallIntBuilder, Result, @"d");
+		}
+		else
+		{
+			Result = SmallIntBuilder.CreateBitCast(Result,
+					ObjResult->getType(), "cast_small_int_result");
+		}
 	}
 	SmallIntBuilder.CreateBr(Continue);
 
@@ -1039,15 +997,68 @@ Value *CodeGenSubroutine::SymbolConstant(NSString *symbol)
 }
 
 Value *CodeGenSubroutine::MessageSendId(Value *receiver,
-                                          NSString *selName,
-                                          NSString *selTypes,
-                                          SmallVectorImpl<Value*> &argv)
+                                        NSString *selName,
+                                        NSArray *possibleSelTypes,
+                                        SmallVectorImpl<Value*> &argv)
 {
-	SmallVector<Value*, 8> args;
-	UnboxArgs(&Builder, CurrentFunction, argv, args, selTypes);
-	LOG("Generating object message send %s\n", [selName UTF8String]);
-	return BoxValue(&Builder, MessageSendId(&Builder, receiver, selName,
-		selTypes, args), selTypes);
+	return MessageSendId(Builder, receiver, selName, possibleSelTypes, argv);
+}
+Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
+                                        Value *receiver,
+                                        NSString *selName,
+                                        NSArray *possibleSelTypes,
+                                        SmallVectorImpl<Value*> &argv)
+{
+	if ([possibleSelTypes count] == 0)
+	{
+		NSString *selTypes = [possibleSelTypes objectAtIndex: 0];
+		SmallVector<Value*, 8> args;
+		UnboxArgs(&B, CurrentFunction, argv, args, selTypes);
+		return BoxValue(&B, MessageSendId(&B, receiver, selName,
+			selTypes, args), selTypes);
+	}
+
+	llvm::Value *imp;
+	llvm::Value *typeEncoding;
+	// FIXME!  Work out why actually doing LoadSelf() for the sender crashes.
+	// It doesn't look like it should...
+	// Look up the IMP and the real type encoding
+	CGM->Runtime->lookupIMPAndTypes(B, NULL, receiver, selName, imp, typeEncoding);
+	llvm::Constant *StrCmp = CGM->getModule()->getOrInsertFunction("strcmp",
+				types.intTy, types.ptrToVoidTy, types.ptrToVoidTy, NULL);
+	llvm::Value *zero = llvm::ConstantInt::get(types.intTy, 0);
+	llvm::BasicBlock *finish = 
+		llvm::BasicBlock::Create(CGM->Context, "end_polymorphic_send",
+					CurrentFunction);
+	CGBuilder finishBuilder(finish);
+	llvm::PHINode *phi = IRBuilderCreatePHI(&finishBuilder, types.idTy, [possibleSelTypes count]);
+
+	for (NSString *selTypes in possibleSelTypes)
+	{
+		// See if this is the correct type.
+		llvm::Value *strCmpResult =
+			B.CreateCall2(StrCmp, CGM->MakeConstantString(selTypes), typeEncoding);
+		llvm::Value *isCorrect = B.CreateICmpEQ(strCmpResult, zero);
+		llvm::BasicBlock *match = 
+			llvm::BasicBlock::Create(CGM->Context, "next_try", CurrentFunction);
+		llvm::BasicBlock *fail = 
+			llvm::BasicBlock::Create(CGM->Context, "fail_test", CurrentFunction);
+		B.CreateCondBr(isCorrect, match, fail);
+		B.SetInsertPoint(match);
+		// Do the real message send
+		SmallVector<Value*, 8> args;
+		UnboxArgs(&B, CurrentFunction, argv, args, selTypes);
+		llvm::Value *result = BoxValue(&B, MessageSendId(&B,
+					receiver, selName, selTypes, args), selTypes);
+		phi->addIncoming(result, B.GetInsertBlock());
+		B.CreateBr(finish);
+		B.SetInsertPoint(fail);
+	}
+	// FIXME: We should probably throw some kind of exception here.  Or maybe
+	// call out to the interpreter to do the real call.
+	B.CreateUnreachable();
+	B.SetInsertPoint(finish);
+	return phi;
 }
 Value *CodeGenSubroutine::CallFunction(NSString *functionName,
                                          NSString *argTypes,
@@ -1126,21 +1137,52 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 }
 
 Value *CodeGenSubroutine::MessageSendSuper(NSString *selName,
-                                             NSString *selTypes,
-                                             SmallVectorImpl<Value*> &argv)
+                                           NSString *selTypes,
+                                           SmallVectorImpl<Value*> &argv)
 {
-	return BoxValue(&Builder, MessageSendSuper(&Builder, CurrentFunction, selName,
-		selTypes, argv), selTypes);
+	Value *Sender = LoadSelf();
+	Value *SelfPtr = Sender;
+
+	llvm::SmallVector<Value*, 8> args;
+	UnboxArgs(&Builder, CurrentFunction,  argv, args, selTypes);
+
+	bool isSRet = false;
+	LLVMType *realReturnType = NULL;
+	FunctionType *MethodTy = types.functionTypeFromString(selTypes,
+		isSRet, realReturnType);
+
+	MethodFamily family = MethodFamilyForSelector(selName);
+
+	CGObjCRuntime *Runtime = CGM->getRuntime();
+
+	llvm::Value *msg = Runtime->GenerateMessageSendSuper(Builder,
+		Sender, CGM->SuperClassName, SelfPtr, selName, selTypes, args,
+		CGM->inClassMethod, ExceptionBB);
+	if (MethodTy->getReturnType() == realReturnType)
+	{
+		msg = Builder.CreateBitCast(msg, realReturnType);
+	}
+	// If we send a super message in the init family, it may consume self and
+	// generate a new self.  We store this to self, because no other use is
+	// valid.
+	if (family == Init)
+	{
+		CGM->assign->storeLocal(Builder, Self, msg);
+	}
+	if (isObject(selTypes))
+	{
+		// Retain the result, and then release it at the end.
+		msg = CGM->assign->retainResult(Builder, selName, msg);
+	}
+	return BoxValue(&Builder, msg, selTypes);
 }
 Value *CodeGenSubroutine::MessageSend(Value *receiver,
                                       NSString *selName,
-                                      NSString *selTypes,
+                                      NSArray *possibleSelTypes,
                                       SmallVectorImpl<Value*> &argv)
 {
-	LOG("Generating %s (%s)\n", [selName UTF8String], [selTypes UTF8String]);
-	Value *msg = MessageSend(&Builder, CurrentFunction, receiver, selName,
-			selTypes, argv);
-	return BoxValue(&Builder, msg, selTypes);
+	return MessageSend(&Builder, CurrentFunction, receiver, selName,
+			possibleSelTypes, argv);
 }
 Value *CodeGenSubroutine::LoadClassVariable(NSString *className,
                                             NSString *cVarName)

@@ -106,28 +106,29 @@ protected:
 	 */
 	void initializeVariableWithValue(LKSymbol *aSym, llvm::Value *val);
 	/**
-	* Send a message to the superclass.
-	*/
-	Value *MessageSendSuper(CGBuilder *B, Function *F, NSString *selName,
-			NSString *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
-	/**
-	* Preform a real message send.  Reveicer must be a real object, not a
-	* SmallInt.
+	* Preform a real message send.  Receiver must be a real object, not a
+	* SmallInt.  Assumes that there is only one possible type for the selector.
 	*/
 	Value *MessageSendId(CGBuilder *B, Value *receiver, NSString *selName,
 		NSString *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
+	/**
+	* Preform a real message send.  Receiver must be a real object, not a
+	* SmallInt.  Tries all of the possible types.
+	*/
+	Value *MessageSendId(CGBuilder &B, Value *receiver, NSString *selName,
+			NSArray *selTypes, SmallVectorImpl<Value*> &argv);
 	/**
 	 * Send a message to something that may be a SmallInt or an Objective-C
 	 * object.
 	 */
 	Value *MessageSend(CGBuilder *B, Function *F, Value *receiver, NSString 
-	    *selName, NSString *selTypes, SmallVectorImpl<Value*> &boxedArgs);
+	    *selName, NSArray *selTypes, SmallVectorImpl<Value*> &boxedArgs);
 	/**
 	 * Send a message with no arguments to something that is either a SmallInt or
 	 * an Objective-C object.
 	 */
 	Value *MessageSend(CGBuilder *B, Function *F, Value *receiver, NSString 
-	    *selName, NSString *selTypes);
+	    *selName, NSArray *selTypes);
 	/**
 	 * Cleans up a variable at the end of a method.
 	 */
@@ -157,19 +158,19 @@ public:
 	/**
 	 * Send a message to the superclass.
 	 */
-	Value *MessageSendSuper(NSString *selName, NSString *selTypes, 
+	Value *MessageSendSuper(NSString *selName, NSString *selTypes,
 			SmallVectorImpl<Value*> &argv);
 
 	/**
-	 * Send a message to an Objective-C object.
+	 * Send a message to an Objective-C object.  
 	 */
-	Value *MessageSendId(Value *receiver, NSString *selName, NSString 
-	    *selTypes, SmallVectorImpl<Value*> &argv);
+	Value *MessageSendId(Value *receiver, NSString *selName,
+		NSArray *selTypes, llvm::SmallVectorImpl<llvm::Value*> &argv);
 
 	/**
 	 * Send a message to a Smalltalk object.
 	 */
-	Value *MessageSend(Value *receiver, NSString *selName, NSString 
+	Value *MessageSend(Value *receiver, NSString *selName, NSArray
 	    *selTypes, SmallVectorImpl<Value*> &boxedArgs);
 
 	/**

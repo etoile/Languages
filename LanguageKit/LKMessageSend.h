@@ -10,8 +10,8 @@
 	NSString * selector;
 	/** Array of AST nodes which evaluate to the message arguments. */
 	NSMutableArray * arguments;
-	/** Types for the method */
-	NSString *type;
+	/** Array of possible type encodings for the method */
+	NSArray *type;
 }
 /**
  * Return a new message send.

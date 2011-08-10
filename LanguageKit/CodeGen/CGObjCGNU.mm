@@ -38,8 +38,6 @@ static int ProtocolVersion = 2;
 namespace {
 class CGObjCGNU : public CGObjCRuntime {
 private:
-	llvm::LLVMContext &Context;
-	CodeGenTypes *types;
 	llvm::Module &TheModule;
 	LLVMStructType *SelStructTy;
 	LLVMType *SelectorTy;
@@ -61,19 +59,10 @@ private:
 	// Some zeros used for GEPs in lots of places.
 	llvm::Constant *Zeros[2];
 	llvm::Constant *NULLPtr;
-	unsigned msgSendMDKind;
 	bool GC;
 	bool JIT;
 	GlobalVariable *ObjCIvarOffsetVariable(NSString *className,
 		NSString *ivarName, uint64_t Offset);
-	llvm::Value *callIMP(CGBuilder &Builder,
-	                     llvm::Value *imp,
-	                     NSString *typeEncoding,
-	                     llvm::Value *Receiver,
-	                     llvm::Value *Selector,
-	                     llvm::SmallVectorImpl<llvm::Value*> &ArgV,
-	                     llvm::BasicBlock *CleanupBlock,
-	                     llvm::MDNode *metadata);
 	llvm::Constant *GenerateIvarList(
 		NSString *ClassName,
 		StringVector &IvarNames,
@@ -116,14 +105,16 @@ public:
 		CodeGenTypes *cgTypes,
 		llvm::Module &Mp,
 		llvm::LLVMContext &C,
-		LLVMType *LLVMIntType,
-		LLVMType *LLVMLongType,
 		bool enableGC,
 		bool isJit);
+	virtual void lookupIMPAndTypes(CGBuilder &Builder,
+	                               llvm::Value *Sender,
+	                               llvm::Value *&Receiver,
+	                               NSString *selName,
+	                               llvm::Value *&imp,
+	                               llvm::Value *&typeEncoding);
 	virtual llvm::Constant *GenerateConstantString(NSString *String);
 	virtual llvm::Value *GenerateMessageSend(CGBuilder &Builder,
-	                                         LLVMType *ReturnTy,
-	                                         bool isSRet,
 	                                         llvm::Value *Sender,
 	                                         llvm::Value *Receiver,
 	                                         NSString *selName,
@@ -133,8 +124,6 @@ public:
 	                                         NSString *ReceiverClass,
 	                                         bool isClassMessage);
 	virtual llvm::Value *GenerateMessageSendSuper(CGBuilder &Builder,
-	                                              LLVMType *ReturnTy,
-	                                              bool isSRet,
 	                                              llvm::Value *Sender,
 	                                              NSString *SuperClassName,
 	                                              llvm::Value *Receiver,
@@ -223,22 +212,19 @@ static std::string SymbolNameForMethod(NSString *ClassName,
 CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
                      llvm::Module &M,
                      llvm::LLVMContext &C,
-                     LLVMType *LLVMIntType,
-                     LLVMType *LLVMLongType,
                      bool enableGC,
                      bool isJit) :
-                      Context(C),
-                      TheModule(M),
-                      IntTy(LLVMIntType),
-                      LongTy(LLVMLongType)
+                      CGObjCRuntime(cgTypes, C),
+                      TheModule(M)
 {
+	IntTy = types->intTy;
+	LongTy = types->longTy;
 	GC = enableGC;
 	JIT = isJit;
 	if (GC)
 	{
 		RuntimeVersion = 10;
 	}
-	types = cgTypes;
 	Zeros[0] = ConstantInt::get(LLVMType::getInt32Ty(Context), 0);
 	Zeros[1] = Zeros[0];
 
@@ -432,7 +418,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
 	return ObjCStr;
 }
-llvm::Value *CGObjCGNU::callIMP(
+llvm::Value *CGObjCRuntime::callIMP(
                             CGBuilder &Builder,
                             llvm::Value *imp,
                             NSString *typeEncoding,
@@ -497,7 +483,10 @@ llvm::Value *CGObjCGNU::callIMP(
 					Builder.GetInsertBlock()->getParent());
 		llvm::InvokeInst *inv = IRBuilderCreateInvoke(&Builder, imp, continueBB, CleanupBlock,
 			callArgs);
-		inv->setMetadata(msgSendMDKind, metadata);
+		if (0 != metadata)
+		{
+			inv->setMetadata(msgSendMDKind, metadata);
+		}
 		Builder.SetInsertPoint(continueBB);
 		if (isSRet)
 		{
@@ -508,7 +497,10 @@ llvm::Value *CGObjCGNU::callIMP(
 	else
 	{
 		llvm::CallInst *call = IRBuilderCreateCall(&Builder, imp, callArgs);
-		call->setMetadata(msgSendMDKind, metadata);
+		if (0 != metadata)
+		{
+			call->setMetadata(msgSendMDKind, metadata);
+		}
 		if (isSRet)
 		{
 			call->addAttribute(1, Attribute::StructRet);
@@ -541,8 +533,6 @@ llvm::Value *CGObjCGNU::callIMP(
 ///send to self with special delivery semantics indicating which class's method
 ///should be called.
 llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
-                                            LLVMType *ReturnTy,
-                                            bool isSRet,
                                             llvm::Value *Sender,
                                             NSString *SuperClassName,
                                             llvm::Value *Receiver,
@@ -601,11 +591,47 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 	return callIMP(Builder, imp, selTypes, Receiver,
 			Selector, ArgV, CleanupBlock, node);
 }
+void CGObjCGNU::lookupIMPAndTypes(CGBuilder &Builder,
+                                  llvm::Value *Sender,
+                                  llvm::Value *&Receiver,
+                                  NSString *selName,
+                                  llvm::Value *&imp,
+                                  llvm::Value *&typeEncoding)
+{
+	llvm::Value *Selector = GetSelector(Builder, selName, 0);
+
+	if (0 == Sender)
+	{
+		Sender = NULLPtr;
+	}
+	llvm::Value *ReceiverPtr = Builder.CreateAlloca(Receiver->getType());
+	Builder.CreateStore(Receiver, ReceiverPtr, true);
+
+	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
+			IntTy, PtrTy, NULL);
+
+	llvm::Constant *lookupFunction = 
+		TheModule.getOrInsertFunction("objc_msg_lookup_sender",
+				llvm::PointerType::getUnqual(SlotTy), ReceiverPtr->getType(),
+				Selector->getType(), Sender->getType(), NULL);
+	// Lookup does not capture the receiver pointer
+	if (llvm::Function *LookupFn = dyn_cast<llvm::Function>(lookupFunction)) 
+	{
+		LookupFn->setDoesNotCapture(1);
+	}
+
+	llvm::CallInst *slot = 
+		Builder.CreateCall3(lookupFunction, ReceiverPtr, Selector, Sender);
+
+	slot->setOnlyReadsMemory();
+
+	imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
+	typeEncoding = Builder.CreateLoad(Builder.CreateStructGEP(slot, 2));
+	Receiver = Builder.CreateLoad(ReceiverPtr, true);
+}
 
 /// Generate code for a message send expression.
 llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
-                                            LLVMType *ReturnTy,
-                                            bool isSRet,
                                             llvm::Value *Sender,
                                             llvm::Value *Receiver,
                                             NSString *selName,
@@ -1337,14 +1363,12 @@ llvm::Value *CGObjCGNU::OffsetOfIvar(CGBuilder &Builder,
 		"ivar"));
 }
 
-CGObjCRuntime *CreateObjCRuntime(CodeGenTypes *types,
-                                 llvm::Module &M,
-                                 llvm::LLVMContext &C,
-                                 LLVMType *LLVMIntType,
-                                 LLVMType *LLVMLongType,
-                                 bool enableGC,
-                                 bool isJit)
+CGObjCRuntime *etoile::languagekit::CreateObjCRuntime(CodeGenTypes *types,
+                                                      llvm::Module &M,
+                                                      llvm::LLVMContext &C,
+                                                      bool enableGC,
+                                                      bool isJit)
 {
-  return new CGObjCGNU(types, M, C, LLVMIntType, LLVMLongType, enableGC, isJit);
+  return new CGObjCGNU(types, M, C, enableGC, isJit);
 }
 CGObjCRuntime::~CGObjCRuntime() {}

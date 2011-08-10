@@ -66,7 +66,7 @@
  * integer contained within an object pointer).
  */
 - (void*) sendMessage:(NSString*)aMessage
-                types:(NSString*)types
+                types:(NSArray*)types
                    to:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned int)argc;
@@ -83,7 +83,7 @@
  * Objective-C object, not a small integer.
  */
 - (void*) sendMessage:(NSString*)aMessage
-                types:(NSString*)types
+                types:(NSArray*)types
              toObject:(void*)receiver
              withArgs:(void**)argv
                 count:(unsigned int)argc;
