@@ -63,7 +63,7 @@ private:
 	llvm::Constant *NULLPtr;
 	unsigned msgSendMDKind;
 	bool GC;
-private:
+	bool JIT;
 	GlobalVariable *ObjCIvarOffsetVariable(NSString *className,
 		NSString *ivarName, uint64_t Offset);
 	llvm::Value *callIMP(CGBuilder &Builder,
@@ -118,7 +118,8 @@ public:
 		llvm::LLVMContext &C,
 		LLVMType *LLVMIntType,
 		LLVMType *LLVMLongType,
-		bool enableGC);
+		bool enableGC,
+		bool isJit);
 	virtual llvm::Constant *GenerateConstantString(NSString *String);
 	virtual llvm::Value *GenerateMessageSend(CGBuilder &Builder,
 	                                         LLVMType *ReturnTy,
@@ -224,13 +225,15 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
                      llvm::LLVMContext &C,
                      LLVMType *LLVMIntType,
                      LLVMType *LLVMLongType,
-                     bool enableGC) :
+                     bool enableGC,
+                     bool isJit) :
                       Context(C),
                       TheModule(M),
                       IntTy(LLVMIntType),
                       LongTy(LLVMLongType)
 {
 	GC = enableGC;
+	JIT = isJit;
 	if (GC)
 	{
 		RuntimeVersion = 10;
@@ -282,6 +285,15 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
                                     NSString *SelName,
                                     NSString *SelTypes) 
 {
+	// In JIT mode, we hard-code selectors.
+	if (JIT)
+	{
+		SEL sel = sel_registerTypedName_np([SelName UTF8String], [SelTypes UTF8String]);
+		return Builder.CreateIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)sel),
+			SelectorTy);
+	}
+
+
 	// For static selectors, we return an alias for now then store them all in
 	// a list that the runtime will initialise later.
 
@@ -1313,8 +1325,9 @@ CGObjCRuntime *CreateObjCRuntime(CodeGenTypes *types,
                                  llvm::LLVMContext &C,
                                  LLVMType *LLVMIntType,
                                  LLVMType *LLVMLongType,
-                                 bool enableGC)
+                                 bool enableGC,
+                                 bool isJit)
 {
-  return new CGObjCGNU(types, M, C, LLVMIntType, LLVMLongType, enableGC);
+  return new CGObjCGNU(types, M, C, LLVMIntType, LLVMLongType, enableGC, isJit);
 }
 CGObjCRuntime::~CGObjCRuntime() {}

@@ -172,8 +172,9 @@ public:
 CGObjCRuntime *CreateObjCRuntime(
     etoile::languagekit::CodeGenTypes *types,
     llvm::Module &M,
-	llvm::LLVMContext &C,
+    llvm::LLVMContext &C,
     LLVMType *LLVMIntType,
     LLVMType *LLVMLongType,
-	bool enableGC);
+    bool enableGC,
+    bool isJit);
 #endif

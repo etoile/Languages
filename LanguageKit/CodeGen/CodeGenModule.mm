@@ -105,7 +105,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 
 	Runtime = CreateObjCRuntime(types, *TheModule, Context, types->intTy,
-			IntegerType::get(Context, sizeof(long) * 8), gc);
+			IntegerType::get(Context, sizeof(long) * 8), gc, jit);
 
 	// FIXME: Leak
 	//Debug = new DIFactory(*TheModule);
