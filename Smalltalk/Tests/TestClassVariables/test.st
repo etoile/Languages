@@ -4,11 +4,11 @@ NSObject subclass: Thing [
 	 
 	 +initialize [
 	       ETTranscript show: 'Class initialisation'; cr.
-	       instances := NSMutableArray new.
+	       instances := NSMutableString new.
 	 ]
 
 	 init [
-	       instances addObject: self.
+	       instances appendString: 'a'.
 	       ETTranscript show: 'Object initialisation (';
 	       		    show: instances ; show: ')'; cr.
 	       ^ self.
