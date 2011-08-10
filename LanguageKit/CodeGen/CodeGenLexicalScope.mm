@@ -946,8 +946,7 @@ Value *CodeGenSubroutine::LoadSelf(void)
 
 Value *CodeGenSubroutine::LoadClass(NSString *classname)
 {
-	return CGM->getRuntime()->LookupClass(Builder,
-		CGM->MakeConstantString(classname));
+	return CGM->getRuntime()->LookupClass(Builder, classname);
 }
 
 Value *CodeGenSubroutine::LoadValueOfTypeAtOffsetFromObject(

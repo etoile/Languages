@@ -146,13 +146,13 @@ static NSInteger compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
 
 - (NSArray*)arguments
 {
-	return collectSymbolsOfType(symbols, LKSymbolScopeArgument);
+	NSMutableArray *arguments = collectSymbolsOfType(symbols, LKSymbolScopeArgument);
+	[arguments sortUsingFunction: compareSymbolOrder context: NULL];
+	return arguments;
 }
 - (NSArray*)locals
 {
-	NSMutableArray *locals = collectSymbolsOfType(symbols, LKSymbolScopeLocal);
-	[locals sortUsingFunction: compareSymbolOrder context: NULL];
-	return locals;
+	return collectSymbolsOfType(symbols, LKSymbolScopeLocal);
 }
 - (NSArray*)byRefVariables;
 {

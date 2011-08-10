@@ -144,7 +144,7 @@ public:
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Value *LookupClass(CGBuilder &Builder,
-	                                 llvm::Value *ClassName);
+	                                 NSString *ClassName);
 	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
 	                                 llvm::Value *SelTypes);
@@ -272,12 +272,22 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 // This has to perform the lookup every time, since posing and related
 // techniques can modify the name -> class mapping.
 llvm::Value *CGObjCGNU::LookupClass(CGBuilder &Builder,
-                                    llvm::Value *ClassName) 
+                                    NSString *ClassName) 
 {
+	if (JIT)
+	{
+		Class cls = NSClassFromString(ClassName);
+		if (Nil != cls)
+		{
+			return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)cls),
+			IdTy);
+		}
+	}
+	llvm::Value *className = MakeConstantString(ClassName);
 	llvm::Constant *ClassLookupFn =
 		TheModule.getOrInsertFunction("objc_lookup_class", IdTy, PtrToInt8Ty,
 			NULL);
-	return Builder.CreateCall(ClassLookupFn, ClassName);
+	return Builder.CreateCall(ClassLookupFn, className);
 }
 
 /// Statically looks up the selector for the specified name / type pair.
@@ -289,7 +299,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 	if (JIT)
 	{
 		SEL sel = sel_registerTypedName_np([SelName UTF8String], [SelTypes UTF8String]);
-		return Builder.CreateIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)sel),
+		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)sel),
 			SelectorTy);
 	}
 
@@ -544,8 +554,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 	// FIXME: Posing will break this.
-	llvm::Value *ReceiverClass = LookupClass(Builder,
-			MakeConstantString(SuperClassName));
+	llvm::Value *ReceiverClass = LookupClass(Builder, SuperClassName);
 	// If it's a class message, get the metaclass
 	if (isClassMessage)
 	{

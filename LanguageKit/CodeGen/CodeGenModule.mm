@@ -128,7 +128,7 @@ void CodeGenModule::CreateClassPointerGlobal(NSString *className, const char *gl
 	// Initialise it in the module load function
 	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
 				Runtime->LookupClass(InitialiseBuilder,
-					MakeConstantString(className)), types->idTy), global);
+					className), types->idTy), global);
 }
 
 
@@ -334,13 +334,11 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 {
 	if (JIT)
 	{
-		id constant = [NSClassFromString(className) performSelector: NSSelectorFromString(constructor) withObject: arg];
+		id constant = [NSClassFromString(className) performSelector: NSSelectorFromString(constructor) withObject: (__bridge id)[arg UTF8String]];
 		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(types->intPtrTy, (uintptr_t)[constant retain]),
 			types->idTy);
 	}
-	GlobalVariable *ClassPtr =
-		TheModule->getGlobalVariable([className UTF8String], true);
-	Value *Class = InitialiseBuilder.CreateLoad(ClassPtr);
+	Value *Class = Runtime->LookupClass(Builder, className);
 
 	Value *V = MakeConstantString(arg);
 
@@ -357,7 +355,7 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 
 Value *CodeGenModule::SymbolConstant(CGBuilder &Builder, NSString *symbol)
 {
-	return GenericConstant(Builder, @".smalltalk_symbol_class",
+	return GenericConstant(Builder, @"Symbol",
 			@"SymbolForCString:", symbol);
 }
 
@@ -368,7 +366,7 @@ Value *CodeGenModule::IntConstant(CGBuilder &Builder, NSString *value)
 	intptr_t ptrVal = (val << 1);
 	if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val))
 	{
-		return GenericConstant(Builder, @".smalltalk_bigint_class",
+		return GenericConstant(Builder, @"BigInt",
 				@"bigIntWithCString:", value);
 	}
 	ptrVal |= 1;
@@ -379,7 +377,7 @@ Value *CodeGenModule::IntConstant(CGBuilder &Builder, NSString *value)
 }
 Value *CodeGenModule::FloatConstant(CGBuilder &Builder, NSString *value)
 {
-	return GenericConstant(Builder, @".smalltalk_boxedfloat_class",
+	return GenericConstant(Builder, @"BoxedFloat",
 			@"boxedFloatWithCString:", value);
 }
 

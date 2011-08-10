@@ -143,9 +143,9 @@ public:
                                          bool isClassMethod=false,
 	                                     bool isSRet=false,
                                          bool isVarArg=false) = 0;
-  /// Look up the class for the specified name
-  virtual llvm::Value *LookupClass(CGBuilder &Builder, llvm::Value
-      *ClassName) =0;
+	/// Look up the class for the specified name
+	virtual llvm::Value *LookupClass(CGBuilder &Builder,
+	                                 NSString *ClassName) =0;
 	// Define class variables for a specific class
 	virtual void DefineClassVariables(
 			NSString* ClassName,

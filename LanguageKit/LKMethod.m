@@ -111,7 +111,9 @@ static NSSet *ARCBannedMessages;
 		NSInteger i = 2;
 		for (NSString *arg in [signature arguments])
 		{
-			[[symbols symbolForName: arg] setTypeEncoding: [NSString stringWithUTF8String: [sig getArgumentTypeAtIndex: i++]]];
+			LKSymbol *argSymbol = [symbols symbolForName: arg];
+			[argSymbol setIndex: i];
+			[argSymbol setTypeEncoding: [NSString stringWithUTF8String: [sig getArgumentTypeAtIndex: i++]]];
 		}
 		NSString *methodName = [signature selector];
 		[self beginMethodWithGenerator: aGenerator
