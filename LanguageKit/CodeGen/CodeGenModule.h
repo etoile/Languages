@@ -43,6 +43,7 @@ private:
 public:
   CodeGenTypes *types;
 private:
+  bool JIT;
 
   //DIFactory *Debug;
   DICompileUnit ModuleScopeDescriptor;

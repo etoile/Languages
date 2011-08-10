@@ -76,6 +76,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 		bool jit, bool profiling) 
 	: Context(C), InitialiseBuilder(Context), profilingEnabled(profiling)
 {
+	JIT = jit;
 	ClassName = nil;
 	SuperClassName = nil;
 	// When we JIT code, we put the Small Int message functions inside the
@@ -331,6 +332,12 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 		NSString *className, NSString *constructor, 
 		NSString *arg)
 {
+	if (JIT)
+	{
+		id constant = [NSClassFromString(className) performSelector: NSSelectorFromString(constructor) withObject: arg];
+		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(types->intPtrTy, (uintptr_t)[constant retain]),
+			types->idTy);
+	}
 	GlobalVariable *ClassPtr =
 		TheModule->getGlobalVariable([className UTF8String], true);
 	Value *Class = InitialiseBuilder.CreateLoad(ClassPtr);

@@ -402,6 +402,14 @@ llvm::Value *CGObjCGNU::GetWeakSymbol(const std::string &Name,
 /// Generate an NSConstantString object.
 llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 {
+	// In JIT mode, just reuse the string.
+	if (JIT)
+	{
+		// Copy instead of retaining, in case we got passed a mutable string.
+		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)[String copy]),
+			IdTy);
+	}
+
 	NSUInteger length = [String length];
 	std::vector<llvm::Constant*> Ivars;
 	Ivars.push_back(NULLPtr);
