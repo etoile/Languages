@@ -1,3 +1,4 @@
+<< types = '{ count = I8@0:4; }' >>
 "
  Tests mutually recursive class dependencies. (The List class needs to
  know the SuffixList class to create suffices, but the suffix class is
@@ -8,7 +9,7 @@
 "
 NSObject subclass: List [
   suffixOfSize: n [
-    ^ SuffixList new initWithSource: self start: (self theSize - n)
+    ^ SuffixList alloc initWithSource: self start: (self theSize - n)
   ]
   print [
     ETTranscript show: '---'; cr.
@@ -38,7 +39,7 @@ List subclass: ActualList [
 NSObject subclass: SmalltalkTool [
   run [
     | l |
-    l := ActualList new initWithArray: { 'a'. 'b'. 'c'. 'd'. 'e' }.
+    l := ActualList alloc initWithArray: { 'a'. 'b'. 'c'. 'd'. 'e' }.
     l print.
     (l suffixOfSize: 3) print.
   ]
