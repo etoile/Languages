@@ -81,6 +81,32 @@ string CodeGenSubroutine::FunctionNameFromSelector(NSString *sel)
 	}
 }
 
+static NSString *trimTypeEncoding(NSString *type, char openBracket, char closeBracket)
+{
+	NSUInteger end = 0;
+	NSUInteger length = [type length];
+	int bracketCount = 0;
+	//FIXME: This is much slower than it needs to be
+	while (end < length)
+	{
+		unichar c = [type characterAtIndex: end];
+		end++;
+		if (c == openBracket)
+		{
+			bracketCount++;
+		}
+		else if (c == closeBracket)
+		{
+			bracketCount--;
+			if (0 == bracketCount)
+			{
+				break;
+			}
+		}
+	}
+	return [type substringToIndex: end];
+}
+
 Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 {
 	CGObjCRuntime *Runtime = CGM->getRuntime();
@@ -120,9 +146,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			// Box float/double
 			// TODO: On 64-bit platforms hide floats inside pointers, leave
 			// doubles boxed
-			Value *BoxedFloatClass = B->CreateLoad(
-				CGM->getModule()->getGlobalVariable(".smalltalk_boxedfloat_class",
-					true));
+			Value *BoxedFloatClass = Runtime->LookupClass(*B, @"BoxedFloat");
 			NSString *castSelName;
 			if (type == 'f')
 			{
@@ -142,18 +166,13 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 		}
 		case ':':
 		{
-			Value *SymbolClass = B->CreateLoad(
-				CGM->getModule()->getGlobalVariable(
-					".smalltalk_symbol_class", true));
+			Value *SymbolClass = Runtime->LookupClass(*B, @"Symbol");
 			return Runtime->GenerateMessageSend(*B, NULL,
 					SymbolClass, @"SymbolForSelector:", NULL, V);
 		}
 		case '{':
 		{
-			Value *NSValueClass = B->CreateLoad(
-				CGM->getModule()->getGlobalVariable(
-					".smalltalk_nsvalue_class", true));
-			NSString * castSelName = @"valueWithBytes:objCType:";
+			NSString * castSelName = nil;
 			bool passValue = false;
 			if ([typestr rangeOfString: @"{_NSRect"].location == 0)
 			{
@@ -175,33 +194,42 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 				castSelName = @"valueWithSize:";
 				passValue = true;
 			}
+			else
+			{
+				llvm::Value *buffer = B->CreateAlloca(V->getType());
+				B->CreateStore(V, buffer);
+				return B->CreateCall2(CGM->TheModule->getOrInsertFunction("LKBoxValue",
+				                                                          types.idTy,
+				                                                          buffer->getType(),
+				                                                          types.ptrToVoidTy, NULL),
+				                      buffer,
+				                      CGM->MakeConstantString(trimTypeEncoding(typestr, '{', '}')));
+			}
 			if (passValue)
 			{
+				Value *NSValueClass = Runtime->LookupClass(*B, @"NSValue");
 				Value *boxed = Runtime->GenerateMessageSend(*B,
 						NULL, NSValueClass, castSelName, NULL, V);
 				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
 				{
-						call->setOnlyReadsMemory();
+					call->setOnlyReadsMemory();
 				}
 				return boxed;
 			}
-			assert(0 && "Boxing arbitrary structures doesn't work yet");
 		}
 		// Other types, just wrap them up in an NSValue
 		default:
 		{
-			Value *NSValueClass = B->CreateLoad(
-				CGM->getModule()->getGlobalVariable(
-					".smalltalk_nsvalue_class",	true));
 			// TODO: We should probably copy this value somewhere, maybe with a
 			// custom object instead of NSValue?
 			NSUInteger end = 0;
 			while (!isdigit([typestr characterAtIndex: end])) { end++; }
-			SmallVector<Value*,2> args;
-			args.push_back(V);
-			args.push_back(CGM->MakeConstantString([typestr substringToIndex: end]));
-			return Runtime->GenerateMessageSend(*B, LoadSelf(),
-					NSValueClass, @"valueWithBytesOrNil:objCType:", NULL, args);
+			return B->CreateCall2(CGM->TheModule->getOrInsertFunction("LKBoxValue",
+			                                                          types.idTy,
+			                                                          V->getType(),
+			                                                          types.ptrToVoidTy, NULL),
+			                      V,
+			                      CGM->MakeConstantString(typestr));
 		}
 		// Map void returns to nil
 		case 'v':
@@ -226,7 +254,7 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 		return val;
 	}
 	NSString *returnTypeString = [type substringToIndex: 1];
-	NSString *castSelName;
+	NSString *castSelName = nil;
 	switch([type characterAtIndex: 0])
 	{
 		case 'c':
@@ -282,48 +310,38 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 			return val;
 		case '{':
 		{
-			NSUInteger end = 0;
-			NSUInteger length = [type length];
-			int braceCount = 1;
-			while (end < length)
-			{
-				unichar c = [type characterAtIndex: end];
-				if (c == '{')
-				{
-					braceCount++;
-				}
-				else if (c == '}')
-				{
-					braceCount--;
-					if (0 == braceCount)
-					{
-						break;
-					}
-				}
-				end++;
-			}
-			returnTypeString = [type substringToIndex: end];
+			returnTypeString = trimTypeEncoding(type, '{', '}');
 			//Special cases for NSRect and NSPoint
 			if ([type rangeOfString: @"{_NSRect"].location == 0)
 			{
 				castSelName = @"rectValue";
-				break;
 			}
-			if ([type rangeOfString: @"{_NSRange"].location == 0)
+			else if ([type rangeOfString: @"{_NSRange"].location == 0)
 			{
 				castSelName = @"rangeValue";
-				break;
 			}
-			if ([type rangeOfString: @"{_NSPoint"].location == 0)
+			else if ([type rangeOfString: @"{_NSPoint"].location == 0)
 			{
 				castSelName = @"pointValue";
-				break;
 			}
-			if ([type rangeOfString: @"{_NSSize"].location == 0)
+			else if ([type rangeOfString: @"{_NSSize"].location == 0)
 			{
 				castSelName = @"sizeValue";
-				break;
 			}
+			else
+			{
+				llvm::Value *buffer = B->CreateAlloca(types.typeFromString(returnTypeString));
+				B->CreateCall3(CGM->TheModule->getOrInsertFunction("LKUnboxValue",
+				                                                   types.voidTy,
+				                                                   types.idTy,
+				                                                   buffer->getType(),
+				                                                   types.ptrToVoidTy, NULL),
+				               val,
+				               buffer,
+				               CGM->MakeConstantString(returnTypeString));
+				return B->CreateLoad(buffer);
+			}
+			break;
 		}
 		default:
 			LOG("Found type value: %s\n", [type UTF8String]);
@@ -517,7 +535,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType) && !returnsRetained)
 	{
 		Value *retObj = ReturnBuilder.CreateLoad(RetVal);
-		if (isLKObject(ReturnType))
+		if (isLKObject(ReturnType) && @encode(LKObject)[0] != '@')
 		{
 			CGBuilder smallIntBuilder(CGM->Context);
 			splitSmallIntCase(retObj, ReturnBuilder, smallIntBuilder);
@@ -636,7 +654,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
 	{
 		Value *retObj = ExceptionBuilder.CreateLoad(RetVal);
-		if (isLKObject(ReturnType))
+		if (isLKObject(ReturnType) && @encode(LKObject)[0] != '@')
 		{
 			CGBuilder smallIntBuilder(CGM->Context);
 			splitSmallIntCase(retObj, ExceptionBuilder, smallIntBuilder);
@@ -790,6 +808,18 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
                                       NSArray *possibleSelTypes,
                                       SmallVectorImpl<Value*> &boxedArgs)
 {
+	// See if there is a function defined to implement this message
+	Value *SmallIntFunction =
+		getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
+
+	// If there is no function (for inlining) and the runtime supports small
+	// objects, just emit a normal message send and let the runtime sort it
+	// out.
+	if ((0 == SmallIntFunction) && (@encode(LKObject)[0] == '@'))
+	{
+		return MessageSendId(*B, receiver, selName, possibleSelTypes,
+				boxedArgs);
+	}
 	Value *Int = B->CreatePtrToInt(receiver, types.intPtrTy);
 	Value *IsSmallInt = B->CreateTrunc(Int, Type::getInt1Ty(CGM->Context), "is_small_int");
 
@@ -809,9 +839,6 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 	// Basic block for rejoining the two cases.
 	BasicBlock *Continue = BasicBlock::Create(CGM->Context, "Continue", F);
 
-	// See if there is a function defined to implement this message
-	Value *SmallIntFunction =
-		getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
 
 	BasicBlock *smallIntContinueBB = 0;
 

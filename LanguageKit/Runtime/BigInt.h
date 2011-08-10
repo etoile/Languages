@@ -16,17 +16,18 @@
 + (BigInt*) bigIntWithUnsignedLong:(unsigned long)aVal;
 + (BigInt*) bigIntWithMP:(mpz_t)aVal;
 @end
+#ifndef OBJC_SMALL_OBJECT_SHIFT
+#define OBJC_SMALL_OBJECT_SHIFT ((sizeof(id) == 4) ? 1 : 3)
+#endif
 
 static inline LKObject LKObjectFromNSInteger(NSInteger integer)
 {
-	LKObject obj;
 	if((integer << 1 >> 1) != integer)
 	{
-		obj.object = [BigInt bigIntWithLongLong: (long long)integer];
+		return LKObjectFromObject([BigInt bigIntWithLongLong: (long long)integer]);
 	}
 	else
 	{
-		obj.smallInt = (integer << 1) | 1;
+		return LKObjectFromObject((__bridge id)((integer << OBJC_SMALL_OBJECT_SHIFT) | 1));
 	}
-	return obj;
 }

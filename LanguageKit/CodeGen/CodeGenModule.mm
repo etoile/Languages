@@ -119,15 +119,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 
 void CodeGenModule::CreateClassPointerGlobal(NSString *className, const char *globalName)
 {
-	// Create the global
-	Value *global = new GlobalVariable(*TheModule, types->idTy, false,
-			llvm::GlobalValue::InternalLinkage, ConstantPointerNull::get(types->idTy),
-			globalName);
-
-	// Initialise it in the module load function
-	InitialiseBuilder.CreateStore(InitialiseBuilder.CreateBitCast(
-				Runtime->LookupClass(InitialiseBuilder,
-					className), types->idTy), global);
+assert(0 && "Dead code!");
 }
 
 
@@ -173,13 +165,6 @@ void CodeGenModule::BeginClass(NSString *aClassName,
 	Runtime->DefineClassVariables(ClassName, CvarNames, CvarTypes);
 	InstanceSize = sizeof(void*) * IvarNames.size();
 	CurrentClassTy = types->idTy;
-
-	CreateClassPointerGlobal(@"Symbol", ".smalltalk_symbol_class");
-	CreateClassPointerGlobal(@"NSValue", ".smalltalk_nsvalue_class");
-	CreateClassPointerGlobal(@"NSNumber", ".smalltalk_nsnumber_class");
-	CreateClassPointerGlobal(@"BigInt", ".smalltalk_bigint_class");
-	CreateClassPointerGlobal(@"BoxedFloat", ".smalltalk_boxedfloat_class");
-
 }
 
 void CodeGenModule::EndClass(void)

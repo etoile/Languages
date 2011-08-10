@@ -97,19 +97,12 @@ static inline id LKObjCAutoreleaseReturnValue(id object)
 		mpz_## func (b->v, number, v);\
 		mpz_clear(number);\
 	}\
-	LKObject ret;\
 	if (mpz_fits_sint_p(b->v))\
 	{\
 		int intValue = mpz_get_si(b->v);\
-		if (intValue << 1 >> 1 == intValue)\
-		{\
-			mpz_clear(b->v);\
-			ret.smallInt = (intValue << 1) | 1;\
-			return ret;\
-		}\
+		return LKObjectFromNSInteger(intValue);\
 	}\
-	ret.object = LKObjCAutoreleaseReturnValue(b);\
-	return ret;\
+	return LKObjectFromObject(LKObjCAutoreleaseReturnValue(b));\
 }
 
 #define op(name) op2(name, name)

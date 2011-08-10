@@ -1,4 +1,51 @@
 #import <EtoileFoundation/EtoileCompatibility.h>
+#import <objc/runtime.h>
+
+/**
+ * If we have small object support in the runtime, then we just use it and get
+ * rid of all of the hackery.
+ */
+#ifdef OBJC_SMALL_OBJECT_SHIFT
+
+@class NSSmallInt;
+
+typedef NSSmallInt* SmallInt;
+
+typedef id LKObject;
+
+#define LKOBJECT(x) x
+
+__attribute__((unused))
+static inline BOOL LKObjectIsSmallInt(LKObject obj)
+{
+	return ((NSInteger)obj & OBJC_SMALL_OBJECT_MASK) != 0;
+}
+
+__attribute__((unused))
+static id LKObjectToId(LKObject obj)
+{
+	return obj;
+}
+
+__attribute__((unused))
+static inline BOOL LKObjectIsObject(LKObject obj)
+{
+	return ((NSInteger)obj & OBJC_SMALL_OBJECT_MASK) == 0;
+}
+
+__attribute__((unused))
+static inline NSInteger NSIntegerFromSmallInt(LKObject smallInt)
+{
+	return [smallInt integerValue];
+}
+__attribute__((unused))
+static inline LKObject LKObjectFromObject(id obj)
+{
+	return obj;
+}
+
+
+#else
 
 /**
  * LKObject.h defines the type used for LanguageKit object and some functions
@@ -48,9 +95,18 @@ static inline BOOL LKObjectIsObject(LKObject obj)
 }
 
 __attribute__((unused))
-static inline NSInteger NSIntegerFromSmallInt(SmallInt smallInt)
+static inline NSInteger NSIntegerFromSmallInt(LKObject smallInt)
 {
-	NSCAssert(smallInt & 1, @"Not a SmallInt!");
-	return smallInt >> 1;
+	NSCAssert(smallInt.smallInt & 1, @"Not a SmallInt!");
+	return smallInt.smallInt >> 1;
 }
 
+__attribute__((unused))
+static inline LKObject LKObjectFromObject(id obj)
+{
+	LKObject o;
+	o.object = obj;
+	return o;
+}
+
+#endif

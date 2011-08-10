@@ -184,7 +184,7 @@ static id BoxValue(void *value, const char *typestr)
 				LKObject v = *(LKObject*)value;
 				if (LKObjectIsSmallInt(v))
 				{
-					return [BigInt bigIntWithLongLong: NSIntegerFromSmallInt(v.smallInt)];
+					return [BigInt bigIntWithLongLong: NSIntegerFromSmallInt(v)];
 				}
 				return *(__bridge id*)value;
 			}

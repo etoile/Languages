@@ -10,6 +10,9 @@ typedef intptr_t NSInteger;
 @class NSString;
 __attribute__((noreturn)) void abort(void);
 void NSLog(NSString*, ...);
+@interface NSNumber
+- (NSInteger)integerValue;
+@end
 #include "LKObject.h"
 
 // Dummy interfaces to make warnings go away
