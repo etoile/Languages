@@ -82,6 +82,7 @@ typedef struct
 	intptr_t otherval = (intptr_t)other;\
 	otherval >>= 1;
 
+#ifndef OBJC_SMALL_OBJECT_MASK
 MSG0(log)
 	NSLog(@"%lld", (long long) ((intptr_t)obj >>1));
 	return obj;
@@ -92,7 +93,12 @@ MSG0(retain)
 MSG0(autorelease)
 	return obj;
 }
-void SmallIntMsgrelease(void *obj) {}
+MSG0(release) }
+NSString *SmallIntMsgstringValue_(void *obj)
+{
+	return [NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
+}
+#endif
 
 MSG1(ifTrue_)
 	if (val == 0)
@@ -358,10 +364,6 @@ CASTMSG(unsigned long long, unsignedLongLong)
 CASTMSG(BOOL, bool)
 CASTMSG(float, float)
 CASTMSG(double, double)
-NSString *SmallIntMsgstringValue_(void *obj)
-{
-	return [NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
-}
 
 enum
 {

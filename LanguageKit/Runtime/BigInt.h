@@ -2,7 +2,7 @@
 #import "LKObject.h"
 #include <gmp.h>
 
-@interface BigInt : NSObject {
+@interface BigInt : NSNumber {
 @public
   /**
    * Value for this object.  Public so it can be accessed from others to

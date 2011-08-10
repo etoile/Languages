@@ -24,6 +24,11 @@ static BigInt *BigIntNO;
 	mpz_init_set_str(b->v, aString, 10);
 	return b;
 }
+// Pretend that big ints are doubls so that the comparison stuff works.
+- (const char*)objCType
+{
+	return "d";
+}
 + (BigInt*) bigIntWithLongLong:(long long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
@@ -169,34 +174,6 @@ CMP(isGreaterThan, >)
 CMP(isLessThanOrEqualTo, <=)
 CMP(isGreaterThanOrEqualTo, >=)
 CMP(isEqual, ==)
-- (id) ifTrue:(id)t
-{
-	if (mpz_cmp(v, ZERO) != 0)
-	{
-		return [t value];
-	}
-	return nil;
-}
-- (id) ifFalse:(id)f
-{
-	if (mpz_cmp(v, ZERO) == 0)
-	{
-		return [f value];
-	}
-	return nil;
-}
-- (id) ifTrue:(id)t ifFalse:(id)f
-{
-	if (mpz_cmp(v, ZERO) == 0)
-	{
-		return [f value];
-	}
-	else
-	{
-		return [t value];
-	}
-	return nil;
-}
 - (id) timesRepeat:(id) aBlock
 {
 	id result = nil;
@@ -329,7 +306,7 @@ CMP(isEqual, ==)
 	return (returnType) gmpFunction(v);\
 }
 
-CASTMETHOD(char, charValue, mpz_get_si)
+CASTMETHOD(signed char, charValue, mpz_get_si)
 CASTMETHOD(unsigned char, unsignedCharValue, mpz_get_ui)
 CASTMETHOD(short int, shortValue, mpz_get_si)
 CASTMETHOD(unsigned short int, unsignedShortValue, mpz_get_ui)
@@ -349,5 +326,56 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 	BigInt *new = [object_getClass(self) allocWithZone: aZone];
 	mpz_init_set(new->v, v);
 	return new;
+}
+@end
+
+@implementation NSNumber (LanguageKit)
+- (id)ifTrue: (id(^)(void))block
+{
+	if ([self boolValue])
+	{
+		return block();
+	}
+	return 0;
+}
+- (id)ifFalse: (id(^)(void))block
+{
+	if (![self boolValue])
+	{
+		return block();
+	}
+	return 0;
+}
+- (id)ifTrue: (id(^)(void))block ifFalse: (id(^)(void))falseBlock
+{
+	if ([self boolValue])
+	{
+		return block();
+	}
+	return falseBlock;
+}
+- (id)timesRepeat: (id(^)(void))block
+{
+	void *ret = NULL;
+	unsigned long long max = [self unsignedLongLongValue];
+	for (unsigned long long i=0 ; i<max ; i++)
+	{
+		ret = block();
+	}
+	return ret;
+}
+- (id)to: (id)to by: (id)by do: (id(^)(id))block
+{
+	unsigned long long i = [self unsignedLongLongValue];
+	id result = nil;
+	for (unsigned long long step = [by unsignedLongLongValue]; i<step ; i++)
+	{
+		result = block([NSNumber numberWithUnsignedLongLong: i]);
+	}
+	return result;
+}
+- (id)to: (id)to do: (id(^)(id))block
+{
+	return [self to: to by: [NSNumber numberWithInt: 1] do: block];
 }
 @end
