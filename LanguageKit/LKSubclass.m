@@ -32,7 +32,6 @@
 }
 - (BOOL)check
 {
-	Class SuperClass = NSClassFromString(superclass);
 	BOOL success = YES;
 	ASSIGN(symbols, [LKSymbolTable symbolTableForClass: classname]);
 	[symbols setEnclosingScope: [LKSymbolTable symbolTableForClass: superclass]];

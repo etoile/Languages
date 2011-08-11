@@ -136,6 +136,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 		[new visitWithVisitor:aVisitor];
 	}
 	[anArray removeObjectsAtIndexes: remove];
+	[remove release];
 }
 - (void)dealloc
 {

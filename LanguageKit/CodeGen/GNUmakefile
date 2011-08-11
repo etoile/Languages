@@ -53,8 +53,6 @@ ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 ${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
 
-CC = clang
-CXX = clang++
 LD = $(CXX)
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc 
