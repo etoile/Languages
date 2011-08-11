@@ -278,7 +278,7 @@ MSG1(and_)
 	OTHER_OBJECT(and)
 	RETURN_INT(val && otherval);
 }
-MSG1(or)
+MSG1(or_)
 	OTHER_OBJECT(or)
 	RETURN_INT(val || otherval);
 }
@@ -327,6 +327,21 @@ COMPARE(isGreaterThanOrEqualTo, >=)
 #ifdef STATIC_COMPILE
 @interface NSSmallInt @end
 @implementation NSSmallInt (LanguageKit)
+#define BOOLMETHOD0(method) \
+	- (BOOL)method\
+	{\
+		return SmallIntMsg ## method(self);\
+	}
+#define METHOD0(method) \
+	- (id)method\
+	{\
+		return SmallIntMsg ## method(self);\
+	}
+#define BOOLMETHOD1(method) \
+	- (BOOL)method: (id)other\
+	{\
+		return SmallIntMsg ## method ## _(self, other);\
+	}
 #define METHOD1(method) \
 	- (id)method: (id)other\
 	{\
@@ -336,6 +351,23 @@ METHOD1(plus)
 METHOD1(sub)
 METHOD1(mul)
 METHOD1(div)
+BOOLMETHOD1(isLessThan)
+BOOLMETHOD1(isGreaterThan)
+BOOLMETHOD1(isGreaterThanOrEqualTo)
+BOOLMETHOD1(isLessThanOrEqualTo)
+METHOD1(mod)
+METHOD1(bitwiseAnd)
+METHOD1(bitwiseOr)
+METHOD1(and)
+METHOD1(or)
+METHOD0(not)
+BOOLMETHOD0(isAlphanumeric)
+BOOLMETHOD0(isUppercase)
+BOOLMETHOD0(isLowercase)
+BOOLMETHOD0(isDigit)
+BOOLMETHOD0(isAlphabetic)
+BOOLMETHOD0(isWhitespace)
+METHOD0(value)
 
 @end
 #endif
