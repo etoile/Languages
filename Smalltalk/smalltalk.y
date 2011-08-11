@@ -351,8 +351,27 @@ cascade_expression(E) ::= simple_expression(T) message(M) SEMICOLON message(G).
 
 keyword_expression(E) ::= simple_expression(T) keyword_message(M).
 {
-	[M setTarget:T];
-	E = M;
+	if ([T isKindOfClass: [LKDeclRef class]] &&
+		[@"C" isEqualToString: [T symbol]])
+	{
+		LKFunctionCall *call= [[LKFunctionCall new] autorelease];
+		[call setFunctionName: [[(LKMessageSend*)M selector] stringByReplacingOccurrencesOfString: @":" withString: @""]];
+		NSArray *args = [M arguments];
+		if ([args count] == 1 && [[args objectAtIndex: 0] isKindOfClass: [LKArrayExpr class]])
+		{
+			[call setArguments: [(LKArrayExpr*)[args objectAtIndex: 0] elements]];
+		}
+		else
+		{
+			[call setArguments: [args mutableCopy]];
+		}
+		E = call;
+	}
+	else
+	{
+		[M setTarget:T];
+		E = M;
+	}
 }
 
 simple_expression(E) ::= WORD(V).

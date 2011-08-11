@@ -15,6 +15,17 @@ static NSMutableDictionary *compilersByLanguage;
 
 static id<LKCompilerDelegate> DefaultDelegate;
 
+// Don't include the header yet - we don't want to add a SCK dependency, just
+// use it if we have it.
+@interface SCKSourceCollection : NSObject
+@property (nonatomic, readonly) NSMutableDictionary *functions;
+@property (nonatomic, readonly) NSMutableDictionary *globals;
+- (id)sourceFileForPath: (NSString*)aPath;
+@end
+
+
+static SCKSourceCollection *collection;
+
 @interface LKDefaultCompilerDelegate : NSObject<LKCompilerDelegate>
 {
 	NSMutableSet *polymorphicSelectors;
@@ -185,6 +196,13 @@ int DEBUG_DUMP_MODULES = 0;
 		[compilersByExtension setObject:nextClass
 		                         forKey:[nextClass fileExtension]];
 	}
+	// If SourceCodeKit is installed, let's use it!
+	[self loadFrameworkNamed: @"SourceCodeKit"];
+	collection = [NSClassFromString(@"SCKSourceCollection") new];
+	if (collection)
+	{
+		[self loadFrameworkNamed: @"EtoileFoundation"];
+	}
 }
 + (id) alloc
 {
@@ -315,6 +333,16 @@ static NSString *loadFramework(NSString *framework)
 			NSBundle *bundle = [NSBundle bundleWithPath:f];
 			if ([bundle load]) 
 			{
+				// If a framework header exists, then load it
+				if (nil != collection)
+				{
+					f = [f stringByAppendingPathComponent: @"Headers"];
+					f = [f stringByAppendingPathComponent: [framework stringByAppendingPathExtension: @"h"]];
+					if ([fm fileExistsAtPath:f isDirectory:&isDir] && !isDir)
+					{
+						[collection sourceFileForPath: f];
+					}
+				}
 				return [bundle bundlePath];
 			}
 		}
@@ -450,6 +478,15 @@ static NSString *loadFramework(NSString *framework)
 {
 	return [self loadScriptNamed: fileName fromBundle: [NSBundle mainBundle]];
 }
++ (NSString*)typesForFunction: (NSString*)functionName
+{
+	return [[[collection functions] objectForKey: functionName] typeEncoding];
+}
++ (NSString*)typesForGlobal: (NSString*)globalName
+{
+	return [[[collection globals] objectForKey: globalName] typeEncoding];
+}
+
 - (BOOL) loadApplicationScriptNamed:(NSString*)name
 {
 	return [self loadScriptNamed: name fromBundle: [NSBundle mainBundle]];

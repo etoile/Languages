@@ -88,6 +88,13 @@
              withArgs:(void**)argv
                 count:(unsigned int)argc;
 /**
+ * Calls a C function, with the specified type encoding.
+ */
+- (void*)callFunction: (NSString*)functionName
+         typeEncoding: (NSString*)typeEncoding
+            arguments: (void**)arguments
+                count: (int)count;
+/**
  * Begin generating a block expression with the specified number of arguments
  * and locals.  The bound variables are pointers to variables declared outside
  * the block's scope.

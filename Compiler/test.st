@@ -46,6 +46,10 @@ NSObject subclass: SmalltalkTool
 	run [
 	| task |
 		[ :x :y :z | x log. y log. z log.] value: '1' value: '2' value: '3'.
+		'Testing C functions, sqrt(60), fdim(60,12):' log.
+		(C sqrt: 60) log.
+		(C fdim: {60. 12}) log.
+		(C f: 60 dim: 12) log.
 		"Test cascade messages:"
 		self cascade1; cascade2 ; cascade1; cascade2.
 		(TestBlock new) log.
@@ -75,6 +79,9 @@ NSObject subclass: SmalltalkTool
 	]
 	test: r [
 	| a b c|
+		C putchar: 'f'.
+		C putchar: 'o'.
+		C putchar: 'o'.
 		"Test array creation."
 		a := {NSObject new. NSString new. NSArray new}.
 		NSGarbageCollector defaultCollector collectExhaustively.

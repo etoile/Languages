@@ -144,6 +144,15 @@ const char * LKObjectEncoding = @encode(LKObject);
 	return 
 		Builder->getCurrentScope()->MessageSendSuper(sel, selTypes, args);
 }
+- (void*)callFunction: (NSString*)functionName
+         typeEncoding: (NSString*)typeEncoding
+            arguments: (void**)argv
+                count: (int)argc
+{
+	SmallVector<Value*, 8> args;
+	args.append((Value**)argv, ((Value**)argv)+argc);
+	return Builder->getCurrentScope()->CallFunction(functionName, typeEncoding, args);
+}
 - (void*) sendMessage:(NSString*)aMessage
                 types:(NSArray*)types
                    to:(void*)receiver

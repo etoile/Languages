@@ -45,6 +45,10 @@ EMIT_STRING(LKUndefinedSymbolError)
  */
 EMIT_STRING(LKInvalidSelectorError)
 /**
+ * The compiler can't determine the type encoding for a referenced symbol.
+ */
+EMIT_STRING(LKUnknownTypeError)
+/**
  * An attempt was made to subclass a nonexistent class.  This error is usually
  * fatal, but can be recovered by adding the superclass to the runtime.  The
  * name of the missing superclass will be stored in the dictionary with the

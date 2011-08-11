@@ -2,6 +2,7 @@
 #import "LKModule.h"
 
 @implementation LKArrayExpr
+@synthesize elements;
 + (id) arrayWithElements:(NSArray*)anArray
 {
 	return [[[self alloc] initWithElements: anArray] autorelease];

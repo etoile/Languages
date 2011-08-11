@@ -28,6 +28,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	LKCompiler.m\
 	LKCompilerErrors.m\
 	LKDeclRef.m\
+	LKFunctionCall.m\
 	LKIfStatement.m\
 	LKLiteral.m\
 	LKLoop.m\
@@ -57,6 +58,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 	LKCompiler.h\
 	LKCompilerErrors.h\
 	LKDeclRef.h\
+	LKFunctionCall.h\
 	LKInterpreter.h\
 	LKIfStatement.h\
 	LKLiteral.h\
