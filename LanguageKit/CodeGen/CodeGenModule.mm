@@ -77,6 +77,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 	: Context(C), InitialiseBuilder(Context), profilingEnabled(profiling)
 {
 	JIT = jit;
+	CategoryName = nil;
 	ClassName = nil;
 	SuperClassName = nil;
 	// When we JIT code, we put the Small Int message functions inside the
