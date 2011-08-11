@@ -202,11 +202,13 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)parentContext
 {
 	int count = [[[self symbols] arguments] count];
-	return [Block_copy(^(id arg0, ...) {
+	__unsafe_unretained __block id blockContext = nil;
+	blockContext = [Block_copy(^(id arg0, ...) {
 		LKInterpreterContext *context = [[LKInterpreterContext alloc]
 		            initWithSymbolTable: [self symbols]
 		                         parent: parentContext];
 		__unsafe_unretained id params[count];
+		[context setBlockContextObject: blockContext];
 		
 		va_list arglist;
 		va_start(arglist, arg0);
@@ -232,6 +234,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		}
 		return nil;
 	}) autorelease];
+	return blockContext;
 }
 @end
 
@@ -405,8 +408,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)context forTarget: (id)receiver
 {
 	NSString *receiverClassName = nil;
-	if ([target isKindOfClass: [LKDeclRef class]] && 
-		[[[(LKDeclRef*)target symbol] name] isEqualToString: @"super"])
+	if ([target isKindOfClass: [LKSuperRef class]])
 	{
 		LKAST *ast = [self parent];
 		while (nil != ast && ![ast isKindOfClass: [LKSubclass class]])
@@ -501,7 +503,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	LKInterpreterContext *context = [[LKInterpreterContext alloc]
 							initWithSymbolTable: symbols
 							             parent: nil];
-	[context setValue: receiver forSymbol: @"self"];
+	[context setSelfObject: receiver];
 	for (unsigned int i=0; i<count; i++)
 	{
 		[context setValue: args[i]
@@ -509,11 +511,14 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	}
 
 	id result = nil;
-	// FIXME: @try {
-	result = [self executeInContext: context];
-	// } @finally {
-	[context release];
-	// }
+	@try
+	{
+		result = [self executeInContext: context];
+	}
+	@finally
+	{
+		[context release];
+	}
 
 	return result;
 }

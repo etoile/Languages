@@ -39,7 +39,7 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 
 MsgSendSmallInt.o:
 	@echo " Compiling small int messages..."
-	@clang -c -ftrapv `gnustep-config --objc-flags` ${${FRAMEWORK_NAME}_OBJCFLAGS} MsgSendSmallInt.m -o MsgSendSmallInt.o
+	@clang -c -ftrapv `gnustep-config --objc-flags` ${${FRAMEWORK_NAME}_OBJCFLAGS} MsgSendSmallInt.m -o MsgSendSmallInt.o -DSTATIC_COMPILE
 
 before-clean::
 	@rm -f MsgSendSmallInt.o MsgSendSmallInt.d

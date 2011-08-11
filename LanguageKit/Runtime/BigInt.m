@@ -283,16 +283,20 @@ CMP(isEqual, ==)
 	return [self to: other by: [BigInt bigIntWithLongLong: 1] do: aBlock];
 }
 
-- (NSString*) description
+- (NSString*)descriptionWithLocale: (NSLocale*)ignored
 {
 	char * cstr = mpz_get_str(NULL, 10, v);
 	NSString *str = [NSString stringWithUTF8String:cstr];
 	free(cstr);
 	return str;
 }
+- (NSString*)description
+{
+	return [self descriptionWithLocale: nil];
+}
 - (NSString*) stringValue
 {
-	return [self description];
+	return [self descriptionWithLocale: nil];
 }
 
 - (void) dealloc

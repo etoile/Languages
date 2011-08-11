@@ -322,6 +322,24 @@ COMPARE(isGreaterThan, >)
 COMPARE(isLessThanOrEqualTo, <=)
 COMPARE(isGreaterThanOrEqualTo, >=)
 
+// If we're building the version that's linked into the run-time support
+// library, then also compile these functions as real methods.
+#ifdef STATIC_COMPILE
+@interface NSSmallInt @end
+@implementation NSSmallInt (LanguageKit)
+#define METHOD1(method) \
+	- (id)method: (id)other\
+	{\
+		return SmallIntMsg ## method ## _(self, other);\
+	}
+METHOD1(plus)
+METHOD1(sub)
+METHOD1(mul)
+METHOD1(div)
+
+@end
+#endif
+
 void *MakeSmallInt(long long val) {
 	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
 	intptr_t ptr = val << 1;
