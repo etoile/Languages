@@ -126,6 +126,15 @@ static LLVMType *LLVMTypeFromString2(LLVMContext &Context, const char ** typestr
 			(*typestr)++;
 			return StructType::get(Context, types);
 		}
+		case '[':
+		{
+			(*typestr)++;
+			uint64_t elements = strtoll(*typestr, (char**)typestr, 10);
+			LLVMType *elementTy = LLVMTypeFromString2(Context, typestr);
+			// Skip the trailing ]
+			(*typestr)++;
+			return ArrayType::get(elementTy, elements);
+		}
 		default:
 		//FIXME: Structure and array types
 			return NULL;
