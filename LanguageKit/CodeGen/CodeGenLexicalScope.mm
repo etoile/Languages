@@ -1044,6 +1044,21 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 		return BoxValue(&B, MessageSendId(&B, receiver, selName,
 			selTypes, args), selTypes);
 	}
+	// Once we've found the right method to call and called it, do sensible things.
+	llvm::BasicBlock *finish = 
+		llvm::BasicBlock::Create(CGM->Context, "end_polymorphic_send",
+					CurrentFunction);
+	llvm::BasicBlock *start = 
+		llvm::BasicBlock::Create(CGM->Context, "start_polymorphic_send",
+					CurrentFunction);
+	// Polymorphic sends to nil don't work, we have to do the nil test ourself
+	B.CreateCondBr(B.CreateIsNotNull(receiver), start, finish);
+
+	CGBuilder finishBuilder(finish);
+	llvm::PHINode *phi = IRBuilderCreatePHI(&finishBuilder, types.idTy, [possibleSelTypes count]+1);
+	phi->addIncoming(llvm::Constant::getNullValue(phi->getType()), B.GetInsertBlock());
+	B.SetInsertPoint(start);
+
 
 	llvm::Value *imp;
 	llvm::Value *typeEncoding;
@@ -1054,11 +1069,26 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 	llvm::Constant *StrCmp = CGM->getModule()->getOrInsertFunction("strcmp",
 				types.intTy, types.ptrToVoidTy, types.ptrToVoidTy, NULL);
 	llvm::Value *zero = llvm::ConstantInt::get(types.intTy, 0);
-	llvm::BasicBlock *finish = 
-		llvm::BasicBlock::Create(CGM->Context, "end_polymorphic_send",
+
+	// No type info is available, throw an exception
+	llvm::BasicBlock *totalFail = 
+		llvm::BasicBlock::Create(CGM->Context, "type_info_lookup_fail",
 					CurrentFunction);
-	CGBuilder finishBuilder(finish);
-	llvm::PHINode *phi = IRBuilderCreatePHI(&finishBuilder, types.idTy, [possibleSelTypes count]);
+	start = 
+		llvm::BasicBlock::Create(CGM->Context, "start_polymorphic_first",
+					CurrentFunction);
+	B.CreateCondBr(B.CreateIsNotNull(typeEncoding), start, totalFail);
+	B.SetInsertPoint(totalFail);
+	llvm::Value *cmd = CGM->Runtime->GetSelector(B, selName, 0);
+	B.CreateCall2(CGM->TheModule->getOrInsertFunction("__LanguageKitInvalidTypeEncoding",
+	                                                  types.voidTy,
+	                                                  types.idTy,
+	                                                  cmd->getType(),
+	                                                  NULL),
+	              receiver,
+	              cmd);
+	B.CreateUnreachable();
+	B.SetInsertPoint(start);
 
 	for (NSString *selTypes in possibleSelTypes)
 	{
@@ -1081,9 +1111,7 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 		B.CreateBr(finish);
 		B.SetInsertPoint(fail);
 	}
-	// FIXME: We should probably throw some kind of exception here.  Or maybe
-	// call out to the interpreter to do the real call.
-	B.CreateUnreachable();
+	B.CreateBr(totalFail);
 	B.SetInsertPoint(finish);
 	return phi;
 }

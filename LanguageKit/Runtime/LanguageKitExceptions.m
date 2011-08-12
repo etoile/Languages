@@ -225,3 +225,9 @@ void __LanguageKitTestNonLocalReturn(void *context,
 	// Should not be reached:
 	abort();
 }
+
+void __LanguageKitInvalidTypeEncoding(id self, SEL cmd)
+{
+	[NSException raise: @"LKTypeInfoException"
+	            format: @"Unable to determine type info for [%@ %@]", self, NSStringFromSelector(cmd)];
+}
