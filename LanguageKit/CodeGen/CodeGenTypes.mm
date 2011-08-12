@@ -176,6 +176,16 @@ static void const countIntsAndFloats(LLVMType *ty,
 	{
 		ints++;
 	}
+	else if (ty->isArrayTy())
+	{
+		unsigned i=0;
+		unsigned f=0;
+		LLVMArrayType *arr = cast<LLVMArrayType>(ty);
+		countIntsAndFloats(arr->getElementType(), i, f);
+		uint64_t elements = arr->getNumElements();
+		ints += i * elements;
+		floats += f * elements;
+	}
 	else if (ty->isAggregateType())
 	{
 		for (Type::subtype_iterator i=ty->subtype_begin(), end=ty->subtype_end()
