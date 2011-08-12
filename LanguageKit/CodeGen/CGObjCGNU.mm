@@ -61,7 +61,7 @@ private:
 	llvm::Constant *NULLPtr;
 	bool GC;
 	bool JIT;
-	GlobalVariable *ObjCIvarOffsetVariable(NSString *className,
+	llvm::Constant *ObjCIvarOffsetVariable(NSString *className,
 		NSString *ivarName, uint64_t Offset);
 	llvm::Constant *GenerateIvarList(
 		NSString *ClassName,
@@ -1329,7 +1329,7 @@ llvm::Value *CGObjCGNU::AddressOfClassVariable(CGBuilder &Builder,
 }
 
 
-GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(NSString *className,
+llvm::Constant *CGObjCGNU::ObjCIvarOffsetVariable(NSString *className,
 		NSString *ivarName, uint64_t Offset)
 {
 	const std::string Name = std::string("__objc_ivar_offset_") +
@@ -1340,6 +1340,10 @@ GlobalVariable *CGObjCGNU::ObjCIvarOffsetVariable(NSString *className,
 	llvm::GlobalVariable *IvarOffsetPointer = TheModule.getNamedGlobal(Name);
 	if (!IvarOffsetPointer)
 	{
+		if (Offset == 0)
+		{
+			return TheModule.getOrInsertGlobal(Name, llvm::PointerType::getUnqual(LLVMType::getInt32Ty(Context)));
+		}
 		llvm::ConstantInt *OffsetGuess =
 			llvm::ConstantInt::get(LLVMType::getInt32Ty(Context), Offset,
 					"ivar");

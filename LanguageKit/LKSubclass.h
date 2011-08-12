@@ -42,4 +42,12 @@
  * Adds a new instance variable.
  */
 - (void)addInstanceVariable: (NSString*)anIvar;
+/**
+ * Returns an array of all of the names of instance variables.
+ */
+- (NSArray*)instanceVariables;
+/**
+ * Returns an array of all of the names of class variables.
+ */
+- (NSArray*)classVariables;
 @end

@@ -143,6 +143,14 @@
 {
 	[ivars addObject: anIvar];
 }
+- (NSArray*)instanceVariables
+{
+	return ivars;
+}
+- (NSArray*)classVariables
+{
+	return cvars;
+}
 - (void)dealloc
 {
   [classname release];
