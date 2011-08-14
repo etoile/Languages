@@ -135,7 +135,7 @@ static inline NSMutableArray* collectSymbolsOfType(NSDictionary *symbols,
 	return [args autorelease];
 }
 
-static NSInteger compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
+static NSComparisonResult compareSymbolOrder(id a, LKSymbol *b, void *c)
 {
 	NSInteger i1 = [a index];
 	NSInteger i2 = [b index];

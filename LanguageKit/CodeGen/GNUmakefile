@@ -12,8 +12,8 @@ FRAMEWORK_NAME = ${PROJECT_NAME}
 
 
 ifeq ($(GNUSTEP_TARGET_CPU), x86_64)
-${FRAMEWORK_NAME}_CC_FILES += \
-	AMD64/AMD64ABIInfo.cpp
+${FRAMEWORK_NAME}_OBJCC_FILES += \
+	AMD64/AMD64ABIInfo.mm
 endif
 
 ${FRAMEWORK_NAME}_OBJCC_FILES = \
@@ -52,6 +52,7 @@ LLVM_LIBS=all
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 ${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
+
 
 CC = clang
 CXX = clang++
