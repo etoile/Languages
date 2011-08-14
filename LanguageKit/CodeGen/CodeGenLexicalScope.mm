@@ -944,8 +944,9 @@ Value *CodeGenSubroutine::LoadValueOfTypeAtOffsetFromObject(
 	// Get the offset
 	Value *Offset =
 		CGM->getRuntime()->OffsetOfIvar(Builder, className, ivarName, offset);
+	Offset = Builder.CreateSExt(Offset, types.intPtrTy);
 	// Add the offset to the object address
-	Value *addr = Builder.CreatePtrToInt(object, types.intTy);
+	Value *addr = Builder.CreatePtrToInt(object, types.intPtrTy);
 	addr = Builder.CreateAdd(addr, Offset);
 	// Cast it to a pointer of the correct type
 	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(types.typeFromString(type)));
@@ -979,6 +980,7 @@ void CodeGenSubroutine::StoreValueOfTypeAtOffsetFromObject(
 	Value *box = Unbox(&Builder, CurrentFunction, value, type);
 	// Calculate the offset of the ivar
 	Value *Offset = Runtime->OffsetOfIvar(Builder, className, ivarName, offset);
+	Offset = Builder.CreateSExt(Offset, types.intPtrTy);
 	// Do the ASSIGN() thing if it's an object.
 	if ([type characterAtIndex: 0] == '@' || isLKObject(type))
 	{
@@ -988,7 +990,7 @@ void CodeGenSubroutine::StoreValueOfTypeAtOffsetFromObject(
 		CGM->assign->storeIvar(Builder, object, Offset, box);
 		return;
 	}
-	Value *addr = Builder.CreatePtrToInt(object, types.intTy);
+	Value *addr = Builder.CreatePtrToInt(object, types.intPtrTy);
 	addr = Builder.CreateAdd(addr, Offset);
 	addr = Builder.CreateIntToPtr(addr, PointerType::getUnqual(box->getType()),
 		"ivar");
@@ -1082,7 +1084,7 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 	llvm::Value *cmd = CGM->Runtime->GetSelector(B, selName, 0);
 	B.CreateCall2(CGM->TheModule->getOrInsertFunction("__LanguageKitInvalidTypeEncoding",
 	                                                  types.voidTy,
-	                                                  types.idTy,
+	                                                  receiver->getType(),
 	                                                  cmd->getType(),
 	                                                  NULL),
 	              receiver,
