@@ -28,10 +28,14 @@ static const unsigned MAX_FLOATS_IN_REGISTERS = 0;
 static const bool SMALL_FLOAT_STRUCTS_ON_STACK = false;
 #	endif
 #else
+#	ifdef __FreeBSD__
+static const unsigned MAX_INTS_IN_REGISTERS = 2;
+#	else
 // Some placeholder values
 static const unsigned MAX_INTS_IN_REGISTERS = 0;
+#	endif
 static const unsigned MAX_FLOATS_IN_REGISTERS = 0;
-static const bool SMALL_FLOAT_STRUCTS_ON_STACK = false;
+static const bool SMALL_FLOAT_STRUCTS_ON_STACK = true;
 #endif
 
 #if defined(__linux__) && defined(__PPC__)
