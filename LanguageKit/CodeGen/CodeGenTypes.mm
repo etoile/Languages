@@ -309,7 +309,12 @@ FunctionType *CodeGenTypes::functionTypeFromString(NSString *type,
 	NEXT(typestr);
 	while(*typestr)
 	{
-		ArgTypes.push_back(LLVMTypeFromString2(context, &typestr));
+		LLVMType *argTy = LLVMTypeFromString2(context, &typestr);
+		if (argTy->isStructTy() && PASS_STRUCTS_AS_POINTER)
+		{
+			argTy = llvm::PointerType::getUnqual(argTy);
+		}
+		ArgTypes.push_back(argTy);
 		NEXT(typestr);
 	}
 	functionType = FunctionType::get(ReturnTy, ArgTypes, false);

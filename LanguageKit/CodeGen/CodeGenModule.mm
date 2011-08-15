@@ -483,8 +483,8 @@ void CodeGenModule::compile(void)
 	OwningPtr<MemoryBuffer> buffer;
 	MemoryBuffer::getFile([MsgSendSmallIntFilename UTF8String], buffer);
 	Module *smallIntModule = ParseBitcodeFile(buffer.get(), Context);
-	//llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	DUMP(TheModule);
+	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	//FIXME: Use PassManagerBuilder here
 	PassManager pm;
