@@ -70,7 +70,7 @@ typedef struct
 #define MSG(retTy, name, ...) retTy SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
 {\
 	intptr_t val = (intptr_t)obj;\
-	val >>= 1;
+	val >>= OBJC_SMALL_OBJECT_SHIFT;
 /**
  * Small int message with no arguments.
  */
@@ -80,11 +80,11 @@ typedef struct
  */
 #define MSG1(name) MSG(void*, name, void *other)\
 	intptr_t otherval = (intptr_t)other;\
-	otherval >>= 1;
+	otherval >>= OBJC_SMALL_OBJECT_SHIFT;
 
 #ifndef OBJC_SMALL_OBJECT_MASK
 MSG0(log)
-	NSLog(@"%lld", (long long) ((intptr_t)obj >>1));
+	NSLog(@"%lld", (long long) ((intptr_t)obj >>OBJC_SMALL_OBJECT_SHIFT));
 	return obj;
 }
 MSG0(retain)
@@ -96,7 +96,7 @@ MSG0(autorelease)
 MSG0(release) }
 NSString *SmallIntMsgstringValue_(void *obj)
 {
-	return [NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>1)];
+	return [NSString stringWithFormat:@"%lld", (long long)(((intptr_t)obj)>>OBJC_SMALL_OBJECT_SHIFT)];
 }
 #endif
 
@@ -125,7 +125,7 @@ MSG1(ifFalse_)
 id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f)
 {
 	uintptr_t val = (uintptr_t)obj;
-	val >>= 1;
+	val >>= OBJC_SMALL_OBJECT_SHIFT;
 	if (val != 0)
 	{
 		Block *block = t;
@@ -149,28 +149,28 @@ MSG1(timesRepeat_)
 id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
 {
 	intptr_t val = (intptr_t)obj;
-	val >>= 1;
+	val >>= OBJC_SMALL_OBJECT_SHIFT;
 	intptr_t inc = (intptr_t) by;
 	intptr_t max = (intptr_t) to;
-	if (((inc & 1) == 0) || ((max & 1) == 0))
+	if (((inc & OBJC_SMALL_OBJECT_MASK) == 0) || ((max & OBJC_SMALL_OBJECT_MASK) == 0))
 	{
 		BigInt* increment = (BigInt*) by;
 		BigInt* maximum = (BigInt*) to;
-		if ((inc & 1) != 0)
+		if ((inc & OBJC_SMALL_OBJECT_MASK) != 0)
 		{
-			inc >>= 1;
+			inc >>= OBJC_SMALL_OBJECT_SHIFT;
 			increment = [BigInt bigIntWithLongLong: (long long)inc];	
 		}
-		if ((max & 1) != 0)
+		if ((max & OBJC_SMALL_OBJECT_MASK) != 0)
 		{
-			max >>= 1;
+			max >>= OBJC_SMALL_OBJECT_SHIFT;
 			maximum = [BigInt bigIntWithLongLong: (long long)max];	
 		}
 		BigInt* conv = [BigInt bigIntWithLongLong: (long long)val];
 		return [conv to: maximum by: increment do: tdo];
 	}
-	inc >>= 1;
-	max >>= 1;
+	inc >>= OBJC_SMALL_OBJECT_SHIFT;
+	max >>= OBJC_SMALL_OBJECT_SHIFT;
 	
 	id result = nil;
 	for (;val<=max;val+=inc)
@@ -182,8 +182,7 @@ id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
 }
 id SmallIntMsgto_do_(void* obj, void *to, void *tdo)
 {
-	// increment by one -- ((1 << 1) & 1) == 3
-	return SmallIntMsgto_by_do_(obj, to, (void*)3, tdo);
+	return SmallIntMsgto_by_do_(obj, to, (void*)((1<<OBJC_SMALL_OBJECT_SHIFT) | 1), tdo);
 }
 
 
@@ -196,34 +195,36 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 	return NO;
 }
 
+#define IS_OBJECT_POINTER(x) ((((intptr_t)x) & OBJC_SMALL_OBJECT_MASK) == 0)
+
 #define BOX_AND_RETRY(op) [[BigInt bigIntWithLongLong:(long long)val] \
                     op:[BigInt bigIntWithLongLong:(long long)otherval]]
 
 #define OTHER_OBJECT_CAST(op) \
-	if ((((intptr_t)other) & 1) == 0)\
+	if (IS_OBJECT_POINTER(other))\
 	{\
-		intptr_t val = (intptr_t)obj >> 1;\
+		intptr_t val = (intptr_t)obj >> OBJC_SMALL_OBJECT_SHIFT;\
 		LKObject ret = \
 			[[BigInt bigIntWithLongLong:(long long)val] op:other];\
 		return *(void**)&ret;\
 	}
 #define OTHER_OBJECT(op) \
-	if ((((intptr_t)other) & 1) == 0)\
+	if (IS_OBJECT_POINTER(other))\
 	{\
-		intptr_t val = (intptr_t)obj >> 1;\
+		intptr_t val = (intptr_t)obj >> OBJC_SMALL_OBJECT_SHIFT;\
 		return [[BigInt bigIntWithLongLong:(long long)val] op:other];\
 	}
-#define RETURN_INT(x)     if((x << 1 >> 1) != x)\
+#define RETURN_INT(x)     if((x << OBJC_SMALL_OBJECT_SHIFT >> OBJC_SMALL_OBJECT_SHIFT) != x)\
     {\
 		return [BigInt bigIntWithLongLong:(long long)x];\
 	}\
-	return (void*)((x << 1) | 1);
+	return (void*)((x << OBJC_SMALL_OBJECT_SHIFT) | 1);
 
 void *SmallIntMsgplus_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(plus);
 	// Clear the low bit on obj
-	intptr_t val = ((intptr_t)other) & ~ 1;
+	intptr_t val = ((intptr_t)other) & ~ OBJC_SMALL_OBJECT_MASK;
 	// Add the two values together.  This will cause the overflow handler to be
 	// invoked in case of overflow, otherwise it will contain the correct
 	// result.
@@ -233,7 +234,7 @@ void *SmallIntMsgsub_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(sub);
 	// Clear the low bit and invert the sign bit on other 
-	intptr_t val = -(((intptr_t)other) & ~1);
+	intptr_t val = -(((intptr_t)other) & ~ OBJC_SMALL_OBJECT_MASK);
 	// Add the two values together.  This will cause the overflow handler to be
 	// invoked in case of overflow, otherwise it will contain the correct
 	// result.
@@ -243,9 +244,9 @@ void *SmallIntMsgmul_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(mul)
 	// Clear the low bit on obj
-	intptr_t val = ((intptr_t)obj) & ~ 1;
+	intptr_t val = ((intptr_t)obj) & ~ OBJC_SMALL_OBJECT_MASK;
 	// Turn other into a C integer
-	intptr_t otherval = ((intptr_t)other) >> 1;
+	intptr_t otherval = ((intptr_t)other) >> OBJC_SMALL_OBJECT_SHIFT;
 	// val * otherval will be the correct SmallInt value with the low bit
 	// cleared.  This sets the low bit in this case.  To avoid an extra test in
 	// case of overflow, we cheat a bit here and set the low bit spuriously
@@ -272,7 +273,7 @@ MSG1(bitwiseOr_)
 #define BOOLMSG0(name) MSG(BOOL, name)
 #define BOOLMSG1(name) MSG(BOOL, name, void *other)\
 	intptr_t otherval = (intptr_t)other;\
-	otherval >>= 1;
+	otherval >>= OBJC_SMALL_OBJECT_SHIFT;
 
 MSG1(and_)
 	OTHER_OBJECT(and)
@@ -312,9 +313,9 @@ BOOL SmallIntMsg ## msg ## _(void *obj, void *other) \
 { \
 	OTHER_OBJECT(msg) \
 	intptr_t val = (intptr_t)obj; \
-	val >>= 1; \
+	val >>= OBJC_SMALL_OBJECT_SHIFT; \
 	intptr_t otherval = (intptr_t)other; \
-	otherval >>= 1; \
+	otherval >>= OBJC_SMALL_OBJECT_SHIFT; \
 	return val op otherval; \
 }
 COMPARE(isLessThan, <)
@@ -374,9 +375,9 @@ METHOD0(value)
 
 void *MakeSmallInt(long long val) {
 	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
-	intptr_t ptr = val << 1;
+	intptr_t ptr = val << OBJC_SMALL_OBJECT_SHIFT;
 	//fprintf(stderr, "Failing if it is not %lld \n", (long long)(ptr >> 1));
-	if (((ptr >> 1)) != val) {
+	if (((ptr >> OBJC_SMALL_OBJECT_SHIFT)) != val) {
 		return [BigInt bigIntWithLongLong:val];
 	}
 	return (void*)(ptr | 1);
@@ -385,21 +386,21 @@ void *MakeSmallInt(long long val) {
 void *BoxSmallInt(void *obj) {
 	if (obj == NULL) return NULL;
 	intptr_t val = (intptr_t)obj;
-	val >>= 1;
+	val >>= OBJC_SMALL_OBJECT_SHIFT;
 	//fprintf(stderr, "Boxing %d\n", (int) val);
 	return [BigInt bigIntWithLongLong:(long long)val];
 }
 void *BoxObject(void *obj) {
 	intptr_t val = (intptr_t)obj;
-	if (val == 0 || (val & 1) == 0) {
+	if (val == 0 || (val & OBJC_SMALL_OBJECT_MASK) == 0) {
 		return obj;
 	}
-	val >>= 1;
+	val >>= OBJC_SMALL_OBJECT_SHIFT;
 	return [BigInt bigIntWithLongLong:(long long)val];
 }
 
 #define CAST(x) NCAST(x,x)
-#define CASTMSG(type, name) type SmallIntMsg##name##Value(void *obj) { return (type) ((intptr_t)obj>>1); }
+#define CASTMSG(type, name) type SmallIntMsg##name##Value(void *obj) { return (type) ((intptr_t)obj>>OBJC_SMALL_OBJECT_SHIFT); }
 
 CASTMSG(char, char)
 CASTMSG(unsigned char, unsignedChar)
@@ -445,7 +446,7 @@ struct _block_byref_object
 void LKByRefKeep(struct _block_byref_object *dst, struct _block_byref_object*src)
 {
 	dst->captured = src->captured;
-	if ((((intptr_t)dst->captured) & 1) != 1)
+	if ((((intptr_t)dst->captured) & OBJC_SMALL_OBJECT_MASK) == 0)
 	{
 		objc_retain(dst->captured);
 	}
@@ -455,7 +456,7 @@ void objc_release(id);
 
 void LKByRefDispose(struct _block_byref_object*src)
 {
-	if ((((intptr_t)src) & 1) != 1)
+	if ((((intptr_t)src) & OBJC_SMALL_OBJECT_MASK) != 0)
 	{
 		objc_release(src->captured);
 	}

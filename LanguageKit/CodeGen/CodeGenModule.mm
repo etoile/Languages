@@ -348,8 +348,8 @@ Value *CodeGenModule::IntConstant(CGBuilder &Builder, NSString *value)
 {
 	errno = 0;
 	long long val = strtoll([value UTF8String], NULL, 10);
-	intptr_t ptrVal = (val << 1);
-	if ((0 == val && errno == EINVAL) || ((ptrVal >> 1) != val))
+	intptr_t ptrVal = (val << OBJC_SMALL_OBJECT_SHIFT);
+	if ((0 == val && errno == EINVAL) || ((ptrVal >> OBJC_SMALL_OBJECT_SHIFT) != val))
 	{
 		return GenericConstant(Builder, @"BigInt",
 				@"bigIntWithCString:", value);
@@ -483,7 +483,7 @@ void CodeGenModule::compile(void)
 	OwningPtr<MemoryBuffer> buffer;
 	MemoryBuffer::getFile([MsgSendSmallIntFilename UTF8String], buffer);
 	Module *smallIntModule = ParseBitcodeFile(buffer.get(), Context);
-	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
+	//llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	DUMP(TheModule);
 	LOG("\n\n\n Optimises to:\n\n\n");
 	//FIXME: Use PassManagerBuilder here

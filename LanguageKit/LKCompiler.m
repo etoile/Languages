@@ -333,13 +333,11 @@ static NSString *loadFramework(NSString *framework)
 			NSBundle *bundle = [NSBundle bundleWithPath:f];
 			if ([bundle load]) 
 			{
-				NSLog(@"Loaded %@", f);
 				// If a framework header exists, then load it
 				if (nil != collection)
 				{
 					f = [f stringByAppendingPathComponent: @"Headers"];
 					f = [f stringByAppendingPathComponent: [framework stringByAppendingPathExtension: @"h"]];
-					NSLog(@"Parsing %@", f);
 					if ([fm fileExistsAtPath:f isDirectory:&isDir] && !isDir)
 					{
 						[collection sourceFileForPath: f];

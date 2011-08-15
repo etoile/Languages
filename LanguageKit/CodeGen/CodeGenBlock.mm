@@ -90,21 +90,21 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 	copyBuilder.CreateRetVoid();
 
 	llvm::StructType *descriptorTy = GetStructType(CGM->Context,
-	                                               types.intTy,         // reserved
-	                                               types.intTy,         // size
+	                                               types.longTy,         // reserved
+	                                               types.longTy,         // size
 	                                               copy->getType(),   // copy
 	                                               dispose->getType(),// dispose
 	                                               types.ptrToVoidTy,   // signature
 	                                               NULL);
 	llvm::Constant *sig = CGM->MakeConstantString(signature);
 	llvm::Constant *size = llvm::ConstantExpr::getSizeOf(blockType);
-	if (size->getType() != types.intTy)
+	if (size->getType() != types.longTy)
 	{
-		size = llvm::ConstantExpr::getTrunc(size, types.intTy);
+		size = llvm::ConstantExpr::getTrunc(size, types.longTy);
 	}
 	llvm::Constant *descriptorInit =
 		llvm::ConstantStruct::get(descriptorTy, 
-			llvm::ConstantInt::get(types.intTy, 0),
+			llvm::ConstantInt::get(types.longTy, 0),
 			size,
 			copy,
 			dispose,
