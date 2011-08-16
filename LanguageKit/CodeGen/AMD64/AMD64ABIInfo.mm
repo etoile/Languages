@@ -119,8 +119,8 @@ inline void AMD64ABIInfo::classifyLLVMType(const StructType *ty,
 	uint64_t sSize = layout->getSizeInBits();
 	uint64_t fieldCount = ty->getNumElements();
 
-	// AMD64 ABI 3.2.3 (1): Objects greater than 128bit are passed in MEMORY
-	if (sSize > 128)
+	// AMD64 ABI 3.2.3 (1): Objects greater than 256bit are passed in MEMORY
+	if (sSize > 256)
 	{
 		*current = MEMORY;
 		return;
