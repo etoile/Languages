@@ -37,18 +37,6 @@
 
 using namespace etoile::languagekit;
 
-// If we have the libobjc opts, use them
-#ifdef LIBOBJC2_PASSES
-ModulePass *createClassIMPCachePass(void);
-FunctionPass *createClassLookupCachePass(void);
-ModulePass *createClassMethodInliner(void);
-FunctionPass *createGNUNonfragileIvarPass(void);
-FunctionPass *createGNULoopIMPCachePass(void);
-
-ModulePass *createTypeFeedbackPass(void);
-ModulePass *createTypeFeedbackDrivenInlinerPass(void);
-#endif
-
 using std::string;
 
 // A copy of the Small Int message module, used when static compiling.
@@ -518,6 +506,23 @@ void CodeGenModule::compile(void)
 	//pm.add(createVerifierPass());
 	pm.run(*TheModule);
 #else
+	static BOOL RuntimePassesLoaded = NO;
+
+	NSMutableArray *paths = [NSMutableArray arrayWithObjects:
+		@"/lib", @"/usr/lib", @"/usr/local/lib", nil];
+	[paths addObjectsFromArray: [[[[NSProcessInfo processInfo] environment] objectForKey: @"LD_LIBRARY_PATH"] componentsSeparatedByString: @":"]];
+	NSFileManager *fm = [NSFileManager defaultManager];
+	for (NSString *path in paths)
+	{
+		NSString *lib = [path stringByAppendingPathComponent: @"libGNUObjCRuntime.so"];
+		if ([fm fileExistsAtPath: lib isDirectory: NULL])
+		{
+			dlopen([lib UTF8String], RTLD_NOW);
+			RuntimePassesLoaded = YES;
+			break;
+		}
+	}
+
 	PassManagerBuilder PMBuilder;
 	// TODO: Allow this to be configured by the driver
 	PMBuilder.OptLevel = 3;
@@ -541,10 +546,13 @@ void CodeGenModule::compile(void)
 		}
 	}
 	PerFunctionPasses->doFinalization();
+	delete PerFunctionPasses;
 	// Run the per-module passes
 	PassManager *PerModulePasses = new PassManager();
 	PerModulePasses->add(new TargetData(TheModule));
 	PMBuilder.populateModulePassManager(*PerModulePasses);
+	// Add the ARC cleanup pass at the end.
+	PerModulePasses->add(createObjCARCContractPass());
 	PerModulePasses->run(*TheModule);
 	delete PerModulePasses;
 #endif
