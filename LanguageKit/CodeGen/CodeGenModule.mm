@@ -520,7 +520,7 @@ void CodeGenModule::compile(void)
 #else
 	PassManagerBuilder PMBuilder;
 	// TODO: Allow this to be configured by the driver
-	PMBuilder.OptLevel = 1;
+	PMBuilder.OptLevel = 3;
 	PMBuilder.addExtension(PassManagerBuilder::EP_EarlyAsPossible,
 	                       addObjCARCExpandPass);
 	PMBuilder.addExtension(PassManagerBuilder::EP_ScalarOptimizerLate,
