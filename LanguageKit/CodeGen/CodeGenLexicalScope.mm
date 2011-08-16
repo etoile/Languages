@@ -1038,7 +1038,7 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
                                         NSArray *possibleSelTypes,
                                         SmallVectorImpl<Value*> &argv)
 {
-	if ([possibleSelTypes count] == 1)
+	if ([possibleSelTypes count] <= 1)
 	{
 		NSString *selTypes = [possibleSelTypes objectAtIndex: 0];
 		SmallVector<Value*, 8> args;

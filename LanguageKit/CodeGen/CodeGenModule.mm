@@ -17,6 +17,7 @@
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/IRBuilder.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <llvm/Target/TargetData.h>
 #include <llvm/Support/system_error.h>
 
@@ -437,6 +438,19 @@ static void *findSymbol(const string &str)
 	return dlsym(RTLD_DEFAULT, str.c_str());
 }
 
+#if LLVM_MAJOR >= 3
+// Create the two ARC optimisation passes
+static void addObjCARCExpandPass(const PassManagerBuilder &Builder, PassManagerBase &PM)
+{
+	PM.add(createObjCARCExpandPass());
+}
+
+static void addObjCARCOptPass(const PassManagerBuilder &Builder, PassManagerBase &PM)
+{
+	PM.add(createObjCARCOptPass());
+}
+#endif
+
 void CodeGenModule::EndModule(void)
 {
 	InitialiseBuilder.CreateRetVoid();
@@ -486,7 +500,7 @@ void CodeGenModule::compile(void)
 	DUMP(TheModule);
 	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	LOG("\n\n\n Optimises to:\n\n\n");
-	//FIXME: Use PassManagerBuilder here
+#if LLVM_MAJOR < 3
 	PassManager pm;
 	pm.add(createScalarReplAggregatesPass());
 	pm.add(createPromoteMemoryToRegisterPass());
@@ -503,6 +517,37 @@ void CodeGenModule::compile(void)
 	pm.add(createCFGSimplificationPass());
 	//pm.add(createVerifierPass());
 	pm.run(*TheModule);
+#else
+	PassManagerBuilder PMBuilder;
+	// TODO: Allow this to be configured by the driver
+	PMBuilder.OptLevel = 1;
+	PMBuilder.addExtension(PassManagerBuilder::EP_EarlyAsPossible,
+	                       addObjCARCExpandPass);
+	PMBuilder.addExtension(PassManagerBuilder::EP_ScalarOptimizerLate,
+	                       addObjCARCOptPass);
+	// Inlining threshold copied from clang.  May be silly...
+	PMBuilder.Inliner = createFunctionInliningPass(275);
+	FunctionPassManager *PerFunctionPasses= new FunctionPassManager(TheModule);
+	PerFunctionPasses->add(new TargetData(TheModule));
+
+	PMBuilder.populateFunctionPassManager(*PerFunctionPasses);
+
+	for (Module::iterator I = TheModule->begin(), E = TheModule->end() ;
+	     I != E ; ++I)
+	{
+		if (!I->isDeclaration())
+		{
+			PerFunctionPasses->run(*I);
+		}
+	}
+	PerFunctionPasses->doFinalization();
+	// Run the per-module passes
+	PassManager *PerModulePasses = new PassManager();
+	PerModulePasses->add(new TargetData(TheModule));
+	PMBuilder.populateModulePassManager(*PerModulePasses);
+	PerModulePasses->run(*TheModule);
+	delete PerModulePasses;
+#endif
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
