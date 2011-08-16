@@ -23,6 +23,7 @@ ${FRAMEWORK_NAME}_OBJC_FILES = \
 	NSValue+structs.m\
 	LanguageKitExceptions.m\
 	OverflowHandler.m\
+	NSString+conversions.m\
 	Symbol.m
 
 ${FRAMEWORK_NAME}_OBJ_FILES = MsgSendSmallInt.o
