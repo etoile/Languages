@@ -1058,6 +1058,20 @@ void CGObjCGNU::GenerateClass(
 	StringVector  &ClassMethodTypes,
 	StringVector &Protocols) 
 {
+	std::string classSymbolName = "__objc_class_name_";
+	classSymbolName += [ClassName UTF8String];
+	if (llvm::GlobalVariable *symbol =
+	  TheModule.getGlobalVariable(classSymbolName))
+	{
+		symbol->setInitializer(llvm::ConstantInt::get(LongTy, 0));
+	}
+	else
+	{
+		new llvm::GlobalVariable(TheModule, LongTy, false,
+			llvm::GlobalValue::ExternalLinkage, llvm::ConstantInt::get(LongTy, 0),
+			classSymbolName);
+	}
+
 	// Get the superclass pointer.
 	llvm::Constant *SuperClass;
 	if (SuperClassName)

@@ -184,6 +184,20 @@ void CodeGenModule::EndCategory(void)
 		ClassMethodTypes, Protocols);
 }
 
+CodeGenFunction::CodeGenFunction(NSString *functionName,
+                                 NSArray *locals,
+                                 NSArray *arguments,
+                                 NSString *signature,
+                                 CodeGenModule *Mod)
+                               : CodeGenSubroutine(Mod) 
+{
+	CleanupBB = 0;
+	// FIXME: Should allow the front end to set this.
+	bool returnsRetained = NO;
+	InitialiseFunction(functionName, arguments, locals, signature, returnsRetained);
+	Self = 0;
+}
+
 CodeGenMethod::CodeGenMethod(NSString *methodName,
                              NSString *functionName,
                              NSArray *locals,
@@ -230,6 +244,17 @@ CodeGenMethod::CodeGenMethod(NSString *methodName,
 	}
 }
 
+void CodeGenModule::BeginFunction(NSString *functionName,
+                                  NSString *functionTypes,
+                                  NSArray *locals,
+                                  NSArray *arguments)
+{
+	inClassMethod = false;
+	assert(ScopeStack.empty()
+		&& "Creating a function inside something is not sensible");
+	ScopeStack.push_back(new CodeGenFunction(functionName, locals,
+		arguments, functionTypes, this));
+}
 void CodeGenModule::BeginInstanceMethod(NSString *methodName,
                                         NSString *methodTypes,
                                         NSArray *locals,
@@ -266,6 +291,12 @@ void CodeGenModule::BeginClassMethod(NSString *methodName,
 		arguments, methodTypes, true, this));
 }
 
+void CodeGenModule::EndFunction()
+{
+	ScopeStack.back()->EndScope();
+	delete ScopeStack.back();
+	ScopeStack.pop_back();
+}
 void CodeGenModule::EndMethod()
 {
 	//assert(isa<CodeGenMethod>(ScopeStack.back()));

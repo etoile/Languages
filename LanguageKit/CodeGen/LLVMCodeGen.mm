@@ -122,6 +122,17 @@ const char * LKObjectEncoding = @encode(LKObject);
 {
 	Builder->BeginInstanceMethod(aName, types, locals, args);
 }
+- (void)beginFunction: (NSString*)aName
+     withTypeEncoding: (NSString*)typeEncoding
+            arguments: (NSArray*)arguments 
+               locals: (NSArray*)locals;
+{
+	Builder->BeginFunction(aName, typeEncoding, locals, arguments);
+}
+- (void)endFunction
+{
+	Builder->EndFunction();
+}
 
 - (void*) sendMessage:(NSString*)aMessage
                 types:(NSArray*)types

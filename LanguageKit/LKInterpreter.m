@@ -402,6 +402,31 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 }
 @end
 
+@interface LKFunctionCall (LKInterpreter)
+@end
+@implementation LKFunctionCall (LKInterpreter)
+- (id)interpretInContext: (LKInterpreterContext*)context
+{
+	NSArray *arguments = [self arguments];
+	unsigned int argc = [arguments count];
+	__unsafe_unretained id argv[argc];
+	for (unsigned int i=0 ; i<argc ; i++)
+	{
+		LKAST *arg = [arguments objectAtIndex: i];
+		arg = [arg retain];
+		@try
+		{
+			argv[i] = [arg interpretInContext: context];
+		}
+		@finally
+		{
+			[arg release];
+		}
+	}
+	return LKCallFunction([self functionName], [self typeEncoding], argc, argv);
+}
+@end
+
 @interface LKMessageSend (LKInterpreter)
 @end
 @implementation LKMessageSend (LKInterpreter)

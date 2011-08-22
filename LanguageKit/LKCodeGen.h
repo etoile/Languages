@@ -62,6 +62,13 @@
                    arguments: (NSArray*)arguments
                       locals: (NSArray*)locals;
 /**
+ * Begins compiling a free-standing function.  
+ */
+- (void)beginFunction: (NSString*)aName
+     withTypeEncoding: (NSString*)typeEncoding
+            arguments: (NSArray*)arguments 
+               locals: (NSArray*)locals;
+/**
  * Sends a message to a receiver which may be a SmallInt (a boxed Smalltalk
  * integer contained within an object pointer).
  */

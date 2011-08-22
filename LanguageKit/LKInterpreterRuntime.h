@@ -17,7 +17,11 @@
  */
 id LKSendMessage(NSString *className, id receiver, NSString *selName,
                  unsigned int argc, __unsafe_unretained id *args);
-
+/**
+ * Calls the named function, with the specified type encoding.  
+ */
+id LKCallFunction(NSString *functionName, NSString *types,
+                 unsigned int argc, __unsafe_unretained id *args);
 /**
  * Gets the value of an instance variable, boxing it as necessary.
  */

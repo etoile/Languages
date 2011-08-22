@@ -36,6 +36,7 @@ private:
   friend class CodeGenBlock;
   friend class CodeGenSubroutine;
   friend class CodeGenMethod;
+  friend class CodeGenFunction;
 
   LLVMContext &Context;
   Module *TheModule;
@@ -154,6 +155,17 @@ public:
 	 */
 	void EndCategory(void);
 
+	/**
+	 * Start a function method.
+	 */
+	void BeginFunction(NSString *methodName,
+	                   NSString *methodTypes,
+	                   NSArray *locals,
+	                   NSArray *arguments);
+	/**
+	 * Ends a function.
+	 */
+	void EndFunction(void);
 	/**
 	 * Start a class method.
 	 */

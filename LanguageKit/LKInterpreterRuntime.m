@@ -12,6 +12,7 @@
 #endif
 #include <string.h>
 #include <ffi.h>
+#include <dlfcn.h>
 
 static id BoxValue(void *value, const char *typestr);
 static void UnboxValue(id value, void *dest, const char *objctype);
@@ -287,6 +288,50 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 			            format: @"Unable to transmogriy object to"
 			                    "compound type: %s\n", objctype];
 	}
+}
+
+id LKCallFunction(NSString *functionName, NSString *types,
+                 unsigned int argc, __unsafe_unretained id *args)
+{
+	NSMethodSignature *sig = [NSMethodSignature signatureWithObjCTypes: [types UTF8String]];
+	void *function = dlsym(RTLD_DEFAULT, [functionName UTF8String]);
+	if (nil == function)
+	{
+		[NSException raise: LKInterpreterException
+		            format: @"Could not look up function %@", functionName];
+	}
+
+	// Prepare FFI types
+	const char *returnObjCType = [sig methodReturnType];
+	ffi_type *ffi_ret_ty = FFITypeForObjCType(returnObjCType);
+	ffi_type *ffi_tys[argc];
+	for (unsigned int i = 0; i < argc; i++)
+	{
+		const char *objCType = [sig getArgumentTypeAtIndex: i];
+		ffi_tys[i] = FFITypeForObjCType(objCType);
+	}
+	
+	ffi_cif cif;
+	if (FFI_OK != ffi_prep_cif(&cif,  FFI_DEFAULT_ABI, argc, ffi_ret_ty, ffi_tys))
+	{
+		[NSException raise: LKInterpreterException
+		            format: @"Error preparing call signature"];
+	}
+	
+	// Prepare actual args. Use more space than needed
+	char unboxedArgumentsBuffer[[sig numberOfArguments]][[sig frameLength]];
+	void *unboxedArguments[[sig numberOfArguments]];
+	for (unsigned int i = 0; i < argc; i++)
+	{
+		const char *objCType = [sig getArgumentTypeAtIndex: i];
+		UnboxValue(args[i], unboxedArgumentsBuffer[i], objCType);
+		unboxedArguments[i] = unboxedArgumentsBuffer[i];
+	}
+	
+	char msgSendRet[[sig methodReturnLength]];
+	ffi_call(&cif, function, &msgSendRet, unboxedArguments);
+	
+	return BoxValue(msgSendRet, [sig methodReturnType]);
 }
 
 id LKSendMessage(NSString *className, id receiver, NSString *selName,

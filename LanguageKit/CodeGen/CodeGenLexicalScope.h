@@ -313,5 +313,14 @@ public:
 	              bool isClass,
 	              CodeGenModule *Mod);
 };
+class CodeGenFunction : public CodeGenSubroutine
+{
+public:
+	CodeGenFunction(NSString *functionName,
+                    NSArray *locals,
+                    NSArray *arguments,
+                    NSString *signature,
+                    CodeGenModule *Mod);
+};
 }}
 #endif 
