@@ -94,6 +94,9 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 	BasicBlock *EntryBB = 
 		llvm::BasicBlock::Create(Context, "entry", LiteralInitFunction);
 	InitialiseBuilder.SetInsertPoint(EntryBB);
+	initializerPool =
+		InitialiseBuilder.CreateCall(TheModule->getOrInsertFunction("objc_autoreleasePoolPush",
+					types->ptrToVoidTy, NULL));
 
 	Runtime = CreateObjCRuntime(types, *TheModule, Context, gc, jit);
 
@@ -472,6 +475,8 @@ static void addObjCARCOptPass(const PassManagerBuilder &Builder, PassManagerBase
 
 void CodeGenModule::EndModule(void)
 {
+	InitialiseBuilder.CreateCall(TheModule->getOrInsertFunction("objc_autoreleasePoolPop",
+				types->voidTy, types->ptrToVoidTy, NULL), initializerPool);
 	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();

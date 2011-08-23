@@ -54,6 +54,7 @@ private:
   Module *SmallIntModule;
   Function *LiteralInitFunction;
   CGBuilder InitialiseBuilder;
+  llvm::Value *initializerPool;
   CGObjCRuntime * Runtime;
   CodeGenAssignments *assign;
   bool inClassMethod;
