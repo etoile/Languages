@@ -154,6 +154,8 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 	blockContext = Builder.CreateBitCast(CurrentFunction->arg_begin(), blockPtrTy);
 	// Self is bound directly.
 	Self = Builder.CreateStructGEP(blockContext, 6);
+	// Context pointer for non-local returns
+	Context = Builder.CreateLoad(Builder.CreateStructGEP(blockContext, 5));
 
 	// Create the block structure in the parent scope.
 	CodeGenSubroutine *parent = CGM->ScopeStack.back();
@@ -174,10 +176,7 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 	// The block descriptor
 	b.CreateStore(b.CreateBitCast(emitBlockDescriptor(signature, blockStructureTy), types.ptrToVoidTy),
 		b.CreateStructGEP(block, 4));
-	// We can use the block's on-stack address as its context pointer.  This
-	// lets us trivially differentiate between the original block and copies.
-	b.CreateStore(b.CreateBitCast(block, types.ptrToVoidTy),
-		b.CreateStructGEP(block, 5));
+	b.CreateStore(b.CreateBitCast(parent->Context, types.ptrToVoidTy), b.CreateStructGEP(block, 5));
 	b.CreateStore(parent->LoadSelf(), b.CreateStructGEP(block, 6));
 
 	int i = 7;
@@ -211,7 +210,7 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 	llvm::Value *returnFn = CGM->TheModule->getOrInsertFunction("__LanguageKitThrowNonLocalReturn",
 		types.voidTy, types.idTy, types.idTy, NULL);
 	Builder.CreateCall2(returnFn, 
-		Builder.CreateBitCast(blockContext, types.idTy),
+		Builder.CreateBitCast(Context, types.idTy),
 		Builder.CreateBitCast(RetVal, types.idTy));
 }
 

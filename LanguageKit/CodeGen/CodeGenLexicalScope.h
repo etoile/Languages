@@ -139,6 +139,7 @@ protected:
 	 */
 	void CreatePrintf(CGBuilder &Builder, NSString *str, Value *val);
 public:
+	/**/
 	/**
 	 * Returns the block's object.
 	 */
