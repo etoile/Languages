@@ -343,7 +343,7 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(types->intPtrTy, (uintptr_t)[constant retain]),
 			types->idTy);
 	}
-	Value *Class = Runtime->LookupClass(Builder, className);
+	Value *Class = Runtime->LookupClass(InitialiseBuilder, className);
 
 	Value *V = MakeConstantString(arg);
 
