@@ -351,7 +351,26 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 	//TODO: We don't actually use the size numbers for anything, but someone else
 	//does, so make these sensible:
 	returnTypeString = [returnTypeString stringByAppendingString: @"12@0:4"];
-	return CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName, returnTypeString);
+
+	// See if there is a function defined to implement this message
+	Value *SmallIntFunction =
+		getSmallIntModuleFunction(CGM, FunctionNameFromSelector(castSelName));
+	// If there is no function (for inlining) and the runtime supports small
+	// objects, just emit a normal message send and let the runtime sort it
+	// out.
+	if (0 == SmallIntFunction)
+	{
+		return CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName,
+				returnTypeString);
+	}
+	CGBuilder smallIntBuilder(CGM->Context);
+	splitSmallIntCase(val, *B, smallIntBuilder);
+	llvm::PHINode *unboxed;
+	llvm::Value *unboxedObject = CGM->Runtime->GenerateMessageSend(*B, NULL,
+			val, castSelName, returnTypeString);
+	llvm::Value *unboxedSmallInt = smallIntBuilder.CreateCall(SmallIntFunction, val);
+	combineSmallIntCase(unboxedObject, unboxedSmallInt, unboxed, *B, smallIntBuilder);
+	return unboxed;
 }
 
 llvm::Value *CodeGenSubroutine::loadByRefPointer(llvm::Value *byRefPointer)
@@ -811,7 +830,6 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 	// See if there is a function defined to implement this message
 	Value *SmallIntFunction =
 		getSmallIntModuleFunction(CGM, FunctionNameFromSelector(selName));
-
 	// If there is no function (for inlining) and the runtime supports small
 	// objects, just emit a normal message send and let the runtime sort it
 	// out.
