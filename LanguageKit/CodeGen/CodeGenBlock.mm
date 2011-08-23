@@ -90,10 +90,10 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 	copyBuilder.CreateRetVoid();
 
 	llvm::StructType *descriptorTy = GetStructType(CGM->Context,
-	                                               types.longTy,         // reserved
-	                                               types.longTy,         // size
-	                                               copy->getType(),   // copy
-	                                               dispose->getType(),// dispose
+	                                               types.longTy,        // reserved
+	                                               types.longTy,        // size
+	                                               copy->getType(),     // copy
+	                                               dispose->getType(),  // dispose
 	                                               types.ptrToVoidTy,   // signature
 	                                               NULL);
 	llvm::Constant *sig = CGM->MakeConstantString(signature);
@@ -110,8 +110,8 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 			dispose,
 			sig,
 			NULL);
-	return new GlobalVariable(descriptorTy, true,
-		llvm::GlobalValue::PrivateLinkage, descriptorInit);
+	return new GlobalVariable(*CGM->TheModule, descriptorTy, true,
+		llvm::GlobalValue::PrivateLinkage, descriptorInit, "blockDescriptor");
 }
 
 CodeGenBlock::CodeGenBlock(NSArray *locals,
