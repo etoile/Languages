@@ -22,8 +22,9 @@
 
 - (void*) compileWithGenerator:(id<LKCodeGenerator>)aGenerator
 {
+	NSLog(@"Compiling");
 	id module = [self module];
-	NSString *types_new = [[module typesForMethod:@"new"] objectAtIndex: 0];
+	NSArray *types_new = [module typesForMethod:@"new"];
 
 	id res;
 	[symbols addSymbolsNamed: A(@"Object", @"Array") ofKind: LKSymbolScopeClass];
@@ -41,6 +42,7 @@
 	                     withArgs: NULL
 	                        count: 0];
 	[aGenerator storeValue: res inVariable: [symbols symbolForName: @"Array"]];
+	NSLog(@"wrote preamble");
 
 	return NULL;
 }

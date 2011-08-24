@@ -3,6 +3,7 @@
 @implementation EScriptHoistIvars
 - (id)visitVariableDecl: (LKVariableDecl*)decl
 {
+	return decl;
 	LKMethod *method = (LKMethod*)[decl parent];
 	LKSubclass *cls = (LKSubclass*)[method parent];
 	// Make sure that this is a decl in a method.
@@ -37,6 +38,7 @@
 	}
 - (id)visitMessageSend: (LKMessageSend*)msg
 {
+	return msg;
 	// Check that this message is setting a slot
 	if (![@"setValue:forKey:" isEqualToString: [msg selector]])
 	{
