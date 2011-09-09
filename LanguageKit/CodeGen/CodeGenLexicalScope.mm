@@ -1319,7 +1319,14 @@ void CodeGenSubroutine::SetReturn(Value * Ret)
 			Ret = Builder.CreateBitCast(Ret, types.idTy);
 		}
 		Ret = Unbox(&Builder, CurrentFunction, Ret, ReturnType);
-		CGM->assign->storeLocal(Builder, RetVal, Ret);
+		if (isObject(ReturnType))
+		{
+			CGM->assign->storeLocal(Builder, RetVal, Ret);
+		}
+		else
+		{
+			Builder.CreateStore(Ret, RetVal);
+		}
 	}
 	Builder.CreateBr(CleanupBB);
 	Builder.ClearInsertionPoint();
