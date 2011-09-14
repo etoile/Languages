@@ -214,11 +214,11 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 		intptr_t val = (intptr_t)obj >> OBJC_SMALL_OBJECT_SHIFT;\
 		return [[BigInt bigIntWithLongLong:(long long)val] op:other];\
 	}
-#define RETURN_INT(x)     if((x << OBJC_SMALL_OBJECT_SHIFT >> OBJC_SMALL_OBJECT_SHIFT) != x)\
+#define RETURN_INT(x)     if(((x) << OBJC_SMALL_OBJECT_SHIFT >> OBJC_SMALL_OBJECT_SHIFT) != (x)) \
     {\
-		return [BigInt bigIntWithLongLong:(long long)x];\
+	  return [BigInt bigIntWithLongLong:(long long)(x)];	\
 	}\
-	return (void*)((x << OBJC_SMALL_OBJECT_SHIFT) | 1);
+  return (void*)(((x) << OBJC_SMALL_OBJECT_SHIFT) | 1);
 
 void *SmallIntMsgplus_(void *obj, void *other)
 {

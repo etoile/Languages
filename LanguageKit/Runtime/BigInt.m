@@ -356,7 +356,7 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 	{
 		return block();
 	}
-	return falseBlock;
+	return falseBlock();
 }
 - (id)timesRepeat: (id(^)(void))block
 {
