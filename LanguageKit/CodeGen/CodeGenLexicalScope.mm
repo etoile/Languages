@@ -598,22 +598,33 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	ExceptionBB =
 		BasicBlock::Create(CGM->Context, "non_local_return_handler", CurrentFunction);
 	CGBuilder ExceptionBuilder(ExceptionBB);
-	Value *exception = ExceptionBuilder.CreateCall(
-			llvm::Intrinsic::getDeclaration(TheModule,
-				llvm::Intrinsic::eh_exception ));
-	ExceptionBuilder.CreateStore(exception, exceptionPtr);
 	Value *ehPersonality =
 		ExceptionBuilder.CreateBitCast(TheModule->getOrInsertFunction(
 			"__LanguageKitEHPersonalityRoutine", Type::getVoidTy(CGM->Context), NULL),
 			types.ptrToVoidTy);
-
+	llvm::Constant *ehType =
+		TheModule->getOrInsertGlobal("__LanguageKitNonLocalReturn",
+		                             Type::getInt8Ty(CGM->Context));
+#if LLVM_MAJOR < 3
+	Value *exception = ExceptionBuilder.CreateCall(
+			llvm::Intrinsic::getDeclaration(TheModule,
+				llvm::Intrinsic::eh_exception));
 	Value *eh_selector = ExceptionBuilder.CreateCall4(
 		llvm::Intrinsic::getDeclaration(TheModule,
 			llvm::Intrinsic::eh_selector),
 		exception, ehPersonality,
-		TheModule->getOrInsertGlobal("__LanguageKitNonLocalReturn", Type::getInt8Ty(CGM->Context)),
+		ehType,
 		ConstantPointerNull::get(types.ptrToVoidTy));
-
+#else
+	LLVMStructType *ehRegisters =
+		GetStructType(CGM->Context, types.ptrToVoidTy, types.intPtrTy, NULL);
+	LandingPadInst *lp =
+		ExceptionBuilder.CreateLandingPad(ehRegisters, ehPersonality, 1);
+	lp->addClause(ehType);
+	Value *exception = ExceptionBuilder.CreateExtractValue(lp, 0);
+	Value *eh_selector = ExceptionBuilder.CreateExtractValue(lp, 1);
+#endif
+	ExceptionBuilder.CreateStore(exception, exceptionPtr);
 	ExceptionBuilder.CreateStore(ExceptionBuilder.CreateTrunc(eh_selector, Int1Ty), is_catch);
 	ExceptionBuilder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 1), inException);
 	ExceptionBuilder.CreateBr(CleanupBB);

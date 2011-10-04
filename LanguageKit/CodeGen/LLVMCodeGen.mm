@@ -17,8 +17,9 @@ BOOL objc_collecting_enabled(void) { return NO; }
 #include <llvm/Constants.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/DerivedTypes.h>
-#include <llvm/Target/TargetSelect.h>
 #include <llvm/ExecutionEngine/JIT.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/Support/TargetSelect.h>
 
 using llvm::Value;
 using llvm::BasicBlock;
@@ -58,6 +59,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 		// however, to make sure that the linker doesn't optimise the JIT away.
 		InitializeNativeTarget();
 		LLVMLinkInJIT();
+		llvm::JITExceptionHandling = true;
 
 		// TODO: These should all use a per-object context so we can have
 		// multiple compilers in the same class.

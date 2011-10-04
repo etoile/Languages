@@ -455,10 +455,12 @@ llvm::Value *CodeGenModule::LoadScopedValue(NSString *variable)
 
 static ExecutionEngine *EE = NULL;
 
+#if LLVM_MAJOR < 3
 static void *findSymbol(const string &str)
 {
 	return dlsym(RTLD_DEFAULT, str.c_str());
 }
+#endif
 
 #if LLVM_MAJOR >= 3
 // Create the two ARC optimisation passes
@@ -507,14 +509,6 @@ void CodeGenModule::EndModule(void)
 	DUMP(TheModule);
 }
 
-extern "C" void __register_frame(void*);
-static void register_frame(void* f)
-{
-	NSLog(@"Registering frame");
-	__register_frame(f);
-}
-
-
 void CodeGenModule::compile(void)
 {
 	EndModule();
@@ -553,7 +547,7 @@ void CodeGenModule::compile(void)
 		NSString *lib = [path stringByAppendingPathComponent: @"libGNUObjCRuntime.so"];
 		if ([fm fileExistsAtPath: lib isDirectory: NULL])
 		{
-			dlopen([lib UTF8String], RTLD_NOW);
+			//dlopen([lib UTF8String], RTLD_NOW);
 			RuntimePassesLoaded = YES;
 			break;
 		}
@@ -586,18 +580,24 @@ void CodeGenModule::compile(void)
 	// Run the per-module passes
 	PassManager *PerModulePasses = new PassManager();
 	PerModulePasses->add(new TargetData(TheModule));
+	PerModulePasses->add(createVerifierPass());
 	PMBuilder.populateModulePassManager(*PerModulePasses);
 	// Add the ARC cleanup pass at the end.
 	PerModulePasses->add(createObjCARCContractPass());
+	PerModulePasses->add(createVerifierPass());
+	PerModulePasses->add(createStripSymbolsPass(true));
 	PerModulePasses->run(*TheModule);
 	delete PerModulePasses;
 #endif
 	DUMP(TheModule);
 	if (NULL == EE)
 	{
+		LOG("Creating execution engine...\n");
 		EE = ExecutionEngine::create(TheModule);
+		assert(EE && "Created execution engine");
+#if LLVM_MAJOR < 3
 		EE->InstallLazyFunctionCreator(findSymbol);
-		EE->InstallExceptionTableRegister(register_frame);
+#endif
 	}
 	LOG("Compiling...\n");
 	EE->runStaticConstructorsDestructors(TheModule, false);
