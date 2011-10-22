@@ -248,13 +248,11 @@ struct ARCAssignments : public CodeGenAssignments
 	                                  NSString* aSelector,
 	                                  llvm::Value *aValue)
 	{
-		if (!SelectorReturnsRetained(aSelector))
+		if (SelectorReturnsRetained(aSelector))
 		{
 			ensureType(aBuilder, aValue, Types.idTy);
-			aValue = aBuilder.CreateCall(retainAutoreleasedRV, aValue);
+			aValue = aBuilder.CreateCall(autorelease, aValue);
 		}
-		ensureType(aBuilder, aValue, Types.idTy);
-		aValue = aBuilder.CreateCall(autorelease, aValue);
 		return aValue;
 	}
 	virtual void releaseValue(CGBuilder &aBuilder, llvm::Value *aValue)

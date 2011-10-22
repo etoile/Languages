@@ -516,9 +516,9 @@ void CodeGenModule::compile(void)
 	MemoryBuffer::getFile([MsgSendSmallIntFilename UTF8String], buffer);
 	Module *smallIntModule = ParseBitcodeFile(buffer.get(), Context);
 	DUMP(TheModule);
+#if LLVM_MAJOR < 3
 	llvm::Linker::LinkModules(TheModule, smallIntModule, 0);
 	LOG("\n\n\n Optimises to:\n\n\n");
-#if LLVM_MAJOR < 3
 	PassManager pm;
 	pm.add(createScalarReplAggregatesPass());
 	pm.add(createPromoteMemoryToRegisterPass());
@@ -536,6 +536,13 @@ void CodeGenModule::compile(void)
 	//pm.add(createVerifierPass());
 	pm.run(*TheModule);
 #else
+	std::string error;
+	if (llvm::Linker::LinkModules(TheModule, smallIntModule, 0, &error))
+	{
+		[NSException raise: @"LKCodeGenException"
+		            format: @"Linking failed: %s", error.c_str()];
+	}
+	LOG("\n\n\n Optimises to:\n\n\n");
 	static BOOL RuntimePassesLoaded = NO;
 
 	NSMutableArray *paths = [NSMutableArray arrayWithObjects:

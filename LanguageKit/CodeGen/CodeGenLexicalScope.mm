@@ -1198,7 +1198,7 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 		llvm::BasicBlock *continueBB =
 			llvm::BasicBlock::Create(CGM->Context, "invoke_continue",
 					Builder.GetInsertBlock()->getParent());
-		ret = IRBuilderCreateInvoke(&Builder, f, continueBB, CleanupBB,
+		ret = IRBuilderCreateInvoke(&Builder, f, continueBB, ExceptionBB,
 			callArgs);
 		Builder.SetInsertPoint(continueBB);
 		if (isSRet)
