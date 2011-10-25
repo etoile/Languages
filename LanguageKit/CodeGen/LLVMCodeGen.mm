@@ -197,7 +197,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 			Builder->StoreScopedValue([aVariable name], (llvm::Value*)aVal);
 			break;
 		case LKSymbolScopeObject:
-			Builder->StoreIVar([aVariable name], [aVariable typeEncoding], (Value*)aVal);
+			Builder->StoreIVar(aVariable, (Value*)aVal);
 			break;
 		case LKSymbolScopeClass:
 			Builder->StoreCVar([aVariable name], (Value*)aVal);

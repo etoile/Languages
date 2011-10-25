@@ -415,13 +415,23 @@ Value *CodeGenModule::LoadCvar(LKSymbol *cvar)
 	}
 	return getCurrentScope()->LoadClassVariable(className, [cvar name]);
 }
-void CodeGenModule::StoreIVar(NSString *iVarName, NSString *typeEncoding, Value *value)
+void CodeGenModule::StoreIVar(LKSymbol *ivar, Value *value)
 {
 	CodeGenSubroutine *scope = getCurrentScope();
+	NSString *className = nil;
+	id owner = [ivar owner];
+	if (class_isMetaClass(object_getClass(owner)))
+	{
+		className = [owner className];
+	}
+	else
+	{
+		className = [owner classname];
+	}
 	scope->StoreValueOfTypeAtOffsetFromObject(value,
-	                                          ClassName,
-	                                          iVarName,
-	                                          typeEncoding,
+	                                          className,
+	                                          [ivar name],
+	                                          [ivar typeEncoding],
 	                                          0,
 	                                          scope->LoadSelf());
 }

@@ -205,7 +205,7 @@ public:
 	/**
 	 * Stores the instance variable for the current class.
 	 */
-	void StoreIVar(NSString *iVarName, NSString *typeEncoding, Value *value);
+	void StoreIVar(LKSymbol *ivar, Value *value);
 	/**
 	 * Stores a variable in the specified local value.
 	 */
