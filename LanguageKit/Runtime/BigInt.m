@@ -117,6 +117,42 @@ op(sub)
 op(mul)
 op(mod)
 op2(div, tdiv_q)
+
+#define op_cmp(name, func) \
+  - (LKObject) name: (id)other \
+{\
+  	if (nil == other)\
+	{\
+		[NSException raise: @"BigIntException"\
+		            format: @"nil argument to min"];\
+	}\
+	BigInt *otherVal;\
+	LKObject returnVal;\
+\
+	if (object_getClass(other) == BigIntClass || [other isKindOfClass: BigIntClass])\
+	{\
+	     if (mpz_cmp(v, ((BigInt*)other)->v) func  0)	\
+			 returnVal = LKObjectFromObject(self);\
+		 else\
+			 returnVal = LKObjectFromObject(other);\
+	}\
+	else\
+	{\
+		BigInt *b = [[BigInt alloc] init];\
+		mpz_t number;\
+		mpz_init_set_si(number, [other intValue]);\
+		if (mpz_cmp(v, number) func  0)\
+		    returnVal = LKObjectFromObject(self);\
+		else\
+   		    returnVal = LKObjectFromObject(other);\
+\
+		mpz_clear(number);\
+	}\
+	return returnVal;\
+}\
+
+op_cmp(min, <=)
+op_cmp(max, >=) 
 - (id)and: (id)a
 {
 	return mpz_get_si(v) && [a intValue] ? BigIntYES : BigIntNO;

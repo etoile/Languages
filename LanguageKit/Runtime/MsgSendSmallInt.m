@@ -23,6 +23,8 @@ void NSLog(NSString*, ...);
 - (LKObject)div:(id)a;
 - (LKObject)mul:(id)a;
 - (LKObject)mod:(id)a;
+- (LKObject)min:(id)a;
+- (LKObject)max:(id)a;
 - (id)to:(id)a by:(id)b do:(id)c;
 - (id)to:(id)a do:(id)c;
 - (id)and: (id)a;
@@ -253,6 +255,29 @@ void *SmallIntMsgmul_(void *obj, void *other)
 	// when returning a big integer.  This then clears that bit.  
 	return (void*)((val * otherval) ^ 1);
 }
+void *SmallIntMsgmin_(void *obj, void *other)
+{
+    OTHER_OBJECT_CAST(min)
+	// Turn other into a C integer
+	intptr_t otherval = ((intptr_t)other) >> OBJC_SMALL_OBJECT_SHIFT;
+
+	if ((intptr_t)obj <= otherval)
+	  return obj;
+	else
+	  return (void *)otherval;
+}
+void *SmallIntMsgmax_(void *obj, void *other)
+{
+    OTHER_OBJECT_CAST(max)
+	// Turn other into a C integer
+	intptr_t otherval = ((intptr_t)other) >> OBJC_SMALL_OBJECT_SHIFT;
+
+	if ((intptr_t)obj <= otherval)
+	  return (void*)otherval;
+	else
+	  return obj;
+}
+
 MSG1(div_)
 	OTHER_OBJECT_CAST(div)
 	RETURN_INT((val / otherval));
@@ -352,6 +377,8 @@ METHOD1(plus)
 METHOD1(sub)
 METHOD1(mul)
 METHOD1(div)
+METHOD1(min)
+METHOD1(max)
 BOOLMETHOD1(isLessThan)
 BOOLMETHOD1(isGreaterThan)
 BOOLMETHOD1(isGreaterThanOrEqualTo)
