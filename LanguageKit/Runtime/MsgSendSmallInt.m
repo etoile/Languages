@@ -258,22 +258,18 @@ void *SmallIntMsgmul_(void *obj, void *other)
 void *SmallIntMsgmin_(void *obj, void *other)
 {
     OTHER_OBJECT_CAST(min)
-	// Turn other into a C integer
-	intptr_t otherval = ((intptr_t)other) >> OBJC_SMALL_OBJECT_SHIFT;
 
-	if ((intptr_t)obj <= otherval)
+	if (obj <= other)
 	  return obj;
 	else
-	  return (void *)otherval;
+	  return other;
 }
 void *SmallIntMsgmax_(void *obj, void *other)
 {
     OTHER_OBJECT_CAST(max)
-	// Turn other into a C integer
-	intptr_t otherval = ((intptr_t)other) >> OBJC_SMALL_OBJECT_SHIFT;
 
-	if ((intptr_t)obj <= otherval)
-	  return (void*)otherval;
+	if (obj <= other)
+	  return other;
 	else
 	  return obj;
 }
