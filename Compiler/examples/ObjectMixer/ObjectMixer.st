@@ -140,7 +140,6 @@ NSObject subclass: SmalltalkTool
 		browserItem setHeight: 200.
 
 		codeEditorItem := itemFactory textView.
-		codeEditorItem view retain.
 		codeEditorItem setWidth: 700.
 		codeEditorItem setHeight: 400.
 
