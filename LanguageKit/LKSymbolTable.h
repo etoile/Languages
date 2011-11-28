@@ -78,6 +78,11 @@ typedef enum
  */
 + (LKSymbolTable*)symbolTableForClass: (NSString*)aClassName;
 /**
+ * Returns the symbol table for a class.  If the class exists, then this will
+ * be populated with its instance variables. If not, then it return nil.
+ */
++ (LKSymbolTable*)lookupTableForClass: (NSString*)aClassName;
+/**
  * Add a symbol to this table.
  */
 - (void)addSymbol: (LKSymbol*)aSymbol;

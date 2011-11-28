@@ -74,6 +74,18 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 	}
 	return table;
 }
++ (LKSymbolTable*)lookupTableForClass: aClassName
+{
+  LKSymbolTable *table = [NewClasses objectForKey: aClassName];
+  if (nil != table) { return table; }
+  
+  Class class = NSClassFromString(aClassName);
+  if (class)
+  {
+	return [self symbolTableForClass: aClassName];
+  }
+  return nil;
+}
 - (void)addSymbol: (LKSymbol*)aSymbol
 {
 	[symbols setObject: aSymbol forKey: [aSymbol name]];

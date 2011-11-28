@@ -33,8 +33,21 @@
 - (BOOL)check
 {
 	BOOL success = YES;
-	ASSIGN(symbols, [LKSymbolTable symbolTableForClass: classname]);
-	[symbols setEnclosingScope: [LKSymbolTable symbolTableForClass: superclass]];
+	LKSymbolTable* superSymTable = [LKSymbolTable lookupTableForClass: superclass];
+	ASSIGN(symbols, [LKSymbolTable symbolTableForClass: classname]); 
+	if (Nil == superSymTable)
+	{
+	  NSDictionary *errorDetails = D([NSString stringWithFormat:
+			@"Attempting to subclass un unknown superclasss: %@", superclass],
+			kLKHumanReadableDescription,
+			self, kLKASTNode);
+	  if ([LKCompiler reportError: LKUndefinedSuperclassError
+							details: errorDetails] == NO)
+	  {
+		  return NO;
+	  }
+	}
+	[symbols setEnclosingScope: superSymTable];
 	//Construct symbol table.
 	if (Nil != NSClassFromString(classname))
 	{
