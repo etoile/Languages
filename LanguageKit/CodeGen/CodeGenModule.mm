@@ -564,7 +564,7 @@ void CodeGenModule::compile(void)
 		NSString *lib = [path stringByAppendingPathComponent: @"libGNUObjCRuntime.so"];
 		if ([fm fileExistsAtPath: lib isDirectory: NULL])
 		{
-			//dlopen([lib UTF8String], RTLD_NOW);
+			dlopen([lib UTF8String], RTLD_NOW);
 			RuntimePassesLoaded = YES;
 			break;
 		}
@@ -598,7 +598,7 @@ void CodeGenModule::compile(void)
 	PassManager *PerModulePasses = new PassManager();
 	PerModulePasses->add(new TargetData(TheModule));
 	PerModulePasses->add(createVerifierPass());
-	//PMBuilder.populateModulePassManager(*PerModulePasses);
+	PMBuilder.populateModulePassManager(*PerModulePasses);
 	// Add the ARC cleanup pass at the end.
 	PerModulePasses->add(createObjCARCContractPass());
 	PerModulePasses->add(createVerifierPass());

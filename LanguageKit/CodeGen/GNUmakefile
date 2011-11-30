@@ -46,11 +46,11 @@ ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 ${FRAMEWORK_NAME}_CPPFLAGS =  `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/-DLLVM_MAJOR=\1 -DLLVM_MINOR=\2/'`
 
 # LLVM flags
-#LLVM_LIBS=analysis archive backend bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support system target transformutils #x86 x86asmprinter x86codegen
-LLVM_LIBS=all
+LLVM_LIBS=analysis archive bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support target transformutils #x86 x86asmprinter x86codegen
+#LLVM_LIBS=all
 
-${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
-${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags  ${LLVM_LIBS}` -g
+${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ` -g
+${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags ` -g
 LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
 
 

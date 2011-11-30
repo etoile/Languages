@@ -617,7 +617,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		ConstantPointerNull::get(types.ptrToVoidTy));
 #else
 	LLVMStructType *ehRegisters =
-		GetStructType(CGM->Context, types.ptrToVoidTy, types.intPtrTy, NULL);
+		GetStructType(CGM->Context, types.ptrToVoidTy, llvm::Type::getInt32Ty(CGM->Context), NULL);
 	LandingPadInst *lp =
 		ExceptionBuilder.CreateLandingPad(ehRegisters, ehPersonality, 1);
 	lp->addClause(ehType);
