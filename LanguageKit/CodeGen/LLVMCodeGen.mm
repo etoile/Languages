@@ -59,7 +59,9 @@ const char * LKObjectEncoding = @encode(LKObject);
 		// however, to make sure that the linker doesn't optimise the JIT away.
 		InitializeNativeTarget();
 		LLVMLinkInJIT();
-		llvm::JITExceptionHandling = true;
+#if (LLVM_MAJOR > 3) && (LLVM_MINOR > 0)
+			llvm::JITExceptionHandling = true;
+#endif
 
 		// TODO: These should all use a per-object context so we can have
 		// multiple compilers in the same class.
