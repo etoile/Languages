@@ -354,7 +354,12 @@ llvm::Constant *CGObjCGNU::MakeConstantString(NSString *Str,
                                               const std::string &Name) 
 {
 	std::string str([Str UTF8String], [Str length]);
+#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MAJOR > 0)
+	llvm::Constant *ConstStr = llvm::ConstantDataArray::getString(Context,
+		str, true);
+#else
 	llvm::Constant * ConstStr = llvm::ConstantArray::get(Context, str);
+#endif
 	ConstStr = new llvm::GlobalVariable(TheModule, ConstStr->getType(), true,
 		llvm::GlobalValue::InternalLinkage, ConstStr, Name);
 	return llvm::ConstantExpr::getGetElementPtr(ConstStr, Zeros, 2);
@@ -1083,7 +1088,11 @@ void CGObjCGNU::GenerateClass(
 		SuperClass = llvm::ConstantPointerNull::get(
 			llvm::cast<llvm::PointerType>(PtrToInt8Ty));
 	}
+#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MAJOR > 0)
+	llvm::Constant * Name = llvm::ConstantDataArray::getString(Context, [ClassName UTF8String], true);
+#else
 	llvm::Constant * Name = llvm::ConstantArray::get(Context, [ClassName UTF8String]);
+#endif
 	Name = new llvm::GlobalVariable(TheModule, Name->getType(), true,
 		llvm::GlobalValue::InternalLinkage, Name, ".class_name");
 	// Empty vector used to construct empty method lists
