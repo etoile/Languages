@@ -52,7 +52,7 @@ Constant *CodeGenModule::MakeConstantString(NSString *Str,
 	Constant *ConstStr = constantStrings[Str];
 	if (0 == ConstStr)
 	{
-#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MAJOR > 0)
+#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MINOR > 0)
 		ConstStr = llvm::ConstantDataArray::getString(Context, [Str UTF8String]);
 #else
 		ConstStr = llvm::ConstantArray::get(Context, [Str UTF8String]);

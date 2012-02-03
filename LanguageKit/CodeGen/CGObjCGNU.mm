@@ -354,7 +354,7 @@ llvm::Constant *CGObjCGNU::MakeConstantString(NSString *Str,
                                               const std::string &Name) 
 {
 	std::string str([Str UTF8String], [Str length]);
-#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MAJOR > 0)
+#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MINOR > 0)
 	llvm::Constant *ConstStr = llvm::ConstantDataArray::getString(Context,
 		str, true);
 #else
@@ -1088,7 +1088,7 @@ void CGObjCGNU::GenerateClass(
 		SuperClass = llvm::ConstantPointerNull::get(
 			llvm::cast<llvm::PointerType>(PtrToInt8Ty));
 	}
-#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MAJOR > 0)
+#if (LLVM_MAJOR > 3) || ((LLVM_MAJOR == 3) && LLVM_MINOR > 0)
 	llvm::Constant * Name = llvm::ConstantDataArray::getString(Context, [ClassName UTF8String], true);
 #else
 	llvm::Constant * Name = llvm::ConstantArray::get(Context, [ClassName UTF8String]);
