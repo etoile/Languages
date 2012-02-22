@@ -15,6 +15,10 @@
 {
 	return [[Symbol alloc] initWithSelector:aSelector];
 }
+- (id) copyWithZone: (NSZone*) aZone
+{
+  return [self retain];
+}
 - (id) initWithSelector:(SEL) aSelector
 {
 	SELFINIT

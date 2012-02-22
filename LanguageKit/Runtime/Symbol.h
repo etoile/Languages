@@ -21,6 +21,7 @@
 + (id) SymbolForCString:(const char*)aSymbol NS_RETURNS_RETAINED;
 + (id) SymbolForSelector:(SEL) aSelector NS_RETURNS_RETAINED;
 
+- (id) copyWithZone: (NSZone*)aZone;
 - (id) initWithSelector:(SEL) aSelector;
 - (id) stringValue;
 - (SEL) selValue;
