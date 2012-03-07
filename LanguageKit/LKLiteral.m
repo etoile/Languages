@@ -69,12 +69,20 @@ static NSDictionary *ObjCConstants;
 	                         withString:@"'" 
 	                            options:0
 	                              range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"\\\\"
+	                         withString:@"\\s" 
+	                            options:0
+	                              range:NSMakeRange(0, [escaped length])];
 	[escaped replaceOccurrencesOfString:@"\\n"
 	                         withString:@"\n" 
 	                            options:0
 	                              range:NSMakeRange(0, [escaped length])];
 	[escaped replaceOccurrencesOfString:@"\\t"
 	                         withString:@"\t" 
+	                            options:0
+	                              range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"\\s"
+	                         withString:@"\\" 
 	                            options:0
 	                              range:NSMakeRange(0, [escaped length])];
 
