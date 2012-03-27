@@ -1,12 +1,12 @@
 /*
-	AMD64ABIInfo.cpp
+	GenericABIInfo.h
 
-	ABI information provider for code generation on AMD64 platforms.
+	ABI information provider for platforms that don't have an explicit provider.
 
-	Copyright (C) 2011 Niels Grewe
+	Copyright (C) 2012 Niels Grewe
 
 	Author:  Niels Grewe <niels.grewe@halbordnung.de>
-	Date:  March 2011
+	Date:  March 2012
 
 	Redistribution and use in source and binary forms, with or without
 	modification, are permitted provided that the following conditions are met:
@@ -32,66 +32,24 @@
 	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 	THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <stdint.h>
-#include <llvm/DerivedTypes.h>
-#include <llvm/Target/TargetData.h>
+#include "ABIInfo.h"
+#include "LLVMCompat.h"
+#include <llvm/Module.h>
 #include <llvm/LLVMContext.h>
-#include "../ABIInfo.h"
-#ifndef AMD64ABIInfo_h_INCLUDED
-#define AMD64ABIInfo_h_INCLUDED
+#ifndef GenericABIInfo_h_INCLUDED
+#define GenericABIInfo_h_INCLUDED
 
-enum
-{
-NO_CLASS,
-INTEGER,
-SSE,
-SSEUP,
-X87,
-X87UP,
-COMPLEX_X87,
-MEMORY,
-AMD64_CLASS_MAX
-};
-
-typedef uintptr_t AMD64ABIClass;
-
-
-typedef struct _AMD64ABIClassPair
-{
-	AMD64ABIClass low;
-	AMD64ABIClass high;
-
-} AMD64ABIClassPair;
 
 namespace etoile
 {
 namespace languagekit
 {
-class AMD64ABIInfo : public ABIInfo
+class GenericABIInfo : public ABIInfo
 {
 private:
-	const llvm::TargetData *td;
 	llvm::LLVMContext &context;
-protected:
-	AMD64ABIClass mergeClasses(const AMD64ABIClass accumulator, const AMD64ABIClass next);
-	void postMergerCleanup(AMD64ABIClass *low, AMD64ABIClass *high, uint64_t size);
-	void classifyLLVMType(llvm::Type *ty, uint64_t offset,
-	  AMD64ABIClass *low, AMD64ABIClass *high);
-	void classifyLLVMType(llvm::VectorType *ty, uint64_t offset,
-	  AMD64ABIClass *low, AMD64ABIClass *high);
-	void classifyLLVMType(llvm::ArrayType *ty, uint64_t offset,
-	  AMD64ABIClass *low, AMD64ABIClass *high);
-	void classifyLLVMType(llvm::StructType *ty, uint64_t offset,
-	  AMD64ABIClass *low, AMD64ABIClass *high);
-	/**
-	 * This function classifies the given LLVM type and assigns it the corresponding
-	 * AMD64 ABI classes. They can subsequently be used to determine the correct
-	 * register and stack layout for a function call.
-	 */
-	AMD64ABIClassPair classPairForLLVMType(llvm::Type *ty);
 public:
-	AMD64ABIInfo(llvm::Module &M);
-	~AMD64ABIInfo();
+	GenericABIInfo(llvm::Module &M) : ABIInfo(M), context(md.getContext()) {};
 
 	LLVMType *returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
 	  bool &onStack,
@@ -100,6 +58,6 @@ public:
 
 	bool passStructTypeAsPointer(llvm::StructType *ty);
 };
-} // namespace: languagekit
-} // namespace: etoile
-#endif //AMD64ABIInfo_h_INCLUDED
+} //namespace: languagekit
+} //namespace: etoile
+#endif //GenericABIInfo_h_INCLUDED

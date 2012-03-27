@@ -20,7 +20,11 @@
 #include <algorithm>
 #include <errno.h>
 
-#include "ABI.h"
+#ifdef __amd64__
+#include "AMD64/AMD64ABIInfo.h"
+#else
+#include "GenericABIInfo.h"
+#endif
 #import <Foundation/Foundation.h>
 #import "../Runtime/LKObject.h"
 
@@ -155,75 +159,6 @@ LLVMType *CodeGenTypes::typeFromString(NSString *typeEncoding)
 	while ((*typestr) && !isdigit(*typestr)) { typestr++; }\
 	while (isdigit(*typestr)) { typestr++; }
 
-static void const countIntsAndFloats(LLVMType *ty,
-                                     unsigned &ints,
-                                     unsigned &floats)
-{
-	if(ty->getTypeID() == Type::VoidTyID)
-	{
-		return;
-	}
-	if (ty->isIntegerTy())
-	{
-		ints++;
-	}
-	else if (ty->isFloatingPointTy())
-	{
-		floats++;
-	}
-	// Assume that pointers count as integers for now.
-	else if(ty->getTypeID() == Type::PointerTyID)
-	{
-		ints++;
-	}
-	else if (ty->isArrayTy())
-	{
-		unsigned i=0;
-		unsigned f=0;
-		LLVMArrayType *arr = cast<LLVMArrayType>(ty);
-		countIntsAndFloats(arr->getElementType(), i, f);
-		uint64_t elements = arr->getNumElements();
-		ints += i * elements;
-		floats += f * elements;
-	}
-	else if (ty->isAggregateType())
-	{
-		for (Type::subtype_iterator i=ty->subtype_begin(), end=ty->subtype_end()
-		     ; i!=end ; ++i)
-		{
-			countIntsAndFloats(*i, ints, floats);
-		}
-	}
-	else
-	{
-		ty->dump();
-		assert(0 && "Unrecgnised type.");
-	}
-}
-
-/**
- * Determines whether a specific structure should be returned on the stack.
- * 
- * Note that this is not expressive enough for all ABIs - we will eventually
- * need to have it handle complex and structure types differently.
- */
-static inline bool shouldReturnValueOnStack(LLVMType *sTy)
-{
-	unsigned ints = 0;
-	unsigned floats = 0;
-	if (isa<StructType>(sTy))
-	{
-		countIntsAndFloats(sTy, ints, floats);
-		LOG("Found %d ints and %d floats in ", ints, floats);
-		DUMP(sTy);
-		if (ints > MAX_INTS_IN_REGISTERS || floats > MAX_FLOATS_IN_REGISTERS)
-		{
-			LOG("Returning value on stack\n");
-			return true;
-		}
-	}
-	return false;
-}
 namespace etoile
 {
 namespace languagekit
@@ -232,6 +167,11 @@ namespace languagekit
 CodeGenTypes::CodeGenTypes(llvm::Module &M) : Mod(M)
 {
 	llvm::LLVMContext &context = M.getContext();
+#	ifdef __amd64__
+	AI = new AMD64ABIInfo(M);
+#	else
+	AI = new GenericABIInfo(M);
+#	endif
 	voidTy = llvm::Type::getVoidTy(context);
 	idTy = llvm::Type::getInt8PtrTy(context);
 	ptrToIdTy = llvm::PointerType::getUnqual(idTy);
@@ -290,27 +230,22 @@ FunctionType *CodeGenTypes::functionTypeFromString(NSString *type,
 	llvm::LLVMContext &context = Mod.getContext();
 	// Function encodings look like this:
 	// v12@0:4@8 - void f(id, SEL, id)
-	LLVMType * ReturnTy = LLVMTypeFromString2(context, &typestr);
-	isSRet = shouldReturnValueOnStack(ReturnTy);
-	
+	unsigned ints;
+	unsigned floats;
+	LLVMType * ReturnTy = LLVMTypeFromString2(context, &typestr);	
 	realRetTy = ReturnTy;
-	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ReturnTy)
-		&&                              
-		ReturnTy == GetStructType(context, Type::getFloatTy(context), Type::getFloatTy(context), NULL))
-	{   
-		isSRet = false;
-		ReturnTy = Type::getInt64Ty(context);
-	}
+
+	ReturnTy = AI->returnTypeAndRegisterUsageForRetLLVMType(ReturnTy,
+	  isSRet, ints, floats);
 	if (isSRet)
 	{
-		ArgTypes.push_back(llvm::PointerType::getUnqual(ReturnTy));
-		ReturnTy = voidTy;
+		ArgTypes.push_back(llvm::PointerType::getUnqual(realRetTy));
 	}
 	NEXT(typestr);
 	while(*typestr)
 	{
 		LLVMType *argTy = LLVMTypeFromString2(context, &typestr);
-		if (argTy->isStructTy() && PASS_STRUCTS_AS_POINTER)
+		if (argTy->isStructTy() && AI->passStructTypeAsPointer(cast<StructType>(argTy)))
 		{
 			argTy = llvm::PointerType::getUnqual(argTy);
 		}

@@ -1170,7 +1170,7 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 		sret = Builder.CreateAlloca(realReturnType);
 		callArgs.push_back(sret);
 	}
-	if (PASS_STRUCTS_AS_POINTER)
+	if (types.AI->passStructTypeAsPointer(NULL))
 	{
 		llvm::Value* callArg;
 		for (unsigned int i = 0; i < args.size() ; i++) {

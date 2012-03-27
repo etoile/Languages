@@ -6,7 +6,7 @@
  * structure that can be returned in registers.
  *
  * MAX_FLOATS_IN_REGISTERS - This defines the maximum number of floating point
- * values in a structure that can be returned in registers.  
+ * values in a structure that can be returned in registers.
  *
  * PASS_STRUCTS_AS_POINTER - Flag indicating that structures are always passed
  * by reference.
@@ -27,6 +27,10 @@ static const unsigned MAX_INTS_IN_REGISTERS = 0;
 static const unsigned MAX_FLOATS_IN_REGISTERS = 0;
 static const bool SMALL_FLOAT_STRUCTS_ON_STACK = false;
 #	endif
+#elif defined(__amd64__)
+static const unsigned MAX_INTS_IN_REGISTERS = 6;
+static const unsigned MAX_FLOATS_IN_REGISTERS = 8;
+static const bool SMALL_FLOAT_STRUCTS_ON_STACK = false;
 #else
 #	ifdef __FreeBSD__
 static const unsigned MAX_INTS_IN_REGISTERS = 2;

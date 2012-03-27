@@ -40,6 +40,7 @@
 #include "../ABI.h"
 #include "AMD64ABIInfo.h"
 #include "../CodeGenModule.h"
+#include <llvm/Module.h>
 
 /*
  * Useful sources of information on the AMD64 ABI:
@@ -61,9 +62,14 @@ static inline bool willCrossWordBoundary(uint64_t offset,
 	return (boundaryIs != boundaryWould);
 }
 
-AMD64ABIInfo::AMD64ABIInfo(CodeGenModule *aModule)
+
+namespace etoile
 {
-	td = new TargetData(aModule->getModule());
+namespace languagekit
+{
+AMD64ABIInfo::AMD64ABIInfo(llvm::Module &M) : ABIInfo(M), context(md.getContext())
+{
+	td = new TargetData(&md);
 }
 
 AMD64ABIInfo::~AMD64ABIInfo()
@@ -71,15 +77,15 @@ AMD64ABIInfo::~AMD64ABIInfo()
 	delete td;
 }
 
-inline void AMD64ABIInfo::classifyLLVMType(const ArrayType *ty,
+inline void AMD64ABIInfo::classifyLLVMType(ArrayType *ty,
   uint64_t offset,
   AMD64ABIClass *high,
   AMD64ABIClass *low)
 {
 	AMD64ABIClass *current = offset < 64 ? low : high;
-	uint64_t aSize = td->getTypeAllocSizeInBits(ty);
+	uint64_t aSize = td->getTypeAllocSizeInBits(cast<Type>(ty));
 	uint64_t elementCount = ty->getNumElements();
-	const Type *elementTy = ty->getElementType();
+	Type *elementTy = ty->getElementType();
 	uint64_t eSize = td->getTypeAllocSizeInBits(elementTy);
 
 	// AMD64 ABI 3.2.3 (1): Objects greater than 128bit are passed in MEMORY
@@ -109,7 +115,7 @@ inline void AMD64ABIInfo::classifyLLVMType(const ArrayType *ty,
 	}
 }
 
-inline void AMD64ABIInfo::classifyLLVMType(const StructType *ty,
+inline void AMD64ABIInfo::classifyLLVMType(StructType *ty,
   uint64_t offset,
   AMD64ABIClass *high,
   AMD64ABIClass *low)
@@ -126,9 +132,11 @@ inline void AMD64ABIInfo::classifyLLVMType(const StructType *ty,
 		return;
 	}
 
-	for (uint64_t i = 0, newOffset = offset; i < fieldCount ; i++, newOffset += layout->getElementOffsetInBits(i))
+	for (uint64_t i = 0, newOffset = offset; i < fieldCount ; i++)
 	{
-		const Type *thisFieldTy = ty->getElementType(i);
+		unsigned elementAtOffset = layout->getElementContainingOffset(newOffset/8);
+		newOffset += layout->getElementOffsetInBits(elementAtOffset);
+		Type *thisFieldTy = ty->getElementType(i);
 		/*
 		 * AMD64 ABI 3.2.3 (1): Objects with unaligned fields are passed in MEMORY
 		 */
@@ -153,13 +161,13 @@ inline void AMD64ABIInfo::classifyLLVMType(const StructType *ty,
 
 }
 
-inline void AMD64ABIInfo::classifyLLVMType(const VectorType *ty,
+inline void AMD64ABIInfo::classifyLLVMType(VectorType *ty,
   uint64_t offset,
   AMD64ABIClass *low,
   AMD64ABIClass *high)
 {
 	AMD64ABIClass *current = offset < 64 ? low : high;
-	const Type *elTy = ty->getElementType();
+	Type *elTy = ty->getElementType();
 	uint64_t vSize = td->getTypeAllocSizeInBits(ty);
 
 	if (32 == vSize)
@@ -216,7 +224,7 @@ inline void AMD64ABIInfo::classifyLLVMType(const VectorType *ty,
 
 }
 
-void AMD64ABIInfo::classifyLLVMType(const Type *ty,
+void AMD64ABIInfo::classifyLLVMType(Type *ty,
   uint64_t offset,
   AMD64ABIClass *low,
   AMD64ABIClass *high)
@@ -267,21 +275,21 @@ void AMD64ABIInfo::classifyLLVMType(const Type *ty,
 
 	if (ty->isVectorTy())
 	{
-		classifyLLVMType(dynamic_cast<const VectorType*>(ty), offset, high, low);
+		classifyLLVMType(cast<VectorType>(ty), offset, high, low);
 		return;
 	}
 
 	if (ty->isArrayTy())
 	{
 		// We have already eliminated pointers and vectors as the other composites.
-		classifyLLVMType(dynamic_cast<const ArrayType*>(ty), offset, high, low);
+		classifyLLVMType(cast<ArrayType>(ty), offset, high, low);
 		return;
 	}
 
 	if (ty->isStructTy())
 	{
 		// We have already eliminated pointers and vectors as the other composites.
-		classifyLLVMType(dynamic_cast<const StructType*>(ty), offset, high, low);
+		classifyLLVMType(cast<StructType>(ty), offset, high, low);
 		return;
 	}
 	/*
@@ -410,7 +418,7 @@ void AMD64ABIInfo::postMergerCleanup(AMD64ABIClass *low, AMD64ABIClass *high, ui
 	}
 }
 
-AMD64ABIClassPair AMD64ABIInfo::classPairForLLVMType(const Type *ty)
+AMD64ABIClassPair AMD64ABIInfo::classPairForLLVMType(Type *ty)
 {
 	AMD64ABIClassPair pair = {NO_CLASS, NO_CLASS};
 	if(ty->getTypeID() == Type::VoidTyID)
@@ -422,3 +430,76 @@ AMD64ABIClassPair AMD64ABIInfo::classPairForLLVMType(const Type *ty)
 	postMergerCleanup(&(pair.low), &(pair.high), td->getTypeAllocSizeInBits(ty));
 	return pair;
 }
+
+
+LLVMType* AMD64ABIInfo::returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
+  bool &onStack,
+  unsigned &integerRegisters,
+  unsigned &floatRegisters)
+{
+	// This is really a rough approximation of how we actually want to return values.
+	onStack = false;
+	AMD64ABIClassPair pair = classPairForLLVMType(ty);
+	switch (pair.low)
+	{
+		case NO_CLASS:
+			if (NO_CLASS == pair.high)
+			{
+				return  llvm::Type::getVoidTy(context);
+			}
+			break;
+		case MEMORY:
+			onStack = true;
+			return llvm::Type::getVoidTy(context);
+		case INTEGER:
+			integerRegisters++;
+			break;
+		case SSE:
+			floatRegisters++;
+			break;
+		case SSEUP:
+			if (0 == (floatRegisters % 2))
+			{
+				floatRegisters++;
+			}
+			break;
+		case X87:
+		case X87UP:
+		case COMPLEX_X87:
+		default:
+			// I think we need to ignore these
+			break;
+	}
+
+	switch (pair.high)
+	{
+		case NO_CLASS:
+		case MEMORY:
+		case X87:
+		case X87UP:
+		case COMPLEX_X87:
+			// these are not or have already been handled
+			break;
+		case INTEGER:
+			integerRegisters++;
+			break;
+		case SSE:
+			floatRegisters++;
+			break;
+		case SSEUP:
+			if (0 == (floatRegisters % 2))
+			{
+				floatRegisters++;
+			}
+			break;
+	}
+	return ty;
+}
+
+bool AMD64ABIInfo::passStructTypeAsPointer(llvm::StructType *ty)
+{
+	return false;
+}
+
+} //namespace: languagekit
+} //namepsace: etoile

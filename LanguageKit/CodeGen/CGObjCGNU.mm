@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#import "ABI.h"
 #import "CGObjCRuntime.h"
 #import "CodeGenTypes.h"
 #include "llvm/Module.h"
@@ -32,7 +31,7 @@ using namespace etoile::languagekit;
 
 // The version of the runtime that this class targets.  Must match the version
 // in the runtime.
-static int RuntimeVersion = 8;
+static int RuntimeVersion = 9;
 static int ProtocolVersion = 2;
 
 namespace {
@@ -450,7 +449,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	}
 	callArgs.push_back(Receiver);
 	callArgs.push_back(Selector);
-	if (PASS_STRUCTS_AS_POINTER)
+	if (types->AI->passStructTypeAsPointer(NULL))
 	{
 		llvm::Value* callArg;
 		for (unsigned int i = 0; i < ArgV.size() ; i++) {

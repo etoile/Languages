@@ -1,6 +1,6 @@
 #include "llvm/Support/IRBuilder.h"
 #include "LLVMCompat.h"
-
+#include "ABIInfo.h"
 @class NSString;
 namespace llvm
 {
@@ -13,9 +13,13 @@ namespace etoile
 {
 namespace languagekit
 {
-	struct CodeGenTypes 
+	struct CodeGenTypes
 	{
 		llvm::Module &Mod;
+		/**
+		 * ABI Information provider.
+		 */
+		ABIInfo *AI;
 		/**
 		 * LLVM void type.
 		 */

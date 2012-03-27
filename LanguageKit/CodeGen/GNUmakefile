@@ -16,7 +16,8 @@ ${FRAMEWORK_NAME}_OBJCC_FILES += \
 	AMD64/AMD64ABIInfo.mm
 endif
 
-${FRAMEWORK_NAME}_OBJCC_FILES = \
+${FRAMEWORK_NAME}_OBJCC_FILES += \
+	GenericABIInfo.mm\
 	CGObjCGNU.mm\
 	CodeGenAssignments.mm\
 	CodeGenBlock.mm\

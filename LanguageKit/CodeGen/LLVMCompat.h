@@ -10,6 +10,7 @@
 #include <llvm/Instructions.h>
 #include <llvm/Metadata.h>
 #include <llvm/Intrinsics.h>
+#include <llvm/Support/IRBuilder.h>
 
 // Only preserve names in a debug build.  This simplifies the
 // IR in a release build, but makes it much harder to debug.
@@ -19,7 +20,7 @@
 	typedef llvm::IRBuilder<> CGBuilder;
 #endif
 
-__attribute((unused)) static inline 
+__attribute((unused)) static inline
 llvm::PHINode* CreatePHI(llvm::Type *Ty,
                          unsigned NumReservedValues,
                          const llvm::Twine &NameStr="",
@@ -33,7 +34,7 @@ llvm::PHINode* CreatePHI(llvm::Type *Ty,
 #endif
 }
 
-__attribute((unused)) static inline 
+__attribute((unused)) static inline
 llvm::PHINode* IRBuilderCreatePHI(CGBuilder *Builder,
                                   llvm::Type *Ty,
                                   unsigned NumReservedValues,
@@ -50,7 +51,7 @@ llvm::PHINode* IRBuilderCreatePHI(CGBuilder *Builder,
 
 
 
-__attribute((unused)) static inline 
+__attribute((unused)) static inline
 llvm::MDNode* CreateMDNode(llvm::LLVMContext &C,
                            llvm::Value **V,
                             unsigned length=1) {
@@ -63,7 +64,7 @@ llvm::MDNode* CreateMDNode(llvm::LLVMContext &C,
 }
 
 template<typename T>
-static inline 
+static inline
 llvm::InvokeInst* IRBuilderCreateInvoke(CGBuilder *Builder,
                                         llvm::Value *callee,
                                         llvm::BasicBlock *dest,
@@ -79,7 +80,7 @@ llvm::InvokeInst* IRBuilderCreateInvoke(CGBuilder *Builder,
 }
 
 template<typename T>
-static inline 
+static inline
 llvm::CallInst* IRBuilderCreateCall(CGBuilder *Builder,
                                     llvm::Value *callee,
                                     T values,
