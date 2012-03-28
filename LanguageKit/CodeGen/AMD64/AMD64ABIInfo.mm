@@ -134,8 +134,7 @@ inline void AMD64ABIInfo::classifyLLVMType(StructType *ty,
 
 	for (uint64_t i = 0, newOffset = offset; i < fieldCount ; i++)
 	{
-		unsigned elementAtOffset = layout->getElementContainingOffset(newOffset/8);
-		newOffset += layout->getElementOffsetInBits(elementAtOffset);
+		newOffset = offset + layout->getElementOffsetInBits(i);
 		Type *thisFieldTy = ty->getElementType(i);
 		/*
 		 * AMD64 ABI 3.2.3 (1): Objects with unaligned fields are passed in MEMORY
