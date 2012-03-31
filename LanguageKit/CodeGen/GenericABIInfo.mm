@@ -87,6 +87,14 @@ namespace etoile
 {
 namespace languagekit
 {
+
+LLVMType* GenericABIInfo::returnTypeForRetLLVMType(LLVMType *ty, bool &onStack)
+{
+	unsigned ints = 0;
+	unsigned floats = 0;
+	return returnTypeAndRegisterUsageForRetLLVMType(ty, onStack, ints, floats);
+}
+
 LLVMType* GenericABIInfo::returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
           bool &onStack,
           unsigned &integerRegisters,
@@ -121,9 +129,27 @@ LLVMType* GenericABIInfo::returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
 	return realRetTy;
 }
 
-bool GenericABIInfo::passStructTypeAsPointer(llvm::StructType *ty)
+bool GenericABIInfo::willPassTypeAsPointer(llvm::Type *ty)
 {
-	return PASS_STRUCTS_AS_POINTER;
+	if (isa<StructType>(ty))
+	{
+		return PASS_STRUCTS_AS_POINTER;
+	}
+	return false;
+}
+
+llvm::AttrListPtr GenericABIInfo::attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retType)
+{
+	unsigned intReg;
+	unsigned floatReg;
+	bool isSRet = false;
+	GenericABIInfo::returnTypeAndRegisterUsageForRetLLVMType(retType, isSRet, intReg, floatReg);
+	if (isSRet)
+	{
+		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attribute::StructRet);
+		return AttrListPtr::get(&stackRetAttr, 1);
+	}
+	return AttrListPtr::get((AttributeWithIndex*)NULL, 0);
 }
 
 } //namespace: languagekit

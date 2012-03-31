@@ -435,6 +435,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	bool isSRet;
 	LLVMType *ReturnTy;
 	llvm::FunctionType *fTy = types->functionTypeFromString(typeEncoding, isSRet, ReturnTy);
+	llvm::AttrListPtr attributes = types->AI->attributeListForFunctionType(fTy, ReturnTy);
 	imp = Builder.CreateBitCast(imp, llvm::PointerType::getUnqual(fTy));
 
 	// Call the method
@@ -449,27 +450,20 @@ llvm::Value *CGObjCRuntime::callIMP(
 	}
 	callArgs.push_back(Receiver);
 	callArgs.push_back(Selector);
-	if (types->AI->passStructTypeAsPointer(NULL))
-	{
-		llvm::Value* callArg;
-		for (unsigned int i = 0; i < ArgV.size() ; i++) {
-			callArg = ArgV[i];
-			if (isa<StructType>(callArg->getType()))
-			{
-				llvm::AllocaInst *StructPointer =
-					Builder.CreateAlloca(callArg->getType());
-				Builder.CreateStore(callArg, StructPointer);
-				callArgs.push_back(StructPointer);
-			}
-			else
-			{
-				callArgs.push_back(callArg);
-			}
+	llvm::Value* callArg;
+	for (unsigned int i = 0; i < ArgV.size() ; i++) {
+		callArg = ArgV[i];
+		if (types->AI->willPassTypeAsPointer(callArg->getType()))
+		{
+			llvm::AllocaInst *StructPointer =
+				Builder.CreateAlloca(callArg->getType());
+			Builder.CreateStore(callArg, StructPointer);
+			callArgs.push_back(StructPointer);
 		}
-	}
-	else
-	{
-		callArgs.insert(callArgs.end(), ArgV.begin(), ArgV.end());
+		else
+		{
+			callArgs.push_back(callArg);
+		}
 	}
 	for (int i=0 ; i<fTy->getNumParams() ; i++)
 	{
@@ -492,10 +486,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 			inv->setMetadata(msgSendMDKind, metadata);
 		}
 		Builder.SetInsertPoint(continueBB);
-		if (isSRet)
-		{
-			inv->addAttribute(1, Attribute::StructRet);
-		}
+		inv->setAttributes(attributes);
 		ret = inv;
 	}
 	else
@@ -505,10 +496,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 		{
 			call->setMetadata(msgSendMDKind, metadata);
 		}
-		if (isSRet)
-		{
-			call->addAttribute(1, Attribute::StructRet);
-		}
+		call->setAttributes(attributes);
 		ret = call;
 	}
 	if (isSRet)
@@ -1298,6 +1286,7 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 	llvm::FunctionType *MethodTy = llvm::FunctionType::get(ReturnTy,
 		Args,
 		isVarArg);
+	llvm::AttrListPtr attributes = types->AI->attributeListForFunctionType(MethodTy, ReturnTy);
 	std::string FunctionName = SymbolNameForMethod(ClassName, CategoryName,
 		MethodName, isClassMethod);
 	
@@ -1305,10 +1294,10 @@ llvm::Function *CGObjCGNU::MethodPreamble(
 		llvm::GlobalValue::InternalLinkage,
 		FunctionName,
 		&TheModule);
+	Method->setAttributes(attributes);
 	llvm::Function::arg_iterator AI = Method->arg_begin();
 	if (isSRet)
 	{
-		Method->addAttribute(1, Attribute::StructRet);
 		AI->setName("retval");
 		++AI;
 	}

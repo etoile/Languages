@@ -230,13 +230,10 @@ FunctionType *CodeGenTypes::functionTypeFromString(NSString *type,
 	llvm::LLVMContext &context = Mod.getContext();
 	// Function encodings look like this:
 	// v12@0:4@8 - void f(id, SEL, id)
-	unsigned ints;
-	unsigned floats;
 	LLVMType * ReturnTy = LLVMTypeFromString2(context, &typestr);	
 	realRetTy = ReturnTy;
 
-	ReturnTy = AI->returnTypeAndRegisterUsageForRetLLVMType(ReturnTy,
-	  isSRet, ints, floats);
+	ReturnTy = AI->returnTypeForRetLLVMType(ReturnTy, isSRet);
 	if (isSRet)
 	{
 		ArgTypes.push_back(llvm::PointerType::getUnqual(realRetTy));
@@ -245,7 +242,7 @@ FunctionType *CodeGenTypes::functionTypeFromString(NSString *type,
 	while(*typestr)
 	{
 		LLVMType *argTy = LLVMTypeFromString2(context, &typestr);
-		if (argTy->isStructTy() && AI->passStructTypeAsPointer(cast<StructType>(argTy)))
+		if (AI->willPassTypeAsPointer(argTy))
 		{
 			argTy = llvm::PointerType::getUnqual(argTy);
 		}

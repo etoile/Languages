@@ -89,16 +89,23 @@ protected:
 	 * register and stack layout for a function call.
 	 */
 	AMD64ABIClassPair classPairForLLVMType(llvm::Type *ty);
-public:
-	AMD64ABIInfo(llvm::Module &M);
-	~AMD64ABIInfo();
 
 	LLVMType *returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
 	  bool &onStack,
 	  unsigned &integerRegisters,
 	  unsigned &floatRegisters);
+public:
+	AMD64ABIInfo(llvm::Module &M);
+	~AMD64ABIInfo();
 
-	bool passStructTypeAsPointer(llvm::StructType *ty);
+	LLVMType *returnTypeForRetLLVMType(LLVMType *ty,
+	  bool &onStack);
+
+	bool willPassTypeAsPointer(llvm::Type *ty);
+	llvm::Attributes attributesForLLVMType(llvm::Type *ty, unsigned freeInteger, unsigned &usedInteger,
+	  unsigned freeFloat,
+	  unsigned &usedFloat);
+	llvm::AttrListPtr attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy);
 };
 } // namespace: languagekit
 } // namespace: etoile

@@ -1157,7 +1157,7 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 
 	FunctionType *functionTy = types.functionTypeFromString(argTypes,
 			isSRet, realReturnType);
-
+	AttrListPtr attributes = types.AI->attributeListForFunctionType(functionTy, realReturnType);
 	Function *f =
 		static_cast<Function*>(CGM->getModule()->getOrInsertFunction([functionName
 					UTF8String], functionTy));
@@ -1170,27 +1170,20 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 		sret = Builder.CreateAlloca(realReturnType);
 		callArgs.push_back(sret);
 	}
-	if (types.AI->passStructTypeAsPointer(NULL))
-	{
-		llvm::Value* callArg;
-		for (unsigned int i = 0; i < args.size() ; i++) {
-			callArg = args[i];
-			if (isa<StructType>(callArg->getType()))
-			{
-				llvm::AllocaInst *StructPointer =
-					Builder.CreateAlloca(callArg->getType());
-				Builder.CreateStore(callArg, StructPointer);
-				callArgs.push_back(StructPointer);
-			}
-			else
-			{
-				callArgs.push_back(callArg);
-			}
+	llvm::Value* callArg;
+	for (unsigned int i = 0; i < args.size() ; i++) {
+		callArg = args[i];
+		if (types.AI->willPassTypeAsPointer(callArg->getType()))
+		{
+			llvm::AllocaInst *pointer =
+				Builder.CreateAlloca(callArg->getType());
+			Builder.CreateStore(callArg, pointer);
+			callArgs.push_back(pointer);
 		}
-	}
-	else
-	{
-		callArgs.insert(callArgs.end(), args.begin(), args.end());
+		else
+		{
+			callArgs.push_back(callArg);
+		}
 	}
 	llvm::Instruction *ret = 0;
 	if (0 != CleanupBB)
@@ -1201,18 +1194,12 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 		ret = IRBuilderCreateInvoke(&Builder, f, continueBB, ExceptionBB,
 			callArgs);
 		Builder.SetInsertPoint(continueBB);
-		if (isSRet)
-		{
-			cast<llvm::InvokeInst>(ret)->addAttribute(1, Attribute::StructRet);
-		}
+		cast<llvm::InvokeInst>(ret)->setAttributes(attributes);
 	}
 	else
 	{
 		ret = IRBuilderCreateCall(&Builder, f, callArgs);
-		if (isSRet)
-		{
-			cast<llvm::CallInst>(ret)->addAttribute(1, Attribute::StructRet);
-		}
+		cast<llvm::CallInst>(ret)->setAttributes(attributes);
 	}
 	if (isSRet)
 	{

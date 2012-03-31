@@ -48,15 +48,20 @@ class GenericABIInfo : public ABIInfo
 {
 private:
 	llvm::LLVMContext &context;
-public:
-	GenericABIInfo(llvm::Module &M) : ABIInfo(M), context(md.getContext()) {};
 
 	LLVMType *returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
 	  bool &onStack,
 	  unsigned &integerRegisters,
 	  unsigned &floatRegisters);
+public:
+	GenericABIInfo(llvm::Module &M) : ABIInfo(M), context(md.getContext()) {};
 
-	bool passStructTypeAsPointer(llvm::StructType *ty);
+	LLVMType *returnTypeForRetLLVMType(LLVMType *ty,
+	  bool &onStack);
+
+	bool willPassTypeAsPointer(llvm::Type *ty);
+
+	llvm::AttrListPtr attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy);
 };
 } //namespace: languagekit
 } //namespace: etoile

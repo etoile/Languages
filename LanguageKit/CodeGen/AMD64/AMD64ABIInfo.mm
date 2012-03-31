@@ -431,6 +431,14 @@ AMD64ABIClassPair AMD64ABIInfo::classPairForLLVMType(Type *ty)
 }
 
 
+LLVMType* AMD64ABIInfo::returnTypeForRetLLVMType(LLVMType *ty,
+  bool &onStack)
+{
+	unsigned ints = 0;
+	unsigned floats = 0;
+	return returnTypeAndRegisterUsageForRetLLVMType(ty, onStack, ints, floats);
+}
+
 LLVMType* AMD64ABIInfo::returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
   bool &onStack,
   unsigned &integerRegisters,
@@ -495,9 +503,121 @@ LLVMType* AMD64ABIInfo::returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
 	return ty;
 }
 
-bool AMD64ABIInfo::passStructTypeAsPointer(llvm::StructType *ty)
+bool AMD64ABIInfo::willPassTypeAsPointer(llvm::Type *ty)
 {
+	AMD64ABIClassPair pair = classPairForLLVMType(ty);
+	switch(pair.low)
+	{
+		case MEMORY:
+		case X87:
+		case COMPLEX_X87:
+			return true;
+		default:
+			break;
+	}
 	return false;
+}
+
+llvm::Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
+  unsigned freeInteger, unsigned &usedInteger,
+  unsigned freeFloat, unsigned &usedFloat)
+{
+	AMD64ABIClassPair pair = classPairForLLVMType(ty);
+	/*
+	 * Comments in clang's target info suggest that LLVM can
+	 * generate better code when we always inform it about the
+	 * alignment.
+	 */
+	unsigned align = std::max(td->getABITypeAlignment(ty) / 8, 8U);
+	switch(pair.low)
+	{
+		case NO_CLASS:
+		break;
+		case MEMORY:
+  		case X87:
+  		case COMPLEX_X87:
+			/*
+			 * Also, we avoid the byval attribute when the type would be
+			 * naturally passed on the stack at the right place (i.e. no
+			 * free registers left, aligned to 8, not larger than 64bit)
+			 */
+			if ((0 == freeInteger)
+			  && (align == 8) && (64 < td->getTypeSizeInBits(ty)))
+			{
+				{
+					return Attributes(Attribute::None);
+				}
+			}
+			return Attributes(Attribute::ByVal) | Attribute::constructAlignmentFromInt(align);
+		case INTEGER:
+			usedInteger++;
+			if ((NO_CLASS == pair.high) && isa<IntegerType>(ty))
+			{
+				// TODO: Check whether we need to extend the type, but strip of an enum first
+			}
+		break;
+		case SSE:
+			usedFloat++;
+		break;
+		default:
+		break;
+	}
+
+	switch (pair.high)
+	{
+		case INTEGER:
+			usedInteger++;
+		break;
+		case SSE:
+		case SSEUP:
+			usedFloat++;
+		break;
+		default:
+		break;
+	}
+	return Attribute::None;
+}
+
+
+llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy)
+{
+	unsigned usedInteger = 0;
+	unsigned freeInteger = 6;
+	unsigned usedFloat = 0;
+	unsigned freeFloat = 8;
+	bool isSRet = false;
+	llvm::SmallVector<AttributeWithIndex, 8> attributes;
+	AMD64ABIInfo::returnTypeAndRegisterUsageForRetLLVMType(retTy, isSRet, usedInteger, usedFloat);
+	freeInteger -= usedInteger;
+	freeFloat -= usedFloat;
+
+	for (unsigned i = 0; i < funTy->getNumParams(); i++)
+	{
+		llvm::Type *paramTy = funTy->getParamType(i);
+		Attributes attr = Attributes(Attribute::None);
+		if ((0 == i) && (isSRet))
+		{
+			attr |= Attribute::StructRet;
+			usedInteger++;
+		}
+		else
+		{	
+			attr |= attributesForLLVMType(paramTy, freeInteger, usedInteger, freeFloat, usedFloat);
+			freeFloat = 8 - usedFloat;
+			freeInteger = 6 - usedInteger;
+		}
+
+		if (Attributes(Attribute::None) != attr)
+		{
+			AttributeWithIndex indexedAttr = AttributeWithIndex::get((i + 1), attr);
+			attributes.push_back(indexedAttr);
+		}
+		else
+		{
+		}
+	}
+	
+return AttrListPtr::get(attributes.begin(), attributes.end());
 }
 
 } //namespace: languagekit

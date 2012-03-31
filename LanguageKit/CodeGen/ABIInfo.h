@@ -51,14 +51,18 @@ protected:
 public:
 	ABIInfo(llvm::Module &M) : md(M) {};
 	/**
-	 * This function can be used to determine the register usage for a function return.
+	 * This function can be used to determine the function return type.
 	 */
-	virtual LLVMType *returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
-	  bool &onStack,
-	  unsigned &integerRegisters,
-	  unsigned &floatRegisters) = 0;
+	virtual LLVMType *returnTypeForRetLLVMType(LLVMType *ty,
+	  bool &onStack) = 0;
 
-	virtual bool passStructTypeAsPointer(llvm::StructType *ty) = 0;
+	virtual bool willPassTypeAsPointer(llvm::Type *ty) = 0;
+
+	/**
+	 * Quick shim to generate attribute lists to apply to functions. retTy specifies the
+	 * intended rather than the ABI-mandated return type of the function.
+	 */
+	virtual llvm::AttrListPtr attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy) = 0;
 };
 } //namespace: languagekit
 } //namespace: etoile
