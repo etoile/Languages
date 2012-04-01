@@ -43,7 +43,7 @@ void NSLog(NSString*, ...);
 - (BOOL)isAlphabetic;
 - (id)value;
 @end
-@interface NSString 
+@interface NSString
 {
 	id isa;
 }
@@ -161,19 +161,19 @@ id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
 		if ((inc & OBJC_SMALL_OBJECT_MASK) != 0)
 		{
 			inc >>= OBJC_SMALL_OBJECT_SHIFT;
-			increment = [BigInt bigIntWithLongLong: (long long)inc];	
+			increment = [BigInt bigIntWithLongLong: (long long)inc];
 		}
 		if ((max & OBJC_SMALL_OBJECT_MASK) != 0)
 		{
 			max >>= OBJC_SMALL_OBJECT_SHIFT;
-			maximum = [BigInt bigIntWithLongLong: (long long)max];	
+			maximum = [BigInt bigIntWithLongLong: (long long)max];
 		}
 		BigInt* conv = [BigInt bigIntWithLongLong: (long long)val];
 		return [conv to: maximum by: increment do: tdo];
 	}
 	inc >>= OBJC_SMALL_OBJECT_SHIFT;
 	max >>= OBJC_SMALL_OBJECT_SHIFT;
-	
+
 	id result = nil;
 	for (;val<=max;val+=inc)
 	{
@@ -235,7 +235,7 @@ void *SmallIntMsgplus_(void *obj, void *other)
 void *SmallIntMsgsub_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(sub);
-	// Clear the low bit and invert the sign bit on other 
+	// Clear the low bit and invert the sign bit on other
 	intptr_t val = -(((intptr_t)other) & ~ OBJC_SMALL_OBJECT_MASK);
 	// Add the two values together.  This will cause the overflow handler to be
 	// invoked in case of overflow, otherwise it will contain the correct
@@ -252,7 +252,7 @@ void *SmallIntMsgmul_(void *obj, void *other)
 	// val * otherval will be the correct SmallInt value with the low bit
 	// cleared.  This sets the low bit in this case.  To avoid an extra test in
 	// case of overflow, we cheat a bit here and set the low bit spuriously
-	// when returning a big integer.  This then clears that bit.  
+	// when returning a big integer.  This then clears that bit.
 	return (void*)((val * otherval) ^ 1);
 }
 void *SmallIntMsgmin_(void *obj, void *other)
@@ -436,8 +436,12 @@ CASTMSG(unsigned long, unsignedLong)
 CASTMSG(long long, longLong)
 CASTMSG(unsigned long long, unsignedLongLong)
 CASTMSG(BOOL, bool)
+#if	1 == OBJC_SMALL_OBJECT_SHIFT
+// if we have many small object classes, gnustep-base will handle floats and doubles
+// specially and these will fail.
 CASTMSG(float, float)
 CASTMSG(double, double)
+#endif
 
 enum
 {
