@@ -614,10 +614,19 @@ void CodeGenModule::compile(void)
 	if (NULL == EE)
 	{
 		LOG("Creating execution engine...\n");
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+		EngineBuilder EB = EngineBuilder(TheModule);
+		TargetOptions TO;
+		TO.JITExceptionHandling = 1;
+		// Note: mathk, turn on debug info generation here too!
+		EB.setTargetOptions(TO);
+		EE = EB.create();
+#else
 		EE = ExecutionEngine::create(TheModule);
 		assert(EE && "Created execution engine");
-#if LLVM_MAJOR < 3
+#	if LLVM_MAJOR < 3
 		EE->InstallLazyFunctionCreator(findSymbol);
+#	endif
 #endif
 	}
 	LOG("Compiling...\n");
