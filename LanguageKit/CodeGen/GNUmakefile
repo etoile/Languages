@@ -52,7 +52,7 @@ LLVM_LIBS=analysis archive bitreader bitwriter codegen core engine executionengi
 
 ${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ` -g
 ${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags ` -g
-LIBRARIES_DEPEND_UPON += `llvm-config --ldflags --libfiles ${LLVM_LIBS}`
+LIBRARIES_DEPEND_UPON += `llvm-config --ldflags` -lLLVM-`llvm-config --version`
 
 
 CC = clang
