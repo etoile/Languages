@@ -61,15 +61,19 @@ LD = $(CXX)
 
 ${FRAMEWORK_NAME}_RESOURCE_FILES += MsgSendSmallInt.bc 
 
+ifeq ($(broken_ctype), yes)
+ADDITIONAL_CLANG_FLAGS+=-DBROKEN_CTYPE
+endif
+
 include $(GNUSTEP_MAKEFILES)/framework.make
 -include ../../../etoile.make
 -include ../../../documentation.make
 
-all:: MsgSendSmallInt.bc
+shared-instance-bundle-all: MsgSendSmallInt.bc
 
 MsgSendSmallInt.bc: ../Runtime/MsgSendSmallInt.m
 	@echo "Generating LLVM bitcode for small int messages..."
-	@clang -c -ftrapv  -ftrapv-handler=smalltalk_overflow_handler `gnustep-config --objc-flags` -emit-llvm -fexceptions ../Runtime/MsgSendSmallInt.m -o MsgSendSmallInt.private.bc 
+	@clang -c $(ADDITIONAL_CLANG_FLAGS) -ftrapv  -ftrapv-handler=smalltalk_overflow_handler `gnustep-config --objc-flags` -emit-llvm -fexceptions ../Runtime/MsgSendSmallInt.m -o MsgSendSmallInt.private.bc 
 	@cp MsgSendSmallInt.private.bc MsgSendSmallInt.bc
 	@#opt -make-runtime-lib-interface MsgSendSmallInt.private.bc -o MsgSendSmallInt.bc
 	@rm MsgSendSmallInt.private.bc

@@ -11,10 +11,15 @@ FRAMEWORK_NAME = ${PROJECT_NAME}
 
 LIBRARIES_DEPEND_UPON += -lgmp $(FND_LIBS) $(OBJC_LIBS) $(SYSTEM_LIBS)
 
+
 ${FRAMEWORK_NAME}_CPPFLAGS += -D_POSIX_C_SOURCE=199309 -D_BSD_SOURCE
 ${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions -fobjc-exceptions
 ${FRAMEWORK_NAME}_CFLAGS += -std=c99 -fexceptions
 
+ifeq ($(broken_ctype), yes)
+LIBRARIES_DEPEND_UPON += -licuuc
+${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -fexceptions -fobjc-exceptions -DBROKEN_CTYPE
+endif
 
 ${FRAMEWORK_NAME}_OBJC_FILES = \
 	BigInt.m\

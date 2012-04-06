@@ -2,8 +2,23 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdint.h>
-#include <ctype.h>
-
+#ifdef BROKEN_CTYPE
+/*
+ * If we have a libc that provides a (w)ctype implementation that is known not
+ * to work with llvm, we link libicu instead and redefine the isw* stuff to
+ * libicu functions. The TestIsAlphabetic test case for small case will reveal
+ * if this is needed.
+ */
+#include <unicode/uchar.h>
+#define iswalnum(val) (u_isUAlphabetic(val) || u_isdigit(val))
+#define iswalpha(val) u_isUAlphabetic(val)
+#define iswdigit(val) u_isdigit(val)
+#define iswspace(val) u_isUWhiteSpace(val)
+#define iswupper(val) u_isUUppercase(val)
+#define iswlower(val) u_isULowercase(val)
+#else
+#include <wctype.h>
+#endif
 typedef intptr_t NSInteger;
 // Redefine a few things so LKObject will work correctly.
 #define NSCAssert(x, msg) if (!(x)) { NSLog(msg); abort(); }
@@ -12,6 +27,8 @@ __attribute__((noreturn)) void abort(void);
 void NSLog(NSString*, ...);
 @interface NSNumber
 - (NSInteger)integerValue;
+- (double)doubleValue;
+- (float)floatValue;
 @end
 #include "LKObject.h"
 
@@ -308,22 +325,22 @@ MSG0(not)
 	RETURN_INT(!val);
 }
 BOOLMSG0(isAlphanumeric)
-	return isalpha(val) || isdigit(val);
+	return iswalnum(val);
 }
 BOOLMSG0(isUppercase)
-	return isupper(val);
+	return iswupper(val);
 }
 BOOLMSG0(isLowercase)
-	return islower(val);
+	return iswlower(val);
 }
 BOOLMSG0(isDigit)
-	return isdigit(val);
+	return iswdigit(val);
 }
 BOOLMSG0(isAlphabetic)
-	return isalpha(val);
+	return iswalpha(val);
 }
 BOOLMSG0(isWhitespace)
-	return isspace(val);
+	return iswspace(val);
 }
 MSG0(value)
 	return obj;
@@ -436,12 +453,52 @@ CASTMSG(unsigned long, unsignedLong)
 CASTMSG(long long, longLong)
 CASTMSG(unsigned long long, unsignedLongLong)
 CASTMSG(BOOL, bool)
-#if	1 == OBJC_SMALL_OBJECT_SHIFT
-// if we have many small object classes, gnustep-base will handle floats and doubles
-// specially and these will fail.
+
+#if 3 == OBJC_SMALL_OBJECT_SHIFT
+/*
+ * On 64bit platforms, gnustep-base provides a special case for small doubles or
+ * floats, so we redefine CASTMSG to unbox them correctly.
+ */
+
+union BoxedDouble
+{
+	uintptr_t bits;
+	double d;
+};
+
+static inline double unboxExtendedDouble(uintptr_t boxed)
+{
+	uintptr_t mask = boxed & 8;
+	union BoxedDouble ret;
+	boxed &= ~7;
+	ret.bits = boxed | (mask >> 1) | (mask >> 2) | (mask >> 3);
+	return ret.d;
+}
+
+static inline double unboxRepeatingDouble(uintptr_t boxed)
+{
+	uintptr_t mask = boxed & 56;
+	union BoxedDouble ret;
+	boxed &= ~7;
+	ret.bits = boxed |  (mask >> 3);
+	return ret.d;
+}
+#undef CASTMSG
+#define CASTMSG(type, name) type SmallintMsg##name##Value(void *obj) {\
+	uintptr_t smallClass = (((uintptr_t)obj) & OBJC_SMALL_OBJECT_MASK);\
+	if (2 == smallClass)\
+	{\
+		return (type) unboxExtendedDouble((uintptr_t)obj);\
+	}\
+	else if ((3 == smallClass) || (5 == smallClass))\
+	{\
+		return (type) unboxRepeatingDouble((uintptr_t)obj);\
+	}\
+	return [(NSNumber*)obj name##Value];\
+}
+#endif
 CASTMSG(float, float)
 CASTMSG(double, double)
-#endif
 
 enum
 {
