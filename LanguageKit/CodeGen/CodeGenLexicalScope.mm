@@ -1035,7 +1035,7 @@ Value *CodeGenSubroutine::ComparePointers(Value *lhs, Value *rhs)
 	rhs = Builder.CreatePtrToInt(rhs, types.intPtrTy);
 	Value *result = Builder.CreateICmpEQ(rhs, lhs, "pointer_compare_result");
 	result = Builder.CreateZExt(result, types.intPtrTy);
-	result = Builder.CreateShl(result, ConstantInt::get(types.intPtrTy, 1));
+	result = Builder.CreateShl(result, ConstantInt::get(types.intPtrTy, OBJC_SMALL_OBJECT_SHIFT));
 	result = Builder.CreateOr(result, ConstantInt::get(types.intPtrTy, 1));
 	return Builder.CreateIntToPtr(result, types.idTy);
 }
