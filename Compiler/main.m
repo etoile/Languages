@@ -26,7 +26,7 @@ static NSBundle *mainBundle = nil;
 + (void) enableHack
 {
 	Method mine = class_getClassMethod(self, @selector(mainBundle));
-	class_replaceMethod(objc_getMetaClass("NSBundle"), @selector(mainBundle), 
+	class_replaceMethod(objc_getMetaClass("NSBundle"), @selector(mainBundle),
 		method_getImplementation(mine), method_getTypeEncoding(mine));
 }
 + (NSBundle*) mainBundle
@@ -73,7 +73,7 @@ static LKAST *parseScript(NSString *script, NSString *extension)
 {
 	[LKCompiler compilerClassForFileExtension:extension];
 	script = stripScriptPreamble(script);
-	id parser = 
+	id parser =
 		[[[LKCompiler compilerClassForFileExtension:extension]
 	   			parserClass] new];
 	LKAST *module = [parser parseString:script];
@@ -123,7 +123,7 @@ static BOOL jitScript(NSString *script, NSString *extension, BOOL interpret)
 	return YES;
 }
 
-static BOOL staticCompileScript(NSString *script, NSString *outFile, 
+static BOOL staticCompileScript(NSString *script, NSString *outFile,
 		NSString *extension)
 {
 	NS_DURING
@@ -149,7 +149,7 @@ static void logTimeSinceWithMessage(clock_t c1, NSString *message)
 	clock_t c2 = clock();
 	struct rusage r;
 	getrusage(RUSAGE_SELF, &r);
-	NSLog(@"%@ took %f seconds.  Peak used %ldKB.", message, 
+	NSLog(@"%@ took %f seconds.  Peak used %ldKB.", message,
 		((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC, r.ru_maxrss);
 }
 
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];
 
-	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:iq", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:o:iq", argc, argv);
 
 	// Debug mode.
 	if ([[opts objectForKey:@"d"] boolValue])
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 		mainBundle = [NSBundle bundleWithPath:bundle];
 		[NSBundleHack enableHack];
 		c1 = clock();
-		Class principalClass = 
+		Class principalClass =
 			[LKCompiler loadLanguageKitBundle:mainBundle];
 		logTimeSinceWithMessage(c1, @"Loading bundle");
 		if ([principalClass isKindOfClass: [NSNull class]])
@@ -290,8 +290,12 @@ int main(int argc, char **argv)
 	// Static compile
 	if ([[opts objectForKey:@"c"] boolValue])
 	{
-		NSString *bcFile = [[ProgramFile stringByDeletingPathExtension]
-			stringByAppendingPathExtension:@"bc"];
+		NSString *bcFile = [opts objectForKey: @"o"];
+		if (nil == bcFile)
+		{
+			bcFile = [[ProgramFile stringByDeletingPathExtension]
+				stringByAppendingPathExtension:@"bc"];
+		}
 		staticCompileScript(Program, bcFile, extension);
 		return 0;
 	}
