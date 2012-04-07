@@ -65,7 +65,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	SUPERINIT;
 	ASSIGN(parent, aParent);
 	ASSIGN(symbolTable, aTable);
-	ASSIGN(selfObject, [aParent selfObject]);
+	selfObject = [aParent selfObject];
 	ASSIGN(blockContextObject, [aParent blockContextObject]);
 	objects = [NSMutableDictionary new];
 	return self;
@@ -75,7 +75,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	[objects release];
 	[symbolTable release];
 	[parent release];
-	[selfObject release];
 	[blockContextObject release];
 	[super dealloc];
 }
@@ -507,6 +506,16 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			{
 				[element retain];
 			}
+		}
+		if ([[[self signature] selector] isEqualToString: @"dealloc"])
+		{
+			LKAST *ast = [self parent];
+			while (nil != ast && ![ast isKindOfClass: [LKSubclass class]])
+			{
+				ast = [ast parent];
+			}
+			NSString *receiverClassName = [(LKSubclass*)ast superclassname];
+			return LKSendMessage(receiverClassName, [context selfObject], @"dealloc", 0, 0);
 		}
 	}
 	@catch (LKBlockReturnException *ret)
