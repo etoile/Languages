@@ -334,6 +334,19 @@ id LKCallFunction(NSString *functionName, NSString *types,
 	return BoxValue(msgSendRet, [sig methodReturnType]);
 }
 
+static BOOL isInMethodFamily(NSString *selName, NSString *family)
+{
+	if ([selName rangeOfString: family].location != 0)
+	{
+		return NO;
+	}
+	if ([selName length] == [family length])
+	{
+		return YES;
+	}
+	return isupper([selName characterAtIndex: [family length]]);
+}
+
 id LKSendMessage(NSString *className, id receiver, NSString *selName,
                  unsigned int argc, __unsafe_unretained id *args)
 {
@@ -341,6 +354,20 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	{
 		return nil;
 	}
+	BOOL autoreleaseResult = NO;
+	if (isInMethodFamily(selName, @"alloc") ||
+	    isInMethodFamily(selName, @"new") ||
+	    isInMethodFamily(selName, @"copy") ||
+	    isInMethodFamily(selName, @"mutableCopy"))
+	{
+		autoreleaseResult = YES;
+	}
+	else if (isInMethodFamily(selName, @"init"))
+	{
+		autoreleaseResult = YES;
+		receiver = [receiver retain];
+	}
+
 	SEL sel = sel_getUid([selName UTF8String]);
 	NSMethodSignature *sig = [receiver methodSignatureForSelector: sel];
 	if (nil == sig)
@@ -440,7 +467,12 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	char msgSendRet[[sig methodReturnLength]];
 	ffi_call(&cif, methodIMP, &msgSendRet, unboxedArguments);
 	
-	return BoxValue(msgSendRet, [sig methodReturnType]);
+	id result = BoxValue(msgSendRet, [sig methodReturnType]);
+	if (autoreleaseResult)
+	{
+		result = [result autorelease];
+	}
+	return result;
 }
 
 

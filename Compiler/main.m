@@ -319,7 +319,9 @@ int main(int argc, char **argv)
 	}
 	c1 = clock();
 	id aTool = [tool new];
+	@autoreleasepool {
 	[aTool run];
+	}
 	if ([[opts objectForKey:@"d"] boolValue])
 	{
 		NSLog(@"Object at address %x has data: ", (unsigned)(uintptr_t)aTool);
