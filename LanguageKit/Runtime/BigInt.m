@@ -99,7 +99,7 @@ static inline id LKObjCAutoreleaseReturnValue(id object)
 	{\
 		mpz_t number;\
 		mpz_init_set_si(number, [other intValue]);\
-		mpz_## func (b->v, number, v);\
+		mpz_## func (b->v, v, number);\
 		mpz_clear(number);\
 	}\
 	if (mpz_fits_sint_p(b->v))\

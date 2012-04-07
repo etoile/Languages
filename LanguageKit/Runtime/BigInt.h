@@ -22,7 +22,7 @@
 
 static inline LKObject LKObjectFromNSInteger(NSInteger integer)
 {
-	if((integer << 1 >> 1) != integer)
+	if((integer << OBJC_SMALL_OBJECT_SHIFT >> OBJC_SMALL_OBJECT_SHIFT) != integer)
 	{
 		return LKObjectFromObject([BigInt bigIntWithLongLong: (long long)integer]);
 	}
