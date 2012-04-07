@@ -634,7 +634,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
                                             bool isClassMessage)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-
+#if !defined(__arm__) && !defined(__i386__) && !defined(__x86_64__)
 	if (0 == Sender)
 	{
 		Sender = NULLPtr;
@@ -663,6 +663,24 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 	llvm::Value *imp = Builder.CreateLoad(Builder.CreateStructGEP(slot, 4));
 
 	Receiver = Builder.CreateLoad(ReceiverPtr, true);
+#else
+	char ret = [selTypes characterAtIndex: 0];
+	const char *msgFuncName = "objc_msgSend";
+	switch (ret)
+	{
+		case 'f': case 'd': case 'D':
+			msgFuncName = "objc_msgSend_fpret";
+	}
+	bool isSRet;
+	LLVMType *ReturnTy;
+	llvm::FunctionType *fTy = types->functionTypeFromString(selTypes, isSRet, ReturnTy);
+	llvm::AttrListPtr attributes = types->AI->attributeListForFunctionType(fTy, ReturnTy);
+	if (isSRet)
+	{
+			msgFuncName = "objc_msgSend_stret";
+	}
+	llvm::Value *imp = TheModule.getOrInsertFunction(msgFuncName, fTy, attributes);
+#endif
 	llvm::Value *impMD[] = {
 		llvm::MDString::get(Context, [selName UTF8String]),
 		llvm::MDString::get(Context, [ReceiverClass UTF8String]),
