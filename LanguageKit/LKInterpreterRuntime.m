@@ -17,9 +17,15 @@
 static id BoxValue(void *value, const char *typestr);
 static void UnboxValue(id value, void *dest, const char *objctype);
 
+#ifdef __LP64__
+ffi_type *_ffi_type_nspoint_elements[] = {
+	&ffi_type_double, &ffi_type_double, NULL
+};
+#else
 ffi_type *_ffi_type_nspoint_elements[] = {
 	&ffi_type_float, &ffi_type_float, NULL
 };
+#endif
 ffi_type ffi_type_nspoint = {
 	0, 0, FFI_TYPE_STRUCT, _ffi_type_nspoint_elements
 };
