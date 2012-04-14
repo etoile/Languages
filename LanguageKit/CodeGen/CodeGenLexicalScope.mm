@@ -754,6 +754,7 @@ static NSString *nextArgument(NSString *types)
 {
 	const char *start = [types UTF8String];
 	const char *typestr = start;
+	if (!(*typestr == '\0') && *typestr == '{') do typestr++; while(*typestr != '}');
 	while (!(*typestr == '\0') && !isdigit(*typestr)) { typestr++; }
 	while (isdigit(*typestr)) { typestr++; }
 	return [types substringFromIndex: (typestr - start)];
