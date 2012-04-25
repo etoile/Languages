@@ -1,6 +1,9 @@
 #import "LKCategory.h"
 
 @implementation LKCategoryDef
+
+@synthesize className, categoryName, methods;
+
 - (id) initWithName:(NSString*)aName
               class:(NSString*)aClass
             methods:(NSArray*)aMethodList
@@ -18,8 +21,8 @@
 	[methods release];
 	[super dealloc];
 }
-+ (id) categoryWithName:(NSString*)aName 
-           onClassNamed:(NSString*)aClass 
++ (id) categoryWithName:(NSString*)aName
+           onClassNamed:(NSString*)aClass
                 methods:(NSArray*)aMethodList
 {
 	return [[[self alloc] initWithName:aName
@@ -53,11 +56,6 @@
 	}
 	[str appendString:@"\n]"];
 	return str;
-}
-
-- (NSMutableArray*) methods
-{
-	return methods;
 }
 
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator

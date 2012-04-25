@@ -11,12 +11,17 @@
   /** Array of methods defined in this category. */
   NSMutableArray * methods;
 }
+
+@property (readonly, nonatomic) NSString *className;
+@property (readonly, nonatomic) NSString *categoryName;
+@property (readonly, nonatomic) NSMutableArray *methods;
+
 /**
  * Return a new Category with the specified name, class and list of
  * methods.  The third argument is an array of AST nodes representing methods.
  */
-+ (id) categoryWithName:(NSString*)aName 
-           onClassNamed:(NSString*)aClass 
++ (id) categoryWithName:(NSString*)aName
+           onClassNamed:(NSString*)aClass
                 methods:(NSArray*)aMethodList;
 /**
  * Returns a new anonymous category.
