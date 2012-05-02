@@ -12,15 +12,17 @@ ${TOOL_NAME}_LANGUAGES = English
 ${TOOL_NAME}_OBJC_FILES = \
 	main.m\
 
-${TOOL_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value
+${TOOL_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value\
+	-fno-objc-legacy-dispatch
 ${TOOL_NAME}_LDFLAGS += -g -lgmp -lEtoileFoundation -lgnustep-gui\
    	-L/usr/local/lib\
 	-lSmalltalkSupport\
-	smalltalk.optimised.o -march=i686
+	-lLanguageKitRuntime\
+	smalltalk.optimised.o 
 
-ADDITIONAL_OBJCFLAGS +=  -march=i686
+#ADDITIONAL_OBJCFLAGS +=  -march=i686
 
-${TOOL_NAME}_CFLAGS += -Wno-implicit -g 
+${TOOL_NAME}_CFLAGS += -Wno-implicit -g -O0
 
 #SMALLTALK_FILES += prototype.st
 SMALLTALK_FILES += fib.st

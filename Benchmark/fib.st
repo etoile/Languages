@@ -1,4 +1,4 @@
-<< types = '{"fibonacci:" = "i12@0:4i8"}'>>
+<< types = '{"fibonacci:" = "i12@0:4i8";}'>>
 NSObject subclass: SmalltalkFibonacci [
 	| f |
 
@@ -28,8 +28,9 @@ NSObject subclass: SmalltalkFibonacci [
 		].
 		^ret.
 	]
-	runNative: i [ (self fib: i) log]
+	runNative: i [ (self fib: i) ]
 	run [
-		(self fibonacci:30) log.
+		"(self fibonacci:40) log."
+		(self fib:40) log.
 	]
 ]

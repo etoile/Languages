@@ -2,6 +2,7 @@ NSObject subclass: SmalltalkTest
 [
 	test
 	[
-		'Testing...' log.
+		"'Testing...' log."
+		'foo' lowercaseString.
 	]
 ]

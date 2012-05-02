@@ -2,11 +2,11 @@
 #include <time.h>
 @class ETTranscript;
 
-const int FibRuns = 1;
-const int FibValue = 47;
+const int FibRuns = 100;
+int FibValue = 30;
 
 @interface Fibonacci : NSObject
-- (void)runNative: (int)i;
+- (void)runNative: (id)i;
 @end
 
 @interface ObjCObject : NSObject {}
@@ -56,24 +56,31 @@ double timeFibonacciC(void)
 }
 double timeFibonacci(id object)
 {
-	clock_t c1 = clock();
+	clock_t c1, c2;
+	@autoreleasepool {
+	c1 = clock();
 	int result;
 	for (unsigned i=0 ; i<FibRuns ; i++)
 	{
 		result = [object fibonacci: FibValue];
 	}
 	NSLog(@"%d", result);
-	clock_t c2 = clock();
+	c2 = clock();
+	}
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
 }
 double timeFibonacciSmalltalk(id object)
 {
-	clock_t c1 = clock();
+	clock_t c1, c2;
+	@autoreleasepool {
+	id num = [NSNumber numberWithInt: FibValue];
+	c1 = clock();
 	for (unsigned i=0 ; i<FibRuns ; i++)
 	{
-		[object runNative: FibValue];
+		[object runNative: num];
 	}
-	clock_t c2 = clock();
+	c2 = clock();
+	}
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
 }
 double timeMessageSend(id object)
@@ -96,11 +103,12 @@ void ETLog(id string, float f)
 int main(void)
 {
 	id pool = [NSAutoreleasePool new];
+	double sttime, octime, ctime;
 	id proto = [[NSClassFromString(@"SmalltalkPrototype") new] makePrototype];
-	double sttime = timeMessageSend(proto);
+	sttime = timeMessageSend(proto);
 	ETLog(@"Smalltalk prototype execution took %f seconds.  ", sttime);
 	proto = [ObjCObject new];
-	double octime = timeMessageSend(proto);
+	octime = timeMessageSend(proto);
 	ETLog(@"ObjC execution took %f seconds.  ", octime);
 	ETLog(@"Ratio: %f", sttime / octime);
 	sttime = timeMessageSend([NSClassFromString(@"SmalltalkPrototype") new]);
@@ -110,7 +118,7 @@ int main(void)
 	ETLog(@"Smalltalk block execution took %f seconds.  ", sttime);
 	ETLog(@"Ratio: %f", sttime / octime);
 
-	double ctime = timeFibonacciC();
+	ctime = timeFibonacciC();
 	ETLog(@"C fibonacci execution took %f seconds.  ", ctime);
 	proto = [ObjCObject new];
 	octime = timeFibonacci(proto);
