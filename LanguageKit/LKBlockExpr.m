@@ -2,7 +2,7 @@
 #import "LKDeclRef.h"
 #import "Runtime/LKObject.h"
 
-@implementation LKBlockExpr 
+@implementation LKBlockExpr
 + (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
 {
 	return [[[self alloc] initWithArguments: arguments
@@ -43,12 +43,24 @@
 {
 	NSMutableString *str = [NSMutableString string];
 	[str appendString:@"[ "];
-	for (LKSymbol *s in [symbols arguments])
+	if (0 != [[symbols arguments] count])
 	{
-		[str appendFormat:@":%@ ", s];
+		for (LKSymbol *s in [symbols arguments])
+		{
+			[str appendFormat:@":%@ ", s];
+		}
+		[str appendString:@"| "];
+		[str appendString:@"\n"];
 	}
-	[str appendString:@"| "];
-	[str appendString:@"\n"];
+	if (0 != [[symbols locals] count])
+	{
+		[str appendString:@"| "];
+		for (LKSymbol *s in [symbols locals])
+		{
+			[str appendFormat: @"%@ ", s];
+		}
+		[str appendString: @"|\n"];
+	}
 	FOREACH(statements, statement, LKAST*)
 	{
 		[str appendString:[statement description]];
@@ -62,7 +74,7 @@
 	NSArray *args = [symbols arguments];
 	NSUInteger argCount = [args count];
 	// FIXME: We should be able to generate other block signatures
-	NSMutableString *sig = 
+	NSMutableString *sig =
 		[NSMutableString stringWithFormat: @"%s%d@?", @encode(LKObject), sizeof(id) * (argCount+1)];
 	for (NSUInteger i=0 ; i<argCount ; i++)
 	{
