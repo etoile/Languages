@@ -29,6 +29,12 @@ void SmalltalkParseFree(void *p, void (*freeProc)(void*));
 //#define PARSE(start, end, type) CASE(start, end, { CALL_PARSER(type, WORD_TOKEN);})
 #define CHARCASE(letter, token) case letter: CALL_PARSER(token, @"char"); break;
 
+static int isidentifierchar(int c)
+{
+	if (c == '_') return 1;
+	return isalnum(c);
+}
+
 /**
  * Helper function so that Lemon can allocate GC-scanned memory.
  */
@@ -72,7 +78,7 @@ static void freeParser(void *memory)
 	for(i=0 ; i<sLength; i++)
 	{
 		unichar c = CHAR(i);
-		CASE(isalpha, isalnum, 
+		CASE(isalpha, isidentifierchar, 
 		{
 			NSString * word = WORD_TOKEN;
 			if([word isEqualToString:@"subclass"])

@@ -6,6 +6,8 @@ NSObject subclass: SmalltalkTool [
 
 	run [ | point |
 		point := NSValue pointWithX: '1.1' Y: '10.2'.
+		point log.
+		point pointValue log.
 		ETTranscript
 			show: 'Boxing:'; cr;
 			show: (self stringForPoint: (point pointValue)); cr;
