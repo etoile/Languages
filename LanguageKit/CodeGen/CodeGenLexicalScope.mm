@@ -170,6 +170,17 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			return Runtime->GenerateMessageSend(*B, NULL,
 					SymbolClass, @"SymbolForSelector:", NULL, V);
 		}
+		case '^':
+		{
+			Value *NSValueClass = Runtime->LookupClass(*B, @"NSValue");
+			Value *boxed = Runtime->GenerateMessageSend(*B,
+					NULL, NSValueClass, @"valueWithPointer:", NULL, V);
+			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
+			{
+				call->setOnlyReadsMemory();
+			}
+			return boxed;
+		}
 		case '{':
 		{
 			NSString * castSelName = nil;
@@ -343,6 +354,12 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 			}
 			break;
 		}
+		case '^':
+		{
+			castSelName = @"pointerValue";
+			returnTypeString = @"^v";
+			break;
+		}
 		default:
 			LOG("Found type value: %s\n", [type UTF8String]);
 			castSelName = @"";
@@ -360,8 +377,10 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 	// out.
 	if (0 == SmallIntFunction)
 	{
-		return CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName,
+		llvm::Value *ret = 
+CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName,
 				returnTypeString);
+		return ret;
 	}
 	CGBuilder smallIntBuilder(CGM->Context);
 	splitSmallIntCase(val, *B, smallIntBuilder);
@@ -1162,7 +1181,6 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 	Function *f =
 		static_cast<Function*>(CGM->getModule()->getOrInsertFunction([functionName
 					UTF8String], functionTy));
-
 	// Construct the call
 	llvm::SmallVector<llvm::Value*, 8> callArgs;
 	llvm::Value *sret = 0;
@@ -1179,12 +1197,13 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 			llvm::AllocaInst *pointer =
 				Builder.CreateAlloca(callArg->getType());
 			Builder.CreateStore(callArg, pointer);
-			callArgs.push_back(pointer);
+			callArg = pointer;
 		}
-		else
+		if (callArg->getType() != functionTy->getParamType(i))
 		{
-			callArgs.push_back(callArg);
+			callArg = Builder.CreateBitCast(callArg, functionTy->getParamType(i));
 		}
+		callArgs.push_back(callArg);
 	}
 	llvm::Instruction *ret = 0;
 	if (0 != CleanupBB)

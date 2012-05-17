@@ -128,6 +128,12 @@ static LLVMType *LLVMTypeFromString2(LLVMContext &Context, const char ** typestr
 				types.push_back(LLVMTypeFromString2(Context, typestr));
 			}
 			(*typestr)++;
+			// If this struct has no fields, then it is opqaue.  Return the
+			// void type for it.
+			if (types.size() == 0)
+			{
+				return Type::getVoidTy(Context);
+			}
 			return StructType::get(Context, types);
 		}
 		case '[':
