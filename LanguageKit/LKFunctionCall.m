@@ -33,6 +33,7 @@
 	}
 	for (LKAST *node in arguments)
 	{
+		[node setParent: self];
 		if (![node check])
 		{
 			return NO;
