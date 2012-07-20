@@ -55,7 +55,7 @@ protected:
 	NSString *ReturnType;
 	bool containsBlocks;
 
-	virtual void SetParentScope(void) {};
+	virtual void SetParentScope(void) {}
 	/**
 	 * Intialises a Function object to be used as a Smalltalk method or block
 	 * function.

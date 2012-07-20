@@ -49,7 +49,7 @@ class ABIInfo
 protected:
 	llvm::Module &md;
 public:
-	ABIInfo(llvm::Module &M) : md(M) {};
+	ABIInfo(llvm::Module &M) : md(M) {}
 	/**
 	 * This function can be used to determine the function return type.
 	 */

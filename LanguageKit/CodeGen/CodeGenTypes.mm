@@ -12,7 +12,6 @@
 #include <llvm/LLVMContext.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
-#include <llvm/Support/IRBuilder.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Target/TargetData.h>
 

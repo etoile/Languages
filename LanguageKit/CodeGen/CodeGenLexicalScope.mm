@@ -1,4 +1,3 @@
-#include <llvm/Support/IRBuilder.h>
 #include <llvm/Module.h>
 #include "CodeGenModule.h"
 #include "CodeGenBlock.h"
@@ -18,7 +17,7 @@ static bool isLKObject(NSString *typeEncoding)
 {
 	// TODO: This can all go away now that libobjc2 supports small objects.
 	static const char*LKObjectEncoding = @encode(LKObject);
-	static const int encodingLength = strlen(LKObjectEncoding);
+	static const unsigned int encodingLength = strlen(LKObjectEncoding);
 	if ([typeEncoding length] < encodingLength) { return false; }
 	char encoding[encodingLength+1];
 	[typeEncoding getCString: encoding

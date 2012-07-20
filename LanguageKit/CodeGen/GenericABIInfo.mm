@@ -37,9 +37,9 @@
 #include "CodeGenModule.h"
 
 using namespace llvm;
-static void const countIntsAndFloats(const LLVMType *ty,
-                                     unsigned &ints,
-                                     unsigned &floats)
+static void countIntsAndFloats(const LLVMType *ty,
+                               unsigned &ints,
+                               unsigned &floats)
 {
 	if(ty->getTypeID() == Type::VoidTyID)
 	{
@@ -147,9 +147,15 @@ llvm::AttrListPtr GenericABIInfo::attributeListForFunctionType(llvm::FunctionTyp
 	if (isSRet)
 	{
 		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attribute::StructRet);
+#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1) || (LLVM_MAJOR > 3)
+		return AttrListPtr::get(stackRetAttr);
+	}
+	return AttrListPtr::get(ArrayRef<AttributeWithIndex>());
+#else
 		return AttrListPtr::get(&stackRetAttr, 1);
 	}
 	return AttrListPtr::get((AttributeWithIndex*)NULL, 0);
+#endif
 }
 
 } //namespace: languagekit

@@ -16,7 +16,6 @@
 #ifndef CLANG_CODEGEN_OBCJRUNTIME_H
 #define CLANG_CODEGEN_OBCJRUNTIME_H
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/Support/IRBuilder.h"
 #include <string>
 #import "CodeGenTypes.h"
 #import "objc_pointers.h"
@@ -49,7 +48,7 @@ protected:
 	 */
 	unsigned msgSendMDKind;
 public:
-	CGObjCRuntime(CodeGenTypes *T, llvm::LLVMContext &C) : types(T), Context(C) {};
+	CGObjCRuntime(CodeGenTypes *T, llvm::LLVMContext &C) : types(T), Context(C) {}
 	virtual ~CGObjCRuntime();
 	/**
 	 * Looks up the IMP for a specific method and the type encoding.

@@ -13,7 +13,7 @@ typedef	enum
 	LKSymbolScopeLocal,    /** Variable declared in this lexical scope */
 	LKSymbolScopeObject,   /** Instance variable */
 	LKSymbolScopeClass,    /** Class variable */
-	LKSymbolScopeGlobal,   /** Global (only class names) */
+	LKSymbolScopeGlobal    /** Global (only class names) */
 } LKSymbolScope;
 
 /**

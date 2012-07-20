@@ -38,21 +38,22 @@ ${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions
-${FRAMEWORK_NAME}_CXXFLAGS = -Wno-variadic-macros
+${FRAMEWORK_NAME}_OBJCCFLAGS = -Wno-variadic-macros -Wno-gnu -Wno-pedantic
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++ -lobjcxx
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM doesn't provide its version in any header files, so define it here using
 # some ugly sed tricks to parse the output from llvm-config
-${FRAMEWORK_NAME}_CPPFLAGS =  `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/-DLLVM_MAJOR=\1 -DLLVM_MINOR=\2/'`
+${FRAMEWORK_NAME}_CPPFLAGS =  $(shell llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/-DLLVM_MAJOR=\1 -DLLVM_MINOR=\2/')
 
 # LLVM flags
 LLVM_LIBS=analysis archive bitreader bitwriter codegen core engine executionengine instrumentation interpreter ipa ipo jit linker native nativecodegen scalaropts selectiondag support target transformutils #x86 x86asmprinter x86codegen
 #LLVM_LIBS=all
 
-${FRAMEWORK_NAME}_CCFLAGS += `llvm-config --cxxflags  ` -g
-${FRAMEWORK_NAME}_OBJCCFLAGS += `llvm-config --cxxflags ` -g
-LIBRARIES_DEPEND_UPON += `llvm-config --ldflags` -lLLVM-`llvm-config --version`
+${FRAMEWORK_NAME}_CCFLAGS += $(shell llvm-config --cxxflags) -g
+${FRAMEWORK_NAME}_OBJCCFLAGS += $(shell llvm-config --cxxflags) -g
+#LIBRARIES_DEPEND_UPON += `llvm-config --ldflags` -lLLVM-`llvm-config --version`
+LIBRARIES_DEPEND_UPON += $(shell llvm-config --ldflags) $(shell if [ `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/\1\2/'` -gt 31 ] ; then llvm-config --libs ; else  echo -lLLVM-`llvm-config --version` ;  fi)
 
 
 CC = clang

@@ -1,7 +1,6 @@
 #include "CodeGenBlock.h"
 #include "CodeGenModule.h"
 #include "LLVMCompat.h"
-#include <llvm/Support/IRBuilder.h>
 #include <llvm/Module.h>
 #import "../LanguageKit.h"
 
@@ -70,7 +69,7 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 	disposeBuilder.CreateCall2(disposeFn, srcField, object);
 
 	// Now we copy all of the byref structures.  
-	for (int i=7 ; i<blockType->getNumElements() ; i++)
+	for (unsigned int i=7 ; i<blockType->getNumElements() ; i++)
 	{
 		// We call into a helper function to do the actual byref copying.  
 		srcField = copyBuilder.CreateStructGEP(copySrc, i);

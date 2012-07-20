@@ -50,7 +50,6 @@ private:
 	std::vector<llvm::Constant*> Classes;
 	std::vector<llvm::Constant*> Categories;
 	std::vector<llvm::Constant*> ConstantStrings;
-	llvm::Function *LoadFunction;
 	object_map<NSString*, llvm::Constant*> ExistingProtocols;
 	typedef std::pair<NSString*, llvm::GlobalAlias*> TypedSelector;
 	typedef object_map<NSString*, SmallVector<TypedSelector, 2> > SelectorMap;
@@ -465,7 +464,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 			callArgs.push_back(callArg);
 		}
 	}
-	for (int i=0 ; i<fTy->getNumParams() ; i++)
+	for (unsigned int i=0 ; i<fTy->getNumParams() ; i++)
 	{
 		LLVMType *argTy = fTy->getParamType(i);
 		if (callArgs[i]->getType() != argTy)

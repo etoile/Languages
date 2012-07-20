@@ -10,7 +10,13 @@
 #include <llvm/Instructions.h>
 #include <llvm/Metadata.h>
 #include <llvm/Intrinsics.h>
+#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1) || (LLVM_MAJOR > 3)
+#include <llvm/IRBuilder.h>
+#include <llvm/DebugInfo.h>
+#else
 #include <llvm/Support/IRBuilder.h>
+#include <llvm/Analysis/DebugInfo.h>
+#endif
 
 // Only preserve names in a debug build.  This simplifies the
 // IR in a release build, but makes it much harder to debug.

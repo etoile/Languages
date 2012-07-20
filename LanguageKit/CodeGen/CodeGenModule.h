@@ -3,7 +3,6 @@
 #import "CGObjCRuntime.h"
 #import "CodeGenTypes.h"
 #import "CodeGenAssignments.h"
-#include <llvm/Analysis/DebugInfo.h>
 #include "llvm/ADT/StringMap.h"
 #include <stdio.h>
 #import "objc_pointers.h"
@@ -248,7 +247,7 @@ public:
 	/**
 	 * Get the module which provides static definitions of small int messages.
 	 */
-	Module *getSmallIntModule() { return SmallIntModule; };
+	Module *getSmallIntModule() { return SmallIntModule; }
 
 	/**
 	 * Compile and load this module.

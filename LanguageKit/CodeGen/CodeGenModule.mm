@@ -15,7 +15,6 @@
 #include <llvm/LLVMContext.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
-#include <llvm/Support/IRBuilder.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <llvm/Target/TargetData.h>
@@ -607,7 +606,10 @@ void CodeGenModule::compile(void)
 	PerModulePasses->add(createObjCARCContractPass());
 	PerModulePasses->add(createVerifierPass());
 	PerModulePasses->add(createStripSymbolsPass(true));
+	// Something in LICM is broken in trunk currently.  Disable until it's fixed.
+#if LLVM_MINOR < 2
 	PerModulePasses->run(*TheModule);
+#endif
 	delete PerModulePasses;
 #endif
 	DUMP(TheModule);

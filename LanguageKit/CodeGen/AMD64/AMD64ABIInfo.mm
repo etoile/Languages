@@ -616,8 +616,11 @@ llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType 
 		{
 		}
 	}
-	
-return AttrListPtr::get(attributes.begin(), attributes.end());
+#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1) || (LLVM_MAJOR > 3)
+	return AttrListPtr::get(attributes);
+#else
+	return AttrListPtr::get(attributes.begin(), attributes.end());
+#endif
 }
 
 } //namespace: languagekit

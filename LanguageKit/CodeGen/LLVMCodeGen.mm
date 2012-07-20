@@ -80,7 +80,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 {
 	return SmallIntFile;
 }
-- (void) startModule: (NSString*)fileName;
+- (void) startModule: (NSString*)fileName
 {
 	if (nil == fileName) fileName = @"Anonymous";
 	Builder = new CodeGenModule(fileName, getGlobalContext(), objc_collecting_enabled());
@@ -129,7 +129,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 - (void)beginFunction: (NSString*)aName
      withTypeEncoding: (NSString*)typeEncoding
             arguments: (NSArray*)arguments 
-               locals: (NSArray*)locals;
+               locals: (NSArray*)locals
 {
 	Builder->BeginFunction(aName, typeEncoding, locals, arguments);
 }
@@ -182,7 +182,7 @@ const char * LKObjectEncoding = @encode(LKObject);
 - (void*)callFunction: (NSString*)functionName
                 types: (NSString*)types
              withArgs: (void**)argv
-                count: (unsigned int)argc;
+                count: (unsigned int)argc
 {
 	SmallVector<Value*, 8> args;
 	args.append((Value**)argv, ((Value**)argv)+argc);

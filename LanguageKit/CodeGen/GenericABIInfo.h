@@ -54,7 +54,7 @@ private:
 	  unsigned &integerRegisters,
 	  unsigned &floatRegisters);
 public:
-	GenericABIInfo(llvm::Module &M) : ABIInfo(M), context(md.getContext()) {};
+	GenericABIInfo(llvm::Module &M) : ABIInfo(M), context(md.getContext()) {}
 
 	LLVMType *returnTypeForRetLLVMType(LLVMType *ty,
 	  bool &onStack);
