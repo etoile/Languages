@@ -22,7 +22,7 @@ for i in Test*; do
 			echo -n .
 		else
 			FAILS=`expr $FAILS + 1`
-			echo -n '{FAIL: '$i'}'
+			echo -n '{FAIL (interpreter): '$i'}'
 		fi	
 	else
     	sh runtest.sh $i -i
@@ -33,7 +33,7 @@ for i in Test*; do
 			echo -n .
 		else
 			FAILS=`expr $FAILS + 1`
-			echo -n '{FAIL (interpreter): '$i'}'
+			echo -n '{FAIL: '$i'}'
 		fi	
 	else
     	sh runtest.sh $i
