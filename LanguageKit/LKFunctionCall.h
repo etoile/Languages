@@ -7,14 +7,14 @@
 /**
  * The name of the called function.
  */
-@property (nonatomic, retain) NSString *functionName;
+@property (nonatomic, strong) NSString *functionName;
 /**
  * The type encoding of the function.
  */
-@property (nonatomic, retain) NSString *typeEncoding;
+@property (nonatomic, strong) NSString *typeEncoding;
 /**
  * The function arguments.
  */
-@property (nonatomic, retain) NSMutableArray *arguments;
+@property (nonatomic, strong) NSMutableArray *arguments;
 @end
 

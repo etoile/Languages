@@ -41,11 +41,11 @@ typedef enum
  */
 @interface LKSymbol : NSObject
 /** The name of this symbol. */
-@property (nonatomic, retain) NSString *name;
+@property (nonatomic, strong) NSString *name;
 /** The Objective-C type encoding of this variable. */
-@property (nonatomic, retain) NSString *typeEncoding;
+@property (nonatomic, strong) NSString *typeEncoding;
 /** The AST node representing the variable */
-@property (nonatomic, assign) id owner;
+@property (nonatomic, unsafe_unretained) id owner;
 /** The scope of this symbol. */
 @property (nonatomic) LKSymbolScope scope;
 /** Index of this symbol.  */
@@ -63,15 +63,15 @@ typedef enum
 @interface LKSymbolTable : NSObject {
 }
 /** The AST node (class, block, method) that contains these declarations. */
-@property (assign, nonatomic) LKAST *declarationScope;
+@property (unsafe_unretained, nonatomic) LKAST *declarationScope;
 /** The parent scope for this symbol table. */
-@property (assign, nonatomic) LKSymbolTable *enclosingScope;
+@property (unsafe_unretained, nonatomic) LKSymbolTable *enclosingScope;
 /** The scope of this symbol table. */
 @property (nonatomic) LKSymbolScope tableScope;
 /**
  * The symbols stored in this symbol table, indexed by name.
  */
-@property (nonatomic, retain) NSMutableDictionary *symbols;
+@property (nonatomic, strong) NSMutableDictionary *symbols;
 /**
  * Returns the symbol table for a class.  If the class exists, then this will
  * be populated with its instance variables.  If not, then it will be empty.
@@ -125,8 +125,8 @@ typedef enum
 __attribute__((unused))
 static NSString *NSStringFromRuntimeString(const char *cString)
 {
-	return [[[NSString alloc] initWithBytesNoCopy: (char*)cString
+	return [[NSString alloc] initWithBytesNoCopy: (char*)cString
 	                                       length: strlen(cString)
 	                                     encoding: NSUTF8StringEncoding
-	                                 freeWhenDone: NO] autorelease];
+	                                 freeWhenDone: NO];
 }

@@ -9,7 +9,7 @@
   /** Name of the category. */
   NSString *categoryName;
   /** Array of methods defined in this category. */
-  NSMutableArray * methods;
+  NSMutableArray *methods;
 }
 
 @property (readonly, nonatomic) NSString *className;

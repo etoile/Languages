@@ -38,11 +38,6 @@ static SCKSourceCollection *collection;
 	polymorphicSelectors = [NSMutableSet new];
 	return self;
 }
-- (void)dealloc
-{
-	[polymorphicSelectors release];
-	[super dealloc];
-}
 - (BOOL)compiler: (LKCompiler*)aCompiler
 generatedWarning: (NSString*)aWarning
          details: (NSDictionary*)info
@@ -447,7 +442,7 @@ static NSString *loadFramework(NSString *framework)
 				{
 					// Create an instance of the new class that can perform any
 					// loading code it needs in +initialize
-					[[[newclass alloc] init] release];
+					[[newclass alloc] init];
 				}
 			}
 		}
@@ -517,18 +512,18 @@ static NSString *loadFramework(NSString *framework)
 }
 - (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle
 {
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	NSString *extension = [[self class] fileExtension];
-	NSArray *scripts = [aBundle pathsForResourcesOfType:extension
-	                                        inDirectory:nil];
-	BOOL success = YES;
-	FOREACH(scripts, scriptFile, NSString*)
-	{
-		NSString *script = [NSString stringWithContentsOfFile: scriptFile];
-		success &= [self compileString:script];
+	@autoreleasepool {
+		NSString *extension = [[self class] fileExtension];
+		NSArray *scripts = [aBundle pathsForResourcesOfType:extension
+		                                        inDirectory:nil];
+		BOOL success = YES;
+		FOREACH(scripts, scriptFile, NSString*)
+		{
+			NSString *script = [NSString stringWithContentsOfFile: scriptFile];
+			success &= [self compileString:script];
+		}
+		return success;
 	}
-	[pool release];
-	return success;
 }
 
 + (BOOL) loadAllScriptsForApplication

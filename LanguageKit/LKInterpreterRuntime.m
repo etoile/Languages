@@ -9,6 +9,7 @@
 #import <EtoileFoundation/runtime.h>
 #ifndef GNU_RUNTIME
 #include <objc/objc-runtime.h>
+#include <objc/objc-arc.h>
 #endif
 #include <string.h>
 #include <ffi.h>
@@ -185,16 +186,8 @@ static id BoxValue(void *value, const char *typestr)
 		case 'v':
 			return nil;
 			// If it's already an object, we don't need to do anything
-		case '(': //FIXME: Hack
-			if (strncmp(typestr, @encode(LKObject), strlen(@encode(LKObject))) == 0)
-			{
-				LKObject v = *(LKObject*)value;
-				if (LKObjectIsSmallInt(v))
-				{
-					return [BigInt bigIntWithLongLong: NSIntegerFromSmallInt(v)];
-				}
-				return *(__bridge id*)value;
-			}
+		case '(':
+			return nil;
 		case '@':
 		case '#':
 			return *(__unsafe_unretained id*)value;
@@ -261,10 +254,10 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 			}
 		case '#':
 		case '@':
-			*(id*)dest = value;
+			*(__unsafe_unretained id*)dest = value;
 			return;
 		case 'v':
-			*(id*)dest = NULL;
+			*(void**)dest = NULL;
 			return;
 		case '{':
 		{
@@ -297,11 +290,11 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 }
 
 id LKCallFunction(NSString *functionName, NSString *types,
-                 unsigned int argc, __unsafe_unretained id *args)
+                 unsigned int argc, const id *args)
 {
 	NSMethodSignature *sig = [NSMethodSignature signatureWithObjCTypes: [types UTF8String]];
 	void *function = dlsym(RTLD_DEFAULT, [functionName UTF8String]);
-	if (nil == function)
+	if (NULL == function)
 	{
 		[NSException raise: LKInterpreterException
 		            format: @"Could not look up function %@", functionName];
@@ -354,7 +347,7 @@ static BOOL isInMethodFamily(NSString *selName, NSString *family)
 }
 
 id LKSendMessage(NSString *className, id receiver, NSString *selName,
-                 unsigned int argc, __unsafe_unretained id *args)
+                 unsigned int argc, const id *args)
 {
 	if (receiver == nil)
 	{
@@ -371,7 +364,6 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	else if (isInMethodFamily(selName, @"init"))
 	{
 		autoreleaseResult = YES;
-		receiver = [receiver retain];
 	}
 
 	SEL sel = sel_getUid([selName UTF8String]);
@@ -476,7 +468,7 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	id result = BoxValue(msgSendRet, [sig methodReturnType]);
 	if (autoreleaseResult)
 	{
-		result = [result autorelease];
+		// FIXME:
 	}
 	return result;
 }
@@ -491,7 +483,7 @@ id LKGetIvar(id receiver, NSString *name)
                     format: @"Error getting ivar '%@' of object %@",
 		                    name, receiver];
 	}
-	void *ivarAddress = (char*)receiver +ivar_getOffset(ivar);
+	void *ivarAddress = (char*)(__bridge void*)receiver +ivar_getOffset(ivar);
 	id result = BoxValue(ivarAddress, ivar_getTypeEncoding(ivar));
 	return result;
 }
@@ -503,11 +495,11 @@ BOOL LKSetIvar(id receiver, NSString *name, id value)
 	{
 		return NO;
 	}
-	void *ivarAddress = (char*)receiver + ivar_getOffset(ivar);
+	void *ivarAddress = (char*)(__bridge void*)receiver + ivar_getOffset(ivar);
 	const char *encoding = ivar_getTypeEncoding(ivar);
 	if (encoding[0] == '@')
 	{
-		ASSIGN(*((id*)ivarAddress), value);
+		*(__strong id*)ivarAddress = value;
 	}
 	else
 	{
@@ -522,7 +514,7 @@ static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret,
 	struct trampoline *t = user_data;
 	Class cls = t->cls;
 	
-	id receiver = *((id*)args[0]);
+	id receiver = *((__unsafe_unretained id*)args[0]);
 	SEL cmd = *((SEL*)args[1]);
 	const char *objctype = t->types;
 

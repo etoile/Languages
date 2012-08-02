@@ -8,7 +8,7 @@
 }
 + (id) assignWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression
 {
-	return [[[self alloc] initWithTarget:aTarget expr:expression] autorelease];
+	return [[self alloc] initWithTarget:aTarget expr:expression];
 }
 - (id) initWithTarget:(LKDeclRef*)aTarget expr:(LKAST*)expression
 {
@@ -75,11 +75,5 @@
 - (LKAST*) expression
 {
 	return expr;
-}
-- (void)dealloc
-{
-	[target release];
-	[expr release];
-	[super dealloc];
 }
 @end

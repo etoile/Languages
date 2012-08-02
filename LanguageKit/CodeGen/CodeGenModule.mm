@@ -345,8 +345,9 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 {
 	if (JIT)
 	{
-		id constant = [NSClassFromString(className) performSelector: NSSelectorFromString(constructor) withObject: (__bridge id)[arg UTF8String]];
-		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(types->intPtrTy, (uintptr_t)[constant retain]),
+		IMP msg = [NSClassFromString(className) methodForSelector: NSSelectorFromString(constructor)];
+		id constant = msg(NSClassFromString(className), NSSelectorFromString(constructor), [arg UTF8String]);
+		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(types->intPtrTy, (uintptr_t)(__bridge_retained void*)[constant copy]),
 			types->idTy);
 	}
 	Value *Class = Runtime->LookupClass(InitialiseBuilder, className);

@@ -12,8 +12,8 @@
 + (LKCompare*) comparisonWithLeftExpression: (LKAST*)expr1
 					        rightExpression: (LKAST*)expr2;
 {
-	return [[[LKCompare alloc] initWithLeftExpression:expr1
-	                                  rightExpression: expr2] autorelease];
+	return [[LKCompare alloc] initWithLeftExpression:expr1
+	                                  rightExpression: expr2];
 }
 - (NSString*) description
 {
@@ -40,11 +40,5 @@
 	tmp = [aVisitor visitASTNode:rhs];
 	ASSIGN(rhs, tmp);
 	[rhs visitWithVisitor:aVisitor];
-}
-- (void)dealloc
-{
-	[lhs release];
-	[rhs release];
-	[super dealloc];
 }
 @end

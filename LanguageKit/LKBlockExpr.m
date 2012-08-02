@@ -5,9 +5,9 @@
 @implementation LKBlockExpr
 + (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList
 {
-	return [[[self alloc] initWithArguments: arguments
+	return [[self alloc] initWithArguments: arguments
 	                                 locals: locals
-	                             statements: statementList] autorelease];
+	                             statements: statementList];
 }
 - (id) initWithArguments: (NSMutableArray*)arguments
                   locals: (NSMutableArray*)locals
@@ -18,7 +18,6 @@
 	[table addSymbolsNamed: locals ofKind: LKSymbolScopeLocal];
 	[table addSymbolsNamed: arguments ofKind: LKSymbolScopeArgument];
 	self = [super initWithSymbolTable: table];
-	[table release];
 	if (self != nil)
 	{
 		ASSIGN(statements, statementList);
@@ -115,10 +114,5 @@
 - (NSMutableArray*) statements
 {
 	return statements;
-}
-- (void)dealloc
-{
-	[statements release];
-	[super dealloc];
 }
 @end

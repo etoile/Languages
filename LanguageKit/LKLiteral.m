@@ -9,7 +9,7 @@
 }
 + (id) literalFromString:(NSString*)aString
 {
-	return [[[self alloc] initWithString:aString] autorelease];
+	return [[self alloc] initWithString:aString];
 }
 - (NSString*) description
 {
@@ -17,11 +17,6 @@
 }
 // No checking needed for literals - they are always semantically valid
 - (BOOL) check { return YES; }
-- (void)dealloc
-{
-	[value release];
-	[super dealloc];
-}
 @end
 
 static NSDictionary *ObjCConstants;
@@ -32,7 +27,7 @@ static NSDictionary *ObjCConstants;
 
 	NSString *plist = [[NSBundle bundleForClass:self]
 		pathForResource:@"ObjCConstants" ofType:@"plist"];
-	ObjCConstants = [[NSDictionary dictionaryWithContentsOfFile:plist] retain];
+	ObjCConstants = [NSDictionary dictionaryWithContentsOfFile:plist];
 }
 + (id) literalFromSymbol:(NSString*)aString
 {
@@ -87,7 +82,6 @@ static NSDictionary *ObjCConstants;
 	                              range:NSMakeRange(0, [escaped length])];
 
 	void *ret = [aGenerator stringConstant:escaped];
-	[escaped release];
 	return ret;
 }
 @end

@@ -30,7 +30,7 @@
 /**
  * List of statements executed after each iteration of the loop.
  */
-@property (retain, nonatomic) NSMutableArray *initStatements;
+@property (strong, nonatomic) NSMutableArray *initStatements;
 /**
  * Return a new loop with the specified statements.
  */

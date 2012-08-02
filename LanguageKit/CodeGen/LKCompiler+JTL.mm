@@ -21,7 +21,6 @@ static LKAST *parseScript(NSString *script, NSString *extension)
 		[[[LKCompiler compilerClassForFileExtension:extension]
 				parserClass] new];
 	LKAST *module = [parser parseString: script];
-	[parser release];
 	return module;
 }
 
@@ -80,7 +79,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 		run(@"llc", A(@"-f", ABS_PATH(@"bundle-bitcode.optimised.bc"), @"-O3"
 		              @"-relocation-model=pic", @"-o", ABS_PATH(@"jtl.s"))) &&
 		// Until then, use GCC to generate the .so
-		run(@"gcc", A(ABS_PATH(@"jtl.s"), @"-shared",
+		run(@"clang", A(ABS_PATH(@"jtl.s"), @"-shared",
 		              @"-o", ABS_PATH(@"jtl.so"))))
 	{
 		return ABS_PATH(@"jtl.so");
@@ -93,66 +92,67 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle
 {
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	[NSThread setThreadPriority: 0];
-	NSFileManager *fm = [NSFileManager defaultManager];
-	NSString *tempDirectory = [fm tempDirectory];
+	@autoreleasepool
+	{
+		[NSThread setThreadPriority: 0];
+		NSFileManager *fm = [NSFileManager defaultManager];
+		NSString *tempDirectory = [fm tempDirectory];
 
-	NSString *path = [aBundle pathForResource:@"LKInfo" ofType:@"plist"];
-	NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile: path];
-	// TODO: Specify a set of AST transforms to apply.
-	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
-	NSMutableArray *bitcodeFiles = [NSMutableArray array];
-	FOREACH(sourceFiles, s, NSString*)
-	{
-		NSString *source = [aBundle pathForResource: s ofType: nil];
-		NSString *outFile = 
-			[tempDirectory stringByAppendingPathComponent: 
-				[source lastPathComponent]];
-		outFile = [outFile stringByAppendingPathExtension: @"bc"];
-		NSString *code = [NSString stringWithContentsOfFile: source];
-		LKAST *ast = parseScript(code, [source pathExtension]);
-		[ast check];
-		//applyTransforms(ast);
-		[ast compileWithGenerator: 
-			[[LLVMStaticCodeGen alloc] initWithFile:outFile]];
-		[bitcodeFiles addObject: outFile];
-	}
-	NSString *so = linkBitcodeFiles(bitcodeFiles, tempDirectory);
-	if (nil != so)
-	{
-		// Try to move the generated library to somewhere where it can be found
-		// the next time.
-		NSString *path = 
-			[[[aBundle bundlePath] stringByAppendingPathComponent: @"Resources"] 
-				stringByAppendingPathComponent: @"languagekit-cache.so"];
-		// Delete an old cache
-		[fm removeFileAtPath: path handler: nil];
-		// Install the new one in the bundle
-		if ([fm movePath: so toPath: path handler: nil])
+		NSString *path = [aBundle pathForResource:@"LKInfo" ofType:@"plist"];
+		NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile: path];
+		// TODO: Specify a set of AST transforms to apply.
+		NSArray *sourceFiles = [plist objectForKey:@"Sources"];
+		NSMutableArray *bitcodeFiles = [NSMutableArray array];
+		FOREACH(sourceFiles, s, NSString*)
 		{
-			NSLog(@"Wrote cache to %@", path);
+			NSString *source = [aBundle pathForResource: s ofType: nil];
+			NSString *outFile = 
+				[tempDirectory stringByAppendingPathComponent: 
+					[source lastPathComponent]];
+			outFile = [outFile stringByAppendingPathExtension: @"bc"];
+			NSString *code = [NSString stringWithContentsOfFile: source];
+			LKAST *ast = parseScript(code, [source pathExtension]);
+			[ast check];
+			//applyTransforms(ast);
+			[ast compileWithGenerator: 
+				[[LLVMStaticCodeGen alloc] initWithFile:outFile]];
+			[bitcodeFiles addObject: outFile];
+		}
+		NSString *so = linkBitcodeFiles(bitcodeFiles, tempDirectory);
+		if (nil != so)
+		{
+			// Try to move the generated library to somewhere where it can be found
+			// the next time.
+			NSString *path = 
+				[[[aBundle bundlePath] stringByAppendingPathComponent: @"Resources"] 
+					stringByAppendingPathComponent: @"languagekit-cache.so"];
+			// Delete an old cache
+			[fm removeFileAtPath: path handler: nil];
+			// Install the new one in the bundle
+			if ([fm movePath: so toPath: path handler: nil])
+			{
+				NSLog(@"Wrote cache to %@", path);
+				[fm removeFileAtPath: tempDirectory handler: nil];
+				return;
+			} 
+			NSArray *dirs = NSSearchPathForDirectoriesInDomains( NSLibraryDirectory,
+				NSUserDomainMask, YES);
+			NSString *userCache = [dirs objectAtIndex: 0];
+			userCache = [[userCache stringByAppendingPathComponent: @"LKCaches"]
+			stringByAppendingPathComponent: [aBundle bundlePath]];
+			[fm   createDirectoryAtPath: userCache
+			withIntermediateDirectories: YES
+			                 attributes: nil
+			                      error: NULL];
+			// Delete an old cache
+			[fm removeFileAtPath: userCache handler: nil];
+			// This shouldn't fail, but if it does then we just give up and JIT
+			// every time.
+			[fm movePath: so toPath: userCache handler: nil];
+			NSLog(@"Wrote cache to %@", userCache);
+			NSLog(@"Deleting %@", tempDirectory);
 			[fm removeFileAtPath: tempDirectory handler: nil];
-			return;
-		} 
-		NSArray *dirs = NSSearchPathForDirectoriesInDomains( NSLibraryDirectory,
-			NSUserDomainMask, YES);
-		NSString *userCache = [dirs objectAtIndex: 0];
-		userCache = [[userCache stringByAppendingPathComponent: @"LKCaches"]
-		stringByAppendingPathComponent: [aBundle bundlePath]];
-		[fm   createDirectoryAtPath: userCache
-		withIntermediateDirectories: YES
-		                 attributes: nil
-		                      error: NULL];
-		// Delete an old cache
-		[fm removeFileAtPath: userCache handler: nil];
-		// This shouldn't fail, but if it does then we just give up and JIT
-		// every time.
-		[fm movePath: so toPath: userCache handler: nil];
-		NSLog(@"Wrote cache to %@", userCache);
-		NSLog(@"Deleting %@", tempDirectory);
-		[fm removeFileAtPath: tempDirectory handler: nil];
+		}
 	}
-	[pool drain];
 }
 @end

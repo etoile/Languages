@@ -37,7 +37,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 ${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
-${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions
+${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
 ${FRAMEWORK_NAME}_OBJCCFLAGS = -Wno-variadic-macros -Wno-gnu -Wno-pedantic
 ${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++ -lobjcxx
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
@@ -51,7 +51,7 @@ LLVM_LIBS=analysis archive bitreader bitwriter codegen core engine executionengi
 #LLVM_LIBS=all
 
 ${FRAMEWORK_NAME}_CCFLAGS += $(shell llvm-config --cxxflags) -g
-${FRAMEWORK_NAME}_OBJCCFLAGS += $(shell llvm-config --cxxflags) -g
+${FRAMEWORK_NAME}_OBJCCFLAGS += $(shell llvm-config --cxxflags) -g -fobjc-arc
 #LIBRARIES_DEPEND_UPON += `llvm-config --ldflags` -lLLVM-`llvm-config --version`
 LIBRARIES_DEPEND_UPON += $(shell llvm-config --ldflags) $(shell if [ `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/\1\2/'` -gt 31 ] ; then llvm-config --libs ; else  echo -lLLVM-`llvm-config --version` ;  fi)
 

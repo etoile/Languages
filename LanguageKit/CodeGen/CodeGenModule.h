@@ -64,17 +64,17 @@ private:
   NSString *CategoryName;
   int InstanceSize;
   SmallVector<CodeGenSubroutine*, 8> ScopeStack;
-  llvm::SmallVector<strong_id<NSString*>, 8> IvarNames;
-  llvm::SmallVector<strong_id<NSString*>, 8> CvarNames;
+  llvm::SmallVector<NSString*, 8> IvarNames;
+  llvm::SmallVector<NSString*, 8> CvarNames;
   // All will be "@" for now.
-  llvm::SmallVector<strong_id<NSString*>, 8> IvarTypes;
-  llvm::SmallVector<strong_id<NSString*>, 8> CvarTypes;
+  llvm::SmallVector<NSString*, 8> IvarTypes;
+  llvm::SmallVector<NSString*, 8> CvarTypes;
   llvm::SmallVector<int, 8> IvarOffsets;
-  llvm::SmallVector<strong_id<NSString*>, 8> InstanceMethodNames;
-  llvm::SmallVector<strong_id<NSString*>, 8> InstanceMethodTypes;
-  llvm::SmallVector<strong_id<NSString*>, 8> ClassMethodNames;
-  llvm::SmallVector<strong_id<NSString*>, 8> ClassMethodTypes;
-  llvm::SmallVector<strong_id<NSString*>, 8> Protocols;
+  llvm::SmallVector<NSString*, 8> InstanceMethodNames;
+  llvm::SmallVector<NSString*, 8> InstanceMethodTypes;
+  llvm::SmallVector<NSString*, 8> ClassMethodNames;
+  llvm::SmallVector<NSString*, 8> ClassMethodTypes;
+  llvm::SmallVector<NSString*, 8> Protocols;
 
 public:
   bool profilingEnabled;

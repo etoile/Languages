@@ -12,7 +12,7 @@
 }
 + (LKVariableDecl*) variableDeclWithName:(LKToken*) declName
 {
-	return [[[self alloc] initWithName:declName] autorelease];
+	return [[self alloc] initWithName:declName];
 }
 - (NSString*) description
 {
@@ -26,7 +26,6 @@
 	[sym setTypeEncoding: NSStringFromRuntimeString(@encode(LKObject))];
 	[sym setScope: LKSymbolScopeLocal];
 	[symbols addSymbol: sym];
-	[sym release];
 }
 - (NSString*)name
 {

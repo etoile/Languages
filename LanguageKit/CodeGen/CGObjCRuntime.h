@@ -33,7 +33,7 @@ namespace llvm {
 
 namespace etoile {
 namespace languagekit {
-typedef const llvm::SmallVectorImpl<strong_id<NSString *> > StringVector;
+typedef const llvm::SmallVectorImpl<NSString *> StringVector;
 
 /// Implements runtime-specific code generation functions.
 class CGObjCRuntime {

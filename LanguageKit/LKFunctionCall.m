@@ -8,13 +8,6 @@
 
 @implementation LKFunctionCall
 @synthesize functionName, typeEncoding, arguments;
-- (void)dealloc
-{
-	[functionName release];
-	[typeEncoding release];
-	[arguments release];
-	[super dealloc];
-}
 - (BOOL)check
 {
 	ASSIGN(typeEncoding, [LKCompiler typesForFunction: functionName]);

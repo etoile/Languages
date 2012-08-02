@@ -47,8 +47,8 @@ const char * LKObjectEncoding = @encode(LKObject);
 		}
 		else 
 		{
-			SmallIntFile = [[[NSBundle bundleForClass:self] 
-				pathForResource: SmallIntFileName ofType: @"bc"] retain];
+			SmallIntFile = [[NSBundle bundleForClass:self] 
+				pathForResource: SmallIntFileName ofType: @"bc"];
 		}
 		NSAssert(SmallIntFile, 
 		         @"Unable to find the location of MsgSendSmallInt.bc."
@@ -286,7 +286,6 @@ const char * LKObjectEncoding = @encode(LKObject);
 {
 	delete Builder;
 	NSFreeMapTable(labelledBasicBlocks);
-	[super dealloc];
 }
 - (void*) generateConstantSymbol:(NSString*)aSymbol
 {

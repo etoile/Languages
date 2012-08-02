@@ -15,11 +15,6 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 
 @implementation LKSymbolTable
 @synthesize enclosingScope, tableScope, symbols, declarationScope;
-- (void)dealloc
-{
-	[symbols release];
-	[super dealloc];
-}
 + (void)initialize
 {
 	NewClasses = [NSMutableDictionary new];
@@ -61,8 +56,6 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 				[sym setScope: LKSymbolScopeObject];
 				[sym setOwner: class];
 				[table addSymbol: sym];
-				[sym release];
-				[name release];
 			}
 			free(ivarlist);
 		}
@@ -110,7 +103,6 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 					[sym setReferencingScopes: 0];
 					[sym setScope: LKSymbolScopeExternal];
 					[self addSymbol: sym];
-					[sym release];
 				default:
 					return sym;
 			}
@@ -123,7 +115,6 @@ static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 			[sym setTypeEncoding: @"@"];
 			[sym setScope: scope];
 			[self addSymbol: sym];
-			[sym release];
 			return sym;
 		}
 	}
@@ -144,7 +135,7 @@ static inline NSMutableArray* collectSymbolsOfType(NSDictionary *symbols,
 			[args addObject: s];
 		}
 	}
-	return [args autorelease];
+	return args;
 }
 
 static NSComparisonResult compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
@@ -189,7 +180,6 @@ static NSComparisonResult compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
 		[sym setScope: kind];
 		[sym setIndex: i++];
 		[self addSymbol: sym];
-		[sym release];
 	}
 }
 @end
@@ -201,12 +191,6 @@ static NSComparisonResult compareSymbolOrder(LKSymbol *a, LKSymbol *b, void *c)
 	SUPERINIT;
 	index = -1;
 	return self;
-}
-- (void)dealloc
-{
-	[name release];
-	[typeEncoding release];
-	[super dealloc];
 }
 - (NSString*)stringValue
 {

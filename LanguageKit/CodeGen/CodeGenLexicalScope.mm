@@ -489,7 +489,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
                                            NSString *typeEncoding,
                                            BOOL returnsRetained)
 {
-	ReturnType = [typeEncoding retain];
+	ReturnType = typeEncoding;
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
 	Module *TheModule = CGM->getModule();

@@ -36,7 +36,7 @@ static NSArray *TypesForMethodName(NSString *methodName)
 	{
 		free(types);
 	}
-	return [typeStrings autorelease];
+	return typeStrings;
 }
 #else
 static NSArray* TypesForMethodName(NSString *methodName)
@@ -60,7 +60,7 @@ static NSArray* TypesForMethodName(NSString *methodName)
 	Class *classes = NULL;
 	if (numClasses > 0 )
 	{
-		classes = malloc(sizeof(Class) * numClasses);
+		classes = (__unsafe_unretained Class*)malloc(sizeof(Class) * numClasses);
 		numClasses = objc_getClassList(classes, numClasses);
 	}
 	
@@ -229,13 +229,5 @@ static NSArray* TypesForMethodName(NSString *methodName)
 - (NSDictionary*) pragmas
 {
 	return pragmas;
-}
-- (void)dealloc
-{
-	[classes release];
-	[categories release];
-	[pragmas release];
-	[typeOverrides release];
-	[super dealloc];
 }
 @end

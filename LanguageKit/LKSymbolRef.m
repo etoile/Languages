@@ -9,12 +9,7 @@
 }
 + (id) referenceWithSymbol:(NSString*)sym
 {
-	return [[[self alloc] initWithSymbol: sym] autorelease];
-}
-- (void)dealloc
-{
-	[symbol release];
-	[super dealloc];
+	return [[self alloc] initWithSymbol: sym];
 }
 - (BOOL) check { return YES; }
 - (NSString*) description

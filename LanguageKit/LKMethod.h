@@ -6,9 +6,9 @@
  */
 @interface LKMethod : LKAST 
 /** Method signature - selector and names of arguments. */
-@property (retain, nonatomic) LKMessageSend *signature;
+@property (strong, nonatomic) LKMessageSend *signature;
 /** List of statements in this method. */
-@property (retain, nonatomic) NSMutableArray *statements;
+@property (strong, nonatomic) NSMutableArray *statements;
 /**
  * Return a new Method with the specified signature, locals and statements.
  */

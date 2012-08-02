@@ -37,10 +37,9 @@ typedef struct
 	NSMutableDictionary *objects;
 }
 @property (unsafe_unretained, nonatomic) id selfObject;
-@property (retain, nonatomic) id blockContextObject;
+@property (strong, nonatomic) id blockContextObject;
 - (id) initWithSymbolTable: (LKSymbolTable*)aTable
                     parent: (LKInterpreterContext*)aParent;
-- (void) dealloc;
 - (void) setValue: (id)value forSymbol: (NSString*)symbol;
 - (id) valueForSymbol: (NSString*)symbol;
 - (LKInterpreterVariableContext)contextForSymbol: (LKSymbol*)symbol;
@@ -53,12 +52,12 @@ typedef struct
 
 @interface LKBlockExpr (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context;
-- (id)executeWithArguments: (__unsafe_unretained id*)args count: (int)count inContext: (LKInterpreterContext*)context;
+- (id)executeWithArguments: (const id*)args count: (int)count inContext: (LKInterpreterContext*)context;
 @end
 
 @interface LKMethod (LKInterpreter)
 - (id)executeInContext: (LKInterpreterContext*)context;
-- (id)executeWithReciever: (id)receiver arguments: (id*)args count: (int)count;
+- (id)executeWithReciever: (id)receiver arguments: (const id*)args count: (int)count;
 @end
 
 @interface LKSubclass (LKInterpreter)

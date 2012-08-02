@@ -24,11 +24,11 @@
                   ivars:(NSArray*)anIvarList
                 methods:(NSArray*)aMethodList
 {
-	return [[[self alloc] initWithName: aName
+	return [[self alloc] initWithName: aName
 	                        superclass: aClass
 	                             cvars: aCvarList
 	                             ivars: anIvarList
-	                           methods: aMethodList] autorelease];
+	                           methods: aMethodList];
 }
 - (BOOL)check
 {
@@ -163,14 +163,5 @@
 - (NSArray*)classVariables
 {
 	return cvars;
-}
-- (void)dealloc
-{
-  [classname release];
-  [superclass release];
-  [methods release];
-  [cvars release];
-  [ivars release];
-  [super dealloc];
 }
 @end

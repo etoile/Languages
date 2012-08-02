@@ -3,7 +3,7 @@
 @implementation LKReturn
 + (id) returnWithExpr:(LKAST*)anExpression
 {
-	return [[[self alloc] initWithExpr: anExpression] autorelease];
+	return [[self alloc] initWithExpr: anExpression];
 }
 - (id) initWithExpr:(LKAST*)anExpression
 {
@@ -39,11 +39,6 @@
 - (BOOL) isBranch
 {
 	return YES;
-}
-- (void)dealloc
-{
-	[ret release];
-	[super dealloc];
 }
 @end
 

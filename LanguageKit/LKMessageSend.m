@@ -37,22 +37,14 @@ static NSSet *ARCBannedMessages;
 + (id)messageWithSelectorName: (NSString*)aSelector
                     arguments: (NSArray*)args
 {
-	return [[[self alloc] initWithSelectorName: aSelector
-	                                 arguments: args] autorelease];
+	return [[self alloc] initWithSelectorName: aSelector
+	                                 arguments: args];
 }
 - (id) initWithSelectorName:(NSString*)aSelector
 {
 	SUPERINIT;
 	ASSIGN(selector, aSelector);
 	return self;
-}
-- (void)dealloc
-{
-	[selector release];
-	[target release];
-	[arguments release];
-	[type release];
-	[super dealloc];
 }
 - (void) setTarget:(id)anObject
 {
@@ -245,13 +237,13 @@ static NSSet *ARCBannedMessages;
 + (LKMessageCascade*) messageCascadeWithTarget:(LKAST*) aTarget
                                       messages:(NSMutableArray*) messageArray
 {
-	return [[[self alloc] initWithTarget:aTarget
-	                            messages:messageArray] autorelease];
+	return [[self alloc] initWithTarget:aTarget
+	                            messages:messageArray];
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	id target = [receiver compileWithGenerator: aGenerator];
-	id result = nil;
+	void *target = [receiver compileWithGenerator: aGenerator];
+	void *result = NULL;
 	FOREACH(messages, message, LKMessageSend*)
 	{
 		result = [message compileWithGenerator: aGenerator forTarget:target];
@@ -279,12 +271,6 @@ static NSSet *ARCBannedMessages;
 		success &= [message check];
 	}
 	return success;
-}
-- (void) dealloc
-{
-	[receiver release];
-	[messages release];
-	[super dealloc];
 }
 - (NSString*) description
 {

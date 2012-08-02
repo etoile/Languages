@@ -9,7 +9,7 @@
 }
 + (LKComment*) commentWithString:(NSString*)aString
 {
-	return [[[LKComment alloc] initWithString:aString] autorelease];
+	return [[LKComment alloc] initWithString:aString];
 }
 - (NSString*) description
 {
@@ -30,9 +30,4 @@
 }
 // Comments are always semantically valid - no checking needed.
 - (BOOL) check { return YES; }
-- (void) dealloc
-{
-	[comment release];
-	[super dealloc];
-}
 @end

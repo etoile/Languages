@@ -13,20 +13,13 @@
 	elseStatements = [elseClause mutableCopy];
 	return self;
 }
-- (void) dealloc
-{
-	[condition release];
-	[thenStatements release];
-	[elseStatements release];
-	[super dealloc];
-}
 + (LKIfStatement*) ifStatementWithCondition:(LKAST*) aCondition
                                        then:(NSArray*)thenClause
                                        else:(NSArray*)elseClause
 {
-	return [[[self alloc] initWithCondition: aCondition
+	return [[self alloc] initWithCondition: aCondition
 	                                   then: thenClause
-	                                   else: elseClause] autorelease];
+	                                   else: elseClause];
 }
 
 static void *emitBlock(id<LKCodeGenerator> aGenerator, 

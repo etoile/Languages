@@ -28,6 +28,6 @@ static inline LKObject LKObjectFromNSInteger(NSInteger integer)
 	}
 	else
 	{
-		return LKObjectFromObject((__bridge id)((integer << OBJC_SMALL_OBJECT_SHIFT) | 1));
+		return LKObjectFromObject((__bridge id)(void*)((integer << OBJC_SMALL_OBJECT_SHIFT) | 1));
 	}
 }

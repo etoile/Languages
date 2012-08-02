@@ -79,12 +79,11 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 - (BOOL)checkWithErrorReporter: (id<LKCompilerDelegate>)errorReporter
 {
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
-	id old = [[dict objectForKey: @"LKCompilerContext"] retain];
+	id old = [dict objectForKey: @"LKCompilerContext"];
 	[dict setObject: errorReporter forKey: @"LKCompilerContext"];
 	BOOL success = [self check];
 	[dict setValue: old forKey: @"LKCompilerContext"];
 
-	[old release];
 	return success;
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
@@ -136,11 +135,8 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 		[new visitWithVisitor:aVisitor];
 	}
 	[anArray removeObjectsAtIndexes: remove];
-	[remove release];
 }
 - (void)dealloc
 {
-	[symbols release];
-	[super dealloc];
 }
 @end

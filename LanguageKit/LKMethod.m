@@ -14,9 +14,9 @@ static NSSet *ARCBannedMessages;
                     locals:(NSMutableArray*)locals
                 statements:(NSMutableArray*)statementList
 {
-	return [[[self alloc] initWithSignature: aSignature
+	return [[self alloc] initWithSignature: aSignature
 	                                 locals: locals
-	                             statements: statementList] autorelease];
+	                             statements: statementList];
 }
 - (id) initWithSignature:(LKMessageSend*)aSignature
                   locals:(NSMutableArray*)locals
@@ -27,17 +27,10 @@ static NSSet *ARCBannedMessages;
 	[st addSymbolsNamed: locals ofKind: LKSymbolScopeLocal];
 	[st addSymbolsNamed: [aSignature arguments] ofKind: LKSymbolScopeArgument];
 	self = [self initWithSymbolTable: st];
-	[st release];
 	if (self == nil) { return nil; }
 	ASSIGN(signature, aSignature);
 	ASSIGN(statements, statementList);
 	return self;
-}
-- (void)dealloc
-{
-	[signature release];
-	[statements release];
-	[super dealloc];
 }
 - (BOOL)check
 {

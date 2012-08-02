@@ -17,11 +17,11 @@ static Class defaultStaticClass;
 }
 + (id<LKCodeGenerator>) defaultJIT
 {
-	return [[defaultJitClass new] autorelease];
+	return [defaultJitClass new];
 }
 + (id<LKStaticCodeGenerator>) defaultStaticCompilerWithFile:(NSString*)outFile
 {
-	return [[[defaultStaticClass alloc] initWithFile:outFile] autorelease];
+	return [[defaultStaticClass alloc] initWithFile:outFile];
 }
 @end
 id <LKCodeGenerator> defaultJIT(void)

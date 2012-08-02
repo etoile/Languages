@@ -14,20 +14,13 @@
 	ASSIGN(methods, [aMethodList mutableCopy]);
 	return self;
 }
-- (void)dealloc
-{
-	[classname release];
-	[categoryName release];
-	[methods release];
-	[super dealloc];
-}
 + (id) categoryWithName:(NSString*)aName
            onClassNamed:(NSString*)aClass
                 methods:(NSArray*)aMethodList
 {
-	return [[[self alloc] initWithName:aName
+	return [[self alloc] initWithName:aName
 	                             class:aClass
-	                           methods:aMethodList] autorelease];
+	                           methods:aMethodList];
 }
 + (id) categoryOnClassNamed:(NSString*)aName methods:(NSArray*)aMethodList
 {
@@ -37,7 +30,7 @@
 }
 - (BOOL)check
 {
-	symbols = [[LKSymbolTable symbolTableForClass: classname] retain];
+	symbols = [LKSymbolTable symbolTableForClass: classname];
 	BOOL success = YES;
 	FOREACH(methods, method, LKAST*)
 	{

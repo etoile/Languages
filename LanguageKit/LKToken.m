@@ -14,7 +14,7 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 }
 + (LKToken*) tokenWithRange:(NSRange)aRange inSource:(NSString*)aString
 {
-	return [[[LKToken alloc] initWithRange:aRange inSource:aString] autorelease];
+	return [[LKToken alloc] initWithRange:aRange inSource:aString];
 }
 - (NSUInteger) length
 {
@@ -32,10 +32,5 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 - (NSString*) sourceDocument
 {
 	return source;
-}
-- (void) dealloc
-{
-	[source release];
-	[super dealloc];
 }
 @end

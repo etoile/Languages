@@ -33,10 +33,10 @@ protected:
 	Value *Context;
 	DIDescriptor ScopeDescriptor;
 
-	typedef std::tr1::unordered_map<strong_id<id>,
+	typedef std::tr1::unordered_map<id,
 	                                llvm::Value*,
-	                                object_hash<strong_id<id> >,
-	                                object_equal<strong_id<id> > > variable_map;
+	                                object_hash<id>,
+	                                object_equal<id> > variable_map;
 	variable_map variables;
 	variable_map indirect_variables;
 

@@ -14,7 +14,7 @@
 }
 + (id) referenceWithSymbol:(NSString*)sym
 {
-	return [[[self alloc] initWithSymbol: sym] autorelease];
+	return [[self alloc] initWithSymbol: sym];
 }
 - (BOOL)check
 {
@@ -72,17 +72,12 @@
 {
 	return symbol;
 }
-- (void)dealloc
-{
-	[symbol release];
-	[super dealloc];
-}
 @end
 
 @implementation LKBuiltinSymbol
 + (LKBuiltinSymbol*)builtin
 {
-	return [[[self alloc] init] autorelease];
+	return [[self alloc] init];
 }
 - (BOOL)check { return YES; }
 @end

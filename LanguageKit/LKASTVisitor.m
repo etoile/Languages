@@ -1,6 +1,7 @@
 #import "LanguageKit.h"
 #import "LKASTVisitor.h"
 
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 #define DEFCLASS(x) \
 @class x;\
 Class x ## Class;

@@ -5,7 +5,7 @@
 @synthesize elements;
 + (id) arrayWithElements:(NSArray*)anArray
 {
-	return [[[self alloc] initWithElements: anArray] autorelease];
+	return [[self alloc] initWithElements: anArray];
 }
 - (id) initWithElements:(NSArray*)anArray
 {
@@ -52,10 +52,5 @@
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
 	[self visitArray:elements withVisitor:aVisitor];
-}
-- (void)dealloc
-{
-	[elements release];
-	[super dealloc];
 }
 @end

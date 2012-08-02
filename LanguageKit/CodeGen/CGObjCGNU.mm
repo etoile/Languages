@@ -405,7 +405,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 	if (JIT)
 	{
 		// Copy instead of retaining, in case we got passed a mutable string.
-		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)[String copy]),
+		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(LongTy, (uintptr_t)(__bridge_retained void*)[String copy]),
 			IdTy);
 	}
 
@@ -755,7 +755,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 llvm::Constant *CGObjCGNU::GenerateIvarList(
 	NSString *ClassName,
 	StringVector  &IvarNames, const
-	llvm::SmallVectorImpl<strong_id<NSString*> >  &IvarTypes, const
+	llvm::SmallVectorImpl<NSString*>  &IvarTypes, const
 	llvm::SmallVectorImpl<int>  &IvarOffsets, 
 	llvm::Constant *&IvarOffsetArray)
 {
@@ -1100,7 +1100,7 @@ void CGObjCGNU::GenerateClass(
 	Name = new llvm::GlobalVariable(TheModule, Name->getType(), true,
 		llvm::GlobalValue::InternalLinkage, Name, ".class_name");
 	// Empty vector used to construct empty method lists
-	llvm::SmallVector<strong_id<NSString*>, 1> empty;
+	llvm::SmallVector<NSString*, 1> empty;
 	llvm::SmallVector<int, 1> empty2;
 	// Generate the method and instance variable lists
 	llvm::Constant *MethodList = GenerateMethodList(ClassName, @"",
