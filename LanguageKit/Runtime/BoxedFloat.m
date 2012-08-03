@@ -141,4 +141,6 @@ CASTMETHOD(unsigned long long int, unsignedLongLongValue)
 CASTMETHOD(float, floatValue)
 CASTMETHOD(double, doubleValue)
 CASTMETHOD(BOOL, boolValue)
+- (id)copy { return [self retain]; }
+- (id)copyWithZone: (NSZone*)unused { return [self retain]; }
 @end
