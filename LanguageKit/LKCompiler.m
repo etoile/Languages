@@ -317,30 +317,42 @@ static NSString *loadFramework(NSString *framework)
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
 			NSAllDomainsMask, YES);
-	FOREACH(dirs, dir, NSString*)
+	NSString *f = [NSString stringWithFormat:@"./%@.framework", framework];
+	NSBundle *bundle = nil;
+	BOOL isDir = NO;
+ 
+	if ([fm fileExistsAtPath:f isDirectory:&isDir] && isDir)
 	{
-		NSString *f = [NSString stringWithFormat:@"%@/Frameworks/%@.framework",
-				 dir, framework];
-		// Check that the framework exists and is a directory.
-		BOOL isDir = NO;
-		if ([fm fileExistsAtPath:f isDirectory:&isDir] && isDir)
+		  bundle = [NSBundle bundleWithPath:f];
+	}
+	else
+	{
+		FOREACH(dirs, dir, NSString*)
 		{
-			NSBundle *bundle = [NSBundle bundleWithPath:f];
-			if ([bundle load]) 
+			f = [NSString stringWithFormat:@"%@/Frameworks/%@.framework",
+									dir, framework];
+			// Check that the framework exists and is a directory.
+			isDir = NO;
+			if ([fm fileExistsAtPath:f isDirectory:&isDir] && isDir)
 			{
-				// If a framework header exists, then load it
-				if (nil != collection)
-				{
-					f = [f stringByAppendingPathComponent: @"Headers"];
-					f = [f stringByAppendingPathComponent: [framework stringByAppendingPathExtension: @"h"]];
-					if ([fm fileExistsAtPath:f isDirectory:&isDir] && !isDir)
-					{
-						[collection sourceFileForPath: f];
-					}
-				}
-				return [bundle bundlePath];
+				bundle = [NSBundle bundleWithPath:f];
+				break;
 			}
 		}
+	}
+	if (nil != bundle && [bundle load])
+	{
+		// If a framework header exists, then load it
+		if (nil != collection)
+		{
+			f = [f stringByAppendingPathComponent: @"Headers"];
+			f = [f stringByAppendingPathComponent: [framework stringByAppendingPathExtension: @"h"]];
+			if ([fm fileExistsAtPath:f isDirectory:&isDir] && !isDir)
+			{
+				[collection sourceFileForPath: f];
+			}
+		}
+		return [bundle bundlePath];
 	}
 	return nil;
 }
