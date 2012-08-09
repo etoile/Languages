@@ -78,3 +78,6 @@ MsgSendSmallInt.bc: ../Runtime/MsgSendSmallInt.m
 	@cp MsgSendSmallInt.private.bc MsgSendSmallInt.bc
 	@#opt -make-runtime-lib-interface MsgSendSmallInt.private.bc -o MsgSendSmallInt.bc
 	@rm MsgSendSmallInt.private.bc
+
+clean::
+	rm -f MsgSendSmallInt.bc
