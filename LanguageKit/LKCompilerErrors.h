@@ -35,6 +35,10 @@ EMIT_STRING(kLKCharacterNumber)
  * The type encoding associated with an error or warning.
  */
 EMIT_STRING(kLKTypeEncoding)
+/**
+ * The name of a header that can't be loaded.
+ */
+EMIT_STRING(kLKHeaderName)
 
 /**
  * A reference was made to an invalid symbol.
@@ -66,6 +70,11 @@ EMIT_STRING(LKRedefinedClassWarning)
  * provide the type encoding that was chosen.
  */
 EMIT_STRING(LKPolymorphicSelectorWarning)
+/**
+ * A C header was referenced, but can't be loaded.  kLKHeaderName will provide
+ * the name of the header.
+ */
+EMIT_STRING(LKMissingHeaderWarning)
 /**
  * Parsing failed.  The info dictionary will contain kLKCharacterNumber,
  * kLKSourceLine, and kLKLineNumber to identify the location of the error.

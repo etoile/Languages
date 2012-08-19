@@ -183,7 +183,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	FOREACH(statements, statement, LKAST*)
 	{
 		result = [statement interpretInContext: context];
-		// FIXME: should be in @finally
 	}
 	return result;
 }
@@ -350,7 +349,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	FOREACH(statements, statement, LKAST*)
 	{
 		result = [statement interpretInContext: context];
-		// FIXME: should be in @finally
 	}
 	return result;
 }
@@ -457,7 +455,6 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	FOREACH(messages, message, LKMessageSend*)
 	{
 		result = [message interpretInContext: context forTarget: target];
-		// FIXME: should be in @finally
 	}
 	return result;
 }

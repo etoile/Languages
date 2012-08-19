@@ -357,6 +357,118 @@ static NSString *loadFramework(NSString *framework)
 	return nil;
 }
 
+static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *basePath)
+{
+	NSString *lib = [basePath stringByAppendingPathComponent: aLibrary];
+	BOOL isDir = NO;
+	if ([fm fileExistsAtPath: lib isDirectory:&isDir] && !isDir)
+	{
+		return dlopen([lib UTF8String], RTLD_GLOBAL) != NULL;
+	}
+	// Add .so to the end if it isn't there
+	NSLog(@"Extension: %@", [aLibrary pathExtension]);
+	if (![@"so" isEqualToString: [aLibrary pathExtension]])
+	{
+		return loadLibraryInPath(fm, [aLibrary stringByAppendingPathExtension: @"so"], basePath);
+	}
+	if (([aLibrary length] < 4) || ![@"lib" isEqualToString: [aLibrary substringToIndex: 3]])
+	{
+		return loadLibraryInPath(fm, [@"lib" stringByAppendingString: aLibrary], basePath);
+	}
+	return NO;
+
+}
+
++ (BOOL) loadLibrary: (NSString*)aLibrary
+{
+	// If SourceCodeKit is not loaded, give up
+	if (nil == collection) { return NO; }
+
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+			NSAllDomainsMask, YES);
+	NSBundle *bundle = nil;
+	BOOL isDir = NO;
+ 
+	// Check local paths
+	if ([fm fileExistsAtPath: aLibrary isDirectory:&isDir] && !isDir)
+	{
+		return dlopen([aLibrary UTF8String], RTLD_GLOBAL) != NULL;
+	}
+	else
+	{
+		// See if it's installed in the GNUstep system
+		for (NSString *dir in dirs)
+		{
+			NSString *path = [dir stringByAppendingPathComponent: @"Libraries"];
+			if (loadLibraryInPath(fm, aLibrary, path))
+			{
+				return YES;
+			}
+		}
+		// Check system include paths
+		dirs = A(@"/usr/local/lib", @"/usr/lib");
+		for (NSString *dir in dirs)
+		{
+			if (loadLibraryInPath(fm, aLibrary, dir))
+			{
+				return YES;
+			}
+		}
+		// FIXME: Should respect LD_LIBRARY_PATH
+	}
+	return NO;
+}
+
++ (BOOL) loadHeader: (NSString*)aHeader
+{
+	// If SourceCodeKit is not loaded, give up
+	if (nil == collection) { return NO; }
+
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+			NSAllDomainsMask, YES);
+	NSBundle *bundle = nil;
+	BOOL isDir = NO;
+ 
+	// Check local paths
+	if ([fm fileExistsAtPath: aHeader isDirectory:&isDir] && !isDir)
+	{
+		[collection sourceFileForPath: aHeader];
+		return YES;
+	}
+	else
+	{
+		// See if it's installed in the GNUstep system
+		for (NSString *dir in dirs)
+		{
+			NSString *f = [dir stringByAppendingPathComponent: @"Headers"];
+			f = [f stringByAppendingPathComponent: aHeader];
+			// Check that the framework exists and is a directory.
+			isDir = NO;
+			if ([fm fileExistsAtPath:f isDirectory:&isDir] && !isDir)
+			{
+				[collection sourceFileForPath: f];
+				return YES;
+			}
+		}
+		// Check system include paths
+		dirs = A(@"/usr/local/include", @"/usr/include");
+		for (NSString *dir in dirs)
+		{
+			NSString *f = [dir stringByAppendingPathComponent: aHeader];
+			// Check that the framework exists and is a directory.
+			isDir = NO;
+			if ([fm fileExistsAtPath:f isDirectory:&isDir] && !isDir)
+			{
+				[collection sourceFileForPath: f];
+				return YES;
+			}
+		}
+	}
+	return NO;
+}
+
 + (BOOL) loadFrameworkNamed:(NSString*)framework
 {
 	return nil != loadFramework(framework);

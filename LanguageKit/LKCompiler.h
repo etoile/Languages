@@ -176,6 +176,17 @@ generatedWarning: (NSString*)aWarning
  */
 + (BOOL) loadAllPlugInsForApplication;
 /**
+ * Attempts to parse a C header.  Returns YES on success, NO on failure.
+ * Failure can be caused by an inability to locate the header or by
+ * SourceCodeKit not being available.
+ */
++ (BOOL) loadHeader: (NSString*)aHeader;
+/**
+ * Attempts to load a library from an absolute path or one of the standard
+ * library locations.
+ */
++ (BOOL) loadLibrary: (NSString*)aLibrary;
+/**
  * <override-subclass /> 
  * Returns the extension used for scripts in this language.
  *

@@ -1,5 +1,6 @@
 #import "LKModule.h"
 #import "LKSubclass.h"
+#import "LKCompilerErrors.h"
 #import <EtoileFoundation/runtime.h>
 #import "Runtime/LKObject.h"
 #import <objc/runtime.h>
@@ -164,18 +165,33 @@ static NSArray* TypesForMethodName(NSString *methodName)
 - (BOOL)check
 {
 	// We might want to get some from other sources in future and merge these.
-	ASSIGN(typeOverrides, [pragmas objectForKey:@"types"]);
+	typeOverrides = [pragmas objectForKey:@"types"];
 	BOOL success = YES;
-	FOREACH(classes, forwardClass, LKSubclass*)
+	for (NSString *header in [pragmas objectForKey: @"headers"])
+	{
+		if (![LKCompiler loadHeader: header])
+		{
+			NSDictionary *errorDetails = D(
+				[NSString stringWithFormat: @"Unable to load header: %@", header],
+				kLKHumanReadableDescription,
+				header,
+				kLKHeaderName,
+				self,
+				kLKASTNode);
+			success &= [LKCompiler reportWarning: LKMissingHeaderWarning
+			                             details: errorDetails];
+		}
+	}
+	for (LKSubclass *forwardClass in classes)
 	{
 		[LKSymbolTable symbolTableForClass: [forwardClass classname]];
 	}
-	FOREACH(classes, class, LKAST*)
+	for (LKAST *class in classes)
 	{
 		[class setParent:self];
 		success &= [class check];
 	}
-	FOREACH(categories, category, LKAST*)
+	for (LKAST *category in categories)
 	{
 		[category setParent:self];
 		success &= [category check];
@@ -209,7 +225,7 @@ static NSArray* TypesForMethodName(NSString *methodName)
 	}
 	[aGenerator endModule];
 	[[NSNotificationCenter defaultCenter]
-	   	postNotificationName: LKCompilerDidCompileNewClassesNotification
+	  	postNotificationName: LKCompilerDidCompileNewClassesNotification
 		              object: nil];
 	return NULL;
 }

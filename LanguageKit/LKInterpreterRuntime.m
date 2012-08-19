@@ -430,7 +430,6 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 				methodIMP = objc_msgSend;
 		}
 	}
-	// FIXME: Needs fpret for double / float returns.
 #endif
 	
 	// Prepare FFI types
@@ -468,7 +467,7 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 	id result = BoxValue(msgSendRet, [sig methodReturnType]);
 	if (autoreleaseResult)
 	{
-		// FIXME:
+		objc_retainAutoreleaseReturnValue(result);
 	}
 	return result;
 }

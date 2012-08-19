@@ -454,7 +454,12 @@ CASTMSG(unsigned long, unsignedLong)
 CASTMSG(long long, longLong)
 CASTMSG(unsigned long long, unsignedLongLong)
 CASTMSG(BOOL, bool)
+CASTMSG(float, float)
+CASTMSG(double, double)
 
+#if 0
+/* We currently only use the fast path for small ints, not doubles, so skip this.
+ */
 #if 3 == OBJC_SMALL_OBJECT_SHIFT
 /*
  * On 64bit platforms, gnustep-base provides a special case for small doubles or
@@ -500,6 +505,7 @@ static inline double unboxRepeatingDouble(uintptr_t boxed)
 #endif
 CASTMSG(float, float)
 CASTMSG(double, double)
+#endif
 
 enum
 {

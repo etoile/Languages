@@ -377,8 +377,8 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 	if (0 == SmallIntFunction)
 	{
 		llvm::Value *ret = 
-CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName,
-				returnTypeString);
+		        CGM->Runtime->GenerateMessageSend(*B, NULL, val, castSelName,
+		        returnTypeString);
 		return ret;
 	}
 	CGBuilder smallIntBuilder(CGM->Context);
