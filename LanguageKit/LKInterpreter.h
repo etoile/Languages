@@ -52,7 +52,10 @@ typedef struct
 
 @interface LKBlockExpr (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context;
-- (id)executeWithArguments: (const id*)args count: (int)count inContext: (LKInterpreterContext*)context;
+- (id)executeBlock: (id)block
+     WithArguments: (const id*)args
+             count: (int)count
+         inContext: (LKInterpreterContext*)context;
 @end
 
 @interface LKMethod (LKInterpreter)

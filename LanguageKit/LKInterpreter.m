@@ -47,9 +47,9 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKBlockReturnException
 + (void)raiseWithValue: (id)returnValue
 {
-	[[LKBlockReturnException exceptionWithName: LKSmalltalkBlockNonLocalReturnException
+	@throw [LKBlockReturnException exceptionWithName: LKSmalltalkBlockNonLocalReturnException
 	                                    reason: @""
-	                                  userInfo: D(returnValue, @"returnValue", nil)] raise];
+	                                  userInfo: D(returnValue, @"returnValue", nil)];
 }
 - (id)returnValue
 {
@@ -168,35 +168,35 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @end
 
 @implementation LKBlockExpr (LKInterpreter)
-- (id)executeWithArguments: (const id*)args
-                     count: (int)count
-                 inContext: (LKInterpreterContext*)context
+- (id)executeBlock: (id)block
+     WithArguments: (const id*)args
+             count: (int)count
+         inContext: (LKInterpreterContext*)context
 {
 	NSArray *arguments = [[self symbols] arguments];
 	for (int i=0; i<count; i++)
 	{
 		[context setValue: args[i]
 		        forSymbol: [[arguments objectAtIndex: i] name]];
-	}
+	} 
+	[context setBlockContextObject: block];
 
 	id result = nil;
 	FOREACH(statements, statement, LKAST*)
 	{
 		result = [statement interpretInContext: context];
 	}
+	[context setBlockContextObject: nil];
 	return result;
 }
 - (id)interpretInContext: (LKInterpreterContext*)parentContext
 {
 	int count = [[[self symbols] arguments] count];
-	__strong __block id blockContext = nil;
-	blockContext = ^(__unsafe_unretained id arg0, ...) {
+	id (^block)(__unsafe_unretained id arg0, ...) = ^(__unsafe_unretained id arg0, ...) {
 		LKInterpreterContext *context = [[LKInterpreterContext alloc]
 		            initWithSymbolTable: [self symbols]
 		                         parent: parentContext];
 		id params[count];
-		// FIXME: The warning about a retain cycle here is correct.
-		[context setBlockContextObject: blockContext];
 		
 		va_list arglist;
 		va_start(arglist, arg0);
@@ -212,9 +212,10 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		
 		@try
 		{
-			return [self executeWithArguments: params
-			                            count: count
-			                        inContext: context];
+			return [self executeBlock: self
+			            WithArguments: params
+			                    count: count
+			                inContext: context];
 		}
 		@finally
 		{
@@ -222,7 +223,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		}
 		return nil;
 	};
-	return blockContext;
+	return block;
 }
 @end
 
@@ -468,13 +469,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 	{
 		FOREACH([self statements], element, LKAST*)
 		{
-			@try
-			{
-				[element interpretInContext: context];
-			}
-			@finally 
-			{
-			}
+			[element interpretInContext: context];
 		}
 		if ([[[self signature] selector] isEqualToString: @"dealloc"])
 		{
