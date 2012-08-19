@@ -78,7 +78,7 @@ NSObject subclass: SmalltalkTool
 		(x value: 'foo') log.
 	]
 	test: r [
-	| a b c|
+	| a b c |
 		C putchar: 'f'.
 		C putchar: 'o'.
 		C putchar: 'o'.
@@ -134,9 +134,11 @@ NSObject subclass: SmalltalkTool
 		self init log.
 		"A really big integer:"
 		'BigInt literals: ' log.
-		10000000000000000 log.
+		1 log.
+		10000000 log.
+		100000000000000000 log.
 		'BigInt arithmetic: ' log.
-		(10000000000000000 + 12) log.
+		(10000000000000000000000000000000000000000000000 + 12) log.
 		'floats:' log.
 		((12.5 + '13') + 14) log.
 		'nil == nil' log.
