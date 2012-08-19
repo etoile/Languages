@@ -366,7 +366,6 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		return dlopen([lib UTF8String], RTLD_GLOBAL) != NULL;
 	}
 	// Add .so to the end if it isn't there
-	NSLog(@"Extension: %@", [aLibrary pathExtension]);
 	if (![@"so" isEqualToString: [aLibrary pathExtension]])
 	{
 		return loadLibraryInPath(fm, [aLibrary stringByAppendingPathExtension: @"so"], basePath);
