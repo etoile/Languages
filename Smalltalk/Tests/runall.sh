@@ -25,7 +25,7 @@ for i in Test*; do
 			echo -n '{FAIL (interpreter): '$i'}'
 		fi	
 	else
-    	sh runtest.sh $i -i
+		sh runtest.sh $i -i
 	fi
 	if [ 1 -eq $QUIET ] ; then
 		if (sh runtest.sh $i > /dev/null 2>&1) ; then
