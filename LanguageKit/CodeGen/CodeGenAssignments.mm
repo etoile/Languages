@@ -22,10 +22,8 @@ static inline bool isInMethodFamily(const char *sel, const char *prefix, size_t 
 	return true;
 }
 
-namespace etoile
-{
-	namespace languagekit
-	{
+namespace etoile { namespace languagekit {
+
 MethodFamily MethodFamilyForSelector(NSString *aSelector)
 {
 	NSUInteger length = [aSelector length];
@@ -59,7 +57,8 @@ bool SelectorReturnsRetained(NSString *aSelector)
 			return false;
 	}
 }
-}}
+
+}} // Namespace etoile::languagekit
 
 static inline llvm::Value* ensureType(CGBuilder &aBuilder,
                                      llvm::Value *aValue,
@@ -115,6 +114,12 @@ struct ARCAssignments : public CodeGenAssignments
 	 */
 	llvm::Constant *retain;
 	/**
+	 * Retains a block.
+	 *
+	 * id objc_retainBlock(id)
+	 */
+	llvm::Constant *retainBlock;
+	/**
 	 * Release a value.
 	 *
 	 * void objc_release(id)
@@ -140,6 +145,8 @@ struct ARCAssignments : public CodeGenAssignments
 			Mod.getOrInsertFunction("objc_retainAutoreleasedReturnValue", Types.idTy, Types.idTy, NULL);
 		retain = 
 			Mod.getOrInsertFunction("objc_retain", Types.idTy, Types.idTy, NULL);
+		retainBlock = 
+			Mod.getOrInsertFunction("objc_retainBlock", Types.idTy, Types.idTy, NULL);
 		release = 
 			Mod.getOrInsertFunction("objc_release", Types.voidTy, Types.idTy, NULL);
 		autorelease = 
@@ -166,11 +173,19 @@ struct ARCAssignments : public CodeGenAssignments
 		}
 		else
 		{
+			llvm::Constant *retFun = retain;
 			// We could use objc_storeStrong() here, but the ARC optimiser will
 			// generate that when it makes sense.  It is easier for the
 			// optimiser to spot and remove balanced retain / release
 			// operations if they are separate.
-			llvm::Value *retained = aBuilder.CreateCall(retain, aValue);
+			if (llvm::AllocaInst *block = llvm::dyn_cast<llvm::AllocaInst>(aValue))
+			{
+				if (block->getMetadata(Types.valueIsBlock))
+				{
+					retFun = retainBlock;
+				}
+			}
+			llvm::Value *retained = aBuilder.CreateCall(retFun, aValue);
 			aBuilder.CreateCall(release, aBuilder.CreateLoad(anAddr));
 			aBuilder.CreateStore(retained, anAddr);
 		}
@@ -265,6 +280,12 @@ struct ARCAssignments : public CodeGenAssignments
 		ensureType(aBuilder, aValue, Types.idTy);
 		return aBuilder.CreateCall(retain, aValue);
 	}
+	virtual llvm::Value *castBlockToObject(CGBuilder &aBuilder, llvm::Value *aValue)
+	{
+		aValue = ensureType(aBuilder, aValue, Types.idTy);
+		aValue = aBuilder.CreateCall(retainBlock, aValue);
+		return aBuilder.CreateCall(autorelease, aValue);
+	}
 };
 /**
   * Assignment class that implements the 
@@ -295,6 +316,11 @@ struct GCAssignments : public CodeGenAssignments
 	  * id objc_read_weak(id *location);
 	  */
 	llvm::Constant *readWeak;
+	/**
+	 * Block copy.
+	 * id _Block_copy(id);
+	 */
+	 llvm::Constant *blockCopy;
 
 	GCAssignments(CodeGenTypes &T) : CodeGenAssignments(T)
 	{
@@ -307,6 +333,8 @@ struct GCAssignments : public CodeGenAssignments
 				Types.idTy, Types.idTy, Types.ptrToIdTy, NULL);
 		readWeak = Mod.getOrInsertFunction("objc_read_weak",
 				Types.idTy, Types.ptrToIdTy, NULL);
+		blockCopy = Mod.getOrInsertFunction("_Block_copy",
+				Types.idTy, Types.idTy, NULL);
 	}
 	void storeWeak(CGBuilder &aBuilder,
 	               llvm::Value *anAddr,
@@ -407,6 +435,11 @@ struct GCAssignments : public CodeGenAssignments
 	virtual llvm::Value* retainValue(CGBuilder &aBuilder, llvm::Value *aValue)
 	{
 		return aValue;
+	}
+	virtual llvm::Value *castBlockToObject(CGBuilder &aBuilder, llvm::Value *aValue)
+	{
+		aValue = ensureType(aBuilder, aValue, Types.idTy);
+		return aBuilder.CreateCall(blockCopy, aValue);
 	}
 };
 }

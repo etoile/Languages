@@ -72,6 +72,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 	CategoryName = nil;
 	ClassName = nil;
 	SuperClassName = nil;
+
 	// When we JIT code, we put the Small Int message functions inside the
 	// module, to allow them to be inlined by module passes.  When static
 	// compiling, we reference them externally and let the link-time optimiser
@@ -483,6 +484,11 @@ static void addObjCARCExpandPass(const PassManagerBuilder &Builder, PassManagerB
 	PM.add(createObjCARCExpandPass());
 }
 
+static void addObjCARCAPElimPass(const PassManagerBuilder &Builder, PassManagerBase &PM)
+{
+	PM.add(createObjCARCAPElimPass());
+}
+
 static void addObjCARCOptPass(const PassManagerBuilder &Builder, PassManagerBase &PM)
 {
 	PM.add(createObjCARCOptPass());
@@ -579,6 +585,8 @@ void CodeGenModule::compile(void)
 	PMBuilder.OptLevel = 3;
 	PMBuilder.addExtension(PassManagerBuilder::EP_EarlyAsPossible,
 	                       addObjCARCExpandPass);
+	PMBuilder.addExtension(PassManagerBuilder::EP_ModuleOptimizerEarly,
+	                       addObjCARCAPElimPass);
 	PMBuilder.addExtension(PassManagerBuilder::EP_ScalarOptimizerLate,
 	                       addObjCARCOptPass);
 	// Inlining threshold copied from clang.  May be silly...

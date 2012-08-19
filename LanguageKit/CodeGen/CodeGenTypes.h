@@ -88,6 +88,14 @@ namespace languagekit
 		 * (id), not a function type.
 		 */
 		LLVMType *typeFromString(NSString *typeEncoding);
+  
+		/**
+		 * Indicates that the current value is a block.  If we pass it to a
+		 * function or a method, or store it on the heap or in a global, then we
+		 * need to call objc_retainBlock().
+		 */
+		unsigned int valueIsBlock;
+		llvm::MDNode *valueIsBlockNode;
 	};
 }
 }

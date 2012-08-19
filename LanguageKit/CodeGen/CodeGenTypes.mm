@@ -172,6 +172,12 @@ namespace languagekit
 CodeGenTypes::CodeGenTypes(llvm::Module &M) : Mod(M)
 {
 	llvm::LLVMContext &context = M.getContext();
+	llvm::Value *MD[] = {
+		llvm::MDString::get(context, "is_block")
+	};
+	valueIsBlock = context.getMDKindID("LKValueIsBlock");
+	valueIsBlockNode = CreateMDNode(context, MD, 1);
+
 #	ifdef __amd64__
 	AI = new AMD64ABIInfo(M);
 #	else

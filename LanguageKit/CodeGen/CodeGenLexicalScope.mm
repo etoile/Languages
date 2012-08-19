@@ -261,6 +261,13 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 	// Special case for LKObjects
 	if (isLKObject(type))
 	{
+		if (llvm::AllocaInst *block = llvm::dyn_cast<llvm::AllocaInst>(val))
+		{
+			if (block->getMetadata(CGM->types->valueIsBlock))
+			{
+				val = CGM->assign->castBlockToObject(*B, val);
+			}
+		}
 		return val;
 	}
 	NSString *returnTypeString = [type substringToIndex: 1];

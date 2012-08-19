@@ -161,6 +161,7 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 	CGBuilder &b = parent->Builder;
 	variable_map &vars = parent->indirect_variables;
 	block = b.CreateAlloca(blockStructureTy);
+	block->setMetadata(CGM->types->valueIsBlock, CGM->types->valueIsBlockNode);
 	// Set the isa pointer to _NSConcreteStackBlock
 	b.CreateStore(CGM->TheModule->getOrInsertGlobal("_NSConcreteStackBlock", types.idTy),
 		b.CreateStructGEP(block, 0));

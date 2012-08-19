@@ -36,7 +36,7 @@ class CodeGenBlock : public CodeGenSubroutine {
 	/**
 	 * A pointer to the block object, in the parent's scope.
 	 */
-	llvm::Value *block;
+	llvm::Instruction *block;
 	/**
 	 * Emits the descriptor for this block.  The descriptor contains the block
 	 * type encoding, along with the functions required to copy and dispose of

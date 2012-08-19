@@ -135,6 +135,11 @@ namespace etoile
 			 * Retains a temporary value.
 			 */
 			virtual llvm::Value* retainValue(CGBuilder &aBuilder, llvm::Value *aValue) = 0;
+			/**
+			 * Casts a block to an object, so that it can be used with the
+			 * normal memory management strategies.
+			 */
+			virtual llvm::Value *castBlockToObject(CGBuilder &aBuilder, llvm::Value *aValue) = 0;
 			virtual ~CodeGenAssignments();
 		};
 	}
