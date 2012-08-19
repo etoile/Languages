@@ -240,10 +240,35 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	// Load specified framework
-	NSString *framework = [opts objectForKey:@"l"];
-	if (nil != framework)
+	id f = [opts objectForKey:@"F"];
+	if (nil != f)
 	{
-		[LKCompiler loadFrameworkNamed: framework];
+		if ([f isKindOfClass: [NSString class]])
+		{
+			[LKCompiler loadFrameworkNamed: f];
+		}
+		else
+		{
+			for (NSString *framework in f)
+			{
+				[LKCompiler loadFrameworkNamed: framework];
+			}
+		}
+	}
+	id l = [opts objectForKey:@"l"];
+	if (nil != l)
+	{
+		if ([l isKindOfClass: [NSString class]])
+		{
+			[LKCompiler loadLibrary: l];
+		}
+		else
+		{
+			for (NSString *lib in l)
+			{
+				[LKCompiler loadLibrary: lib];
+			}
+		}
 	}
 	// Load frameworks specified in plist.
 	NSString *frameworks = [opts objectForKey:@"L"];
