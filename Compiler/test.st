@@ -142,9 +142,9 @@ NSObject subclass: SmalltalkTool
 		'floats:' log.
 		((12.5 + '13') + 14) log.
 		'nil == nil' log.
-		nil == nil log.
+		(nil == nil) log.
 		'nil = nil' log.
-		nil = nil log.
+		(nil = nil) log.
 		NSGarbageCollector defaultCollector collectExhaustively.
 	]
 	objectAtIndex: i [
