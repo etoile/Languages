@@ -325,22 +325,22 @@ MSG0(not)
 	RETURN_INT(!val);
 }
 BOOLMSG0(isAlphanumeric)
-	return iswalnum(val);
+	return iswalnum(val) != 0;
 }
 BOOLMSG0(isUppercase)
-	return iswupper(val);
+	return iswupper(val) != 0;
 }
 BOOLMSG0(isLowercase)
-	return iswlower(val);
+	return iswlower(val) != 0;
 }
 BOOLMSG0(isDigit)
-	return iswdigit(val);
+	return iswdigit(val) != 0;
 }
 BOOLMSG0(isAlphabetic)
-	return iswalpha(val);
+	return iswalpha(val) != 0;
 }
 BOOLMSG0(isWhitespace)
-	return iswspace(val);
+	return iswspace(val) != 0;
 }
 MSG0(value)
 	return obj;
