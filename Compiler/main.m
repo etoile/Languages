@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 	// Forces the compiler to load plugins
 	[LKCompiler supportedLanguageNames];
 
-	NSDictionary *opts = ETGetOptionsDictionary("dtf:b:cC:l:L:v:o:iq", argc, argv);
+	NSDictionary *opts = ETGetOptionsDictionary("dtF:f:b:cC:l:L:v:o:iq", argc, argv);
 
 	// Debug mode.
 	if ([[opts objectForKey:@"d"] boolValue])

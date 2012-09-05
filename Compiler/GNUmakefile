@@ -7,7 +7,7 @@ endif
 #
 # Application
 #
-VERSION = 0.1
+VERSION = 0.4.2
 TOOL_NAME = edlc
 
 ${TOOL_NAME}_LANGUAGES = English
