@@ -298,21 +298,18 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 	for (SmallVectorImpl<TypedSelector>::iterator i = Types.begin(),
 	     e = Types.end() ; i!=e ; i++)
 	{
-		if ([i->first isEqualToString: SelTypes])
+		if (i->first == SelTypes || [i->first isEqualToString: SelTypes])
 		{
-			SelValue = i->second;
-			break;
+			return i->second;
 		}
 	}
 
 	// If not, create a new one.
-	if (0 == SelValue) {
-		SelValue = new llvm::GlobalAlias(SelectorTy,
-		                                 llvm::GlobalValue::PrivateLinkage,
-		                                 string(".objc_selector_")+[SelName UTF8String], NULL,
-		                                 &TheModule);
-		Types.push_back(TypedSelector(SelTypes, SelValue));
-	}
+	SelValue = new llvm::GlobalAlias(SelectorTy,
+	                                 llvm::GlobalValue::PrivateLinkage,
+	                                 string(".objc_selector_")+[SelName UTF8String], NULL,
+	                                 &TheModule);
+	Types.push_back(TypedSelector(SelTypes, SelValue));
 
 
 	return SelValue;
