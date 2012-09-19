@@ -1,12 +1,18 @@
-#import <Foundation/Foundation.h>
+#import <EtoileFoundation/EtoileFoundation.h>
+#import <EtoileFoundation/ETTranscript.h>
 #include <time.h>
+#undef ETLog
 @class ETTranscript;
 
 const int FibRuns = 100;
+const int MessageRuns = 1000000;
 int FibValue = 30;
 
+
 @interface Fibonacci : NSObject
-- (void)runNative: (id)i;
+- (id)fib: (id)i;
+- (id)makePrototype;
+- (id)block;
 @end
 
 @interface ObjCObject : NSObject {}
@@ -50,7 +56,6 @@ double timeFibonacciC(void)
 	{
 		result = fibonacci(FibValue);
 	}
-	NSLog(@"%d", result);
 	clock_t c2 = clock();
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
 }
@@ -64,7 +69,6 @@ double timeFibonacci(id object)
 	{
 		result = [object fibonacci: FibValue];
 	}
-	NSLog(@"%d", result);
 	c2 = clock();
 	}
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
@@ -77,7 +81,7 @@ double timeFibonacciSmalltalk(id object)
 	c1 = clock();
 	for (unsigned i=0 ; i<FibRuns ; i++)
 	{
-		[object runNative: num];
+		[object fib: num];
 	}
 	c2 = clock();
 	}
@@ -86,7 +90,7 @@ double timeFibonacciSmalltalk(id object)
 double timeMessageSend(id object)
 {
 	clock_t c1 = clock();
-	for (unsigned i=0 ; i<1000000 ; i++)
+	for (unsigned i=0 ; i<MessageRuns ; i++)
 	{
 		[object value:@"a string"];
 	}
@@ -94,42 +98,60 @@ double timeMessageSend(id object)
 	return ((double)c2 - (double)c1) / (double)CLOCKS_PER_SEC;
 }
 
+
 void ETLog(id string, float f)
 {
 	[ETTranscript show:[NSString stringWithFormat:string, f]];
 	[ETTranscript cr];
 }
 
-int main(void)
+int main(int argc, char**argv)
 {
 	id pool = [NSAutoreleasePool new];
-	double sttime, octime, ctime;
-	id proto = [[NSClassFromString(@"SmalltalkPrototype") new] makePrototype];
-	sttime = timeMessageSend(proto);
-	ETLog(@"Smalltalk prototype execution took %f seconds.  ", sttime);
-	proto = [ObjCObject new];
-	octime = timeMessageSend(proto);
-	ETLog(@"ObjC execution took %f seconds.  ", octime);
-	ETLog(@"Ratio: %f", sttime / octime);
-	sttime = timeMessageSend([NSClassFromString(@"SmalltalkPrototype") new]);
-	ETLog(@"Smalltalk method execution took %f seconds.  ", sttime);
-	ETLog(@"Ratio: %f", sttime / octime);
-	sttime = timeMessageSend([[NSClassFromString(@"SmalltalkPrototype") new] block]);
-	ETLog(@"Smalltalk block execution took %f seconds.  ", sttime);
-	ETLog(@"Ratio: %f", sttime / octime);
+	NSDictionary *opts = ETGetOptionsDictionary("vr:p", argc, argv);
+	double sttime2, sttime, octime, ctime;
+	if ([[opts objectForKey: @"p"] boolValue])
+	{
+		id proto = [[NSClassFromString(@"SmalltalkPrototype") new] makePrototype];
+		sttime = timeMessageSend(proto);
+		ETLog(@"Smalltalk prototype execution took %f seconds.  ", sttime);
+		proto = [ObjCObject new];
+		octime = timeMessageSend(proto);
+		ETLog(@"ObjC execution took %f seconds.  ", octime);
+		ETLog(@"Ratio: %f", sttime / octime);
+		sttime = timeMessageSend([NSClassFromString(@"SmalltalkPrototype") new]);
+		ETLog(@"Smalltalk method execution took %f seconds.  ", sttime);
+		ETLog(@"Ratio: %f", sttime / octime);
+		sttime = timeMessageSend([[NSClassFromString(@"SmalltalkPrototype") new] block]);
+		ETLog(@"Smalltalk block execution took %f seconds.  ", sttime);
+		ETLog(@"Ratio: %f", sttime / octime);
+	}
 
-	ctime = timeFibonacciC();
-	ETLog(@"C fibonacci execution took %f seconds.  ", ctime);
-	proto = [ObjCObject new];
-	octime = timeFibonacci(proto);
-	ETLog(@"ObjC fibonacci execution took %f seconds.  ", octime);
-	ETLog(@"Ratio: %f", octime / ctime);
-	sttime = timeFibonacci([NSClassFromString(@"SmalltalkFibonacci") new]);
-	ETLog(@"Smalltalk fibonacci execution took %f seconds.  ", sttime);
-	ETLog(@"Ratio: %f", sttime / octime);
-	sttime = timeFibonacciSmalltalk([NSClassFromString(@"SmalltalkFibonacci") new]);
-	ETLog(@"Smalltalk fibonacci SmallInt version execution took %f seconds.  ", sttime);
-	ETLog(@"Ratio: %f", sttime / octime);
+	int repeats = 1;
+	id r = [opts objectForKey: @"r"];
+	if (r) repeats = [r intValue];
+	for (unsigned int i=0 ; i<repeats ; i++)
+	{
+		@autoreleasepool
+		{
+			ctime = timeFibonacciC();
+			id objc = [ObjCObject new];
+			octime = timeFibonacci(objc);
+			sttime = timeFibonacci([NSClassFromString(@"SmalltalkFibonacci") new]);
+			sttime2 = timeFibonacciSmalltalk([NSClassFromString(@"SmalltalkFibonacci") new]);
+			if ([[opts objectForKey: @"v"] boolValue])
+			{
+				ETLog(@"C fibonacci execution took %f seconds.  ", ctime);
+				ETLog(@"ObjC fibonacci execution took %f seconds.  ", octime);
+				ETLog(@"Ratio: %f", octime / ctime);
+				ETLog(@"Smalltalk fibonacci execution took %f seconds.  ", sttime);
+				ETLog(@"Ratio: %f", sttime / octime);
+				ETLog(@"Smalltalk fibonacci SmallInt version execution took %f seconds.  ", sttime);
+				ETLog(@"Ratio: %f", sttime / octime);
+			}
+			printf("%f	%f	%f	%f\n", ctime, octime, sttime, sttime2); 
+		}
+	}
 	[pool release];
 	return 0;
 }

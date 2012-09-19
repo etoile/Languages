@@ -16,7 +16,7 @@ llvm-link -f -o smalltalk.bc \
 
 # Optimise the bitcode
 echo Running optimiser...
-opt -load /home/dc552/gnustep/libobjc/../../llvm/Debug+Asserts/lib/libGNUObjCRuntime.so  -objc-arc-expand -objc-arc -objc-arc-aa    -objc-arc-apelim   -objc-arc-contract -O3 smalltalk.bc -o smalltalk.optimised.bc
+opt -load /usr/local/lib/libGNUObjCRuntime.so -objc-arc-expand -objc-arc -objc-arc-aa    -objc-arc-apelim   -objc-arc-contract -O3 smalltalk.bc -o smalltalk.optimised.bc
 opt -objc-arc-expand -objc-arc -objc-arc-aa    -objc-arc-apelim   -objc-arc-contract -O3 smalltalk.bc -o smalltalk.optimised.bc
 
 # Generate assembly
