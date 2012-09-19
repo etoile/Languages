@@ -1,4 +1,5 @@
 #include <llvm/Module.h>
+#include <llvm/MDBuilder.h>
 #include "CodeGenModule.h"
 #include "CodeGenBlock.h"
 #include "ABI.h"
@@ -1360,7 +1361,10 @@ void CodeGenSubroutine::splitSmallIntCase(llvm::Value *anObject,
 	BasicBlock *smallIntBB = BasicBlock::Create(CGM->Context, "small_int", CurrentFunction);
 	BasicBlock *objectBB = BasicBlock::Create(CGM->Context, "real_object", CurrentFunction);
 
-	aBuilder.CreateCondBr(IsSmallInt, smallIntBB, objectBB);
+	Instruction *Br = aBuilder.CreateCondBr(IsSmallInt, smallIntBB, objectBB);
+	MDBuilder MDB(CGM->Context);
+	Br->setMetadata(LLVMContext::MD_prof, MDB.createBranchWeights(10,1));
+	
 	aBuilder.SetInsertPoint(objectBB);
 	smallIntBuilder.SetInsertPoint(smallIntBB);
 }
