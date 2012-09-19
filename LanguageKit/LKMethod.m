@@ -1,4 +1,5 @@
 #import "LKMethod.h"
+#import "LKReturn.h"
 #import "LKModule.h"
 #import "LKCompilerErrors.h"
 static NSSet *ARCBannedMessages;
@@ -115,6 +116,10 @@ static NSSet *ARCBannedMessages;
 		for (LKAST *statement in statements)
 		{
 			[statement compileWithGenerator: aGenerator];
+		}
+		if (![[statements lastObject] isKindOfClass: [LKReturn class]])
+		{
+			[aGenerator setReturn: [aGenerator loadSelf]];
 		}
 		// FIXME: Don't do this if we're a root class (we don't actually
 		// support root classes in Smalltalk at the moment).

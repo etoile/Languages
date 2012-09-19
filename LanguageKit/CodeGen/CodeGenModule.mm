@@ -241,7 +241,7 @@ CodeGenMethod::CodeGenMethod(NSString *methodName,
 	// FIXME: This retain of self is superfluous.  If the optimiser doesn't
 	// make it go away then we should move this up to the AST which knows that
 	// this is redundant
-	if (RetVal && (RetVal->getType() == types.ptrToIdTy))
+	if (0) //RetVal && (RetVal->getType() == types.ptrToIdTy))
 	{
 		// Methods in the -init family are passed an owning reference to self
 		// that they consume and then return a new owning reference.
@@ -529,6 +529,22 @@ void CodeGenModule::EndModule(void)
 	DUMP(TheModule);
 }
 
+namespace {
+	struct DumpPass : ModulePass {
+		static char ID;
+		DumpPass() : ModulePass(ID) {}
+		virtual bool runOnModule(Module &M) {
+			M.dump();
+			return false;
+		}
+	};
+	char DumpPass::ID;
+	static void addDumpPass(const PassManagerBuilder &Builder, PassManagerBase &PM)
+	{
+		//PM.add(new DumpPass());
+	}
+}
+
 void CodeGenModule::compile(void)
 {
 	EndModule();
@@ -588,6 +604,8 @@ void CodeGenModule::compile(void)
 	PMBuilder.addExtension(PassManagerBuilder::EP_ModuleOptimizerEarly,
 	                       addObjCARCAPElimPass);
 	PMBuilder.addExtension(PassManagerBuilder::EP_ScalarOptimizerLate,
+	                       addDumpPass);
+	PMBuilder.addExtension(PassManagerBuilder::EP_ScalarOptimizerLate,
 	                       addObjCARCOptPass);
 	// Inlining threshold copied from clang.  May be silly...
 	PMBuilder.Inliner = createFunctionInliningPass(275);
@@ -616,9 +634,7 @@ void CodeGenModule::compile(void)
 	PerModulePasses->add(createVerifierPass());
 	PerModulePasses->add(createStripSymbolsPass(true));
 	// Something in LICM is broken in trunk currently.  Disable until it's fixed.
-#if LLVM_MINOR < 2
 	PerModulePasses->run(*TheModule);
-#endif
 	delete PerModulePasses;
 #endif
 	DUMP(TheModule);

@@ -520,7 +520,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 			[LKCompiler setDefaultDelegate: nil];
 			// Make the child process really, really, low priority.
 			setpriority(PRIO_PROCESS, 0, 20);
-			[self justTooLateCompileBundle: bundle];
+			//[self justTooLateCompileBundle: bundle];
 			exit(0);
 		}
 	}

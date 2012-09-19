@@ -579,21 +579,14 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType) && !returnsRetained)
 	{
 		Value *retObj = ReturnBuilder.CreateLoad(RetVal);
-		if (isLKObject(ReturnType) && @encode(LKObject)[0] != '@')
-		{
-			CGBuilder smallIntBuilder(CGM->Context);
-			splitSmallIntCase(retObj, ReturnBuilder, smallIntBuilder);
-			llvm::Value *autoreleased =
-				CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
-			PHINode *phi;
-			combineSmallIntCase(autoreleased, retObj, phi, ReturnBuilder,
-					smallIntBuilder);
-			retObj = phi;
-		}
-		else
-		{
-			retObj = CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
-		}
+		CGBuilder smallIntBuilder(CGM->Context);
+		splitSmallIntCase(retObj, ReturnBuilder, smallIntBuilder);
+		llvm::Value *autoreleased =
+			CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
+		PHINode *phi;
+		combineSmallIntCase(autoreleased, retObj, phi, ReturnBuilder,
+				smallIntBuilder);
+		retObj = phi;
 		ReturnBuilder.CreateStore(retObj, RetVal);
 	}
 	LLVMType *functionRetTy =
@@ -1336,7 +1329,7 @@ void CodeGenSubroutine::BranchOnCondition(Value *condition,
 
 void CodeGenSubroutine::SetReturn(Value * Ret)
 {
-	if (Ret != 0)
+	if (Ret != 0 && [ReturnType characterAtIndex: 0] != 'v')
 	{
 		if (Ret->getType() != types.idTy)
 		{
