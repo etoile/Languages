@@ -1,3 +1,4 @@
+#include "UglyGNUHack.h"
 #include "CodeGenModule.h"
 #include "CodeGenBlock.h"
 #include "LLVMCompat.h"
