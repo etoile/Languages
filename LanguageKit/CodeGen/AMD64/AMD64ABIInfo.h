@@ -34,7 +34,6 @@
 */
 #include <stdint.h>
 #include <llvm/DerivedTypes.h>
-#include <llvm/Target/TargetData.h>
 #include <llvm/LLVMContext.h>
 #include "../ABIInfo.h"
 #ifndef AMD64ABIInfo_h_INCLUDED
@@ -70,7 +69,7 @@ namespace languagekit
 class AMD64ABIInfo : public ABIInfo
 {
 private:
-	const llvm::TargetData *td;
+	const TargetData *td;
 	llvm::LLVMContext &context;
 protected:
 	AMD64ABIClass mergeClasses(const AMD64ABIClass accumulator, const AMD64ABIClass next);

@@ -146,12 +146,14 @@ llvm::AttrListPtr GenericABIInfo::attributeListForFunctionType(llvm::FunctionTyp
 	GenericABIInfo::returnTypeAndRegisterUsageForRetLLVMType(retType, isSRet, intReg, floatReg);
 	if (isSRet)
 	{
-		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attribute::StructRet);
-#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1) || (LLVM_MAJOR > 3)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+		AttrBuilder AB = AttrBuilder(Attributes::StructRet);
+		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attributes::get(context, AB));
 		return AttrListPtr::get(stackRetAttr);
 	}
 	return AttrListPtr::get(ArrayRef<AttributeWithIndex>());
 #else
+		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attribute::StructRet);
 		return AttrListPtr::get(&stackRetAttr, 1);
 	}
 	return AttrListPtr::get((AttributeWithIndex*)NULL, 0);

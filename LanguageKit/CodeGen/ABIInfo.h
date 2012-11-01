@@ -34,7 +34,14 @@
 */
 #include <stdint.h>
 #include <llvm/DerivedTypes.h>
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#include <llvm/DataLayout.h>
+typedef llvm::DataLayout TargetData;
+#else
 #include <llvm/Target/TargetData.h>
+typedef llvm::TargetData TargetData;
+#endif
+
 #include "LLVMCompat.h"
 #ifndef ABIInfo_h_INCLUDED
 #define ABIInfo_h_INCLUDED

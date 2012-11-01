@@ -18,7 +18,12 @@
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/MemoryBuffer.h>
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#include <llvm/DataLayout.h>
+#define TargetData DataLayout
+#else
 #include <llvm/Target/TargetData.h>
+#endif
 #include <llvm/Support/system_error.h>
 
 

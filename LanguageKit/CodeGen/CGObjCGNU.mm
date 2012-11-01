@@ -13,7 +13,12 @@
 #include "llvm/Support/Compiler.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
-#include "llvm/Target/TargetData.h"
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#include <llvm/DataLayout.h>
+#define TargetData DataLayout
+#else
+#include <llvm/Target/TargetData.h>
+#endif
 #include "llvm/LLVMContext.h"
 #include "objc_pointers.h"
 #include <map>
@@ -629,6 +634,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
                                             NSString *ReceiverClass,
                                             bool isClassMessage)
 {
+if (isClassMessage) { NSLog(@"Sending class message [%@ %@]", ReceiverClass, selName); }
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 #if !defined(__arm__) && !defined(__i386__) && !defined(__x86_64__)
 	if (0 == Sender)
