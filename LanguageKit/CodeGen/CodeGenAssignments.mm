@@ -136,21 +136,21 @@ struct ARCAssignments : public CodeGenAssignments
 	ARCAssignments(CodeGenTypes &T) : CodeGenAssignments(T)
 	{
 		storeWeak = 
-			Mod.getOrInsertFunction("objc_storeWeak", Types.idTy, Types.ptrToIdTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_storeWeak", Types.idTy, Types.ptrToIdTy, Types.idTy, (void *)0);
 		loadWeak = 
-			Mod.getOrInsertFunction("objc_loadWeak", Types.idTy, Types.ptrToIdTy, NULL);
+			Mod.getOrInsertFunction("objc_loadWeak", Types.idTy, Types.ptrToIdTy, (void *)0);
 		autoreleaseRV = 
-			Mod.getOrInsertFunction("objc_autoreleaseReturnValue", Types.idTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_autoreleaseReturnValue", Types.idTy, Types.idTy, (void *)0);
 		retainAutoreleasedRV = 
-			Mod.getOrInsertFunction("objc_retainAutoreleasedReturnValue", Types.idTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_retainAutoreleasedReturnValue", Types.idTy, Types.idTy, (void *)0);
 		retain = 
-			Mod.getOrInsertFunction("objc_retain", Types.idTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_retain", Types.idTy, Types.idTy, (void *)0);
 		retainBlock = 
-			Mod.getOrInsertFunction("objc_retainBlock", Types.idTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_retainBlock", Types.idTy, Types.idTy, (void *)0);
 		release = 
-			Mod.getOrInsertFunction("objc_release", Types.voidTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_release", Types.voidTy, Types.idTy, (void *)0);
 		autorelease = 
-			Mod.getOrInsertFunction("objc_autorelease", Types.idTy, Types.idTy, NULL);
+			Mod.getOrInsertFunction("objc_autorelease", Types.idTy, Types.idTy, (void *)0);
 		// None of the ARC functions can throw.
 		llvm::cast<llvm::Function>(storeWeak->stripPointerCasts())->setDoesNotThrow();
 		llvm::cast<llvm::Function>(loadWeak->stripPointerCasts())->setDoesNotThrow();
@@ -326,15 +326,15 @@ struct GCAssignments : public CodeGenAssignments
 	{
 
 		assignIvar = Mod.getOrInsertFunction( "objc_assign_ivar",
-				Types.idTy, Types.idTy, Types.idTy, Types.ptrDiffTy, NULL);
+				Types.idTy, Types.idTy, Types.idTy, Types.ptrDiffTy, (void *)0);
 		assignGlobal = Mod.getOrInsertFunction("objc_assign_global",
-				Types.idTy, Types.idTy, Types.ptrToIdTy, NULL);
+				Types.idTy, Types.idTy, Types.ptrToIdTy, (void *)0);
 		assignWeak = Mod.getOrInsertFunction("objc_assign_weak",
-				Types.idTy, Types.idTy, Types.ptrToIdTy, NULL);
+				Types.idTy, Types.idTy, Types.ptrToIdTy, (void *)0);
 		readWeak = Mod.getOrInsertFunction("objc_read_weak",
-				Types.idTy, Types.ptrToIdTy, NULL);
+				Types.idTy, Types.ptrToIdTy, (void *)0);
 		blockCopy = Mod.getOrInsertFunction("_Block_copy",
-				Types.idTy, Types.idTy, NULL);
+				Types.idTy, Types.idTy, (void *)0);
 	}
 	void storeWeak(CGBuilder &aBuilder,
 	               llvm::Value *anAddr,

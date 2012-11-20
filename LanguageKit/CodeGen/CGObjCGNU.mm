@@ -13,7 +13,7 @@
 #include "llvm/Support/Compiler.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 #include <llvm/DataLayout.h>
 #define TargetData DataLayout
 #else
@@ -243,7 +243,7 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 		  Context,
 		  PtrToInt8Ty,
 		  PtrToInt8Ty,
-		  NULL);
+		  (void *)0);
 	SelectorTy = llvm::PointerType::getUnqual(SelStructTy);
 	PtrToIntTy = llvm::PointerType::getUnqual(IntTy);
 	PtrTy = PtrToInt8Ty;
@@ -275,7 +275,7 @@ llvm::Value *CGObjCGNU::LookupClass(CGBuilder &Builder,
 	llvm::Value *className = MakeConstantString(ClassName);
 	llvm::Constant *ClassLookupFn =
 		TheModule.getOrInsertFunction("objc_lookup_class", IdTy, PtrToInt8Ty,
-			NULL);
+			(void *)0);
 	return Builder.CreateCall(ClassLookupFn, className);
 }
 
@@ -334,7 +334,7 @@ assert(0);
 			TheModule.getOrInsertFunction("sel_register_name", 
 				SelectorTy, 
 				PtrToInt8Ty, 
-				NULL);
+				(void *)0);
 		cmd = Builder.CreateCall(SelFunction, SelName);
 	}
 	else 
@@ -344,7 +344,7 @@ assert(0);
 					SelectorTy,
 					PtrToInt8Ty,
 					PtrToInt8Ty,
-					NULL);
+					(void *)0);
 		cmd = Builder.CreateCall2(SelFunction, SelName, SelTypes);
 	}
 	return cmd;
@@ -418,7 +418,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 	Ivars.push_back(ConstantInt::get(IntTy, length));
 	llvm::Constant *ObjCStr = MakeGlobal(
 		GetStructType(Context, PtrToInt8Ty, PtrToInt8Ty, IntTy,
-		NULL), Ivars, ".objc_str");
+		(void *)0), Ivars, ".objc_str");
 	ConstantStrings.push_back(
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
 	return ObjCStr;
@@ -547,7 +547,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 	}
 	// Construct the structure used to look up the IMP
 	llvm::StructType *ObjCSuperTy = GetStructType(Context, 
-		Receiver->getType(), IdTy, NULL);
+		Receiver->getType(), IdTy, (void *)0);
 	llvm::Value *ObjCSuper = Builder.CreateAlloca(ObjCSuperTy);
 	Builder.CreateStore(Receiver, Builder.CreateStructGEP(ObjCSuper, 0));
 	Builder.CreateStore(ReceiverClass, Builder.CreateStructGEP(ObjCSuper, 1));
@@ -559,7 +559,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 
 	// The lookup function returns a slot, which can be safely cached.
 	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
-		IntTy, PtrTy, NULL);
+		IntTy, PtrTy, (void *)0);
 
 	llvm::Constant *lookupFunction =
 	TheModule.getOrInsertFunction("objc_slot_lookup_super",
@@ -601,12 +601,12 @@ void CGObjCGNU::lookupIMPAndTypes(CGBuilder &Builder,
 	Builder.CreateStore(Receiver, ReceiverPtr, true);
 
 	LLVMType *SlotTy = GetStructType(Context, PtrTy, PtrTy, PtrTy,
-			IntTy, PtrTy, NULL);
+			IntTy, PtrTy, (void *)0);
 
 	llvm::Constant *lookupFunction = 
 		TheModule.getOrInsertFunction("objc_msg_lookup_sender",
 				llvm::PointerType::getUnqual(SlotTy), ReceiverPtr->getType(),
-				Selector->getType(), Sender->getType(), NULL);
+				Selector->getType(), Sender->getType(), (void *)0);
 	// Lookup does not capture the receiver pointer
 	if (llvm::Function *LookupFn = dyn_cast<llvm::Function>(lookupFunction)) 
 	{
@@ -710,7 +710,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 		PtrToInt8Ty, // Really a selector, but the runtime creates it us.
 		PtrToInt8Ty, // Method types
 		llvm::PointerType::getUnqual(IMPTy), //Method pointer
-		NULL);
+		(void *)0);
 	std::vector<llvm::Constant*> Methods;
 	std::vector<llvm::Constant*> Elements;
 	for (unsigned int i = 0, e = MethodTypes.size(); i < e; ++i) 
@@ -742,7 +742,7 @@ llvm::Constant *CGObjCGNU::GenerateMethodList(
 		NextPtrTy, 
 		IntTy, 
 		ObjCMethodArrayTy,
-		NULL);
+		(void *)0);
 
 	Methods.clear();
 	Methods.push_back(llvm::Constant::getNullValue(NextPtrTy));
@@ -772,7 +772,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		PtrToInt8Ty,
 		PtrToInt8Ty,
 		IntTy,
-		NULL);
+		(void *)0);
 	std::vector<llvm::Constant*> Ivars;
 	std::vector<llvm::Constant*> Elements;
 
@@ -796,7 +796,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 	// Structure containing array and array count
 	llvm::StructType *ObjCIvarListTy = GetStructType(Context, IntTy,
 		ObjCIvarArrayTy,
-		NULL);
+		(void *)0);
 
 	// Create an instance of the structure
 	llvm::Constant *IvarList =
@@ -894,7 +894,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 		// Ivar offset pointers, to be filled in by the runtime
 		IvarOffsets->getType(), // ivar_offsets
 		PtrTy,                  // properties (not used by LK yet)
-		NULL);
+		(void *)0);
 	llvm::Constant *Zero = ConstantInt::get(LongTy, 0);
 	llvm::Constant *NullP =
 		llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(PtrTy));
@@ -935,7 +935,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 		Context,
 		PtrToInt8Ty, // Really a selector, but the runtime does the casting for us.
 		PtrToInt8Ty,
-		NULL);
+		(void *)0);
 	std::vector<llvm::Constant*> Methods;
 	std::vector<llvm::Constant*> Elements;
 	for (unsigned int i = 0, e = MethodTypes.size() ; i < e ; i++) {
@@ -950,7 +950,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 			MethodNames.size());
 	llvm::Constant *Array = llvm::ConstantArray::get(ObjCMethodArrayTy, Methods);
 	llvm::StructType *ObjCMethodDescListTy = GetStructType(Context,
-			IntTy, ObjCMethodArrayTy, NULL);
+			IntTy, ObjCMethodArrayTy, (void *)0);
 	Methods.clear();
 	Methods.push_back(ConstantInt::get(IntTy, MethodNames.size()));
 	Methods.push_back(Array);
@@ -968,7 +968,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 		PtrTy, //Should be a recurisve pointer, but it's always NULL here.
 		LongTy,//FIXME: Should be size_t
 		ProtocolArrayTy,
-		NULL);
+		(void *)0);
 	std::vector<llvm::Constant*> Elements; 
 	for (StringVector::const_iterator iter=Protocols.begin(), endIter=Protocols.end();
 	    iter != endIter ; iter++) 
@@ -1015,7 +1015,7 @@ void CGObjCGNU::GenerateProtocol(
 		ProtocolList->getType(),
 		InstanceMethodList->getType(),
 		ClassMethodList->getType(),
-		NULL);
+		(void *)0);
 	std::vector<llvm::Constant*> Elements; 
 	// The isa pointer must be set to a magic number so the runtime knows it's
 	// the correct layout.
@@ -1055,7 +1055,7 @@ void CGObjCGNU::GenerateCategory(
 		  GenerateProtocolList(Protocols), PtrTy));
 	Categories.push_back(llvm::ConstantExpr::getBitCast(
 		  MakeGlobal(GetStructType(Context, PtrToInt8Ty, PtrToInt8Ty, PtrTy,
-			  PtrTy, PtrTy, NULL), Elements), PtrTy));
+			  PtrTy, PtrTy, (void *)0), Elements), PtrTy));
 }
 void CGObjCGNU::GenerateClass(
 	NSString *ClassName,
@@ -1149,7 +1149,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			".objc_static_class_name"));
 		Elements.push_back(llvm::ConstantArray::get(StaticsArrayTy, ConstantStrings));
 		llvm::StructType *StaticsListTy = 
-			GetStructType(Context, PtrToInt8Ty, StaticsArrayTy, NULL);
+			GetStructType(Context, PtrToInt8Ty, StaticsArrayTy, (void *)0);
 		llvm::PointerType *StaticsListPtrTy = 
 			llvm::PointerType::getUnqual(StaticsListTy);
 		Statics = MakeGlobal(StaticsListTy, Elements, ".objc_statics");
@@ -1171,7 +1171,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 		LLVMType::getInt16Ty(Context),
 		LLVMType::getInt16Ty(Context),
 		ClassListTy,
-		NULL);
+		(void *)0);
 
 	Elements.clear();
 	// Pointer to an array of selectors used in this module.
@@ -1248,7 +1248,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	// constants
 	llvm::StructType * ModuleTy = GetStructType(Context, LongTy, LongTy,
 		PtrToInt8Ty, llvm::PointerType::getUnqual(SymTabTy), 
-		GC ? IntTy : NULL, NULL);
+		GC ? IntTy : NULL, (void *)0);
 	Elements.clear();
 	// Runtime version used for compatibility checking.
 	Elements.push_back(ConstantInt::get(LongTy, RuntimeVersion));
@@ -1279,7 +1279,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	Builder.SetInsertPoint(EntryBB);
 
 	llvm::Value *Register = TheModule.getOrInsertFunction("__objc_exec_class",
-		LLVMType::getVoidTy(Context), llvm::PointerType::getUnqual(ModuleTy), NULL);
+		LLVMType::getVoidTy(Context), llvm::PointerType::getUnqual(ModuleTy), (void *)0);
 
 	Builder.CreateCall(Register, Module);
 	Builder.CreateRetVoid();

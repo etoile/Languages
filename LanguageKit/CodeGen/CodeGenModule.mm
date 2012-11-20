@@ -18,7 +18,7 @@
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/MemoryBuffer.h>
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 #include <llvm/DataLayout.h>
 #define TargetData DataLayout
 #else
@@ -106,7 +106,7 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 	InitialiseBuilder.SetInsertPoint(EntryBB);
 	initializerPool =
 		InitialiseBuilder.CreateCall(TheModule->getOrInsertFunction("objc_autoreleasePoolPush",
-					types->ptrToVoidTy, NULL));
+					types->ptrToVoidTy, (void*)0));
 
 	Runtime = CreateObjCRuntime(types, *TheModule, Context, gc, jit);
 
@@ -504,12 +504,12 @@ static void addObjCARCOptPass(const PassManagerBuilder &Builder, PassManagerBase
 void CodeGenModule::EndModule(void)
 {
 	InitialiseBuilder.CreateCall(TheModule->getOrInsertFunction("objc_autoreleasePoolPop",
-				types->voidTy, types->ptrToVoidTy, NULL), initializerPool);
+				types->voidTy, types->ptrToVoidTy, (void *)0), initializerPool);
 	InitialiseBuilder.CreateRetVoid();
 	// Set the module init function to be a global ctor
 	llvm::Function *init = Runtime->ModuleInitFunction();
 	llvm::StructType* CtorStructTy = GetStructType(Context, 
-		llvm::Type::getInt32Ty(Context), init->getType(), NULL);
+		llvm::Type::getInt32Ty(Context), init->getType(), (void *)0);
 
 	std::vector<llvm::Constant*> Ctors;
 
@@ -647,7 +647,7 @@ void CodeGenModule::compile(void)
 	if (NULL == EE)
 	{
 		LOG("Creating execution engine...\n");
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 		EngineBuilder EB = EngineBuilder(TheModule);
 		TargetOptions TO;
 		TO.JITExceptionHandling = 1;

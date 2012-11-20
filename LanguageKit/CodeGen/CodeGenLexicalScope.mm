@@ -1,5 +1,9 @@
 #include <llvm/Module.h>
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 #include <llvm/MDBuilder.h>
+#else
+#include <llvm/Support/MDBuilder.h>
+#endif
 #include "CodeGenModule.h"
 #include "CodeGenBlock.h"
 #include "ABI.h"
@@ -212,7 +216,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 				return B->CreateCall2(CGM->TheModule->getOrInsertFunction("LKBoxValue",
 				                                                          types.idTy,
 				                                                          buffer->getType(),
-				                                                          types.ptrToVoidTy, NULL),
+				                                                          types.ptrToVoidTy, (void *)0),
 				                      buffer,
 				                      CGM->MakeConstantString(trimTypeEncoding(typestr, '{', '}')));
 			}
@@ -238,7 +242,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			return B->CreateCall2(CGM->TheModule->getOrInsertFunction("LKBoxValue",
 			                                                          types.idTy,
 			                                                          V->getType(),
-			                                                          types.ptrToVoidTy, NULL),
+			                                                          types.ptrToVoidTy, (void *)0),
 			                      V,
 			                      CGM->MakeConstantString(typestr));
 		}
@@ -353,7 +357,7 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 				                                                   types.voidTy,
 				                                                   types.idTy,
 				                                                   buffer->getType(),
-				                                                   types.ptrToVoidTy, NULL),
+				                                                   types.ptrToVoidTy, (void *)0),
 				               val,
 				               buffer,
 				               CGM->MakeConstantString(returnTypeString));
@@ -424,7 +428,7 @@ llvm::Value *CodeGenSubroutine::emitByRefStructure(void)
 	                                            copyFn->getType(),   // 4 keep 
 	                                            disposeFn->getType(),// 5 dispose
 	                                            types.idTy,          // 6 value
-	                                            NULL);
+	                                            (void *)0);
 	llvm::Value *byRef = Builder.CreateAlloca(byRefType);
 	llvm::Constant *nilPtr = llvm::ConstantPointerNull::get(types.idTy);
 	Builder.CreateStore(nilPtr, Builder.CreateStructGEP(byRef, 0));
@@ -619,7 +623,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	CGBuilder ExceptionBuilder(ExceptionBB);
 	Value *ehPersonality =
 		ExceptionBuilder.CreateBitCast(TheModule->getOrInsertFunction(
-			"__LanguageKitEHPersonalityRoutine", Type::getVoidTy(CGM->Context), NULL),
+			"__LanguageKitEHPersonalityRoutine", Type::getVoidTy(CGM->Context), (void *)0),
 			types.ptrToVoidTy);
 	llvm::Constant *ehType =
 		TheModule->getOrInsertGlobal("__LanguageKitNonLocalReturn",
@@ -636,7 +640,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		ConstantPointerNull::get(types.ptrToVoidTy));
 #else
 	LLVMStructType *ehRegisters =
-		GetStructType(CGM->Context, types.ptrToVoidTy, llvm::Type::getInt32Ty(CGM->Context), NULL);
+		GetStructType(CGM->Context, types.ptrToVoidTy, llvm::Type::getInt32Ty(CGM->Context), (void *)0);
 	LandingPadInst *lp =
 		ExceptionBuilder.CreateLandingPad(ehRegisters, ehPersonality, 1);
 	lp->addClause(ehType);
@@ -683,7 +687,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 
 	Function *EHFunction = cast<Function>(
 		TheModule->getOrInsertFunction("__LanguageKitTestNonLocalReturn",
-			Type::getVoidTy(CGM->Context), PtrTy, PtrTy, PtrTy, NULL));
+			Type::getVoidTy(CGM->Context), PtrTy, PtrTy, PtrTy, (void *)0));
 	// Note: This is not an invoke - if this throws we want it to unwind up the
 	// stack past the current frame.  If it didn't, we'd get an infinite loop,
 	// with the function continually catching the non-local return exception
@@ -718,7 +722,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 
 	Function *rethrowFunction = cast<Function>(
 		TheModule->getOrInsertFunction("_Unwind_Resume_or_Rethrow",
-			Type::getVoidTy(CGM->Context), PtrTy, NULL));
+			Type::getVoidTy(CGM->Context), PtrTy, (void *)0));
 	ExceptionBuilder.CreateCall(rethrowFunction,
 			ExceptionBuilder.CreateLoad(exceptionPtr));
 	ExceptionBuilder.CreateUnreachable();
@@ -1117,7 +1121,7 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 	// Look up the IMP and the real type encoding
 	CGM->Runtime->lookupIMPAndTypes(B, NULL, receiver, selName, imp, typeEncoding);
 	llvm::Constant *StrCmp = CGM->getModule()->getOrInsertFunction("strcmp",
-				types.intTy, types.ptrToVoidTy, types.ptrToVoidTy, NULL);
+				types.intTy, types.ptrToVoidTy, types.ptrToVoidTy, (void *)0);
 	llvm::Value *zero = llvm::ConstantInt::get(types.intTy, 0);
 
 	// No type info is available, throw an exception
@@ -1134,7 +1138,7 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 	                                                  types.voidTy,
 	                                                  receiver->getType(),
 	                                                  cmd->getType(),
-	                                                  NULL),
+	                                                  (void *)0),
 	              receiver,
 	              cmd);
 	B.CreateUnreachable();
@@ -1361,10 +1365,15 @@ void CodeGenSubroutine::splitSmallIntCase(llvm::Value *anObject,
 	BasicBlock *smallIntBB = BasicBlock::Create(CGM->Context, "small_int", CurrentFunction);
 	BasicBlock *objectBB = BasicBlock::Create(CGM->Context, "real_object", CurrentFunction);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
 	Instruction *Br = aBuilder.CreateCondBr(IsSmallInt, smallIntBB, objectBB);
 	MDBuilder MDB(CGM->Context);
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 	Br->setMetadata(LLVMContext::MD_prof, MDB.createBranchWeights(10,1));
-	
+#endif
+#pragma clang diagnostic pop
+
 	aBuilder.SetInsertPoint(objectBB);
 	smallIntBuilder.SetInsertPoint(smallIntBB);
 }

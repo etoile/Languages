@@ -13,7 +13,7 @@
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/MemoryBuffer.h>
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 #include <llvm/DataLayout.h>
 #define TargetData DataLayout
 #else
@@ -222,7 +222,7 @@ CodeGenTypes::CodeGenTypes(llvm::Module &M) : Mod(M)
 	                                 ptrToVoidTy,  // 4 keep 
 	                                 ptrToVoidTy,  // 5 dispose
 	                                 idTy,         // 6 value
-	                                 NULL);
+	                                 (void *)0);
 }
 
 

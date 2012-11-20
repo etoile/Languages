@@ -45,10 +45,10 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 	CGBuilder disposeBuilder(llvm::BasicBlock::Create(CGM->Context, "entry", dispose));
 	llvm::Constant* copyFn =
 		CGM->TheModule->getOrInsertFunction("_Block_object_assign", types.voidTy,
-			types.ptrToVoidTy, types.ptrToVoidTy, types.intTy, NULL);
+			types.ptrToVoidTy, types.ptrToVoidTy, types.intTy, (void *)0);
 	llvm::Constant* disposeFn =
 		CGM->TheModule->getOrInsertFunction("_Block_object_dispose", types.voidTy,
-			types.ptrToVoidTy, types.intTy, NULL);
+			types.ptrToVoidTy, types.intTy, (void *)0);
 	// BLOCK_FIELD_IS_BYREF
 	llvm::ConstantInt *byref = llvm::ConstantInt::get(types.intTy, 8);
 	// BLOCK_FIELD_IS_OBJECT
@@ -94,7 +94,7 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 	                                               copy->getType(),     // copy
 	                                               dispose->getType(),  // dispose
 	                                               types.ptrToVoidTy,   // signature
-	                                               NULL);
+	                                               (void *)0);
 	llvm::Constant *sig = CGM->MakeConstantString(signature);
 	llvm::Constant *size = llvm::ConstantExpr::getSizeOf(blockType);
 	if (size->getType() != types.longTy)
@@ -108,7 +108,7 @@ llvm::Constant* CodeGenBlock::emitBlockDescriptor(NSString* signature,
 			copy,
 			dispose,
 			sig,
-			NULL);
+			(void *)0);
 	return new GlobalVariable(*CGM->TheModule, descriptorTy, true,
 		llvm::GlobalValue::PrivateLinkage, descriptorInit, "blockDescriptor");
 }
@@ -208,7 +208,7 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 	// having a NULL object that's always bound into blocks as a non-byref
 	// construct
 	llvm::Value *returnFn = CGM->TheModule->getOrInsertFunction("__LanguageKitThrowNonLocalReturn",
-		types.voidTy, types.idTy, types.idTy, NULL);
+		types.voidTy, types.idTy, types.idTy, (void *)0);
 	Builder.CreateCall2(returnFn, 
 		Builder.CreateBitCast(Context, types.idTy),
 		Builder.CreateBitCast(RetVal, types.idTy));

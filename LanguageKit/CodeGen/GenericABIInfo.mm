@@ -115,7 +115,7 @@ LLVMType* GenericABIInfo::returnTypeAndRegisterUsageForRetLLVMType(LLVMType *ty,
 		}
 	}
 	if (SMALL_FLOAT_STRUCTS_ON_STACK && isa<StructType>(ty)
-	  && ty == GetStructType(context, Type::getFloatTy(context), Type::getFloatTy(context), NULL))
+	  && ty == GetStructType(context, Type::getFloatTy(context), Type::getFloatTy(context), (void *)0))
 	{
 		onStack = false;
 		realRetTy = Type::getInt64Ty(context);
@@ -146,7 +146,7 @@ llvm::AttrListPtr GenericABIInfo::attributeListForFunctionType(llvm::FunctionTyp
 	GenericABIInfo::returnTypeAndRegisterUsageForRetLLVMType(retType, isSRet, intReg, floatReg);
 	if (isSRet)
 	{
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 		AttrBuilder AB = AttrBuilder(Attributes::StructRet);
 		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attributes::get(context, AB));
 		return AttrListPtr::get(stackRetAttr);
