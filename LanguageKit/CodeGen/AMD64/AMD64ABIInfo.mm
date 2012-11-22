@@ -646,7 +646,9 @@ llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType 
 			attributes.push_back(indexedAttr);
 		}
 	}
-#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1) || (LLVM_MAJOR > 3)
+#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 2) || (LLVM_MAJOR > 3)
+	return AttrListPtr::get(context, attributes);
+#elif (LLVM_MAJOR == 3) && (LLVM_MINOR > 1)
 	return AttrListPtr::get(attributes);
 #else
 	return AttrListPtr::get(attributes.begin(), attributes.end());
