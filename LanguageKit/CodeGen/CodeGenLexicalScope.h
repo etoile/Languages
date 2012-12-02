@@ -4,7 +4,6 @@
 #include "CodeGenTypes.h"
 #include "CodeGenModule.h"
 #include <string>
-#include <tr1/unordered_map>
 #include "objc_pointers.h"
 
 
@@ -33,7 +32,7 @@ protected:
 	Value *Context;
 	DIDescriptor ScopeDescriptor;
 
-	typedef std::tr1::unordered_map<id,
+	typedef unordered_map<id,
 	                                llvm::Value*,
 	                                object_hash<id>,
 	                                object_equal<id> > variable_map;

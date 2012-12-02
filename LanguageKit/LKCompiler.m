@@ -20,6 +20,8 @@ static id<LKCompilerDelegate> DefaultDelegate;
 @interface SCKSourceCollection : NSObject
 @property (nonatomic, readonly) NSMutableDictionary *functions;
 @property (nonatomic, readonly) NSMutableDictionary *globals;
+@property (nonatomic, readonly) NSMutableDictionary *enumerationValues;
+@property (nonatomic, readonly) NSMutableDictionary *enumerations;
 - (id)sourceFileForPath: (NSString*)aPath;
 @end
 
@@ -603,6 +605,14 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 + (NSString*)typesForGlobal: (NSString*)globalName
 {
 	return [[[collection globals] objectForKey: globalName] typeEncoding];
+}
++ (id)valueOf: (NSString*)enumName inEnumeration: (NSString*)anEnumeration
+{
+	if (nil == anEnumeration)
+	{
+		return [[collection enumerationValues] objectForKey: enumName];
+	}
+	return [[[[collection enumerations] objectForKey: anEnumeration] values] objectForKey: enumName];
 }
 
 - (BOOL) loadApplicationScriptNamed:(NSString*)name

@@ -536,7 +536,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
                                             llvm::BasicBlock *CleanupBlock)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-	// FIXME: Posing will break this.
 	llvm::Value *ReceiverClass = LookupClass(Builder, SuperClassName);
 	// If it's a class message, get the metaclass
 	if (isClassMessage)
@@ -581,6 +580,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 		};
 	llvm::MDNode *node = CreateMDNode(Context, impMD, 3);
 
+Builder.GetInsertBlock()->dump();
 	return callIMP(Builder, imp, selTypes, Receiver,
 			Selector, ArgV, CleanupBlock, node);
 }

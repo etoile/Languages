@@ -354,18 +354,32 @@ keyword_expression(E) ::= simple_expression(T) keyword_message(M).
 	if ([T isKindOfClass: [LKDeclRef class]] &&
 		[@"C" isEqualToString: [T symbol]])
 	{
-		LKFunctionCall *call= [[LKFunctionCall new] autorelease];
-		[call setFunctionName: [[(LKMessageSend*)M selector] stringByReplacingOccurrencesOfString: @":" withString: @""]];
+		NSString *selector = [(LKMessageSend*)M selector];
 		NSArray *args = [M arguments];
-		if ([args count] == 1 && [[args objectAtIndex: 0] isKindOfClass: [LKArrayExpr class]])
+		if ([@"enumValue:" isEqualToString: selector])
 		{
-			[call setArguments: [(LKArrayExpr*)[args objectAtIndex: 0] elements]];
+			E = [[LKEnumReference alloc] initWithValue: [[args objectAtIndex: 0] symbol]
+			                             inEnumeration: nil];
+		}
+		else if ([@"enum:value:" isEqualToString: selector])
+		{
+			E = [[LKEnumReference alloc] initWithValue: [[args objectAtIndex: 0] symbol]
+			                             inEnumeration: [[args objectAtIndex: 1] symbol]];
 		}
 		else
 		{
-			[call setArguments: [args mutableCopy]];
+			LKFunctionCall *call= [[LKFunctionCall new] autorelease];
+			[call setFunctionName: [selector stringByReplacingOccurrencesOfString: @":" withString: @""]];
+			if ([args count] == 1 && [[args objectAtIndex: 0] isKindOfClass: [LKArrayExpr class]])
+			{
+				[call setArguments: [(LKArrayExpr*)[args objectAtIndex: 0] elements]];
+			}
+			else
+			{
+				[call setArguments: [args mutableCopy]];
+			}
+			E = call;
 		}
-		E = call;
 	}
 	else
 	{

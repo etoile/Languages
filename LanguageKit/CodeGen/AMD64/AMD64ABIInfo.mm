@@ -609,39 +609,22 @@ llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType 
 	for (unsigned i = 0; i < funTy->getNumParams(); i++)
 	{
 		llvm::Type *paramTy = funTy->getParamType(i);
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
 		AttrBuilder AB = AttrBuilder(Attributes::None);
-#else
-		Attributes attr = Attributes(Attribute::None);
-#endif
 		if ((0 == i) && (isSRet))
 		{
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
 			AB = AB.addAttribute(Attributes::StructRet);
-#else
-			attr |= Attribute::StructRet;
-#endif
 			usedInteger++;
 		}
 		else
 		{	
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
 			AB = AB.addAttributes(attributesForLLVMType(paramTy, freeInteger, usedInteger, freeFloat, usedFloat));
-#else
-			attr |= attributesForLLVMType(paramTy, freeInteger, usedInteger, freeFloat, usedFloat);
-#endif
 			freeFloat = 8 - usedFloat;
 			freeInteger = 6 - usedInteger;
 		}
 
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
-		if (AB == AttrBuilder())
+		if (AB != AttrBuilder())
 		{
 			Attributes attr = Attributes::get(context, AB);
-#else
-		if (Attributes(Attribute::None) != attr)
-		{
-#endif
 			AttributeWithIndex indexedAttr = AttributeWithIndex::get((i + 1), attr);
 			attributes.push_back(indexedAttr);
 		}

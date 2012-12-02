@@ -80,5 +80,8 @@ EMIT_STRING(LKMissingHeaderWarning)
  * kLKSourceLine, and kLKLineNumber to identify the location of the error.
  */
 EMIT_STRING(LKParserError)
-
+/**
+ * A specified enumerated type does not exist.
+ */
+EMIT_STRING(LKEnumError)
 #undef EMIT_STRING

@@ -117,10 +117,6 @@ static NSSet *ARCBannedMessages;
 		{
 			[statement compileWithGenerator: aGenerator];
 		}
-		if (![[statements lastObject] isKindOfClass: [LKReturn class]])
-		{
-			[aGenerator setReturn: [aGenerator loadSelf]];
-		}
 		// FIXME: Don't do this if we're a root class (we don't actually
 		// support root classes in Smalltalk at the moment).
 		if ([@"dealloc" isEqualToString: methodName])
@@ -129,6 +125,10 @@ static NSSet *ARCBannedMessages;
 			                       types: type
 			                    withArgs: NULL
 			                       count: 0];
+		}
+		if (![[statements lastObject] isKindOfClass: [LKReturn class]])
+		{
+			[aGenerator setReturn: [aGenerator loadSelf]];
 		}
 		[aGenerator endMethod];
 	}
