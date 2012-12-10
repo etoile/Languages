@@ -41,6 +41,9 @@ typedef llvm::DataLayout TargetData;
 #include <llvm/Target/TargetData.h>
 typedef llvm::TargetData TargetData;
 #endif
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 2)
+#define AttrListPtr AttributeSet
+#endif
 
 #include "LLVMCompat.h"
 #ifndef ABIInfo_h_INCLUDED
