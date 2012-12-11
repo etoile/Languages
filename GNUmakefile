@@ -14,6 +14,7 @@ export smalltalk ?= yes
 #
 # Projects (listed by dependency order, then alphabetical order)
 #
+SUBPROJECTS += SourceCodeKit
 
 ifeq ($(smalltalk), yes)
 	SUBPROJECTS += LanguageKit 
