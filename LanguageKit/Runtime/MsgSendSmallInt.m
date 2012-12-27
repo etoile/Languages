@@ -237,7 +237,7 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
     {\
 	  return [BigInt bigIntWithLongLong:(long long)(x)];	\
 	}\
-  return (void*)(((x) << OBJC_SMALL_OBJECT_SHIFT) | 1);
+  return (void*)(((x) << OBJC_SMALL_OBJECT_SHIFT) | (uintptr_t)1);
 
 void *SmallIntMsgplus_(void *obj, void *other)
 {
