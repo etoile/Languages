@@ -518,7 +518,7 @@ bool AMD64ABIInfo::willPassTypeAsPointer(llvm::Type *ty)
 	return false;
 }
 
-llvm::Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
+Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
   unsigned freeInteger, unsigned &usedInteger,
   unsigned freeFloat, unsigned &usedFloat)
 {

@@ -45,6 +45,13 @@ typedef llvm::TargetData TargetData;
 #define AttrListPtr AttributeSet
 #endif
 
+#include <llvm/Attributes.h>
+#if (LLVM_MINOR > 2)
+typedef llvm::Attribute Attributes;
+#else
+typedef llvm::Attributes Attributes;
+#endif
+
 #include "LLVMCompat.h"
 #ifndef ABIInfo_h_INCLUDED
 #define ABIInfo_h_INCLUDED
