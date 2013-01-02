@@ -1,6 +1,6 @@
-#include <llvm/Module.h>
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
-#include <llvm/MDBuilder.h>
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/MDBuilder.h>
+#elif (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 #else
 #include <llvm/Support/MDBuilder.h>
 #endif
@@ -9,8 +9,10 @@
 #include "ABI.h"
 #include "LLVMCompat.h"
 #import <Foundation/Foundation.h>
+extern "C" {
 #import "../LanguageKit.h"
 #import "../Runtime/LKObject.h"
+}
 using namespace etoile::languagekit;
 
 /**

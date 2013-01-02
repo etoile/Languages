@@ -9,17 +9,20 @@
 
 #import "CGObjCRuntime.h"
 #import "CodeGenTypes.h"
-#include "llvm/Module.h"
-#include "llvm/Support/Compiler.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringMap.h"
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
+#include "LLVMCompat.h"
+#include <llvm/Support/Compiler.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 2)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/DataLayout.h>
+#else
 #include <llvm/DataLayout.h>
+#endif
 #define TargetData DataLayout
 #else
 #include <llvm/Target/TargetData.h>
 #endif
-#include "llvm/LLVMContext.h"
 #include "objc_pointers.h"
 #include <map>
 #include <string>

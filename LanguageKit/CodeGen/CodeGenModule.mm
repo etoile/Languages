@@ -5,21 +5,29 @@
 
 #include "llvm/LinkAllPasses.h"
 #include <llvm/Bitcode/ReaderWriter.h>
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/GlobalVariable.h>
+#else
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/GlobalVariable.h>
+#endif
 #include <llvm/Linker.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/GlobalVariable.h>
-#include <llvm/Module.h>
-#include <llvm/LLVMContext.h>
 #include <llvm/PassManager.h>
 #include "llvm/Analysis/Verifier.h"
 #include <llvm/Support/MemoryBuffer.h>
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/DataLayout.h>
+#else
 #include <llvm/DataLayout.h>
+#endif
 #define TargetData DataLayout
 #else
 #include <llvm/Target/TargetData.h>
@@ -35,8 +43,10 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
+extern "C" {
 #import <Foundation/Foundation.h>
 #import "../LanguageKit.h"
+}
 
 
 

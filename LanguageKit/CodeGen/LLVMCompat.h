@@ -7,11 +7,25 @@
 
 #ifndef __LANGUAGEKIT_LLVM_HACKS__
 #define __LANGUAGEKIT_LLVM_HACKS__
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/Metadata.h>
+#include <llvm/IR/Intrinsics.h>
+#else
 #include <llvm/Instructions.h>
 #include <llvm/Metadata.h>
 #include <llvm/Intrinsics.h>
+#endif
 #if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1) || (LLVM_MAJOR > 3)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/LLVMContext.h>
+#else
 #include <llvm/IRBuilder.h>
+#include <llvm/Module.h>
+#include <llvm/LLVMContext.h>
+#endif
 #include <llvm/DebugInfo.h>
 #else
 #include <llvm/Support/IRBuilder.h>

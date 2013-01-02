@@ -33,9 +33,21 @@
 	THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdint.h>
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Attributes.h>
+#include <llvm/IR/LLVMContext.h>
+#else
 #include <llvm/DerivedTypes.h>
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
+#include <llvm/Attributes.h>
+#include <llvm/LLVMContext.h>
+#endif
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 2)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/DataLayout.h>
+#else
 #include <llvm/DataLayout.h>
+#endif
 typedef llvm::DataLayout TargetData;
 #else
 #include <llvm/Target/TargetData.h>
@@ -45,7 +57,6 @@ typedef llvm::TargetData TargetData;
 #define AttrListPtr AttributeSet
 #endif
 
-#include <llvm/Attributes.h>
 #if (LLVM_MINOR > 2)
 typedef llvm::Attribute Attributes;
 #else

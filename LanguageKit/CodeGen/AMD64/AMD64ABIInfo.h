@@ -33,8 +33,6 @@
 	THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdint.h>
-#include <llvm/DerivedTypes.h>
-#include <llvm/LLVMContext.h>
 #include "../ABIInfo.h"
 #ifndef AMD64ABIInfo_h_INCLUDED
 #define AMD64ABIInfo_h_INCLUDED

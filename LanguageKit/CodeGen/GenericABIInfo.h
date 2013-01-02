@@ -34,8 +34,6 @@
 */
 #include "ABIInfo.h"
 #include "LLVMCompat.h"
-#include <llvm/Module.h>
-#include <llvm/LLVMContext.h>
 #ifndef GenericABIInfo_h_INCLUDED
 #define GenericABIInfo_h_INCLUDED
 

@@ -32,7 +32,6 @@
 	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 	THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <llvm/DerivedTypes.h>
 
 #include <string>
 #include <errno.h>
@@ -40,7 +39,11 @@
 #include "../ABI.h"
 #include "AMD64ABIInfo.h"
 #include "../CodeGenModule.h"
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/Module.h>
+#else
 #include <llvm/Module.h>
+#endif
 
 /*
  * Useful sources of information on the AMD64 ABI:

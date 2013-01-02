@@ -39,7 +39,7 @@ ${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
 ${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
 ${FRAMEWORK_NAME}_OBJCCFLAGS = -Wno-variadic-macros -Wno-gnu -Wno-pedantic
-${FRAMEWORK_NAME}_LDFLAGS += -g -lstdc++ -lobjcxx
+${FRAMEWORK_NAME}_LDFLAGS += -g 
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
 # LLVM doesn't provide its version in any header files, so define it here using

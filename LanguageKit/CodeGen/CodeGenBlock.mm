@@ -1,8 +1,9 @@
 #include "CodeGenBlock.h"
 #include "CodeGenModule.h"
 #include "LLVMCompat.h"
-#include <llvm/Module.h>
+extern "C" {
 #import "../LanguageKit.h"
+}
 
 
 using namespace llvm;

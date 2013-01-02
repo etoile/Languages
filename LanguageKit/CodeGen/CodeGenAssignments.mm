@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "CodeGenAssignments.h"
 #include <ctype.h>
-#include <llvm/Module.h>
 
 using namespace etoile::languagekit;
 

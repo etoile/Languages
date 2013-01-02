@@ -14,9 +14,15 @@ BOOL objc_collecting_enabled(void) { return NO; }
 
 #include "CodeGenModule.h"
 #include "CodeGenLexicalScope.h"
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/GlobalVariable.h>
+#else
 #include <llvm/Constants.h>
-#include <llvm/LLVMContext.h>
 #include <llvm/DerivedTypes.h>
+#include <llvm/GlobalVariable.h>
+#endif
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Support/TargetSelect.h>
