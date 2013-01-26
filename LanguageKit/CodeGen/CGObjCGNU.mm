@@ -583,7 +583,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
 		};
 	llvm::MDNode *node = CreateMDNode(Context, impMD, 3);
 
-Builder.GetInsertBlock()->dump();
 	return callIMP(Builder, imp, selTypes, Receiver,
 			Selector, ArgV, CleanupBlock, node);
 }

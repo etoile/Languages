@@ -8,8 +8,10 @@
  */
 extern int DEBUG_DUMP_MODULES;
 
+extern "C" {
 #import <Foundation/NSObject.h>
 #import <LanguageKit/LKCodeGen.h>
+}
 
 namespace etoile
 {

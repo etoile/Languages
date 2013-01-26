@@ -1,9 +1,11 @@
 #import "ObjCXXRuntime.h"
-#import <EtoileFoundation/EtoileFoundation.h>
 #import "LLVMCodeGen.h"
+extern "C" {
+#import <EtoileFoundation/EtoileFoundation.h>
 #import <LanguageKit/LKCompiler.h>
 #import <LanguageKit/LKAST.h>
 #import <LanguageKit/LKModule.h>
+}
 
 //Don't use @class because clang will complain if we send messages to a
 //forward-declared class.
