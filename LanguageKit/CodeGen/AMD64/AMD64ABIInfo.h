@@ -99,7 +99,7 @@ public:
 	  bool &onStack);
 
 	bool willPassTypeAsPointer(llvm::Type *ty);
-	Attributes attributesForLLVMType(llvm::Type *ty, unsigned freeInteger, unsigned &usedInteger,
+	ParameterAttribute attributesForLLVMType(llvm::Type *ty, unsigned freeInteger, unsigned &usedInteger,
 	  unsigned freeFloat,
 	  unsigned &usedFloat);
 	llvm::AttrListPtr attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy);

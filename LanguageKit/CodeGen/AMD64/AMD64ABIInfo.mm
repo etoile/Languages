@@ -521,7 +521,7 @@ bool AMD64ABIInfo::willPassTypeAsPointer(llvm::Type *ty)
 	return false;
 }
 
-Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
+ParameterAttribute AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
   unsigned freeInteger, unsigned &usedInteger,
   unsigned freeFloat, unsigned &usedFloat)
 {
@@ -548,7 +548,9 @@ Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
 			  && (align == 8) && (64 < td->getTypeSizeInBits(ty)))
 			{
 				{
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+					return AttrBuilder(Attributes::None);
+#elif (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
 					AttrBuilder AB = AttrBuilder(Attributes::None);
 					return Attributes::get(context, AB);
 #else
@@ -556,7 +558,9 @@ Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
 #endif
 				}
 			}
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+					return AttrBuilder(Attributes::ByVal).addAlignmentAttr(align);
+#elif (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
 					return Attributes::get(context,
 					    AttrBuilder(Attributes::ByVal).addAlignmentAttr(align));
 #else
@@ -588,15 +592,52 @@ Attributes AMD64ABIInfo::attributesForLLVMType(llvm::Type *ty,
 		default:
 		break;
 	}
-#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
-					AttrBuilder AB = AttrBuilder(Attributes::None);
-					return Attributes::get(context, AB);
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+	return AttrBuilder(Attributes::None);
+#elif (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 1)
+	AttrBuilder AB = AttrBuilder(Attributes::None);
+	return Attributes::get(context, AB);
 #else
-					return Attributes(Attribute::None);
+	return Attributes(Attribute::None);
 #endif
 }
 
 
+#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 2) || (LLVM_MAJOR > 3)
+llvm::AttributeSet AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy)
+{
+	unsigned usedInteger = 0;
+	unsigned freeInteger = 6;
+	unsigned usedFloat = 0;
+	unsigned freeFloat = 8;
+	bool isSRet = false;
+	llvm::AttributeSet attributes;
+	AMD64ABIInfo::returnTypeAndRegisterUsageForRetLLVMType(retTy, isSRet, usedInteger, usedFloat);
+	freeInteger -= usedInteger;
+	freeFloat -= usedFloat;
+
+	for (unsigned i = 0; i < funTy->getNumParams(); i++)
+	{
+		llvm::Type *paramTy = funTy->getParamType(i);
+		AttrBuilder AB = AttrBuilder(Attributes::None);
+		if ((0 == i) && (isSRet))
+		{
+			attributes = attributes.addAttribute(context, (i + 1), Attributes::StructRet);
+			usedInteger++;
+		}
+		else
+		{
+			llvm::AttrBuilder AB = attributesForLLVMType(paramTy, freeInteger, usedInteger, freeFloat, usedFloat);
+			llvm::AttributeSet S = AttributeSet::get(context, 0, AB);
+			attributes = attributes.addAttributes(context, (i + 1), S);
+			freeFloat = 8 - usedFloat;
+			freeInteger = 6 - usedInteger;
+		}
+
+	}
+	return attributes;
+}
+#else
 llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy)
 {
 	unsigned usedInteger = 0;
@@ -619,7 +660,7 @@ llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType 
 			usedInteger++;
 		}
 		else
-		{	
+		{
 			AB = AB.addAttributes(attributesForLLVMType(paramTy, freeInteger, usedInteger, freeFloat, usedFloat));
 			freeFloat = 8 - usedFloat;
 			freeInteger = 6 - usedInteger;
@@ -632,14 +673,14 @@ llvm::AttrListPtr AMD64ABIInfo::attributeListForFunctionType(llvm::FunctionType 
 			attributes.push_back(indexedAttr);
 		}
 	}
-#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 2) || (LLVM_MAJOR > 3)
 	return AttrListPtr::get(context, attributes);
-#elif (LLVM_MAJOR == 3) && (LLVM_MINOR > 1)
+#if (LLVM_MAJOR == 3) && (LLVM_MINOR > 1)
 	return AttrListPtr::get(attributes);
 #else
 	return AttrListPtr::get(attributes.begin(), attributes.end());
 #endif
 }
+#endif
 
 } //namespace: languagekit
 } //namepsace: etoile

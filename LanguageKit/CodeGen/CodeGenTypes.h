@@ -1,5 +1,5 @@
-#include "LLVMCompat.h"
-#include "ABIInfo.h"
+#import "LLVMCompat.h"
+#import "ABIInfo.h"
 @class NSString;
 namespace llvm
 {

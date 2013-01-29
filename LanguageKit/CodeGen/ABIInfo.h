@@ -55,12 +55,27 @@ typedef llvm::TargetData TargetData;
 #endif
 #if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 2)
 #define AttrListPtr AttributeSet
+typedef std::pair<unsigned, llvm::Attribute> AttributeWithIndex;
+inline AttributeWithIndex GetAttributeWithIndex(unsigned index, llvm::Attribute attr)
+{
+	return std::make_pair(index, attr);
+}
+#else
+inline AttributeWithIndex GetAttributeWithIndex(unsigned index, llvm::Attribute &attr)
+{
+	return AttributeWithIndex::get(index, attr);
+}
 #endif
 
 #if (LLVM_MINOR > 2)
 typedef llvm::Attribute Attributes;
 #else
 typedef llvm::Attributes Attributes;
+#endif
+#if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
+typedef llvm::AttrBuilder ParameterAttribute;
+#else
+typedef Attributes ParameterAttribute;
 #endif
 
 #include "LLVMCompat.h"
