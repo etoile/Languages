@@ -72,17 +72,17 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 	[files addObject: ABS_PATH(@"bundle-bitcode.bc")];
 	// Link the bitcode files together
 	if (run(@"llvm-link", files) &&
-	// Optimise the bitcode
-		run(@"opt", A(@"-O3", 
-		              @"-o", ABS_PATH(@"bundle-bitcode.optimised.bc"),
-		              @"-f", ABS_PATH(@"bundle-bitcode.bc"))) &&
-		// TODO: Change this to use @"-filetype=dynlib" when LLVM supports
-		// emitting .so files
-		run(@"llc", A(@"-f", ABS_PATH(@"bundle-bitcode.optimised.bc"), @"-O3"
-		              @"-relocation-model=pic", @"-o", ABS_PATH(@"jtl.s"))) &&
-		// Until then, use GCC to generate the .so
-		run(@"clang", A(ABS_PATH(@"jtl.s"), @"-shared",
-		              @"-o", ABS_PATH(@"jtl.so"))))
+	    // Optimise the bitcode
+	    run(@"opt", A(@"-O3", 
+	                  @"-o", ABS_PATH(@"bundle-bitcode.optimised.bc"),
+	                  @"-f", ABS_PATH(@"bundle-bitcode.bc"))) &&
+	    // TODO: Change this to use @"-filetype=dynlib" when LLVM supports
+	    // emitting .so files
+	    run(@"llc", A(ABS_PATH(@"bundle-bitcode.optimised.bc"), @"-O3",
+	                  @"-relocation-model=pic", @"-o", ABS_PATH(@"jtl.s"))) &&
+	    // Until then, use GCC to generate the .so
+	    run(@"clang", A(ABS_PATH(@"jtl.s"), @"-shared",
+	                  @"-o", ABS_PATH(@"jtl.so"))))
 	{
 		return ABS_PATH(@"jtl.so");
 	}
@@ -133,7 +133,6 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 			// Install the new one in the bundle
 			if ([fm movePath: so toPath: path handler: nil])
 			{
-				NSLog(@"Wrote cache to %@", path);
 				[fm removeFileAtPath: tempDirectory handler: nil];
 				return;
 			} 
@@ -151,8 +150,6 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 			// This shouldn't fail, but if it does then we just give up and JIT
 			// every time.
 			[fm movePath: so toPath: userCache handler: nil];
-			NSLog(@"Wrote cache to %@", userCache);
-			NSLog(@"Deleting %@", tempDirectory);
 			[fm removeFileAtPath: tempDirectory handler: nil];
 		}
 	}
