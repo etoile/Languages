@@ -1,6 +1,8 @@
 #include <dlfcn.h>
 #include <EtoileFoundation/glibc_hack_unistd.h>
 #include <sys/resource.h>
+#include <objc/runtime.h>
+#include <objc/hooks.h>
 
 #import <EtoileFoundation/EtoileFoundation.h>
 #import "LKAST.h"
@@ -27,6 +29,24 @@ static id<LKCompilerDelegate> DefaultDelegate;
 
 
 static SCKSourceCollection *collection;
+static NSMutableArray *loaders;
+static BOOL inDevMode;
+
+static Class lookup_class(const char *name)
+{
+	static BOOL recursing;
+	if (recursing) { return nil; }
+
+	recursing = YES;
+	NSString *className = [NSString stringWithUTF8String: name];
+	for (LKClassLoader loader in loaders)
+	{
+		loader(className);
+	}
+	Class cls = objc_getClass(name);
+	recursing = NO;
+	return cls;
+}
 
 @interface LKDefaultCompilerDelegate : NSObject<LKCompilerDelegate>
 {
@@ -201,6 +221,17 @@ int DEBUG_DUMP_MODULES = 0;
 		[self loadFrameworkNamed: @"EtoileFoundation"];
 	}
 }
+
++ (void)addClassLoader: (LKClassLoader)aBlock;
+{
+	if (nil == loaders)
+	{
+		loaders = [NSMutableArray new];
+		_objc_lookup_class = lookup_class;
+	}
+	[loaders addObject: aBlock];
+}
+
 + (id) alloc
 {
 	if (self == [LKCompiler class])
@@ -475,6 +506,11 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	return nil != loadFramework(framework);
 }
 
++ (BOOL)inDevMode
+{
+	return inDevMode;
+}
+
 + (Class) loadLanguageKitBundle:(NSBundle*)bundle
 {
 	//TODO: Static compile and cache the result in a .so, and load this on
@@ -485,6 +521,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	NSMutableArray *pathsToCheckDateOf = [NSMutableArray array];
 	[pathsToCheckDateOf addObject: plistPath];
 	BOOL success = YES;
+	inDevMode = [[plist objectForKey: @"Development Mode"] boolValue];
 	FOREACH(frameworks, framework, NSString*)
 	{
 		NSString *path = loadFramework(framework);

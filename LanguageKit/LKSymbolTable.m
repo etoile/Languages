@@ -1,4 +1,5 @@
 #import "LKSymbolTable.h"
+#import "LKCompiler.h"
 #import "Runtime/LKObject.h"
 #import <EtoileFoundation/runtime.h>
 
@@ -6,7 +7,7 @@ static NSMutableDictionary *NewClasses;
 
 static LKSymbolScope lookupUnscopedSymbol(NSString *aName)
 {
-	if(NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName])
+	if(NSClassFromString(aName) != NULL || [NewClasses objectForKey:aName] || [LKCompiler inDevMode])
 	{
 		return LKSymbolScopeGlobal;
 	}

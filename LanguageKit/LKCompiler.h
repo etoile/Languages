@@ -14,6 +14,12 @@ typedef enum
 } LKDebuggingMode;
 
 /**
+ * Type of a block to be called when the runtime tries to resolve a class that
+ * doesn't yet exist.
+ */
+typedef void(^LKClassLoader)(NSString*);
+
+/**
  * All languages must use a parser conforming to this protocol.
  */
 @protocol LKParser <NSObject>
@@ -81,9 +87,19 @@ generatedWarning: (NSString*)aWarning
  */
 - (void)setDelegate: (id<LKCompilerDelegate>)aDelegate;
 /**
+ * Adds a new class loader.  These will be called in the order that they
+ * appear.
+ */
++ (void)addClassLoader: (LKClassLoader)aBlock;
+/**
  * Returns a new autoreleased compiler for this language.
  */
 + (LKCompiler*) compiler;
+/**
+ * Returns whether we are in developer mode.  In this mode, all unrecognised
+ * symbols are assumed to be classes.
+ */
++ (BOOL)inDevMode;
 /**
  * Specifies whether the compiler should run in debug mode.  Enabling this will
  * spam stderr with a huge amount of debugging information.  Note that this is
