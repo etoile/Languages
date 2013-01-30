@@ -154,9 +154,9 @@ llvm::AttrListPtr GenericABIInfo::attributeListForFunctionType(llvm::FunctionTyp
 #elif (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 		AttrBuilder AB = AttrBuilder(Attributes::StructRet);
 		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attributes::get(context, AB));
-		return AttrListPtr::get(stackRetAttr);
+		return AttrListPtr::get(context, stackRetAttr);
 	}
-	return AttrListPtr::get(ArrayRef<AttributeWithIndex>());
+	return AttrListPtr::get(context, ArrayRef<AttributeWithIndex>());
 #else
 		AttributeWithIndex stackRetAttr = AttributeWithIndex::get(1, Attribute::StructRet);
 		return AttrListPtr::get(&stackRetAttr, 1);

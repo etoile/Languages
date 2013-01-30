@@ -1,6 +1,7 @@
 #if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR >= 3)
 #include <llvm/IR/MDBuilder.h>
-#elif (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
+#elif (LLVM_MAJOR == 3 && LLVM_MINOR >= 2)
+#include <llvm/MDBuilder.h>
 #else
 #include <llvm/Support/MDBuilder.h>
 #endif
