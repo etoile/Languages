@@ -2,7 +2,7 @@
 
 @implementation LKCategoryDef
 
-@synthesize className, categoryName, methods;
+@synthesize classname, categoryName, methods;
 
 - (id) initWithName:(NSString*)aName
               class:(NSString*)aClass

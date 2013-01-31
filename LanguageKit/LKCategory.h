@@ -12,7 +12,7 @@
   NSMutableArray *methods;
 }
 
-@property (readonly, nonatomic) NSString *className;
+@property (readonly, nonatomic) NSString *classname;
 @property (readonly, nonatomic) NSString *categoryName;
 @property (readonly, nonatomic) NSMutableArray *methods;
 

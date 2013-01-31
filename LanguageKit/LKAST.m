@@ -88,7 +88,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	NSLog(@"Compiling...");
+	NSLog(@"Compiling %@ ...", self);
 	[NSException raise:@"NotImplementedException"
 	            format:@"Code generation not yet implemented for %@", 
 		[self class]];
