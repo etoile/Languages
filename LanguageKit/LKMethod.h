@@ -29,6 +29,10 @@
  * Returns the method's body
  */
 - (NSString*) methodBody;
+/**
+ * Returns YES if this is a class method.
+ */
+- (BOOL)isClassMethod;
 @end
 @interface LKInstanceMethod : LKMethod {}
 @end

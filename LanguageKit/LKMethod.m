@@ -142,6 +142,7 @@ static NSSet *ARCBannedMessages;
 {
 	[self visitArray: statements withVisitor: aVisitor];
 }
+- (BOOL)isClassMethod { return NO; }
 @end
 @implementation LKInstanceMethod
 - (void) beginMethodWithGenerator: (id)aGenerator
@@ -165,4 +166,5 @@ static NSSet *ARCBannedMessages;
 	                   arguments: [symbols arguments]
 	                      locals: [symbols locals]];
 }
+- (BOOL)isClassMethod { return YES; }
 @end
