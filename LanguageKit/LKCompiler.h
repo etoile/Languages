@@ -3,6 +3,7 @@
 @class NSString;
 @class NSArray;
 @class NSDictionary;
+@class LKAST;
 @class LKModule;
 @class LKMethod;
 @protocol LKCodeGenerator;
@@ -107,18 +108,21 @@ generatedWarning: (NSString*)aWarning
  */
 + (void) setDebugMode:(LKDebuggingMode)aFlag;
 /**
- * Compiles and loads the specified source code.
+ * Compiles and loads the specified source code.  Returns the AST on success,
+ * nil on failure.
  */
-- (BOOL) compileString:(NSString*)source;
+- (LKAST*) compileString:(NSString*)source;
 /**
  * Compiles the specified source code to LLVM bitcode.  This can then be
  * optimised with the LLVM opt utility and converted to object code with llc.
+ * Returns the AST on success, nil on failure.
  */
-- (BOOL) compileString:(NSString*)source output:(NSString*)bitcode;
+- (LKAST*) compileString:(NSString*)source output:(NSString*)bitcode;
 /**
- * Compiles the specified source code using the given code generator.
+ * Compiles the specified source code using the given code generator. Returns
+ * the AST on success, nil on failure.
  */
-- (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg;
+- (LKAST*) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg;
 /**
  * Compiles and loads a method on the class with the specified name.
  */

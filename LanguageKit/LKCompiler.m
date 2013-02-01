@@ -126,10 +126,10 @@ static BOOL loadLibraryForBundle(NSString *soFile,
 	// If the bundle has been modified after the cached version...
 	if (nil == soDate || [modified compare: soDate] == NSOrderedDescending)
 	{
-		//NSLog(@"Cache out of date");
+		NSLog(@"Cache out of date");
 		return NO;
 	}
-	//NSLog(@"Attempting to load recompiled cache...");
+	NSLog(@"Attempting to load recompiled cache...");
 	// Return YES if dlopen succeeds.
 	//return NULL != dlopen([soFile UTF8String], RTLD_GLOBAL);
 	void *so = dlopen([soFile UTF8String], RTLD_GLOBAL);
@@ -272,7 +272,7 @@ static void emitParseError(NSException *localException)
 	[LKCompiler reportError: LKParserError
 	                details: parseErrorInfo];
 }
-- (BOOL) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
+- (LKAST*) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
 {
 	id parser = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKModule *ast;
@@ -280,7 +280,7 @@ static void emitParseError(NSException *localException)
 		ast = [parser parseString: source];
 	NS_HANDLER
 		emitParseError(localException);
-		return NO;
+		return nil;
 	NS_ENDHANDLER
 
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
@@ -291,14 +291,14 @@ static void emitParseError(NSException *localException)
 	{
 		[ast compileWithGenerator: cg];
 	}
-	return success;
+	return success ? ast : nil;
 }
-- (BOOL) compileString:(NSString*)source output:(NSString*)bitcode;
+- (LKAST*) compileString:(NSString*)source output:(NSString*)bitcode;
 {
 	id<LKCodeGenerator> cg = defaultStaticCompilterWithFile(bitcode);
 	return [self compileString:source withGenerator:cg];
 }
-- (BOOL) compileString:(NSString*)source
+- (LKAST*) compileString:(NSString*)source
 {
 	return [self compileString:source withGenerator:defaultJIT()];
 }
@@ -628,7 +628,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		NSLog(@"Unable to find %@.%@ in bundle %@.", name, extension, bundle);
 		return NO;
 	}
-	return [self compileString:[NSString stringWithContentsOfFile:path]];
+	return [self compileString:[NSString stringWithContentsOfFile:path]] != nil;
 }
 
 + (BOOL) loadApplicationScriptNamed:(NSString*)fileName
@@ -690,7 +690,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		FOREACH(scripts, scriptFile, NSString*)
 		{
 			NSString *script = [NSString stringWithContentsOfFile: scriptFile];
-			success &= [self compileString:script];
+			success &= ([self compileString:script] != nil);
 		}
 		return success;
 	}
