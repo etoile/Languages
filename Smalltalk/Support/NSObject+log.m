@@ -9,4 +9,8 @@
 {
 	[handle writeData:[[self description] dataUsingEncoding:NSUTF8StringEncoding]];
 }
+- (void) ifNotNil: (id(^)(void))aBlock
+{
+	aBlock();
+}
 @end
