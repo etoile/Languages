@@ -1,4 +1,5 @@
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
+
 @class NSBundle;
 @class NSString;
 @class NSArray;
@@ -75,6 +76,7 @@ generatedWarning: (NSString*)aWarning
 {
 	id<LKCompilerDelegate> delegate;
 }
+@property(nonatomic, retain) NSMutableArray *transforms;
 /**
  * Sets the default delegate that will be used by new compiler instances.  If
  * this is not called then a default delegate will be installed that just logs

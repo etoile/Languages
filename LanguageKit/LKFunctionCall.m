@@ -48,5 +48,17 @@
 	                      arguments: args
 	                          count: count];
 }
+- (NSString*)description
+{
+	NSMutableString *str = [functionName mutableCopy];
+	[str appendString: @"("];
+	for (LKAST *arg in arguments)
+	{
+		[str appendString: [arg description]];
+		[str appendString: @", "];
+	}
+	[str appendString: @")"];
+	return str;
+}
 @end
 

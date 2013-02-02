@@ -126,10 +126,8 @@ static BOOL loadLibraryForBundle(NSString *soFile,
 	// If the bundle has been modified after the cached version...
 	if (nil == soDate || [modified compare: soDate] == NSOrderedDescending)
 	{
-		NSLog(@"Cache out of date");
 		return NO;
 	}
-	NSLog(@"Attempting to load recompiled cache...");
 	// Return YES if dlopen succeeds.
 	//return NULL != dlopen([soFile UTF8String], RTLD_GLOBAL);
 	void *so = dlopen([soFile UTF8String], RTLD_GLOBAL);
@@ -162,6 +160,7 @@ static BOOL loadAnyLibraryForBundle(NSBundle *bundle, NSDate *modified)
 
 int DEBUG_DUMP_MODULES = 0;
 @implementation LKCompiler
+@synthesize transforms;
 + (void) loadBundles
 {
 	NSFileManager *fm = [NSFileManager defaultManager];
@@ -246,6 +245,7 @@ int DEBUG_DUMP_MODULES = 0;
 {
 	SUPERINIT;
 	delegate = DefaultDelegate;
+	transforms = [NSMutableArray new];
 	return self;
 }
 + (LKCompiler*) compiler
@@ -275,7 +275,7 @@ static void emitParseError(NSException *localException)
 - (LKAST*) compileString:(NSString*)source withGenerator:(id<LKCodeGenerator>)cg
 {
 	id parser = AUTORELEASE([[[[self class] parserClass] alloc] init]);
-	LKModule *ast;
+	LKAST *ast;
 	NS_DURING
 		ast = [parser parseString: source];
 	NS_HANDLER
@@ -286,6 +286,15 @@ static void emitParseError(NSException *localException)
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
 	BOOL success = [ast check];
+	if (!success)
+	{
+		return nil;
+	}
+	for (id<LKASTVisitor> transform in transforms)
+	{
+		[ast visitWithVisitor: transform];
+	}
+	success = [ast check];
 	[dict removeObjectForKey: @"LKCompilerContext"];
 	if (success)
 	{
