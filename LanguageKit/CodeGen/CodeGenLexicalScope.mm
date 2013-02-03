@@ -326,11 +326,6 @@ Value *CodeGenSubroutine::Unbox(CGBuilder *B,
 			break;
 		case '#':
 		case '@':
-		{
-			Value *BoxFunction = getSmallIntModuleFunction(CGM, "BoxObject");
-			val = B->CreateBitCast(val, types.idTy);
-			return B->CreateCall(BoxFunction, val, "boxed_small_int");
-		}
 		case 'v':
 			return val;
 		case '{':
@@ -876,7 +871,19 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 				boxedArgs);
 	}
 	Value *Int = B->CreatePtrToInt(receiver, types.intPtrTy);
-	Value *IsSmallInt = B->CreateTrunc(Int, Type::getInt1Ty(CGM->Context), "is_small_int");
+	Value *IsSmallInt;
+	// On 32-bit platforms, we only have one kind of small object.
+	if (types.intPtrTy->getBitWidth() == 32) 
+	{
+		IsSmallInt = B->CreateTrunc(Int,
+			Type::getInt1Ty(CGM->Context), "is_small_int");
+	}
+	else
+	{
+		Int = B->CreateAnd(Int, ConstantInt::get(types.intPtrTy, 7), "low_bits");
+		IsSmallInt = B->CreateICmpEQ(Int,
+			ConstantInt::get(types.intPtrTy, 1), "is_small_int");
+	}
 
 	// Basic blocks for messages to SmallInts and ObjC objects:
 	BasicBlock *SmallInt =
@@ -1362,8 +1369,19 @@ void CodeGenSubroutine::splitSmallIntCase(llvm::Value *anObject,
                                           CGBuilder &smallIntBuilder)
 {
 	Value *Int = aBuilder.CreatePtrToInt(anObject, types.intPtrTy);
-	Value *IsSmallInt = aBuilder.CreateTrunc(Int,
+	Value *IsSmallInt;
+	// On 32-bit platforms, we only have one kind of small object.
+	if (types.intPtrTy->getBitWidth() == 32) 
+	{
+		IsSmallInt = aBuilder.CreateTrunc(Int,
 			Type::getInt1Ty(CGM->Context), "is_small_int");
+	}
+	else
+	{
+		Int = aBuilder.CreateAnd(Int, ConstantInt::get(types.intPtrTy, 7), "low_bits");
+		IsSmallInt = aBuilder.CreateICmpEQ(Int,
+			ConstantInt::get(types.intPtrTy, 1), "is_small_int");
+	}
 
 	BasicBlock *smallIntBB = BasicBlock::Create(CGM->Context, "small_int", CurrentFunction);
 	BasicBlock *objectBB = BasicBlock::Create(CGM->Context, "real_object", CurrentFunction);
