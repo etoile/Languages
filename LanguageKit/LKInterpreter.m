@@ -674,7 +674,7 @@ static uint8_t logBase2(uint8_t x)
 	// FIXME: @try for LKBreak support.
 	BOOL cond = YES;
 	
-	for (LKAST *statement in initStatements)
+	for (LKAST *statement in loopInitStatements)
 	{
 		[statement interpretInContext: context];
 	}

@@ -193,7 +193,7 @@ loop_statement(S) ::= FOR LPAREN expression_list(I) SEMI
                                  expression_list(U) RPAREN body(B).
 {
 	S = [LKLoop loopWithStatements:B];
-	[S setInitStatements:I];
+	[S setLoopInitStatements:I];
 	[S setPreCondition:C];
 	[S setUpdateStatements:U];
 }
@@ -202,7 +202,7 @@ loop_statement(S) ::= FOR LPAREN VAR declarations(I) SEMI
                                   expression_list(U) RPAREN body(B).
 {
 	S = [LKLoop loopWithStatements:B];
-	[S setInitStatements:I];
+	[S setLoopInitStatements:I];
 	[S setPreCondition:C];
 	[S setUpdateStatements:U];
 }

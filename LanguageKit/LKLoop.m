@@ -6,7 +6,7 @@ __thread void *unlabelledBreakBB;
 __thread void *unlabelledContinueBB;
 
 @implementation LKLoop
-@synthesize initStatements;
+@synthesize loopInitStatements;
 + (id) loopWithStatements:(NSMutableArray*)statementList
 {
 	return AUTORELEASE([[self alloc] initWithStatements:statementList]);
@@ -15,7 +15,7 @@ __thread void *unlabelledContinueBB;
 {
 	SELFINIT;
 	DESTROY(label);
-	DESTROY(initStatements);
+	DESTROY(loopInitStatements);
 	DESTROY(preCondition);
 	ASSIGN(statements, statementList);
 	DESTROY(postCondition);
@@ -24,7 +24,7 @@ __thread void *unlabelledContinueBB;
 }
 - (BOOL) check
 {
-	FOREACH(initStatements, initStatement, LKAST*)
+	FOREACH(loopInitStatements, initStatement, LKAST*)
 	{
 		[initStatement setParent:self];
 		if (![initStatement check]) return NO;
@@ -54,7 +54,7 @@ __thread void *unlabelledContinueBB;
 - (NSString*) description
 {
 	NSMutableString *str = [NSMutableString string];
-	FOREACH(initStatements, initStatement, LKAST*)
+	FOREACH(loopInitStatements, initStatement, LKAST*)
 	{
 		[str appendString:[initStatement description]];
 		[str appendString:@".\n"];
@@ -114,7 +114,7 @@ __thread void *unlabelledContinueBB;
 	}
 	// Entry point
 	[aGenerator moveInsertPointToBasicBlock: entryBB];
-	FOREACH(initStatements, initStatement, LKAST*)
+	FOREACH(loopInitStatements, initStatement, LKAST*)
 	{
 		[initStatement compileWithGenerator: aGenerator];
 	}
@@ -175,7 +175,7 @@ __thread void *unlabelledContinueBB;
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor
 {
-	[self visitArray: initStatements withVisitor: aVisitor];
+	[self visitArray: loopInitStatements withVisitor: aVisitor];
 	[preCondition visitWithVisitor: aVisitor];
 	[self visitArray: statements withVisitor: aVisitor];
 	[postCondition visitWithVisitor: aVisitor];
@@ -224,7 +224,7 @@ __thread void *unlabelledContinueBB;
 - (void) dealloc
 {
 	DESTROY(label);
-	DESTROY(initStatements);
+	DESTROY(loopInitStatements);
 	DESTROY(preCondition);
 	DESTROY(statements);
 	DESTROY(postCondition);

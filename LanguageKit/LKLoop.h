@@ -19,7 +19,7 @@
 	/** List of statements in the loop body. */
 	NSMutableArray *statements;
 	/** List of statements to initialize the loop. */
-	NSMutableArray *initStatements;
+	NSMutableArray *loopInitStatements;
 	/** List of statements executed after each iteration of the loop. */
 	NSMutableArray *updateStatements;
 	/** Expression to be tested for truth before each loop iteration. */
@@ -30,7 +30,7 @@
 /**
  * List of statements executed after each iteration of the loop.
  */
-@property (strong, nonatomic) NSMutableArray *initStatements;
+@property (strong, nonatomic) NSMutableArray *loopInitStatements;
 /**
  * Return a new loop with the specified statements.
  */
