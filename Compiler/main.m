@@ -9,7 +9,7 @@
 @implementation NSObject (DumpObject)
 - (void) dumpObject
 {
-	int words = class_getInstanceSize(isa) / sizeof(int);
+	int words = class_getInstanceSize(object_getClass(self)) / sizeof(int);
 	unsigned *word = (unsigned*)self;
 	for (unsigned i = 0 ; i<words ; i++)
 	{
