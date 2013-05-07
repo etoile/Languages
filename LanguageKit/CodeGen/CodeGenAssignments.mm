@@ -52,7 +52,6 @@ bool SelectorReturnsRetained(NSString *aSelector)
 		case Init:
 			return true;
 		case None:
-		default:
 			return false;
 	}
 }

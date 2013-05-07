@@ -46,7 +46,7 @@ namespace {
 class CGObjCGNU : public CGObjCRuntime {
 private:
 	llvm::Module &TheModule;
-	LLVMStructType *SelStructTy;
+	LLVMStructTy *SelStructTy;
 	LLVMType *SelectorTy;
 	LLVMType *PtrToInt8Ty;
 	LLVMType *IMPTy;
@@ -99,10 +99,10 @@ private:
 		const llvm::SmallVectorImpl<llvm::Constant *> &MethodTypes);
 	llvm::Constant *MakeConstantString(NSString *Str, const std::string
 		&Name="");
-	llvm::Constant *MakeGlobal(LLVMStructType *Ty,
+	llvm::Constant *MakeGlobal(LLVMStructTy *Ty,
 		std::vector<llvm::Constant*> &V, const std::string &Name="",
 		bool isPublic=false);
-	llvm::Constant *MakeGlobal(LLVMArrayType *Ty,
+	llvm::Constant *MakeGlobal(LLVMArrayTy *Ty,
 		std::vector<llvm::Constant*> &V, const std::string &Name="");
 	llvm::Value *GetWeakSymbol(const std::string &Name,
                                LLVMType *Type);
@@ -368,7 +368,7 @@ llvm::Constant *CGObjCGNU::MakeConstantString(NSString *Str,
 	return llvm::ConstantExpr::getGetElementPtr(ConstStr, Zeros, 2);
 }
 
-llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructType *Ty,
+llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructTy *Ty,
                                       std::vector<llvm::Constant*> &V,
                                       const std::string &Name,
                                       bool isPublic)
@@ -379,7 +379,7 @@ llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructType *Ty,
 		llvm::GlobalValue::InternalLinkage), C, Name);
 }
 
-llvm::Constant *CGObjCGNU::MakeGlobal(LLVMArrayType *Ty,
+llvm::Constant *CGObjCGNU::MakeGlobal(LLVMArrayTy *Ty,
                                       std::vector<llvm::Constant*> &V,
                                       const std::string &Name) 
 {

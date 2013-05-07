@@ -28,7 +28,7 @@ class CodeGenBlock : public CodeGenSubroutine {
 	/**
 	 * The type of this block's structure.
 	 */
-	LLVMStructType *blockStructureTy;
+	LLVMStructTy *blockStructureTy;
 	/**
 	 * A pointer to the block object, in its own scope.
 	 */

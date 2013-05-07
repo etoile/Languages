@@ -26,51 +26,51 @@ namespace languagekit
 		/**
 		 * Type used for object pointers.
 		 */
-		LLVMPointerType *idTy;
+		LLVMPointerTy *idTy;
 		/**
 		 * Pointer to something.
 		 */
-		LLVMPointerType *ptrToVoidTy;
+		LLVMPointerTy *ptrToVoidTy;
 		/**
 		 * Type used for pointers to object pointers.
 		 */
-		LLVMPointerType *ptrToIdTy;
+		LLVMPointerTy *ptrToIdTy;
 		/**
 		 * Type used for selectors.
 		 */
-		LLVMPointerType *selTy;
+		LLVMPointerTy *selTy;
 		/**
 		  * LLVM type for C char.
 		  */
-		LLVMIntegerType *charTy;
+		LLVMIntegerTy *charTy;
 		/**
 		  * LLVM type for C short.
 		  */
-		LLVMIntegerType *shortTy;
+		LLVMIntegerTy *shortTy;
 		/**
 		  * LLVM type for C int.
 		  */
-		LLVMIntegerType *intTy;
+		LLVMIntegerTy *intTy;
 		/**
 		  * LLVM type for C long.
 		  */
-		LLVMIntegerType *longTy;
+		LLVMIntegerTy *longTy;
 		/**
 		  * LLVM type for C long long.
 		  */
-		LLVMIntegerType *longLongTy;
+		LLVMIntegerTy *longLongTy;
 		/**
 		  * Type of pointer-sized integers.
 		  */
-		LLVMIntegerType *intPtrTy;
+		LLVMIntegerTy *intPtrTy;
 		/**
 		 * Type for pointer subtraction results.
 		 */
-		LLVMIntegerType *ptrDiffTy;
+		LLVMIntegerTy *ptrDiffTy;
 		/**
 		 * The type for a byref structure.
 		 */
-		LLVMStructType *genericByRefType;
+		LLVMStructTy *genericByRefType;
 		/**
 		 * Some zeros to reuse.
 		 */

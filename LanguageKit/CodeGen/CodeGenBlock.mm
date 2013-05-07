@@ -132,7 +132,7 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 		[NSMutableArray arrayWithObject: blockSelf];
 	[realArguments addObjectsFromArray: arguments];
 	InitialiseFunction(@".block_invoke", realArguments, locals, signature);
-	LLVMPointerType *invokeTy = (CurrentFunction->getType());
+	LLVMPointerTy *invokeTy = (CurrentFunction->getType());
 	// Define the layout of a block
 	llvm::SmallVector<LLVMType*, 16> fields;
 	fields.push_back(types.ptrToIdTy);            // 0 isa

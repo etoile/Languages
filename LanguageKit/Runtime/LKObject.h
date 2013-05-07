@@ -5,6 +5,7 @@
  * If we have small object support in the runtime, then we just use it and get
  * rid of all of the hackery.
  */
+#pragma clang diagnostic ignored "-Wdeprecated-objc-pointer-introspection"
 #ifdef OBJC_SMALL_OBJECT_SHIFT
 
 @class NSSmallInt;

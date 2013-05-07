@@ -62,7 +62,7 @@ static void countIntsAndFloats(const LLVMType *ty,
 	{
 		unsigned i=0;
 		unsigned f=0;
-		const LLVMArrayType *arr = cast<LLVMArrayType>(ty);
+		const LLVMArrayTy *arr = cast<LLVMArrayTy>(ty);
 		countIntsAndFloats(arr->getElementType(), i, f);
 		uint64_t elements = arr->getNumElements();
 		ints += i * elements;
@@ -164,6 +164,8 @@ llvm::AttrListPtr GenericABIInfo::attributeListForFunctionType(llvm::FunctionTyp
 	return AttrListPtr::get((AttributeWithIndex*)NULL, 0);
 #endif
 }
+
+ABIInfo::~ABIInfo() {}
 
 } //namespace: languagekit
 } //namespace: etoile

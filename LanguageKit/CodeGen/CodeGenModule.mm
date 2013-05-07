@@ -657,8 +657,13 @@ void CodeGenModule::compile(void)
 	if (NULL == EE)
 	{
 		LOG("Creating execution engine...\n");
+#ifdef LLVM_NATIVE_ASMPRINTER
+		LLVM_NATIVE_ASMPRINTER();
+#endif
 #if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 		EngineBuilder EB = EngineBuilder(TheModule);
+		//EB.setUseMCJIT(true);
+		EB.setRelocationModel(Reloc::Static);
 		TargetOptions TO;
 		TO.JITExceptionHandling = 1;
 		// Note: mathk, turn on debug info generation here too!

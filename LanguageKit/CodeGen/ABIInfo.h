@@ -107,6 +107,7 @@ public:
 	 * intended rather than the ABI-mandated return type of the function.
 	 */
 	virtual llvm::AttrListPtr attributeListForFunctionType(llvm::FunctionType *funTy, llvm::Type *retTy) = 0;
+	virtual ~ABIInfo();
 };
 } //namespace: languagekit
 } //namespace: etoile
