@@ -657,7 +657,9 @@ void CodeGenModule::compile(void)
 	if (NULL == EE)
 	{
 		LOG("Creating execution engine...\n");
-#ifdef LLVM_NATIVE_ASMPRINTER
+// NOTE: LLVM_NATIVE_ASMPRINTER is defined for versions prior to 3.3 but 
+// evaluates to a function that is not exposed among the LLVM headers
+#if defined(LLVM_NATIVE_ASMPRINTER) && (LLVM_MAJOR > 3 || (LLVM_MAJOR == 3 && LLVM_MINOR > 2))
 		LLVM_NATIVE_ASMPRINTER();
 #endif
 #if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
