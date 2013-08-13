@@ -147,9 +147,9 @@ public:
 	                                 NSString *SelName,
 	                                 NSString *SelTypes);
 
-	virtual llvm::Function *MethodPreamble(NSString *ClassName,
-	                                       NSString *CategoryName,
-	                                       NSString *MethodName,
+	virtual llvm::Function *MethodPreamble(const NSString *ClassName,
+	                                       const NSString *CategoryName,
+	                                       const NSString *MethodName,
 	                                       LLVMType *ReturnTy,
 	                                       LLVMType *SelfTy,
 	                                       const SmallVectorImpl<LLVMType*> &ArgTy,
@@ -200,15 +200,15 @@ public:
 } // end anonymous namespace
 
 
-static std::string SymbolNameForSelector(NSString *MethodName)
+static std::string SymbolNameForSelector(const NSString *MethodName)
 {
 	string MethodNameColonStripped([MethodName UTF8String], [MethodName length]);
 	std::replace(MethodNameColonStripped.begin(), MethodNameColonStripped.end(), ':', '_');
 	return MethodNameColonStripped;
 }
 
-static std::string SymbolNameForMethod(NSString *ClassName, 
-	NSString *CategoryName, NSString *MethodName, bool isClassMethod)
+static std::string SymbolNameForMethod(const NSString *ClassName, 
+	const NSString *CategoryName, const NSString *MethodName, bool isClassMethod)
 {
 	return std::string(isClassMethod ? "_c_" : "_i_") + [ClassName UTF8String]
 		+ "_" + [CategoryName UTF8String]+ "_" +
@@ -1289,9 +1289,9 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 }
 
 llvm::Function *CGObjCGNU::MethodPreamble(
-	NSString *ClassName,
-	NSString *CategoryName,
-	NSString *MethodName,
+	const NSString *ClassName,
+	const NSString *CategoryName,
+	const NSString *MethodName,
 	LLVMType *ReturnTy,
 	LLVMType *SelfTy,
 	const SmallVectorImpl<LLVMType*> &ArgTy,
