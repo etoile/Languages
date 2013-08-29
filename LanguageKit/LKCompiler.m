@@ -344,14 +344,14 @@ static void emitParseError(NSException *localException)
           onClassNamed:(NSString*)name
                 output:(NSString*)bitcode
 {
-	id<LKCodeGenerator> cg = defaultStaticCompilterWithFile(bitcode);
+	id<LKCodeGenerator> cg = [LKCodeGenLoader defaultStaticCompilerWithFile: bitcode];
 	return [self compileMethod:source onClassNamed:name withGenerator:cg];
 }
 - (BOOL) compileMethod:(NSString*)source onClassNamed:(NSString*)name
 {
 	return [self compileMethod: source
 	              onClassNamed: name 
-	             withGenerator: defaultJIT()];
+	             withGenerator: [LKCodeGenLoader defaultJIT]];
 }
 
 static NSString *loadFramework(NSString *framework)
@@ -540,6 +540,11 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		{
 			[pathsToCheckDateOf addObject: path];
 		}
+	}
+	NSArray *classesDefine = [plist objectForKey: @"Classes"];
+	FOREACH(classesDefine, classeDef, NSString*)
+	{
+		[LKSymbolTable symbolTableForClass: classeDef];
 	}
 	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
 	FOREACH(sourceFiles, source, NSString*)
