@@ -1,3 +1,6 @@
+// Below line is a work around for a LLVM bug.
+#define __NO_TLS
+
 #import <objc/objc-api.h>
 #include <sys/types.h>
 #include <string.h>
