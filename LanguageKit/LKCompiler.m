@@ -520,6 +520,49 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	return inDevMode;
 }
 
++ (BOOL) compileLanguageKitBundle: (NSBundle*)bundle output: (NSString*)bitcode
+{
+	NSString *dir = [bitcode stringByDeletingLastPathComponent];
+	NSString *outFile = [bitcode lastPathComponent];
+	NSString *plistPath = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
+	NSDictionary *plist = [NSDictionary dictionaryWithContentsOfFile:plistPath];
+	BOOL success = YES;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSArray *sourceFiles = [plist objectForKey:@"Sources"];
+	NSMutableArray *bitcodeFiles = [NSMutableArray array];
+
+	// Create table for each classes so that we do not have undefined reference
+	NSArray *classesDefine = [plist objectForKey: @"Classes"];
+	FOREACH(classesDefine, classeDef, NSString*)
+	{
+		[LKSymbolTable symbolTableForClass: classeDef];
+	}
+	FOREACH(sourceFiles, s, NSString*)
+	{
+		NSString *source = [bundle pathForResource: s ofType: nil];
+		NSString *outFile = 
+			[dir stringByAppendingPathComponent: 
+				[source lastPathComponent]];
+		outFile = [outFile stringByAppendingPathExtension: @"bc"];
+		NSString *code = [NSString stringWithContentsOfFile: source];
+		
+		LKAST *ast;
+		NS_DURING
+			ast = [LKCompiler parseScript: code forFileExtension: [source pathExtension]];
+		NS_HANDLER
+			emitParseError(localException);
+			return NO;
+		NS_ENDHANDLER
+		
+		BOOL checkOk = [ast check];
+		//applyTransforms(ast);
+		[ast compileWithGenerator: defaultStaticCompilterWithFile(outFile)];
+		[bitcodeFiles addObject: outFile];
+	}
+	[LKCompiler linkBitcodeFiles: bitcodeFiles outputDir: dir outputFile: outFile];
+	return success;
+}
+
 + (Class) loadLanguageKitBundle:(NSBundle*)bundle
 {
 	//TODO: Static compile and cache the result in a .so, and load this on
@@ -776,6 +819,22 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	[self subclassResponsibility:_cmd];
 	return Nil;
 }
+
+
+/**
+ * Parse the specified string, using the correct parse.
+ */
++ (LKAST*) parseScript: (NSString*)script forFileExtension: (NSString*)extension
+{
+	[LKCompiler compilerClassForFileExtension:extension];
+	id parser = 
+		[[[LKCompiler compilerClassForFileExtension:extension]
+				parserClass] new];
+	LKAST *module = [parser parseString: script];
+	return module;
+}
+
+
 // Replaced in category if a bundle supports JTL compilation, otherwise does nothing
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle {}
 @end

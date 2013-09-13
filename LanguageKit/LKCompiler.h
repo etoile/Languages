@@ -119,7 +119,7 @@ generatedWarning: (NSString*)aWarning
  * optimised with the LLVM opt utility and converted to object code with llc.
  * Returns the AST on success, nil on failure.
  */
-- (LKAST*) compileString:(NSString*)source output:(NSString*)bitcode;
+//- (LKAST*) compileString:(NSString*)source outputDir:(NSString*)dir;
 /**
  * Compiles the specified source code using the given code generator. Returns
  * the AST on success, nil on failure.
@@ -182,10 +182,20 @@ generatedWarning: (NSString*)aWarning
  * Loads all scripts written in this language from the application bundle.
  */
 - (BOOL) loadAllScriptsForApplication;
+
 /**
  * Loads a bundle containing an LKInfo.plist file.  This should contain a
  * Source key giving an array of source files in the order in which they should
  * be compiled, a Frameworks key giving an array of frameworks and a
+ * Classes key for declaring classes being compile in other to resolve symbols
+ * correctly
+ */
++ (BOOL) compileLanguageKitBundle: (NSBundle*)bundle output: (NSString*)bitcode;
+/**
+ * Loads a bundle containing an LKInfo.plist file.  This should contain a
+ * Source key giving an array of source files in the order in which they should
+ * be compiled, a Frameworks key giving an array of frameworks, a Classes key for
+ * declaring classes being load in other to resolve symbols correctly and a
  * PrincipalClass key for the class that should be instantiated when it is
  * loaded.
  *
@@ -249,8 +259,14 @@ generatedWarning: (NSString*)aWarning
  */
 + (BOOL)reportError: (NSString*)aWarning
             details: (NSDictionary*)info;
+
++ (LKAST*) parseScript: (NSString*)script forFileExtension: (NSString*)extension;
 @end
 
 @interface LKCompiler (JTL)
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle;
+/**
+ * Link LKModule into a library. 
+ */
++ (NSString*)linkBitcodeFiles: (NSMutableArray*) files outputDir: (NSString*)dir outputFile: (NSString*)fileName;
 @end

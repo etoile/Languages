@@ -12,20 +12,6 @@ extern "C" {
 @interface LLVMStaticCodeGen : LLVMCodeGen {}
 - (id) initWithFile:(NSString*)file;
 @end
-
-/**
- * Parse the specified string, using the correct parse.
- */
-static LKAST *parseScript(NSString *script, NSString *extension)
-{
-	[LKCompiler compilerClassForFileExtension:extension];
-	id parser = 
-		[[[LKCompiler compilerClassForFileExtension:extension]
-				parserClass] new];
-	LKAST *module = [parser parseString: script];
-	return module;
-}
-
 /**
  * Look up the path of a binary in the user's path.
  */
@@ -58,18 +44,23 @@ static BOOL run(NSString *cmd, NSArray *args)
 	return [task terminationStatus] == 0;
 }
 
+@implementation LKCompiler (LLVM_JTL)
+
 /**
  * Runs a sequence of LLVM commands that generate a native .so from the bitcode
  * files.  We could generate this in-process, but it seems safer and more
  * flexible to invoke external commands.
  */
-static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
++ (NSString*) linkBitcodeFiles: (NSMutableArray*) files outputDir: (NSString*)dir outputFile: (NSString*)fileName
 {
+
 #define ABS_PATH(x) [dir stringByAppendingPathComponent: x]
 	// Add the small int message file.
 	[files addObject: [LLVMCodeGen smallIntBitcodeFile]];
 	[files addObject: @"-o"];
 	[files addObject: ABS_PATH(@"bundle-bitcode.bc")];
+	NSString *outFile = ABS_PATH(fileName);
+	NSString *asmFile = [outFile stringByAppendingPathExtension: @"s"];
 	// Link the bitcode files together
 	if (run(@"llvm-link", files) &&
 	    // Optimise the bitcode
@@ -79,18 +70,16 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 	    // TODO: Change this to use @"-filetype=dynlib" when LLVM supports
 	    // emitting .so files
 	    run(@"llc", A(ABS_PATH(@"bundle-bitcode.optimised.bc"), @"-O3",
-	                  @"-relocation-model=pic", @"-o", ABS_PATH(@"jtl.s"))) &&
+	                  @"-relocation-model=pic", @"-o", asmFile)) &&
 	    // Until then, use GCC to generate the .so
-	    run(@"clang", A(ABS_PATH(@"jtl.s"), @"-shared",
-	                  @"-o", ABS_PATH(@"jtl.so"))))
+	    run(@"clang", A(asmFile, @"-shared",
+	                  @"-o", outFile)))
 	{
-		return ABS_PATH(@"jtl.so");
+		return outFile; 
 	}
 	return nil;
 #undef ABS_PATH
 }
-
-@implementation LKCompiler (LLVM_JTL)
 
 + (void) justTooLateCompileBundle: (NSBundle*)aBundle
 {
@@ -113,20 +102,20 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 					[source lastPathComponent]];
 			outFile = [outFile stringByAppendingPathExtension: @"bc"];
 			NSString *code = [NSString stringWithContentsOfFile: source];
-			LKAST *ast = parseScript(code, [source pathExtension]);
+			LKAST *ast = [LKCompiler parseScript: code forFileExtension: [source pathExtension]];
 			[ast check];
 			//applyTransforms(ast);
 			[ast compileWithGenerator: 
 				[[LLVMStaticCodeGen alloc] initWithFile:outFile]];
 			[bitcodeFiles addObject: outFile];
 		}
-		NSString *so = linkBitcodeFiles(bitcodeFiles, tempDirectory);
+		NSString * so = [LKCompiler linkBitcodeFiles: bitcodeFiles outputDir: tempDirectory outputFile: @"jtl.so"];
 		if (nil != so)
 		{
 			// Try to move the generated library to somewhere where it can be found
 			// the next time.
-			NSString *path = 
-				[[[aBundle bundlePath] stringByAppendingPathComponent: @"Resources"] 
+			NSString *path =
+				[[[aBundle bundlePath] stringByAppendingPathComponent: @"Resources"]
 					stringByAppendingPathComponent: @"languagekit-cache.so"];
 			// Delete an old cache
 			[fm removeFileAtPath: path handler: nil];
@@ -135,7 +124,7 @@ static NSString *linkBitcodeFiles(NSMutableArray *files, NSString *dir)
 			{
 				[fm removeFileAtPath: tempDirectory handler: nil];
 				return;
-			} 
+			}
 			NSArray *dirs = NSSearchPathForDirectoriesInDomains( NSLibraryDirectory,
 				NSUserDomainMask, YES);
 			NSString *userCache = [dirs objectAtIndex: 0];

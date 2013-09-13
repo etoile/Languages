@@ -1,5 +1,6 @@
 #import "LKAssignExpr.h"
 #import "LKDeclRef.h"
+#import "LKCompilerErrors.h"
 
 @implementation LKAssignExpr
 + (void) initialize
@@ -22,7 +23,19 @@
 	[expr setParent:self];
 	[target setParent:self];
 	BOOL check = [target check] && [expr check];
-	check &= ![target isKindOfClass: [LKBuiltinSymbol class]];
+	if ( [target isKindOfClass: [LKBuiltinSymbol class]] )
+	{
+		NSDictionary *errorDetails = D(
+			[NSString stringWithFormat: @"Trying to assign to a builtin symbol: %@",
+				target], kLKHumanReadableDescription,
+			self, kLKASTNode);
+		if ([LKCompiler reportError: LKInvalidSelectorError
+		                    details: errorDetails])
+		{
+			return [self check];
+		}
+		return NO;
+	}
 	/*
 	if (check && [[target->symbol typeEncoding] characterAtIndex: 0] != '@')
 	{

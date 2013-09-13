@@ -226,18 +226,34 @@ int main(int argc, char **argv)
 		}
 		mainBundle = [NSBundle bundleWithPath:bundle];
 		[NSBundleHack enableHack];
-		c1 = clock();
-		Class principalClass =
-			[LKCompiler loadLanguageKitBundle:mainBundle];
-		logTimeSinceWithMessage(c1, @"Loading bundle");
-		if ([principalClass isKindOfClass: [NSNull class]])
+		if (![[opts objectForKey:@"c"] boolValue])
 		{
-			return 1;
+			c1 = clock();
+			// JIT compile it
+			Class principalClass =
+				[LKCompiler loadLanguageKitBundle:mainBundle];
+			logTimeSinceWithMessage(c1, @"Loading bundle");
+			if ([principalClass isKindOfClass: [NSNull class]])
+			{
+				return 1;
+			}
+			c1 = clock();
+			[[[principalClass alloc] init] run];
+			logTimeSinceWithMessage(c1, @"Smalltalk execution");
+			return 0;
 		}
-		c1 = clock();
-		[[[principalClass alloc] init] run];
-		logTimeSinceWithMessage(c1, @"Smalltalk execution");
-		return 0;
+		else
+		{
+			// Static compile it
+			NSString *soFile = [opts objectForKey: @"o"];
+			if (nil == soFile)
+			{
+				soFile = [[bundle stringByDeletingPathExtension]
+					stringByAppendingPathExtension:@"so"];
+			}
+			[LKCompiler compileLanguageKitBundle: mainBundle output: soFile];
+			return 0;
+		}
 	}
 	// Load specified framework
 	id f = [opts objectForKey:@"F"];
