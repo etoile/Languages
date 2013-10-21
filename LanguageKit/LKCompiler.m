@@ -539,12 +539,10 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	}
 	FOREACH(sourceFiles, s, NSString*)
 	{
-		NSLog(@"Loading smalltalk file %@\n", s);
 		NSString *file = [s lastPathComponent];
 		NSString *source = [bundle pathForResource: [s lastPathComponent] 
 											ofType: nil 
 									   inDirectory: [s stringByDeletingLastPathComponent]];
-		NSLog(@"Loading  file from bundle %@\n", source);
 		NSString *outFile = 
 			[dir stringByAppendingPathComponent: 
 				[source lastPathComponent]];
