@@ -8,4 +8,7 @@
 + (LKIfStatement*) ifStatementWithCondition:(LKAST*) aCondition
                                        then:(NSArray*)thenClause
                                        else:(NSArray*)elseClause;
++ (LKIfStatement*) ifStatementWithCondition:(LKAST*) aCondition;
+- (void)setElseStatements:(NSArray*)elseClause;
+- (void)setThenStatements:(NSArray*)thenClause;
 @end

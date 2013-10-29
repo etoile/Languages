@@ -22,6 +22,13 @@
 	                                   else: elseClause];
 }
 
++ (LKIfStatement*) ifStatementWithCondition:(LKAST*) aCondition
+{
+	return [[self alloc] initWithCondition: aCondition
+									  then: @[]
+									  else: @[]];
+}
+
 static void *emitBlock(id<LKCodeGenerator> aGenerator, 
                        NSArray *statements,
                        void *continueBB,
@@ -38,6 +45,16 @@ static void *emitBlock(id<LKCodeGenerator> aGenerator,
 	}
 	[aGenerator goToBasicBlock: continueBB];
 	return bb;
+}
+
+- (void) setElseStatements: (NSArray*)elseClause
+{
+	elseStatements = [elseClause mutableCopy];
+}
+
+- (void) setThenStatements: (NSArray*)thenClause
+{
+	thenStatements = [thenClause mutableCopy];
 }
 
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
