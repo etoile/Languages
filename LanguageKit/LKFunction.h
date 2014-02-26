@@ -1,5 +1,5 @@
-#import "LKAST.h"
-#import "LKFunctionCall.h"
+#import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKFunctionCall.h>
 
 /**
  * AST node representing a function.

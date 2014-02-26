@@ -1,4 +1,4 @@
-#import "Runtime/BlockClosure.h"
+#import <LanguageKitRuntime/BlockClosure.h>
 #import <LanguageKit/LKAST.h>
 #import <LanguageKit/LKBlockExpr.h>
 #import <LanguageKit/LKMethod.h>

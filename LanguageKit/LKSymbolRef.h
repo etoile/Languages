@@ -1,4 +1,4 @@
-#import "LKDeclRef.h"
+#import <LanguageKit/LKDeclRef.h>
 
 /**
  * AST node representing a reference to a symbol (selector).

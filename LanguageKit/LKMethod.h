@@ -1,5 +1,5 @@
-#import "LKAST.h"
-#import "LKMessageSend.h"
+#import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKMessageSend.h>
 
 /**
  * AST node representing a method.

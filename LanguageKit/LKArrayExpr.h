@@ -1,4 +1,4 @@
-#import "LKAST.h"
+#import <LanguageKit/LKAST.h>
 
 @interface LKArrayExpr : LKAST {
   NSMutableArray *elements;

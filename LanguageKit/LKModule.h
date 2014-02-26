@@ -1,5 +1,5 @@
-#import "LKAST.h"
-#import "LKCompiler.h"
+#import <LanguageKit/LKAST.h>
+#import <LanguageKit/LKCompiler.h>
 
 @class LKSubclass;
 @class LKCategory;

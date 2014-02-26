@@ -1,4 +1,4 @@
-#import "LKAST.h"
+#import <LanguageKit/LKAST.h>
 
 /**
  * AST node representing a new class definition.

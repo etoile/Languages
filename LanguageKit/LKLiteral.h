@@ -1,4 +1,4 @@
-#import "LKAST.h"
+#import <LanguageKit/LKAST.h>
 
 @interface LKLiteral : LKAST {
   /** String representation of value.  Used because this can be a literal too

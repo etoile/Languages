@@ -1,6 +1,6 @@
-#import "LKSymbolTable.h"
-#import "LKCodeGen.h"
-#import "LKCompiler.h"
+#import <LanguageKit/LKSymbolTable.h>
+#import <LanguageKit/LKCodeGen.h>
+#import <LanguageKit/LKCompiler.h>
 
 
 @class LKModule;

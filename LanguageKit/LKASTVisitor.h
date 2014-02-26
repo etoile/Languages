@@ -1,4 +1,4 @@
-#import "LKAST.h"
+#import <LanguageKit/LKAST.h>
 
 /**
  * Generic superclass for AST visitors.  Visitors subclassing this implement
