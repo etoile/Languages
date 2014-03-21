@@ -34,11 +34,11 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 
 # uncomment this line when debugging if you have problems with over-aggressive
 # inlining throwing away useful debugging info.
-${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
-${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
-${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
-${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
-${FRAMEWORK_NAME}_OBJCCFLAGS = -Wno-variadic-macros -Wno-gnu -Wno-pedantic
+#${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
+#${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
+${FRAMEWORK_NAME}_CPPFLAGS +=  -D_GNU_SOURCE 
+${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
+${FRAMEWORK_NAME}_OBJCCFLAGS += -Wno-variadic-macros -Wno-gnu -Wno-pedantic
 ${FRAMEWORK_NAME}_LDFLAGS += -g 
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
@@ -55,6 +55,27 @@ ${FRAMEWORK_NAME}_OBJCCFLAGS += $(shell llvm-config --cxxflags) -g -fobjc-arc
 #LIBRARIES_DEPEND_UPON += `llvm-config --ldflags` -lLLVM-`llvm-config --version`
 LIBRARIES_DEPEND_UPON += $(shell llvm-config --ldflags) $(shell if [ `llvm-config --version | sed 's/\([0-9]*\).\([0-9]*\).*/\1\2/'` -gt 31 ] ; then llvm-config --libs ; else  llvm-config --libs ${LLVM_LIBS} ;  fi)
 
+ifeq (${with_tesla}, yes)
+${FRAMEWORK_NAME}_CC_FILES += \
+	TESLA/Annotations.cpp\
+	TESLA/Assertion.cpp\
+	TESLA/Automaton.cpp\
+	TESLA/Callee.cpp\
+	TESLA/Caller.cpp\
+	TESLA/Debug.cpp\
+	TESLA/FieldReference.cpp\
+	TESLA/Instrumentation.cpp\
+	TESLA/Manifest.cpp\
+	TESLA/Names.cpp\
+	TESLA/Protocol.cpp\
+	TESLA/State.cpp\
+	TESLA/Transition.cpp\
+	TESLA/tesla.pb.cc
+
+${FRAMEWORK_NAME}_CCFLAGS += -std=c++11 -DWITH_TESLA=1 -fno-rtti
+${FRAMEWORK_NAME}_OBJCCFLAGS += -DWITH_TESLA=1 -std=c++11
+${FRAMEWORK_NAME}_LDFLAGS += -lprotobuf -L/home/theraven/TESLA/build/libtesla/src -ltesla
+endif
 
 CC = clang
 CXX = clang++

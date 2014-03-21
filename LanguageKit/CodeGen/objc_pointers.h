@@ -1,6 +1,6 @@
 #import <Foundation/NSObject.h>
 #undef _
-#if __cplusplus > 201100L
+#if __cplusplus > 201100L || __has_include(<unordered_map>)
 #include <unordered_map>
 using std::unordered_map;
 #else
