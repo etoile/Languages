@@ -34,11 +34,11 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 
 # uncomment this line when debugging if you have problems with over-aggressive
 # inlining throwing away useful debugging info.
-${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
-${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
-${FRAMEWORK_NAME}_CPPFLAGS =  -D_GNU_SOURCE 
-${FRAMEWORK_NAME}_OBJCFLAGS = -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
-${FRAMEWORK_NAME}_OBJCCFLAGS = -Wno-variadic-macros -Wno-gnu -Wno-pedantic
+#${FRAMEWORK_NAME}_CXXFLAGS =  -fno-inline
+#${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
+${FRAMEWORK_NAME}_CPPFLAGS +=  -D_GNU_SOURCE 
+${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
+${FRAMEWORK_NAME}_OBJCCFLAGS += -std=gnu99 -Wno-variadic-macros -Wno-gnu -Wno-pedantic
 ${FRAMEWORK_NAME}_LDFLAGS += -g 
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
