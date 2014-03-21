@@ -38,7 +38,7 @@ ${FRAMEWORK_NAME}_HEADER_FILES = \
 #${FRAMEWORK_NAME}_OBJCCFLAGS =  -fno-inline
 ${FRAMEWORK_NAME}_CPPFLAGS +=  -D_GNU_SOURCE 
 ${FRAMEWORK_NAME}_OBJCFLAGS += -std=c99 -g -Wno-unused-value -fexceptions -fobjc-arc
-${FRAMEWORK_NAME}_OBJCCFLAGS += -std=gnu99 -Wno-variadic-macros -Wno-gnu -Wno-pedantic
+${FRAMEWORK_NAME}_OBJCCFLAGS += -std=gnu++11 -Wno-variadic-macros -Wno-gnu -Wno-pedantic
 ${FRAMEWORK_NAME}_LDFLAGS += -g 
 ${FRAMEWORK_NAME}_CFLAGS += -Wno-implicit -g
 
