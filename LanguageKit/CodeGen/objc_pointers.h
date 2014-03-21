@@ -1,6 +1,6 @@
 #import <Foundation/NSObject.h>
 #undef _
-#if __cplusplus > 201100L || __has_include(<unordered_map>)
+#if __cplusplus > 201100L
 #include <unordered_map>
 using std::unordered_map;
 #else
@@ -25,5 +25,5 @@ struct object_hash
 		return (size_t)[(id)s1 hash];
 	}
 };
-template <typename K, typename V> struct object_map : public unordered_map<K, V, object_hash<K>, object_equal<K> > {};
+template <typename K, typename V> struct object_map : public unordered_map<__strong K, V, object_hash<K>, object_equal<K> > {};
 }

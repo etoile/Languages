@@ -43,33 +43,6 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
-#ifdef WITH_TESLA
-#include "TESLA/Callee.h"
-#include "TESLA/Caller.h"
-#include "TESLA/Manifest.h"
-
-tesla::Manifest *Manifest;
-
-Pass *createTESLACalleePass()
-{
-	return new tesla::FnCalleeInstrumenter(*Manifest, false);
-}
-Pass *createTESLACallerPass()
-{
-	return new tesla::FnCallerInstrumenter(*Manifest, false);
-}
-static void addTESLAPasses(const PassManagerBuilder &Builder, PassManagerBase &PM)
-{
-fprintf(stderr, "Manifest: %p\n", Manifest);
-	if (Manifest != 0)
-	{
-		PM.add(createTESLACallerPass());
-		//PM.add(createTESLACalleePass());
-	}
-}
-
-#endif
-
 extern "C" {
 #import <Foundation/Foundation.h>
 #import "../LanguageKit.h"
@@ -126,13 +99,6 @@ CodeGenModule::CodeGenModule(NSString *ModuleName, LLVMContext &C, bool gc,
 		llvm::MemoryBuffer::getFile([MsgSendSmallIntFilename UTF8String], buffer);
 		SmallIntMessages = ParseBitcodeFile(buffer.get(), Context);
 	}
-#ifdef WITH_TESLA
-	if (NULL == Manifest)
-	{
-		Manifest = tesla::Manifest::load(llvm::errs(),
-			tesla::Automaton::Deterministic, "LanguageKit.tesla");
-	}
-#endif
 
 	TheModule = new Module([ModuleName UTF8String], Context);
 	SmallIntModule = SmallIntMessages;
@@ -649,10 +615,6 @@ void CodeGenModule::compile(void)
 	PassManagerBuilder PMBuilder;
 	// TODO: Allow this to be configured by the driver
 	PMBuilder.OptLevel = 3;
-#ifdef WITH_TESLA
-	PMBuilder.addExtension(PassManagerBuilder::EP_EarlyAsPossible,
-	                       addTESLAPasses);
-#endif
 	PMBuilder.addExtension(PassManagerBuilder::EP_EarlyAsPossible,
 	                       addObjCARCExpandPass);
 	PMBuilder.addExtension(PassManagerBuilder::EP_ModuleOptimizerEarly,
@@ -703,8 +665,7 @@ void CodeGenModule::compile(void)
 #if (LLVM_MAJOR > 3) || (LLVM_MAJOR == 3 && LLVM_MINOR > 1)
 		EngineBuilder EB = EngineBuilder(TheModule);
 		//EB.setUseMCJIT(true);
-		//EB.setRelocationModel(Reloc::Static);
-		//EB.setCodeModel(CodeModel::Small);
+		EB.setRelocationModel(Reloc::Static);
 		TargetOptions TO;
 		TO.JITExceptionHandling = 1;
 		// Note: mathk, turn on debug info generation here too!
