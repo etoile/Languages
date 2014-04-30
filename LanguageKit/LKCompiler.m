@@ -20,11 +20,14 @@ static id<LKCompilerDelegate> DefaultDelegate;
 // Don't include the header yet - we don't want to add a SCK dependency, just
 // use it if we have it.
 @interface SCKSourceCollection : NSObject
-@property (nonatomic, readonly) NSMutableDictionary *functions;
-@property (nonatomic, readonly) NSMutableDictionary *globals;
-@property (nonatomic, readonly) NSMutableDictionary *enumerationValues;
-@property (nonatomic, readonly) NSMutableDictionary *enumerations;
+@property (nonatomic, readonly) NSDictionary *functions;
+@property (nonatomic, readonly) NSDictionary *globals;
+@property (nonatomic, readonly) NSDictionary *enumerationValues;
+@property (nonatomic, readonly) NSDictionary *enumerations;
 - (id)sourceFileForPath: (NSString*)aPath;
+@end
+@interface SCKEnumeration : NSObject
+@property (nonatomic, readonly) NSMutableDictionary *values;
 @end
 
 
