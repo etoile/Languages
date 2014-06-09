@@ -667,7 +667,6 @@ void CodeGenModule::compile(void)
 		//EB.setUseMCJIT(true);
 		EB.setRelocationModel(Reloc::Static);
 		TargetOptions TO;
-		TO.JITExceptionHandling = 1;
 		// Note: mathk, turn on debug info generation here too!
 		EB.setTargetOptions(TO);
 		EE = EB.create();
